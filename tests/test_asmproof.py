@@ -3,7 +3,6 @@ import struct
 import sys
 import unittest
 from pathlib import Path
-from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
 from omf import MatchError, OmfReader
@@ -108,6 +107,10 @@ class OMFParsing(unittest.TestCase):
         with self.assertRaises(MatchError):
             OmfReader().read(module(4, [ledata(2, bytes(2)), fixup(2)]))
 
+    def test_fixup_cannot_address_a_different_preceding_data_record(self):
+        with self.assertRaises(MatchError):
+            OmfReader().read(module(4, [ledata(0, bytes(4)), ledata(4, b""), fixup()]))
+
     def test_refuse_32bit_unknown_truncated_and_missing_modend(self):
         inputs = [module(2, [record(0xa1)]), module(2, [record(0xa4)]),
                   module(2)[:-1], module(2)[:-5], module(2) + b"\x00"]
@@ -161,9 +164,15 @@ class Binding(unittest.TestCase):
         self.assertIn("Unbound EXTDEF", result.reason)
 
     def test_cs_reference_adds_contribution_start(self):
-        obj = module(2, [ledata(0, b"\x1c\x00"), fixup()])
-        self.assertEqual(self.proof(obj, context(b"\x9b\x00", start=0x7f)).status, "EQUAL")
-        self.assertEqual(self.proof(obj, context(b"\x1c\x00", start=0x7f)).status, "DIFF")
+        obj = module(30, [ledata(0, b"\x1c\x00" + bytes(28)), fixup()])
+        self.assertEqual(self.proof(obj, context(b"\x9b\x00" + bytes(28), start=0x7f)).status, "EQUAL")
+        self.assertEqual(self.proof(obj, context(b"\x1c\x00" + bytes(28), start=0x7f)).status, "DIFF")
+
+    def test_internal_code_target_must_stay_inside_contribution(self):
+        obj = module(2, [ledata(0, b"\x20\x00"), fixup()])
+        result = self.proof(obj, context(b"\x20\x01"))
+        self.assertEqual(result.status, "DIFF")
+        self.assertIn("outside the object", result.reason)
 
     def test_self_relative_fixup_accounts_for_location_and_field_width(self):
         obj = module(6, [ledata(0, bytes(6)), fixup(at=2, disp=0, relative=True)])

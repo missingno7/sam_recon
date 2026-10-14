@@ -243,6 +243,10 @@ def bind_fixup(f: dict, obj: ObjectModule, code: str, ctx: Context) -> tuple[byt
         raise MatchError(f"Fixup frame {frame_unit} differs from target {target_unit}")
     raw = obj.segment_bytes(code)[at:at + width]
     disp = f["displacement"]
+    if f["target_kind"] == "segment" and f["target"] == code and loc != "base16":
+        relative_target = disp + int.from_bytes(raw[:2], "little")
+        if not 0 <= relative_target <= obj.segment_length(code):
+            raise MatchError("Internal CODE reference points outside the object")
     if f["self_relative"]:
         if loc != "offset16" or target_unit != ctx.unit:
             raise MatchError("Self-relative reference must stay in the same unit")
@@ -399,7 +403,10 @@ def main() -> int:
         obj = OmfReader().read(assembled.obj(), args.source.name)
         results = []
         for ep in episodes:
-            result = prove(obj, original_context(args.object, ep))
+            try:
+                result = prove(obj, original_context(args.object, ep))
+            except (MatchError, OSError, ValueError, KeyError) as exc:
+                result = Proof(ep, status="DIFF", reason=str(exc))
             results.append(result)
             print(result.short())
         if args.worker:
@@ -407,14 +414,16 @@ def main() -> int:
                    "source_sha256": sha256_file(args.source), "assembly": assembled.data,
                    "assembly_directory": str(assembled.directory),
                    "proof_inputs": {str(p.relative_to(LAYOUT.parent)): sha256_file(p)
-                       for p in (Path(__file__), Path(__file__).with_name("omf.py"),
+                       for p in (Path(__file__), *[Path(__file__).with_name(n) for n in
+                                 ("omf.py", "common.py", "toolchain.py", "oracle.py", "mz.py", "harness.py")],
                                  EVIDENCE / "atlas.json", LAYOUT / "routine-kinds.json",
-                                 LAYOUT / "data.json", LAYOUT / "oracle.lock.json")},
+                                 LAYOUT / "data.json", LAYOUT / "oracle.lock.json",
+                                 *[BUILD / "census" / f"{ep}.json" for ep in episodes])},
                    "results": [vars(r) for r in results]}
             atomic_json(BUILD / "workers" / args.worker / "proofs" / args.object /
                         (assembled.key + ".json"), doc)
         return 0 if all(r.status == "EQUAL" for r in results) else 1
-    except (MatchError, toolchain.ToolchainError, OSError, ValueError) as exc:
+    except (MatchError, toolchain.ToolchainError, OSError, ValueError, KeyError) as exc:
         for ep in episodes:
             print(f"{ep}: DIFF: {exc}")
         return 1
