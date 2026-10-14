@@ -2,10 +2,6 @@
 type
   TMenuText = array[1..6] of String[40];
 var
-  d_67FA: Byte;
-  d_67FB: Byte;
-  d_67FC: Byte;
-  d_67FD: Byte;
   d_6814: Word;
   d_6824: Word;
 {@stubs}
@@ -23,10 +19,10 @@ begin
   d_3812[4] := ' T)itle Screen';
   d_3812[5] := ' I)sland Map';
   d_3812[6] := 'END OF WINDOW';
-  d_67FA := $20;
-  d_67FB := $14;
-  d_67FC := $17;
-  d_67FD := 1;
+  d_67FA[1] := $20;
+  d_67FA[2] := $14;
+  d_67FA[3] := $17;
+  d_67FA[4] := 1;
   d_6814 := u3_1601(1);
   if d_6814 = $20 then
   begin

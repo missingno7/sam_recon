@@ -6,11 +6,7 @@ type
     second: string[40];
   end;
 var
-  d_3812: TTextPair;
   d_341C: Byte;
-  d_67FA: Byte;
-  d_67FB: Byte;
-  d_67FC: Byte;
   d_6814: Word;
   d_6824: Word;
 {@stubs}
@@ -21,11 +17,11 @@ function u6_0000: Boolean;
 procedure u3_a1d8;
 begin
   u3_079e;
-  d_3812.first := 'Joystick On (Y-N) ^';
-  d_3812.second := 'END OF WINDOW';
-  d_67FA := $15;
-  d_67FB := $31;
-  d_67FC := 1;
+  d_3812[1] := 'Joystick On (Y-N) ^';
+  d_3812[2] := 'END OF WINDOW';
+  d_67FA[1] := $15;
+  d_67FA[2] := $31;
+  d_67FA[3] := 1;
   d_6814 := u3_1601(1);
   if d_6814 = $15 then
   begin

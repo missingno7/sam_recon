@@ -14,7 +14,6 @@ type
   PSpriteData = ^TSpriteData;
 var
   d_34EC: array[1..25] of TItem;
-  d_67FA: Byte;
   d_6814: Word;
   d_681C, d_6832: Integer;
   d_6840: Integer;
@@ -343,7 +342,7 @@ begin
             d_3812[3][0] := #0;
             d_3812[4] := 'Press ESCAPE  ';
             d_3812[5] := 'END OF WINDOW';
-            d_67FA := 1;
+            d_67FA[1] := 1;
             d_6814 := u3_1601(0);
             d_6EC5 := 0;
             d_6816 := 0;
@@ -403,7 +402,7 @@ begin
             d_3812[6] := '                       ';
             d_3812[7] := 'Press ESCAPE!          ';
             d_3812[8] := 'END OF WINDOW';
-            d_67FA := 1;
+            d_67FA[1] := 1;
             d_6814 := u3_1601(0);
             d_6EC5 := 0;
             d_6816 := 0;
@@ -508,7 +507,7 @@ begin
             d_3812[3][0] := #0;
             d_3812[4] := 'Press ESCAPE';
             d_3812[5] := 'END OF WINDOW';
-            d_67FA := 1;
+            d_67FA[1] := 1;
             d_6814 := u3_1601(0);
             d_6EC5 := 0;
             d_6816 := 0;

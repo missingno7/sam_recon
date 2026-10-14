@@ -2,20 +2,6 @@
 type
   TMenuText = array[1..299] of String[40];
 var
-  d_67FA: Byte;
-  d_67FB: Byte;
-  d_67FC: Byte;
-  d_67FD: Byte;
-  d_67FE: Byte;
-  d_67FF: Byte;
-  d_6800: Byte;
-  d_6801: Byte;
-  d_6802: Byte;
-  d_6803: Byte;
-  d_6804: Byte;
-  d_6805: Byte;
-  d_6806: Byte;
-  d_6807: Byte;
   d_6814: Word;
   d_699E: Word;
   d_6D60: Word;
@@ -58,20 +44,20 @@ begin
   Inc(I); d_3812[I] := 'Make a selection: ^';
   Inc(I); d_3812[I] := 'END OF WINDOW';
 
-  d_67FA := $31;
-  d_67FB := $17;
-  d_67FC := $23;
-  d_67FD := $13;
-  d_67FE := $1F;
-  d_67FF := $18;
-  d_6800 := $10;
-  d_6801 := 1;
-  d_6802 := $39;
-  d_6803 := $1C;
-  d_6804 := $21;
-  d_6805 := $1E;
-  d_6806 := $2E;
-  d_6807 := $2F;
+  d_67FA[1] := $31;
+  d_67FA[2] := $17;
+  d_67FA[3] := $23;
+  d_67FA[4] := $13;
+  d_67FA[5] := $1F;
+  d_67FA[6] := $18;
+  d_67FA[7] := $10;
+  d_67FA[8] := 1;
+  d_67FA[9] := $39;
+  d_67FA[10] := $1C;
+  d_67FA[11] := $21;
+  d_67FA[12] := $1E;
+  d_67FA[13] := $2E;
+  d_67FA[14] := $2F;
 
   d_6814 := u3_1601(0);
   case d_6814 of

@@ -2,16 +2,6 @@
 type
   TString40 = string[40];
 var
-  d_67FA: Byte;
-  d_67FB: Byte;
-  d_67FC: Byte;
-  d_67FD: Byte;
-  d_67FE: Byte;
-  d_67FF: Byte;
-  d_6800: Byte;
-  d_6801: Byte;
-  d_6802: Byte;
-  d_6803: Byte;
   d_6814: Word;
   d_681C: Word;
 {@stubs}
@@ -48,16 +38,16 @@ begin
   d_3812[14] := 'Selection: ^';
   d_3812[15][0] := #0;
   d_3812[16] := 'END OF WINDOW';
-  d_67FA := $23;
-  d_67FB := $14;
-  d_67FC := $2F;
-  d_67FD := $24;
-  d_67FE := $2E;
-  d_67FF := $25;
-  d_6800 := $13;
-  d_6801 := $1F;
-  d_6802 := $10;
-  d_6803 := 1;
+  d_67FA[1] := $23;
+  d_67FA[2] := $14;
+  d_67FA[3] := $2F;
+  d_67FA[4] := $24;
+  d_67FA[5] := $2E;
+  d_67FA[6] := $25;
+  d_67FA[7] := $13;
+  d_67FA[8] := $1F;
+  d_67FA[9] := $10;
+  d_67FA[10] := 1;
 
   d_6814 := u3_1601(0);
   case d_6814 of
@@ -111,7 +101,7 @@ begin
           d_3812[3][0] := #0;
           d_3812[4] := 'Press ESCAPE';
           d_3812[5] := 'END OF WINDOW';
-          d_67FA := 1;
+          d_67FA[1] := 1;
           d_6814 := u3_1601(0);
           d_6EC5 := 0;
           d_6816 := 0;

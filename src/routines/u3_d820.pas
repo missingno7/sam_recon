@@ -2,9 +2,6 @@
 type
   TMenuText = array[1..6] of String[40];
 var
-  d_67FA: Byte;
-  d_67FB: Byte;
-  d_67FC: Byte;
   d_6824: Word;
 {@stubs}
 procedure u3_079e;
@@ -29,9 +26,9 @@ begin
   d_3812[menuIndex] := 'Press ESCAPE!          ';
   Inc(menuIndex);
   d_3812[menuIndex] := 'END OF WINDOW';
-  d_67FA := 1;
-  d_67FB := $1C;
-  d_67FC := $39;
+  d_67FA[1] := 1;
+  d_67FA[2] := $1C;
+  d_67FA[3] := $39;
   d_6824 := $03E7;
   MemW[$0000:$041C] := MemW[$0000:$041A];
   selectedValue := u3_1601(0);

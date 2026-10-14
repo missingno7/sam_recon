@@ -1,8 +1,5 @@
 {@decls}
 var
-  d_67FA: Byte;
-  d_67FB: Byte;
-  d_67FC: Byte;
   d_6814: Word;
   d_6824: Word;
 {@stubs}
@@ -30,9 +27,9 @@ begin
   d_3812[16][0] := #0;
   d_3812[17] := '  Alternate video setting (Y-N) ^ ';
   d_3812[18] := 'END OF WINDOW';
-  d_67FA := $15;
-  d_67FB := $31;
-  d_67FC := 1;
+  d_67FA[1] := $15;
+  d_67FA[2] := $31;
+  d_67FA[3] := 1;
   d_6814 := u3_1601(0);
   if d_6814 = $15 then
     d_70C6 := 1

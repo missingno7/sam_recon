@@ -3,7 +3,6 @@ type
   TString40 = string[40];
 var
   d_6B44: array[1..10] of TString40;
-  d_67FA: Byte;
   d_6814: Word;
 {@stubs}
 procedure u3_079e;
@@ -23,7 +22,7 @@ begin
   d_3812[15] := 'Press any key ^';
   d_3812[16][0] := #0;
   d_3812[17] := 'END OF WINDOW';
-  d_67FA := 1;
+  d_67FA[1] := 1;
   d_6814 := u3_1601(1);
   d_6EC5 := 0;
   d_6816 := 0;

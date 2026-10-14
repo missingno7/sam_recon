@@ -8,8 +8,6 @@ type
       0: (Wide: string[255]);
       1: (Narrow: string[40]);
   end;
-var d_3812: array[1..299] of TStr40;
-var d_67FA: Byte;
 var d_6814: Word;
 {@stubs}
 procedure u3_079e;
@@ -21,11 +19,11 @@ var
 begin
   buffer.Wide := input;
   u3_079e;
-  d_3812[1].Value := buffer.Narrow;
-  d_3812[2].Value[0] := #0;
-  d_3812[3].Value := 'Press ESCAPE';
-  d_3812[4].Value := 'END OF WINDOW';
-  d_67FA := 1;
+  d_3812[1] := buffer.Narrow;
+  d_3812[2][0] := #0;
+  d_3812[3] := 'Press ESCAPE';
+  d_3812[4] := 'END OF WINDOW';
+  d_67FA[1] := 1;
   d_6814 := u3_1601(0);
   d_6EC5 := 0;
   d_6816 := 0;

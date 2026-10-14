@@ -11,7 +11,6 @@ type
   TWindowBuffer = array[0..29999] of Byte;
   PWindowBuffer = ^TWindowBuffer;
 var
-  d_3812: array[1..299] of THelpLine;
   d_67F6: PWindowBuffer;
   d_67FA: array[1..20] of Byte;
   d_6824, d_6826, d_6828, d_682A, d_682C: Integer;

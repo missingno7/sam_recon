@@ -1,7 +1,5 @@
 {@decls}
 var
-  d_67FA: Byte;
-  d_67FB: Byte;
   d_6814: Word;
 {@stubs}
 procedure u3_079e;
@@ -33,8 +31,8 @@ var
     d_3812[10] := 'Are these selections ok (Y-N): ^';
     d_3812[11][0] := #0;
     d_3812[12] := 'END OF WINDOW';
-    d_67FA := $15;
-    d_67FB := $31;
+    d_67FA[1] := $15;
+    d_67FA[2] := $31;
     d_6814 := u3_1601(0);
     if d_6814 = $31 then
       u3_892b
@@ -92,7 +90,7 @@ begin
       d_3812[2][0] := #0;
       d_3812[3] := 'Select key to move right: ^';
       d_3812[4] := 'END OF WINDOW';
-      d_67FA := 1;
+      d_67FA[1] := 1;
       KeyRight := u3_1601(1);
       if KeyRight = 1 then
         ContinueRedefining := False;
@@ -115,7 +113,7 @@ begin
       d_3812[2][0] := #0;
       d_3812[3] := 'Select key to move up: ^';
       d_3812[4] := 'END OF WINDOW';
-      d_67FA := 1;
+      d_67FA[1] := 1;
       KeyUp := u3_1601(1);
       if KeyUp = 1 then
         ContinueRedefining := False;
@@ -139,7 +137,7 @@ begin
       d_3812[2][0] := #0;
       d_3812[3] := 'Select key to move down: ^';
       d_3812[4] := 'END OF WINDOW';
-      d_67FA := 1;
+      d_67FA[1] := 1;
       KeyDown := u3_1601(1);
       if KeyDown = 1 then
         ContinueRedefining := False;
@@ -163,7 +161,7 @@ begin
       d_3812[2][0] := #0;
       d_3812[3] := 'Select key to jump: ^';
       d_3812[4] := 'END OF WINDOW';
-      d_67FA := 1;
+      d_67FA[1] := 1;
       KeyJump := u3_1601(1);
       if KeyJump = 1 then
         ContinueRedefining := False;

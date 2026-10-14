@@ -5,7 +5,6 @@ type
   { Required by the canonical u2_68a9 stub header. }
   TLevelRow = array[1..42] of Char;
 var
-  d_3812: array[1..299] of THelpLine;
   d_67FA: array[1..20] of Byte;
   d_6814: Integer;
   d_6816, d_6EC5: Byte;

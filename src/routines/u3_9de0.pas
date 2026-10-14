@@ -4,10 +4,6 @@ type
     S: String[40];
   end;
 var
-  d_3812: array[1..299] of TRec41;
-  d_67FA: Byte;
-  d_67FB: Byte;
-  d_67FC: Byte;
   d_6814: Word;
   d_6824: Word;
 {@stubs}
@@ -17,11 +13,11 @@ function u3_1601(Mode: Byte): Byte;
 procedure u3_9de0;
 begin
   u3_079e;
-  d_3812[1].S := 'Sounds On (Y-N) ^';
-  d_3812[2].S := 'END OF WINDOW';
-  d_67FA := $15;
-  d_67FB := $31;
-  d_67FC := 1;
+  d_3812[1] := 'Sounds On (Y-N) ^';
+  d_3812[2] := 'END OF WINDOW';
+  d_67FA[1] := $15;
+  d_67FA[2] := $31;
+  d_67FA[3] := 1;
   d_6814 := u3_1601(1);
   if d_6814 = $15 then
     d_34AF := 1

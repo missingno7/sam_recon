@@ -3,7 +3,6 @@
 type
   THelpLine = string[40];
 var
-  d_67FA: Byte;
   d_6814: Word;
 {@stubs}
 procedure u3_079e;
@@ -493,7 +492,7 @@ begin
   d_3812[I] := 'Press PgUp-PgDn        Esc-Exit';
   Inc(I);
   d_3812[I] := 'END OF WINDOW';
-  d_67FA := 1;
+  d_67FA[1] := 1;
   d_6814 := u3_26cf(0);
   d_6EC5 := 0;
   d_6816 := 0;
