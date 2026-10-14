@@ -290,7 +290,16 @@ def extra_offset(name: str, ep: str) -> int | None:
 def episode_globals(ep: str) -> dict:
     """name -> DS offset in `ep` for every referenced global."""
     g = load_json(LAYOUT / "data.json")["globals"]
-    return {n.upper(): int(v[ep], 16) for n, v in g.items() if v.get(ep)}
+    out = {n.upper(): int(v[ep], 16) for n, v in g.items() if v.get(ep)}
+    extra = LAYOUT / "data-extra.json"       # curated entries override the derived map
+    if extra.exists():
+        for n, v in load_json(extra)["globals"].items():
+            if ep in v:
+                if v[ep]:
+                    out[n.upper()] = int(v[ep], 16)
+                else:
+                    out.pop(n.upper(), None)
+    return out
 
 
 # ---------------------------------------------------------------- generation

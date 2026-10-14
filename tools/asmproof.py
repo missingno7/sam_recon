@@ -162,9 +162,8 @@ def original_context(unit: str, episode: str) -> Context:
     routines = {lid.lower(): (e["unit"], e["entry"])
                 for lid, row in atlas["routines"].items()
                 if (e := row["episodes"].get(episode))}
-    globals_ = {n.upper(): int(v[episode], 16)
-                for n, v in load_json(LAYOUT / "data.json")["globals"].items()
-                if v.get(episode)}
+    import harness
+    globals_ = harness.episode_globals(episode)      # data.json + curated data-extra.json
     def extra(name, ep):
         import harness
         return harness.extra_offset(name, ep)

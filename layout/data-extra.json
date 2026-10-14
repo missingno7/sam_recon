@@ -1,6 +1,12 @@
 {
  "description": "Globals whose start offset no code references directly (low array bounds folded into displacements), with their per-episode offsets as proven by accepted routines. tools/harness.extra_offset reads this before inferring from neighbours.",
  "globals": {
+  "d_0000": {
+   "evidence": "Genus PCX Toolkit identity record (u5 typed constant, referenced by obj_u5 as offset d_0000+1Ah); SAM2/3 insert a 14-byte adapter table before it",
+   "sam1": "0000",
+   "sam2": "000E",
+   "sam3": "000E"
+  },
   "d_001a": {
    "evidence": "obj_u5 (Genus PCX toolkit) typed constant; SAM2/3 typed constants start 0Eh later",
    "sam1": "001A",
@@ -18,6 +24,12 @@
    "sam1": "0296",
    "sam2": "02BC",
    "sam3": "02BC"
+  },
+  "d_sam2_0000": {
+   "evidence": "SAM2/3-only adapter classification table used by p_sam2_107a",
+   "sam1": null,
+   "sam2": "0000",
+   "sam3": "0000"
   }
  }
 }
