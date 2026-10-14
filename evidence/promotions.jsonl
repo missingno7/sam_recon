@@ -4,3 +4,7 @@
 {"equal": ["sam1", "sam2", "sam3"], "function": "p_0e67", "note": "supervisor pilots", "source_sha256": "b8b6d7eb615b3998f97c48ebb89c9a014c4701d0835840895c926981bb87105d", "time": "2026-10-14T15:02:20"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "u4_048c", "note": "supervisor pilot: INIT mode", "source_sha256": "7500a8c0263fd15b63502f93afd7a64821091f06bdcc512be47d78b4bd7427f1", "time": "2026-10-14T15:08:39"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_079e", "note": "supervisor pilot", "source_sha256": "5b7881ebdcbbeefe3cf922dd480210b3775ac30299db7b1c430043c4830fe0fc", "time": "2026-10-14T15:10:09"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u1_86df", "note": "supervisor examples", "source_sha256": "07d4339b5069d09c4d93ab4ca639dfeffbb85e1291e8829cf3236b067eaba3e0", "time": "2026-10-14T15:11:38"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u4_0309", "note": "supervisor examples", "source_sha256": "ab8fec52b4884ed4597f270ed231443f4c1272d3b4f955b6250c2315f662624e", "time": "2026-10-14T15:11:38"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "p_0ec2", "note": "supervisor examples", "source_sha256": "27fa3680504277f5365b75d8c028b28c3235905827fac8dbf67f49e75fb4fce6", "time": "2026-10-14T15:11:39"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u3_3c93", "note": "supervisor examples", "source_sha256": "1c73683a8a72cef21f522b47595f02ca080acbc48fb99594c2257cfe3104aef0", "time": "2026-10-14T15:11:39"}
