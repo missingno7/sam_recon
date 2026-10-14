@@ -3,9 +3,10 @@
 ; source byte's bit order, then XORs the cyclic key into that byte.
 CODE segment byte public
 assume cs:CODE
-public u8_0c14
+public DecryptGameAssetBuffer
 
-u8_0c14 proc far
+; Reverses each byte's bit order and XORs a cyclic 28-byte Copyright 1991 Peder Jungck key in place.
+DecryptGameAssetBuffer proc far
     push bp
     mov bp,sp
     sub sp,54h
@@ -98,6 +99,6 @@ outer_test:
     mov sp,bp
     pop bp
     retf 6
-u8_0c14 endp
+DecryptGameAssetBuffer endp
 CODE ends
 end

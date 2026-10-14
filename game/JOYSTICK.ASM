@@ -3,29 +3,31 @@
 ; This is the observed original convention, including its inconsistency.
 CODE segment byte public
 assume cs:CODE
-public u6_00cc
+public ReadJoystickAxis
 
-u6_007f proc far
+; Unused assembly entry measures game-port masks 1,2,4,8 into four passed word destinations.
+ReadFourJoystickAxes proc far
     push bp
     mov bp,sp
     push es
     mov dx,201h
     les di,[bp+12h]
     mov ah,1
-    call u6_00a9
+    call MeasureJoystickAxisToWord
     les di,[bp+0eh]
     mov ah,2
-    call u6_00a9
+    call MeasureJoystickAxisToWord
     les di,[bp+0ah]
     mov ah,4
-    call u6_00a9
+    call MeasureJoystickAxisToWord
     les di,[bp+6]
     mov ah,8
-    call u6_00a9
+    call MeasureJoystickAxisToWord
     jmp four_done            ; TASM reserves a forward-JMP slot (NOP).
-u6_007f endp
+ReadFourJoystickAxes endp
 
-u6_00a9 proc near
+; Helper discharges/recharges one selected axis bit and stores the measured loop count through ES:DI.
+MeasureJoystickAxisToWord proc near
     mov cx,0ffffh
 four_discharge:
     in al,dx
@@ -43,14 +45,15 @@ four_charge:
     add cx,-1
     mov es:[di],cx
     retf
-u6_00a9 endp
+MeasureJoystickAxisToWord endp
 four_done:
     pop es
     mov sp,bp
     pop bp
     retf 16
 
-u6_00cc proc far
+; Times game-port bit 1 shl Axis with interrupts disabled, returning -1 on timeout.
+ReadJoystickAxis proc far
     push bp
     mov bp,sp
     mov dx,201h
@@ -77,6 +80,6 @@ axis_charge:
     mov sp,bp
     pop bp
     ret 2
-u6_00cc endp
+ReadJoystickAxis endp
 CODE ends
 end

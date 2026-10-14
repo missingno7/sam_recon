@@ -18,15 +18,15 @@ tasm /DSAM%1 DECODE.ASM,DECODE.OBJ,;
 if errorlevel 1 goto fail
 tasm /DSAM%1 PROGRAPX.ASM,PROGRAPX.OBJ,;
 if errorlevel 1 goto fail
-if exist U1.TPU del U1.TPU
-if exist U2.TPU del U2.TPU
-if exist U3.TPU del U3.TPU
-if exist U4.TPU del U4.TPU
-if exist U5.TPU del U5.TPU
-if exist U6.TPU del U6.TPU
-if exist U7.TPU del U7.TPU
-if exist U8.TPU del U8.TPU
-if exist U9.TPU del U9.TPU
+if exist SAMPLAY.TPU del SAMPLAY.TPU
+if exist SAMLEVEL.TPU del SAMLEVEL.TPU
+if exist SAMUI.TPU del SAMUI.TPU
+if exist TEXT80.TPU del TEXT80.TPU
+if exist PCXGENUS.TPU del PCXGENUS.TPU
+if exist GAMEJOY.TPU del GAMEJOY.TPU
+if exist SAMSOUND.TPU del SAMSOUND.TPU
+if exist SAMDATA.TPU del SAMDATA.TPU
+if exist PROGRPHX.TPU del PROGRPHX.TPU
 tpc /M /GD /DSAM%1 /$S- /$I- /$R- /$B- SAM.PAS
 if errorlevel 1 goto fail
 copy SAM.EXE SAM%1.EXE > NUL

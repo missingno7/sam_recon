@@ -34,6 +34,7 @@ import mz
 import oracle
 from omf import OmfReader
 import progbuild
+import rename
 import toolchain
 import tpc
 import tpmap
@@ -52,9 +53,14 @@ def build_steps(batch: str, episode: str, options: list[str]) -> list[tuple[str,
         raise ValueError("unknown episode")
     expected = mergeeps.build_batch(options).splitlines()
     actual = mergeeps.normalize(batch).splitlines()
+    aliases = progbuild.canonical_symbols()
+    # Only supported filename substitutions are accepted; the pinned commands
+    # and switches still have to match the original recipe exactly.
+    canonical = lambda s: re.sub(r"(?i)\b([A-Za-z_][A-Za-z_0-9]*)(?=\.TPU\b)",
+                                lambda m: aliases.get(m[1].upper(), m[1]), s)
     meaningful = lambda lines: [s.strip().lower() for s in lines
                                 if s.strip() and not s.strip().lower().startswith("rem ")]
-    if meaningful(actual) != meaningful(expected):
+    if meaningful([canonical(s) for s in actual]) != meaningful(expected):
         raise ValueError("BUILD.BAT differs from the supported pinned recipe (tools/mergeeps.py)")
     steps = []
     for line in actual:
@@ -83,11 +89,70 @@ def copy_sources(tree: Path, work: Path) -> dict:
         blob = path.read_bytes()
         inputs[name] = sha256(blob)
         (work / name).write_bytes(blob)
-    required = {*mergeeps.PASCAL_FILES, "BUILD.BAT",
-                *(name + ".ASM" for name in mergeeps.OBJECT_NAMES.values())}
-    if missing := required - inputs.keys():
+    units = progbuild.semantic_names().get("units", {})
+    required = {"SAM.PAS", "BUILD.BAT", *(name + ".ASM" for name in mergeeps.OBJECT_NAMES.values())}
+    missing = required - inputs.keys()
+    for filename in mergeeps.PASCAL_FILES:
+        if filename == "SAM.PAS":
+            continue
+        unit = Path(filename).stem.lower()
+        semantic = units.get(unit, {}).get("name", unit).upper() + ".PAS"
+        if filename not in inputs and semantic not in inputs:
+            missing.add(filename + " or " + semantic)
+    if missing:
         raise ValueError("missing standalone inputs: " + ", ".join(sorted(missing)))
     return inputs
+
+
+def assembly_context(unit: str, episode: str):
+    """Bind semantic OMF externs/publics to the unchanged coordinate oracle."""
+    ctx = asmproof.original_context(unit, episode)
+    names = progbuild.semantic_names()
+    for lid, row in names.get("routines", {}).items():
+        if lid.lower() in ctx.routines:
+            ctx.routines[row["name"].lower()] = ctx.routines[lid.lower()]
+    for old, row in names.get("globals", {}).items():
+        offset = ctx.globals.get(old.upper())
+        if offset is None:
+            offset = ctx.extra_offset(old, episode) if ctx.extra_offset else None
+        if offset is not None:
+            ctx.globals[row["name"].upper()] = offset
+    return ctx
+
+
+def source_layout(work: Path, episode: str) -> tuple[dict, set]:
+    """Independently inventory real declarations, including typed constants.
+
+    Referenced DS coordinates may point inside records/arrays; only declared
+    variables are expected map publics. Missing required publics are failures.
+    """
+    import harness
+    offsets = harness.episode_globals(episode)
+    aliases = progbuild.canonical_symbols()
+    globals_, routines = {}, set()
+    for path in sorted(work.glob("*.PAS")):
+        pas = rename.Pascal(mergeeps.select_episode(path.read_text("latin1"), episode), path.name)
+        module = aliases.get(pas.root.name.upper(), pas.root.name.upper())
+        unit = "p" if module == "SAM" else module.lower()
+        for n in pas.root.variables:
+            original = aliases.get(n.upper(), n.upper())
+            if progbuild.GLOBAL_RX.fullmatch(original):
+                offset = offsets.get(original)
+                if offset is None:
+                    offset = harness.extra_offset(original, episode)
+                if offset is None:
+                    raise ValueError(f"{episode}: no independently known offset for declared {original}")
+                globals_[original] = {"unit": unit, "offset": offset}
+        for scope in pas.root.children:
+            if scope.interface or module == "SAM" and scope.definition:
+                routines.add(aliases.get(scope.name.upper(), scope.name.upper()).lower())
+    for path in work.glob("*.ASM"):
+        text = mergeeps.select_episode(path.read_text("latin1"), episode, "asm")
+        for line in re.findall(r"(?im)^\s*public\s+([^;\r\n]+)", text):
+            for n in line.split(","):
+                n = n.strip().upper()
+                routines.add(aliases.get(n, n).lower())
+    return globals_, routines
 
 
 def run_tasm(args: list[str], work: Path) -> dict:
@@ -152,6 +217,7 @@ def verify_comparison(original: bytes, candidate: bytes, holes: list[dict], comp
                     and r.get("original_size") == r.get("candidate_size")
                     for r in comparison["segments"]),
         "library data anchors": all(r["equal"] for r in comparison["anchors"]),
+        "global offsets": all(r["equal"] for r in comparison.get("globals", [])),
         "routine entries": all(r["equal"] for r in comparison["routine_entries"]),
     }
     return {"ok": not outside and all(checks.values()), "image_size": len(original),
@@ -219,7 +285,11 @@ def build_episode(tree: Path, episode: str, directory: Path) -> dict:
             ROOT / "layout/profiles.json", ROOT / "layout/toolchain.json", oracle.LOCK,
             BUILD / "datamap" / (episode + ".json"),
             *[Path(__file__).with_name(n) for n in ("standalone.py", "mergeeps.py", "progbuild.py",
-                "asmproof.py", "omf.py", "tpc.py", "toolchain.py", "mz.py", "tpmap.py", "oracle.py", "lz91.py")])}
+                "asmproof.py", "omf.py", "tpc.py", "toolchain.py", "mz.py", "tpmap.py", "oracle.py", "lz91.py",
+                "rename.py")])}
+        names_path = ROOT / "layout/names.json"
+        if names_path.is_file():
+            report["proof_inputs"]["layout/names.json"] = sha256_file(names_path)
         objects = {}
         for command, args in steps:
             if command != "tasm":
@@ -231,7 +301,7 @@ def build_episode(tree: Path, episode: str, directory: Path) -> dict:
             if not assembly["ok"]:
                 raise RuntimeError(f"{name}: TASM failed; see {work / (name + '.LOG')}")
             objects[unit] = obj = OmfReader().read((work / (name + ".OBJ")).read_bytes(), name + ".OBJ")
-            proof = asmproof.prove(obj, asmproof.original_context(unit, episode))
+            proof = asmproof.prove(obj, assembly_context(unit, episode))
             recipe_path = ROOT / "recipes" / ("obj_" + unit + ".json")
             recipe = load_json(recipe_path)["episodes"][episode]
             report["proof_inputs"][str(recipe_path.relative_to(ROOT))] = sha256_file(recipe_path)
@@ -254,7 +324,9 @@ def build_episode(tree: Path, episode: str, directory: Path) -> dict:
         with progbuild.isolated_tools(directory / "diagnostics"):
             anchors = progbuild.library_anchors(episode, project, cen, image, [f"/DSAM{episode[-1]}", *options])
         report["library_anchors"] = anchors
-        generated = SimpleNamespace(episode=episode, globals={}, routines={})
+        globals_, expected_routines = source_layout(work, episode)
+        generated = SimpleNamespace(episode=episode, globals=globals_, routines={},
+                                    expected_routines=expected_routines)
         report["comparison"] = comparison = progbuild.compare_image(project, generated, cen, image, relocs,
             mz.parse(unpacked).header, executable, map_text, anchors)
         # TP5's ordinary empty heap is outside the loaded image. progbuild's
@@ -301,18 +373,20 @@ def main(argv=None) -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("tree", type=Path)
     ap.add_argument("--episodes", default=",".join(EPISODES))
+    ap.add_argument("--output-dir", type=Path, default=OUT,
+                    help="receipt directory (default: standalone worker directory)")
     args = ap.parse_args(argv)
     eps = args.episodes.split(",")
     if not eps or any(ep not in EPISODES for ep in eps) or len(set(eps)) != len(eps):
         ap.error("--episodes must be a comma-separated subset of sam1,sam2,sam3")
-    run = OUT / uuid.uuid4().hex[:12]
+    run = args.output_dir / uuid.uuid4().hex[:12]
     reports = {}
     for ep in eps:
         print(f"{ep}: building standalone sources in {run / ep}", flush=True)
         reports[ep] = build_episode(args.tree, ep, run / ep)
         print(summary(reports[ep]), flush=True)
     atomic_json(run / "report.json", reports)
-    atomic_json(OUT / "latest.json", {"run": str(run), "episodes": reports})
+    atomic_json(args.output_dir / "latest.json", {"run": str(run), "episodes": reports})
     (run / "report.txt").write_text("\n".join(summary(r) for r in reports.values()) + "\n")
     print(f"Report: {run / 'report.json'}")
     return 0 if all(r["ok"] for r in reports.values()) else 1

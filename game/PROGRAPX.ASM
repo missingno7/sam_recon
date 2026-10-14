@@ -4,51 +4,52 @@
 ; NOPs are the original reserved forward-JMP slots.
 CODE segment byte public
 assume cs:CODE
-public u9_01a3,u9_01c5,u9_01d3,u9_01f9,u9_024c
-public u9_029f,u9_02db,u9_02fa,u9_0337,u9_0352
-public u9_0475,u9_051f,u9_0625,u9_07ee,u9_1795
-public u9_1831,u9_19f9,u9_1b27,u9_2463,u9_27e2
-public u9_2981,u9_2a9f,u9_2b38,u9_2e6d,u9_2ecf
-public u9_2f32
+public PgSetToolboxVideoMode,PgSetBiosVideoMode,PgSetScreenStride,PgPanDisplayAtRetraceStart,PgPanDisplayAtRetraceEnd
+public PgSetEgaSplitScanline,PgWaitVerticalRetrace,PgSetVgaSplitScanline,PgSetBorderColor,PgSetPaletteRegister
+public PgBlitMasked16x16,PgBlitMasked8x8,PgSetDrawColor,PgFillRectangleByteAligned,PgCapturePlanarRectangle
+public PgRestorePlanarRectangle,PgBlitMaskedShifted16x16,PgBlitMaskedShifted8x8,PgOrShifted16x16,PgInitializeRomFonts
+public PgSelectRomFont,PgBlitOpaque16x16,PgBlitOpaque8x8,PgCopyCachedVideoTile16x16,PgCopyVideoScreenRegion320x200
+public PgCopyStatusBandTemplate
 
-text_x                 dw ?
-text_y                 dw ?
-font_pixel_x           dw ?
-font_pixel_y           dw ?
-text_cs_base           dw ?
-font_rows              dw ?
-glyph_offset           dw ?
-glyph_segment          dw ?
-font_row_index         dw ?
-glyph_left             dw ?
-glyph_right            dw ?
-text_char_index        dw ?
-text_char_code         dw ?
-left_masks             db 0ffh,7fh,3fh,1fh,0fh,7,3,1
-pixel_masks            db 80h,40h,20h,10h,8,4,2,1
-transfer_width         dw ?
-transfer_height        dw ?
-transfer_x_end         dw ?
-transfer_y_end         dw ?
-transfer_x_start       dw ?
-transfer_y_start       dw ?
-screen_stride          dw 40
-toolbox_marker         dw 0666h
-banner_newlines        db 23 dup (10)
-banner                 db 'ProGraphx EGA/VGA Toolbox',13,10,26
-version                db 'Version 2.0 320x200 EGA/VGA',13,10,26
-copyright              db 'Copyright 1991 by Peder Jungck',13,10,26
-draw_page              dw 0
-draw_color             dw 1
-draw_operation         db 0
-clip_left              dw 0
-clip_right             dw 39
-clip_top               dw 0
-clip_bottom            dw 199
-clip_left_pixels       dw 0
-clip_right_pixels      dw 319
+PgTextX                 dw ?
+PgTextY                 dw ?
+PgFontPixelX           dw ?
+PgFontPixelY           dw ?
+PgTextCsBase           dw ?
+PgFontRowCount              dw ?
+PgGlyphOffset           dw ?
+PgGlyphSegment          dw ?
+PgFontRowIndex         dw ?
+PgGlyphLeft             dw ?
+PgGlyphRight            dw ?
+PgTextCharIndex        dw ?
+PgTextCharCode         dw ?
+PgLeftMasks             db 0ffh,7fh,3fh,1fh,0fh,7,3,1
+PgPixelMasks            db 80h,40h,20h,10h,8,4,2,1
+PgTransferWidth         dw ?
+PgTransferHeight        dw ?
+PgTransferXEnd         dw ?
+PgTransferYEnd         dw ?
+PgTransferXStart       dw ?
+PgTransferYStart       dw ?
+PgScreenStrideBytes          dw 40
+PgToolboxMarker         dw 0666h
+PgBannerNewlines        db 23 dup (10)
+PgProductBanner                 db 'ProGraphx EGA/VGA Toolbox',13,10,26
+PgVersionBanner                db 'Version 2.0 320x200 EGA/VGA',13,10,26
+PgCopyrightBanner              db 'Copyright 1991 by Peder Jungck',13,10,26
+PgDrawPage              dw 0
+PgDrawColor             dw 1
+PgDrawOperation         db 0
+PgClipLeftByte              dw 0
+PgClipRightByte             dw 39
+PgClipTopRow               dw 0
+PgClipBottomRow            dw 199
+PgClipLeftPixel       dw 0
+PgClipRightPixel      dw 319
 ; set toolbox video mode
-u9_01a3 proc far
+; src/asm/u9.asm u9_01a3: set toolbox video mode.
+PgSetToolboxVideoMode proc far
     push bp
     mov bp,sp
     mov ax,word ptr [bp+6]
@@ -70,10 +71,11 @@ mode_set_bios:
     int 10h
     pop bp
     retf 2
-u9_01a3 endp
+PgSetToolboxVideoMode endp
 
 ; set bios video mode
-u9_01c5 proc far
+; src/asm/u9.asm u9_01c5: set bios video mode.
+PgSetBiosVideoMode proc far
     push bp
     mov bp,sp
     mov ax,word ptr [bp+6]
@@ -81,10 +83,11 @@ u9_01c5 proc far
     int 10h
     pop bp
     retf 2
-u9_01c5 endp
+PgSetBiosVideoMode endp
 
 ; set screen stride
-u9_01d3 proc far
+; src/asm/u9.asm u9_01d3: set screen stride.
+PgSetScreenStride proc far
     push bp
     mov bp,sp
     mov bx,word ptr [bp+6]
@@ -92,7 +95,7 @@ u9_01d3 proc far
     jge stride_ge_e
     mov bx,28h
 stride_ge_e:
-    mov word ptr cs:[screen_stride],bx
+    mov word ptr cs:[PgScreenStrideBytes],bx
     push ax
     mov dx,3d4h
     mov ax,13h
@@ -104,10 +107,11 @@ stride_ge_e:
     pop ax
     pop bp
     retf 2
-u9_01d3 endp
+PgSetScreenStride endp
 
 ; pan display retrace variant a
-u9_01f9 proc far
+; Programs CRTC start address after retrace, then waits for bit 3 of port 3DAh to become set before.
+PgPanDisplayAtRetraceStart proc far
     push bp
     mov bp,sp
     mov dx,3dah
@@ -121,7 +125,7 @@ pan_a_repeat_b:
     jne pan_a_repeat_b
     cli
     mov ax,word ptr [bp+6]
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov cx,word ptr [bp+8]
     shr cx,1
     shr cx,1
@@ -153,10 +157,11 @@ pan_a_repeat_35:
     sti
     pop bp
     retf 4
-u9_01f9 endp
+PgPanDisplayAtRetraceStart endp
 
 ; pan display retrace variant b
-u9_024c proc far
+; Programs CRTC start address after retrace, then waits for bit 3 of port 3DAh to become clear before.
+PgPanDisplayAtRetraceEnd proc far
     push bp
     mov bp,sp
     mov dx,3dah
@@ -170,7 +175,7 @@ pan_b_repeat_b:
     jne pan_b_repeat_b
     cli
     mov ax,word ptr [bp+6]
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov cx,word ptr [bp+8]
     shr cx,1
     shr cx,1
@@ -202,10 +207,11 @@ pan_b_repeat_35:
     sti
     pop bp
     retf 4
-u9_024c endp
+PgPanDisplayAtRetraceEnd endp
 
 ; set split scanline
-u9_029f proc far
+; Programs line-compare register 18h and overflow bit 8; p_1148 calls this path when the adapter is not VGA.
+PgSetEgaSplitScanline proc far
     push bp
     mov bp,sp
     mov ax,40h
@@ -236,10 +242,11 @@ split_repeat_15:
     out dx,ax
     pop bp
     retf 2
-u9_029f endp
+PgSetEgaSplitScanline endp
 
 ; wait vertical retrace
-u9_02db proc far
+; src/asm/u9.asm u9_02db: wait vertical retrace.
+PgWaitVerticalRetrace proc far
     push es
     xor ax,ax
     mov es,ax
@@ -263,14 +270,15 @@ retrace_continue_19:
     je retrace_equal_16
     pop es
     retf
-u9_02db endp
+PgWaitVerticalRetrace endp
 
 ; set split scanline registers
-u9_02fa proc far
+; Programs line-compare and overflow registers including register 9; p_1148 selects this path for VGA.
+PgSetVgaSplitScanline proc far
     push bp
     mov bp,sp
     push cs
-    call near ptr u9_02db
+    call near ptr PgWaitVerticalRetrace
     push es
     xor ax,ax
     mov es,ax
@@ -305,10 +313,11 @@ splitregs_continue_38:
     pop es
     pop bp
     retf 2
-u9_02fa endp
+PgSetVgaSplitScanline endp
 
 ; set border color
-u9_0337 proc far
+; src/asm/u9.asm u9_0337: set border color.
+PgSetBorderColor proc far
     push bp
     mov bp,sp
     mov ah,10h
@@ -318,19 +327,21 @@ u9_0337 proc far
     int 10h
     pop bp
     retf 2
-u9_0337 endp
+PgSetBorderColor endp
 
 ; reset current video mode
-u9_0349 proc far
+; src/asm/u9.asm u9_0349: reset current video mode.
+PgResetCurrentVideoMode proc far
     mov ah,0fh
     int 10h
     xor ah,ah
     int 10h
     retf
-u9_0349 endp
+PgResetCurrentVideoMode endp
 
 ; set palette register
-u9_0352 proc far
+; src/asm/u9.asm u9_0352: set palette register.
+PgSetPaletteRegister proc far
     push bp
     mov bp,sp
     mov ax,1000h
@@ -339,20 +350,22 @@ u9_0352 proc far
     int 10h
     pop bp
     retf 4
-u9_0352 endp
+PgSetPaletteRegister endp
 
 ; set text direction
-u9_0364 proc far
+; src/asm/u9.asm u9_0364: set text direction.
+PgSetTextDirection proc far
     push bp
     mov bp,sp
     mov ax,word ptr [bp+6]
-    mov word ptr cs:[text_direction],ax
+    mov word ptr cs:[PgTextDirection],ax
     pop bp
     retf 2
-u9_0364 endp
+PgSetTextDirection endp
 
 ; blit masked 32x16
-u9_0372 proc far
+; src/asm/u9.asm u9_0372: blit masked 32x16.
+PgBlitMasked32x16 proc far
     push bp
     mov bp,sp
     push ds
@@ -365,14 +378,14 @@ u9_0372 proc far
     push di
     push ax
     mov ax,bx
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov ax,di
     pop di
     mov bx,word ptr [bp+8]
     add bx,ax
-    mov ax,word ptr cs:[draw_page]
+    mov ax,word ptr cs:[PgDrawPage]
     cmp al,0
     je masked32_equal_35
     mov cx,ax
@@ -482,7 +495,7 @@ masked32_continue_94:
     lodsb
     xchg byte ptr es:[bx],al
     inc bx
-    add bx,word ptr cs:[screen_stride]
+    add bx,word ptr cs:[PgScreenStrideBytes]
     dec bx
     dec bx
     dec bx
@@ -498,16 +511,17 @@ masked32_continue_94:
     pop ds
     pop bp
     retf 8
-u9_0372 endp
+PgBlitMasked32x16 endp
 
 ; blit masked 16x16
-u9_0475 proc far
+; src/asm/u9.asm u9_0475: blit masked 16x16.
+PgBlitMasked16x16 proc far
     push bp
     mov bp,sp
     push ds
     push di
     push si
-    mov di,word ptr cs:[screen_stride]
+    mov di,word ptr cs:[PgScreenStrideBytes]
     dec di
     lds si,dword ptr [bp+0ah]
     mov dx,0a000h
@@ -516,14 +530,14 @@ u9_0475 proc far
     push di
     push ax
     mov ax,bx
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov ax,di
     pop di
     mov bx,word ptr [bp+8]
     add bx,ax
-    mov ax,word ptr cs:[draw_page]
+    mov ax,word ptr cs:[PgDrawPage]
     cmp al,0
     je masked16_equal_3b
     mov cx,ax
@@ -593,10 +607,11 @@ masked16_row_loop_44:
     pop ds
     pop bp
     retf 8
-u9_0475 endp
+PgBlitMasked16x16 endp
 
 ; blit masked 8x8
-u9_051f proc far
+; src/asm/u9.asm u9_051f: blit masked 8x8.
+PgBlitMasked8x8 proc far
     push bp
     mov bp,sp
     push ds
@@ -606,7 +621,7 @@ u9_051f proc far
     mov dx,0a000h
     mov es,dx
     mov bx,word ptr [bp+8]
-    mov dx,word ptr cs:[draw_page]
+    mov dx,word ptr cs:[PgDrawPage]
     cmp dl,0
     je masked8_equal_23
     mov cx,ax
@@ -618,7 +633,7 @@ masked8_equal_23:
     push di
     push ax
     mov ax,dx
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov ax,di
@@ -651,7 +666,7 @@ masked8_row_loop_40:
     out dx,al
     lodsb
     xchg byte ptr es:[bx],al
-    add bx,word ptr cs:[screen_stride]
+    add bx,word ptr cs:[PgScreenStrideBytes]
     loop masked8_row_loop_40
     mov al,0fh
     out dx,al
@@ -663,11 +678,12 @@ masked8_row_loop_40:
     pop ds
     pop bp
     retf 8
-u9_051f endp
+PgBlitMasked8x8 endp
 
-plane_rect_height      dw 0
+PgPlaneRectHeight      dw 0
 ; blit single plane rectangle
-u9_05a1 proc far
+; src/asm/u9.asm u9_05a1: blit single plane rectangle.
+PgBlitSinglePlaneRectangle proc far
     push bp
     mov bp,sp
     push ds
@@ -677,7 +693,7 @@ u9_05a1 proc far
     mov dx,0a000h
     mov es,dx
     mov bx,word ptr [bp+0ch]
-    mov dx,word ptr cs:[draw_page]
+    mov dx,word ptr cs:[PgDrawPage]
     cmp dl,0
     je plane_rect_equal_23
     mov cx,ax
@@ -689,7 +705,7 @@ plane_rect_equal_23:
     push di
     push ax
     mov ax,ax
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov dx,di
@@ -701,22 +717,22 @@ plane_rect_equal_23:
     out dx,al
     inc dx
     mov ax,word ptr [bp+6]
-    mov word ptr cs:[plane_rect_height],ax
+    mov word ptr cs:[PgPlaneRectHeight],ax
 plane_rect_repeat_47:
     mov cx,word ptr [bp+8]
 plane_rect_loop_4a:
     mov dx,3c5h
-    mov ax,word ptr cs:[draw_color]
+    mov ax,word ptr cs:[PgDrawColor]
     mov dx,3c5h
     out dx,al
     lodsb
     xchg byte ptr es:[bx],al
     inc bx
     loop plane_rect_loop_4a
-    add bx,word ptr cs:[screen_stride]
+    add bx,word ptr cs:[PgScreenStrideBytes]
     sub bx,word ptr [bp+8]
-    dec word ptr cs:[plane_rect_height]
-    cmp word ptr cs:[plane_rect_height],0
+    dec word ptr cs:[PgPlaneRectHeight]
+    cmp word ptr cs:[PgPlaneRectHeight],0
     je plane_rect_equal_73
     jmp short plane_rect_repeat_47
 plane_rect_equal_73:
@@ -730,35 +746,38 @@ plane_rect_equal_73:
     pop ds
     pop bp
     retf 0ch
-u9_05a1 endp
+PgBlitSinglePlaneRectangle endp
 
 ; set color or plane mask
-u9_0625 proc far
+; Stores the requested word in CS:draw_color, used as the four-plane fill/pixel color.
+PgSetDrawColor proc far
     push bp
     mov bp,sp
     mov ax,word ptr [bp+6]
-    mov word ptr cs:[draw_color],ax
+    mov word ptr cs:[PgDrawColor],ax
     pop bp
     retf 2
-u9_0625 endp
+PgSetDrawColor endp
 
 ; select draw page
-u9_0633 proc far
+; src/asm/u9.asm u9_0633: select draw page.
+PgSelectDrawPage proc far
     push bp
     mov bp,sp
     mov ax,word ptr [bp+6]
-    mov word ptr cs:[draw_page],ax
+    mov word ptr cs:[PgDrawPage],ax
     pop bp
     retf 2
-u9_0633 endp
+PgSelectDrawPage endp
 
 ; put pixel
-u9_0641 proc far
+; src/asm/u9.asm u9_0641: put pixel.
+PgPutPixel proc far
     push bp
     mov bp,sp
     push ds
     mov dx,0a000h
-    mov ax,word ptr cs:[draw_page]
+    mov ax,word ptr cs:[PgDrawPage]
     cmp al,0
     je putpixel_equal_17
     mov cx,ax
@@ -771,7 +790,7 @@ putpixel_equal_17:
     push di
     push ax
     mov ax,bx
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov ax,di
@@ -799,7 +818,7 @@ putpixel_equal_17:
     mov al,ch
     out dx,al
     mov al,byte ptr [bx]
-    mov ax,word ptr cs:[draw_color]
+    mov ax,word ptr cs:[PgDrawColor]
     mov byte ptr [bx],al
     mov dx,3ceh
     mov al,5
@@ -816,15 +835,16 @@ putpixel_equal_17:
     pop ds
     pop bp
     retf 4
-u9_0641 endp
+PgPutPixel endp
 
 ; put pixel clipped
-u9_06c1 proc far
+; src/asm/u9.asm u9_06c1: put pixel clipped.
+PgPutPixelClipped proc far
     push bp
     mov bp,sp
     push ds
     mov dx,0a000h
-    mov ax,word ptr cs:[draw_page]
+    mov ax,word ptr cs:[PgDrawPage]
     cmp al,0
     je clip_pixel_equal_17
     mov cx,ax
@@ -834,22 +854,22 @@ clip_pixel_loop_11:
 clip_pixel_equal_17:
     mov ds,dx
     mov bx,word ptr [bp+6]
-    cmp bx,word ptr cs:[clip_top]
+    cmp bx,word ptr cs:[PgClipTopRow]
     jl clip_pixel_less_97
-    cmp bx,word ptr cs:[clip_bottom]
+    cmp bx,word ptr cs:[PgClipBottomRow]
     jg clip_pixel_less_97
     push di
     push ax
     mov ax,bx
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov ax,di
     pop di
     mov bx,word ptr [bp+8]
-    cmp bx,word ptr cs:[clip_left_pixels]
+    cmp bx,word ptr cs:[PgClipLeftPixel]
     jl clip_pixel_less_97
-    cmp bx,word ptr cs:[clip_right_pixels]
+    cmp bx,word ptr cs:[PgClipRightPixel]
     jg clip_pixel_less_97
     shr bx,1
     shr bx,1
@@ -873,7 +893,7 @@ clip_pixel_equal_17:
     mov al,ch
     out dx,al
     mov al,byte ptr [bx]
-    mov ax,word ptr cs:[draw_color]
+    mov ax,word ptr cs:[PgDrawColor]
     mov byte ptr [bx],al
     mov dx,3ceh
     mov al,5
@@ -891,17 +911,18 @@ clip_pixel_less_97:
     pop ds
     pop bp
     retf 4
-u9_06c1 endp
+PgPutPixelClipped endp
 
 ; get pixel
-u9_075d proc far
+; src/asm/u9.asm u9_075d: get pixel.
+PgGetPixel proc far
     push bp
     mov bp,sp
     push ds
     mov bx,word ptr [bp+8]
     mov cx,word ptr [bp+6]
     mov dx,0a000h
-    mov ax,word ptr cs:[draw_page]
+    mov ax,word ptr cs:[PgDrawPage]
     cmp al,0
     je getpixel_equal_1d
     mov cx,ax
@@ -913,7 +934,7 @@ getpixel_equal_1d:
     push di
     push ax
     mov ax,cx
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov ax,di
@@ -948,10 +969,11 @@ getpixel_equal_5b:
     pop ds
     pop bp
     retf 4
-u9_075d endp
+PgGetPixel endp
 
 ; show video page bios
-u9_07c6 proc far
+; src/asm/u9.asm u9_07c6: show video page bios.
+PgShowVideoPageBios proc far
     push bp
     mov bp,sp
     mov ax,word ptr [bp+6]
@@ -959,10 +981,11 @@ u9_07c6 proc far
     int 10h
     pop bp
     retf 2
-u9_07c6 endp
+PgShowVideoPageBios endp
 
 ; set mouse cursor shape
-u9_07d4 proc far
+; Calls mouse INT 33h AX=9 with a shape pointer and hotspot operands; the original loads BX twice.
+PgSetMouseCursorShape proc far
     push bp
     mov bp,sp
     push ds
@@ -975,18 +998,19 @@ u9_07d4 proc far
     pop ds
     pop bp
     retf 8
-u9_07d4 endp
+PgSetMouseCursorShape endp
 
-byte_rect_height       dw 0
+PgByteRectHeight       dw 0
 ; fill rectangle byte aligned
-u9_07ee proc far
+; src/asm/u9.asm u9_07ee: fill rectangle byte aligned.
+PgFillRectangleByteAligned proc far
     push bp
     mov bp,sp
     push ds
     mov dx,0a000h
     mov es,dx
     mov bx,word ptr [bp+0ch]
-    mov dx,word ptr cs:[draw_page]
+    mov dx,word ptr cs:[PgDrawPage]
     cmp dl,0
     je rect_bytes_equal_1e
     mov cx,ax
@@ -998,7 +1022,7 @@ rect_bytes_equal_1e:
     push di
     push ax
     mov ax,ax
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov dx,di
@@ -1010,17 +1034,17 @@ rect_bytes_equal_1e:
     out dx,al
     inc dx
     mov ax,word ptr [bp+6]
-    mov word ptr cs:[byte_rect_height],ax
+    mov word ptr cs:[PgByteRectHeight],ax
 rect_bytes_repeat_42:
     mov cx,word ptr [bp+0ah]
 rect_bytes_loop_45:
     mov dx,3c5h
-    mov ax,word ptr cs:[draw_color]
+    mov ax,word ptr cs:[PgDrawColor]
     mov dx,3c5h
     out dx,al
     mov ax,0ffh
     xchg byte ptr es:[bx],al
-    mov ax,word ptr cs:[draw_color]
+    mov ax,word ptr cs:[PgDrawColor]
     xor ax,0ffh
     mov dx,3c5h
     out dx,al
@@ -1028,10 +1052,10 @@ rect_bytes_loop_45:
     xchg byte ptr es:[bx],al
     inc bx
     loop rect_bytes_loop_45
-    add bx,word ptr cs:[screen_stride]
+    add bx,word ptr cs:[PgScreenStrideBytes]
     sub bx,word ptr [bp+0ah]
-    dec word ptr cs:[byte_rect_height]
-    cmp word ptr cs:[byte_rect_height],0
+    dec word ptr cs:[PgByteRectHeight]
+    cmp word ptr cs:[PgByteRectHeight],0
     je rect_bytes_equal_81
     jmp short rect_bytes_repeat_42
 rect_bytes_equal_81:
@@ -1043,44 +1067,45 @@ rect_bytes_equal_81:
     pop ds
     pop bp
     retf 8
-u9_07ee endp
+PgFillRectangleByteAligned endp
 
 ; fill rectangle clipped
-u9_087e proc far
+; src/asm/u9.asm u9_087e: fill rectangle clipped.
+PgFillRectangleClipped proc far
     push bp
     mov bp,sp
     push ds
     mov dx,0a000h
     mov es,dx
     mov bx,word ptr [bp+0ch]
-    cmp bx,word ptr cs:[clip_right]
+    cmp bx,word ptr cs:[PgClipRightByte]
     jle clip_rect_bytes_le_16
 clip_rect_bytes_repeat_13:
     jmp near ptr clip_rect_bytes_continue_fa
 clip_rect_bytes_le_16:
-    cmp bx,word ptr cs:[clip_left]
+    cmp bx,word ptr cs:[PgClipLeftByte]
     jge clip_rect_bytes_ge_2f
     mov dx,word ptr [bp+0ah]
 clip_rect_bytes_repeat_20:
     inc bx
     dec dx
-    cmp bx,word ptr cs:[clip_left]
+    cmp bx,word ptr cs:[PgClipLeftByte]
     jl clip_rect_bytes_repeat_20
     mov word ptr [bp+0ah],dx
     mov word ptr [bp+0ch],bx
 clip_rect_bytes_ge_2f:
     mov cx,word ptr [bp+0ch]
     add cx,word ptr [bp+0ah]
-    cmp cx,word ptr cs:[clip_right]
+    cmp cx,word ptr cs:[PgClipRightByte]
     jle clip_rect_bytes_le_4a
-    sub cx,word ptr cs:[clip_bottom]
+    sub cx,word ptr cs:[PgClipBottomRow]
     mov dx,word ptr [bp+0ah]
 clip_rect_bytes_loop_44:
     dec dx
     loop clip_rect_bytes_loop_44
     mov word ptr [bp+0ah],dx
 clip_rect_bytes_le_4a:
-    mov dx,word ptr cs:[draw_page]
+    mov dx,word ptr cs:[PgDrawPage]
     cmp dl,0
     je clip_rect_bytes_equal_5c
     mov cx,ax
@@ -1089,24 +1114,24 @@ clip_rect_bytes_loop_56:
     loop clip_rect_bytes_loop_56
 clip_rect_bytes_equal_5c:
     mov ax,word ptr [bp+8]
-    cmp ax,word ptr cs:[clip_bottom]
+    cmp ax,word ptr cs:[PgClipBottomRow]
     jg clip_rect_bytes_repeat_13
-    cmp ax,word ptr cs:[clip_top]
+    cmp ax,word ptr cs:[PgClipTopRow]
     jge clip_rect_bytes_ge_7f
     mov dx,word ptr [bp+6]
 clip_rect_bytes_repeat_70:
     inc ax
     dec dx
-    cmp ax,word ptr cs:[clip_top]
+    cmp ax,word ptr cs:[PgClipTopRow]
     jl clip_rect_bytes_repeat_70
     mov word ptr [bp+6],dx
     mov word ptr [bp+8],ax
 clip_rect_bytes_ge_7f:
     mov cx,word ptr [bp+8]
     add cx,word ptr [bp+6]
-    cmp cx,word ptr cs:[clip_bottom]
+    cmp cx,word ptr cs:[PgClipBottomRow]
     jle clip_rect_bytes_le_9a
-    sub cx,word ptr cs:[clip_bottom]
+    sub cx,word ptr cs:[PgClipBottomRow]
     mov dx,word ptr [bp+6]
 clip_rect_bytes_loop_94:
     dec dx
@@ -1116,7 +1141,7 @@ clip_rect_bytes_le_9a:
     push di
     push ax
     mov ax,ax
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov dx,di
@@ -1128,17 +1153,17 @@ clip_rect_bytes_le_9a:
     out dx,al
     inc dx
     mov ax,word ptr [bp+6]
-    mov word ptr cs:[byte_rect_height],ax
+    mov word ptr cs:[PgByteRectHeight],ax
 clip_rect_bytes_repeat_bb:
     mov cx,word ptr [bp+0ah]
 clip_rect_bytes_loop_be:
     mov dx,3c5h
-    mov ax,word ptr cs:[draw_color]
+    mov ax,word ptr cs:[PgDrawColor]
     mov dx,3c5h
     out dx,al
     mov ax,0ffh
     xchg byte ptr es:[bx],al
-    mov ax,word ptr cs:[draw_color]
+    mov ax,word ptr cs:[PgDrawColor]
     xor ax,0ffh
     mov dx,3c5h
     out dx,al
@@ -1146,10 +1171,10 @@ clip_rect_bytes_loop_be:
     xchg byte ptr es:[bx],al
     inc bx
     loop clip_rect_bytes_loop_be
-    add bx,word ptr cs:[screen_stride]
+    add bx,word ptr cs:[PgScreenStrideBytes]
     sub bx,word ptr [bp+0ah]
-    dec word ptr cs:[byte_rect_height]
-    cmp word ptr cs:[byte_rect_height],0
+    dec word ptr cs:[PgByteRectHeight]
+    cmp word ptr cs:[PgByteRectHeight],0
     je clip_rect_bytes_continue_fa
     jmp short clip_rect_bytes_repeat_bb
 clip_rect_bytes_continue_fa:
@@ -1162,16 +1187,17 @@ clip_rect_bytes_continue_fa:
     pop ds
     pop bp
     retf 8
-u9_087e endp
+PgFillRectangleClipped endp
 
 ; pixel address and bit helper
-u9_098a proc far
+; src/asm/u9.asm u9_098a: pixel address and bit helper.
+PgPixelAddressAndBitHelper proc far
     mov cl,bl
     push dx
     push di
     push ax
     mov ax,ax
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov dx,di
@@ -1183,7 +1209,7 @@ u9_098a proc far
     shr bx,1
     add bx,ax
     push cx
-    mov cx,word ptr cs:[draw_page]
+    mov cx,word ptr cs:[PgDrawPage]
     mov ax,0a000h
     cmp cx,0
     je pixel_address_equal_30
@@ -1197,20 +1223,21 @@ pixel_address_equal_30:
     xor cl,7
     mov ah,1
     retf
-u9_098a endp
+PgPixelAddressAndBitHelper endp
 
-line_x_step            dw ?
-line_y_step            dw ?
-line_error             dw ?
-line_major_delta       dw ?
+PgLineRowAddressStep            dw ?
+PgLineDoubleMinorDelta            dw ?
+PgLineErrorAdjustment             dw ?
+PgLineMajorAxis       dw ?
 ; draw line bresenham
-u9_09ce proc far
+; src/asm/u9.asm u9_09ce: draw line bresenham.
+PgDrawLineBresenham proc far
     push bp
     mov bp,sp
     push si
     push di
     mov dx,3ceh
-    mov ah,byte ptr cs:[draw_color]
+    mov ah,byte ptr cs:[PgDrawColor]
     xor al,al
     out dx,ax
     mov ax,0f01h
@@ -1218,7 +1245,7 @@ u9_09ce proc far
     mov ah,0
     mov al,3
     out dx,ax
-    mov si,word ptr cs:[screen_stride]
+    mov si,word ptr cs:[PgScreenStrideBytes]
     mov cx,word ptr [bp+8]
     sub cx,word ptr [bp+0ch]
     je line_a_equal_98
@@ -1238,31 +1265,31 @@ line_a_nonnegative_3c:
     neg bx
     neg si
 line_a_nonnegative_4a:
-    mov word ptr cs:[line_x_step],si
-    mov word ptr cs:[line_major_delta],0
+    mov word ptr cs:[PgLineRowAddressStep],si
+    mov word ptr cs:[PgLineMajorAxis],0
     cmp bx,cx
     jle line_a_le_63
-    mov word ptr cs:[line_major_delta],1
+    mov word ptr cs:[PgLineMajorAxis],1
     xchg bx,cx
 line_a_le_63:
     shl bx,1
-    mov word ptr cs:[line_y_step],bx
+    mov word ptr cs:[PgLineDoubleMinorDelta],bx
     sub bx,cx
     mov si,bx
     sub bx,cx
-    mov word ptr cs:[line_error],bx
+    mov word ptr cs:[PgLineErrorAdjustment],bx
     push cx
     mov ax,word ptr [bp+0ah]
     mov bx,word ptr [bp+0ch]
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     mov di,bx
     shl ah,cl
     mov bl,ah
     mov al,8
     pop cx
     inc cx
-    cmp word ptr cs:[line_major_delta],0
+    cmp word ptr cs:[PgLineMajorAxis],0
     jg line_a_greater_95
     jmp near ptr line_a_loop_11b
 line_a_greater_95:
@@ -1280,7 +1307,7 @@ line_a_ge_a8:
     mov bx,word ptr [bp+0ch]
     push cx
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     shl ah,cl
     mov al,8
     out dx,ax
@@ -1295,7 +1322,7 @@ line_a_equal_c1:
     mov ax,word ptr [bp+0ah]
     mov bx,word ptr [bp+0ch]
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     mov di,bx
     mov dh,ah
     not dh
@@ -1348,16 +1375,16 @@ line_a_loop_11d:
     jb line_a_branch_146
     or si,si
     jns line_a_nonnegative_134
-    add si,word ptr cs:[line_y_step]
+    add si,word ptr cs:[PgLineDoubleMinorDelta]
     loop line_a_loop_11d
     out dx,ax
     or byte ptr es:[di],al
     jmp short line_a_continue_18a
 line_a_nonnegative_134:
-    add si,word ptr cs:[line_error]
+    add si,word ptr cs:[PgLineErrorAdjustment]
     out dx,ax
     or byte ptr es:[di],al
-    add di,word ptr cs:[line_x_step]
+    add di,word ptr cs:[PgLineRowAddressStep]
     loop line_a_loop_11b
     jmp short line_a_continue_18a
 line_a_branch_146:
@@ -1366,27 +1393,27 @@ line_a_branch_146:
     inc di
     or si,si
     jns line_a_nonnegative_158
-    add si,word ptr cs:[line_y_step]
+    add si,word ptr cs:[PgLineDoubleMinorDelta]
     loop line_a_loop_11b
     jmp short line_a_continue_18a
 line_a_nonnegative_158:
-    add si,word ptr cs:[line_error]
-    add di,word ptr cs:[line_x_step]
+    add si,word ptr cs:[PgLineErrorAdjustment]
+    add di,word ptr cs:[PgLineRowAddressStep]
     loop line_a_loop_11b
     jmp short line_a_continue_18a
 line_a_continue_166:
-    mov bx,word ptr cs:[line_x_step]
+    mov bx,word ptr cs:[PgLineRowAddressStep]
 line_a_loop_16b:
     out dx,ax
     or byte ptr es:[di],al
     add di,bx
     or si,si
     jns line_a_nonnegative_17e
-    add si,word ptr cs:[line_y_step]
+    add si,word ptr cs:[PgLineDoubleMinorDelta]
     loop line_a_loop_16b
     jmp short line_a_continue_18a
 line_a_nonnegative_17e:
-    add si,word ptr cs:[line_error]
+    add si,word ptr cs:[PgLineErrorAdjustment]
     ror ah,1
     adc di,0
     loop line_a_loop_16b
@@ -1403,10 +1430,11 @@ line_a_continue_18a:
     pop si
     pop bp
     retf 8
-u9_09ce endp
+PgDrawLineBresenham endp
 
 ; draw line bresenham variant
-u9_0b6a proc far
+; src/asm/u9.asm u9_0b6a: draw line bresenham variant.
+PgDrawLineBresenhamVariant proc far
     push bp
     mov bp,sp
     push si
@@ -1414,7 +1442,7 @@ u9_0b6a proc far
     mov dx,3ceh
     mov ax,5
     out dx,ax
-    mov ah,byte ptr cs:[draw_color]
+    mov ah,byte ptr cs:[PgDrawColor]
     xor al,al
     out dx,ax
     mov ax,0f01h
@@ -1422,7 +1450,7 @@ u9_0b6a proc far
     mov ah,18h
     mov al,3
     out dx,ax
-    mov si,word ptr cs:[screen_stride]
+    mov si,word ptr cs:[PgScreenStrideBytes]
     mov cx,word ptr [bp+8]
     sub cx,word ptr [bp+0ch]
     je line_b_equal_9c
@@ -1442,31 +1470,31 @@ line_b_nonnegative_40:
     neg bx
     neg si
 line_b_nonnegative_4e:
-    mov word ptr cs:[line_x_step],si
-    mov word ptr cs:[line_major_delta],0
+    mov word ptr cs:[PgLineRowAddressStep],si
+    mov word ptr cs:[PgLineMajorAxis],0
     cmp bx,cx
     jle line_b_le_67
-    mov word ptr cs:[line_major_delta],1
+    mov word ptr cs:[PgLineMajorAxis],1
     xchg bx,cx
 line_b_le_67:
     shl bx,1
-    mov word ptr cs:[line_y_step],bx
+    mov word ptr cs:[PgLineDoubleMinorDelta],bx
     sub bx,cx
     mov si,bx
     sub bx,cx
-    mov word ptr cs:[line_error],bx
+    mov word ptr cs:[PgLineErrorAdjustment],bx
     push cx
     mov ax,word ptr [bp+0ah]
     mov bx,word ptr [bp+0ch]
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     mov di,bx
     shl ah,cl
     mov bl,ah
     mov al,8
     pop cx
     inc cx
-    cmp word ptr cs:[line_major_delta],0
+    cmp word ptr cs:[PgLineMajorAxis],0
     jg line_b_greater_99
     jmp near ptr line_b_loop_11f
 line_b_greater_99:
@@ -1484,7 +1512,7 @@ line_b_ge_ac:
     mov bx,word ptr [bp+0ch]
     push cx
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     shl ah,cl
     mov al,8
     out dx,ax
@@ -1499,7 +1527,7 @@ line_b_equal_c5:
     mov ax,word ptr [bp+0ah]
     mov bx,word ptr [bp+0ch]
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     mov di,bx
     mov dh,ah
     not dh
@@ -1552,16 +1580,16 @@ line_b_loop_121:
     jb line_b_branch_14a
     or si,si
     jns line_b_nonnegative_138
-    add si,word ptr cs:[line_y_step]
+    add si,word ptr cs:[PgLineDoubleMinorDelta]
     loop line_b_loop_121
     out dx,ax
     xor byte ptr es:[di],al
     jmp short line_b_continue_18e
 line_b_nonnegative_138:
-    add si,word ptr cs:[line_error]
+    add si,word ptr cs:[PgLineErrorAdjustment]
     out dx,ax
     xor byte ptr es:[di],al
-    add di,word ptr cs:[line_x_step]
+    add di,word ptr cs:[PgLineRowAddressStep]
     loop line_b_loop_11f
     jmp short line_b_continue_18e
 line_b_branch_14a:
@@ -1570,27 +1598,27 @@ line_b_branch_14a:
     inc di
     or si,si
     jns line_b_nonnegative_15c
-    add si,word ptr cs:[line_y_step]
+    add si,word ptr cs:[PgLineDoubleMinorDelta]
     loop line_b_loop_11f
     jmp short line_b_continue_18e
 line_b_nonnegative_15c:
-    add si,word ptr cs:[line_error]
-    add di,word ptr cs:[line_x_step]
+    add si,word ptr cs:[PgLineErrorAdjustment]
+    add di,word ptr cs:[PgLineRowAddressStep]
     loop line_b_loop_11f
     jmp short line_b_continue_18e
 line_b_continue_16a:
-    mov bx,word ptr cs:[line_x_step]
+    mov bx,word ptr cs:[PgLineRowAddressStep]
 line_b_loop_16f:
     out dx,ax
     xor byte ptr es:[di],al
     add di,bx
     or si,si
     jns line_b_nonnegative_182
-    add si,word ptr cs:[line_y_step]
+    add si,word ptr cs:[PgLineDoubleMinorDelta]
     loop line_b_loop_16f
     jmp short line_b_continue_18e
 line_b_nonnegative_182:
-    add si,word ptr cs:[line_error]
+    add si,word ptr cs:[PgLineErrorAdjustment]
     ror ah,1
     adc di,0
     loop line_b_loop_16f
@@ -1607,16 +1635,17 @@ line_b_continue_18e:
     pop si
     pop bp
     retf 8
-u9_0b6a endp
+PgDrawLineBresenhamVariant endp
 
 ; draw rectangle outline
-u9_0d0a proc far
+; src/asm/u9.asm u9_0d0a: draw rectangle outline.
+PgDrawRectangleOutline proc far
     push bp
     mov bp,sp
     push si
     push di
     mov dx,3ceh
-    mov ax,word ptr cs:[draw_color]
+    mov ax,word ptr cs:[PgDrawColor]
     xchg ah,al
     xor al,al
     out dx,ax
@@ -1627,12 +1656,12 @@ u9_0d0a proc far
     out dx,ax
     mov dx,3ceh
     mov al,3
-    mov ah,byte ptr cs:[draw_operation]
+    mov ah,byte ptr cs:[PgDrawOperation]
     shl ah,1
     shl ah,1
     shl ah,1
     out dx,ax
-    mov si,word ptr cs:[screen_stride]
+    mov si,word ptr cs:[PgScreenStrideBytes]
     mov ax,word ptr [bp+0ah]
     mov bx,word ptr [bp+6]
     mov cx,bx
@@ -1645,7 +1674,7 @@ outline_ge_40:
     mov bx,word ptr [bp+0ch]
     push cx
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     shl ah,cl
     mov al,8
     out dx,ax
@@ -1666,7 +1695,7 @@ outline_ge_66:
     mov bx,word ptr [bp+8]
     push cx
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     shl ah,cl
     mov al,8
     out dx,ax
@@ -1679,7 +1708,7 @@ outline_loop_75:
     mov ax,word ptr [bp+0ah]
     mov bx,word ptr [bp+0ch]
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     mov di,bx
     mov dh,ah
     not dh
@@ -1727,7 +1756,7 @@ outline_continue_cf:
     mov ax,word ptr [bp+6]
     mov bx,word ptr [bp+0ch]
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     mov di,bx
     mov dh,ah
     not dh
@@ -1783,16 +1812,17 @@ outline_continue_127:
     pop si
     pop bp
     retf 8
-u9_0d0a endp
+PgDrawRectangleOutline endp
 
 ; draw rectangle outline clipped
-u9_0e48 proc far
+; src/asm/u9.asm u9_0e48: draw rectangle outline clipped.
+PgDrawRectangleOutlineClipped proc far
     push bp
     mov bp,sp
     push si
     push di
     mov dx,3ceh
-    mov ax,word ptr cs:[draw_color]
+    mov ax,word ptr cs:[PgDrawColor]
     xchg ah,al
     xor al,al
     out dx,ax
@@ -1805,7 +1835,7 @@ u9_0e48 proc far
     mov al,3
     mov ah,0
     out dx,ax
-    mov si,word ptr cs:[screen_stride]
+    mov si,word ptr cs:[PgScreenStrideBytes]
     mov ax,word ptr [bp+0ch]
     mov bx,word ptr [bp+8]
     cmp ax,bx
@@ -1822,14 +1852,14 @@ clip_outline_le_38:
     mov word ptr [bp+0ah],ax
     mov word ptr [bp+6],bx
 clip_outline_le_49:
-    cmp ax,word ptr cs:[clip_top]
+    cmp ax,word ptr cs:[PgClipTopRow]
     jge clip_outline_ge_54
-    mov ax,word ptr cs:[clip_top]
+    mov ax,word ptr cs:[PgClipTopRow]
 clip_outline_ge_54:
     mov bx,word ptr [bp+6]
-    cmp bx,word ptr cs:[clip_bottom]
+    cmp bx,word ptr cs:[PgClipBottomRow]
     jle clip_outline_le_63
-    mov bx,word ptr cs:[clip_bottom]
+    mov bx,word ptr cs:[PgClipBottomRow]
 clip_outline_le_63:
     mov cx,bx
     sub cx,ax
@@ -1839,13 +1869,13 @@ clip_outline_le_63:
 clip_outline_ge_6d:
     inc cx
     mov bx,word ptr [bp+0ch]
-    cmp bx,word ptr cs:[clip_left_pixels]
+    cmp bx,word ptr cs:[PgClipLeftPixel]
     jl clip_outline_less_91
-    cmp bx,word ptr cs:[clip_right_pixels]
+    cmp bx,word ptr cs:[PgClipRightPixel]
     jg clip_outline_greater_df
     push cx
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     shl ah,cl
     mov al,8
     out dx,ax
@@ -1856,14 +1886,14 @@ clip_outline_loop_8a:
     loop clip_outline_loop_8a
 clip_outline_less_91:
     mov ax,word ptr [bp+0ah]
-    cmp ax,word ptr cs:[clip_top]
+    cmp ax,word ptr cs:[PgClipTopRow]
     jg clip_outline_greater_9f
-    mov ax,word ptr cs:[clip_top]
+    mov ax,word ptr cs:[PgClipTopRow]
 clip_outline_greater_9f:
     mov bx,word ptr [bp+6]
-    cmp bx,word ptr cs:[clip_bottom]
+    cmp bx,word ptr cs:[PgClipBottomRow]
     jl clip_outline_less_ae
-    mov bx,word ptr cs:[clip_bottom]
+    mov bx,word ptr cs:[PgClipBottomRow]
 clip_outline_less_ae:
     mov cx,bx
     sub cx,ax
@@ -1873,13 +1903,13 @@ clip_outline_less_ae:
 clip_outline_ge_b8:
     inc cx
     mov bx,word ptr [bp+8]
-    cmp bx,word ptr cs:[clip_left_pixels]
+    cmp bx,word ptr cs:[PgClipLeftPixel]
     jl clip_outline_greater_df
-    cmp bx,word ptr cs:[clip_right_pixels]
+    cmp bx,word ptr cs:[PgClipRightPixel]
     jg clip_outline_greater_e5
     push cx
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     shl ah,cl
     mov al,8
     out dx,ax
@@ -1897,40 +1927,40 @@ clip_outline_repeat_e2:
 clip_outline_greater_e5:
     push ds
     mov ax,word ptr [bp+0ah]
-    cmp ax,word ptr cs:[clip_top]
+    cmp ax,word ptr cs:[PgClipTopRow]
     jl clip_outline_repeat_e2
-    cmp ax,word ptr cs:[clip_bottom]
+    cmp ax,word ptr cs:[PgClipBottomRow]
     jg clip_outline_greater_df
     mov bx,word ptr [bp+0ch]
-    cmp bx,word ptr cs:[clip_left_pixels]
+    cmp bx,word ptr cs:[PgClipLeftPixel]
     jge clip_outline_ge_106
-    mov bx,word ptr cs:[clip_left_pixels]
+    mov bx,word ptr cs:[PgClipLeftPixel]
 clip_outline_ge_106:
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     mov di,bx
     mov dh,ah
     not dh
     shl dh,cl
     not dh
     mov cx,word ptr [bp+8]
-    cmp cx,word ptr cs:[clip_right_pixels]
+    cmp cx,word ptr cs:[PgClipRightPixel]
     jle clip_outline_le_123
-    mov cx,word ptr cs:[clip_right_pixels]
+    mov cx,word ptr cs:[PgClipRightPixel]
 clip_outline_le_123:
     and cl,7
     xor cl,7
     mov dl,0ffh
     shl dl,cl
     mov ax,word ptr [bp+8]
-    cmp ax,word ptr cs:[clip_right_pixels]
+    cmp ax,word ptr cs:[PgClipRightPixel]
     jle clip_outline_le_13b
-    mov ax,word ptr cs:[clip_right_pixels]
+    mov ax,word ptr cs:[PgClipRightPixel]
 clip_outline_le_13b:
     mov bx,word ptr [bp+0ch]
-    cmp bx,word ptr cs:[clip_left_pixels]
+    cmp bx,word ptr cs:[PgClipLeftPixel]
     jge clip_outline_ge_14a
-    mov bx,word ptr cs:[clip_left_pixels]
+    mov bx,word ptr cs:[PgClipLeftPixel]
 clip_outline_ge_14a:
     mov cl,3
     shr ax,cl
@@ -1970,40 +2000,40 @@ clip_outline_repeat_17d:
 clip_outline_continue_180:
     push ds
     mov ax,word ptr [bp+6]
-    cmp ax,word ptr cs:[clip_top]
+    cmp ax,word ptr cs:[PgClipTopRow]
     jl clip_outline_repeat_17d
-    cmp ax,word ptr cs:[clip_bottom]
+    cmp ax,word ptr cs:[PgClipBottomRow]
     jg clip_outline_repeat_17d
     mov bx,word ptr [bp+0ch]
-    cmp bx,word ptr cs:[clip_left_pixels]
+    cmp bx,word ptr cs:[PgClipLeftPixel]
     jge clip_outline_ge_1a1
-    mov bx,word ptr cs:[clip_left_pixels]
+    mov bx,word ptr cs:[PgClipLeftPixel]
 clip_outline_ge_1a1:
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     mov di,bx
     mov dh,ah
     not dh
     shl dh,cl
     not dh
     mov cx,word ptr [bp+8]
-    cmp cx,word ptr cs:[clip_right_pixels]
+    cmp cx,word ptr cs:[PgClipRightPixel]
     jle clip_outline_le_1be
-    mov cx,word ptr cs:[clip_right_pixels]
+    mov cx,word ptr cs:[PgClipRightPixel]
 clip_outline_le_1be:
     and cl,7
     xor cl,7
     mov dl,0ffh
     shl dl,cl
     mov ax,word ptr [bp+8]
-    cmp ax,word ptr cs:[clip_right_pixels]
+    cmp ax,word ptr cs:[PgClipRightPixel]
     jle clip_outline_le_1d6
-    mov ax,word ptr cs:[clip_right_pixels]
+    mov ax,word ptr cs:[PgClipRightPixel]
 clip_outline_le_1d6:
     mov bx,word ptr [bp+0ch]
-    cmp bx,word ptr cs:[clip_left_pixels]
+    cmp bx,word ptr cs:[PgClipLeftPixel]
     jge clip_outline_ge_1e5
-    mov bx,word ptr cs:[clip_left_pixels]
+    mov bx,word ptr cs:[PgClipLeftPixel]
 clip_outline_ge_1e5:
     mov cl,3
     shr ax,cl
@@ -2049,16 +2079,17 @@ clip_outline_continue_215:
     pop si
     pop bp
     retf 8
-u9_0e48 endp
+PgDrawRectangleOutlineClipped endp
 
 ; fill rectangle
-u9_106f proc far
+; src/asm/u9.asm u9_106f: fill rectangle.
+PgFillRectangle proc far
     push bp
     mov bp,sp
     push si
     push di
     mov dx,3ceh
-    mov ah,byte ptr cs:[draw_color]
+    mov ah,byte ptr cs:[PgDrawColor]
     xor al,al
     out dx,ax
     mov ax,0f01h
@@ -2067,12 +2098,12 @@ u9_106f proc far
     mov al,3
     out dx,ax
 fill_rect_repeat_19:
-    mov si,word ptr cs:[screen_stride]
+    mov si,word ptr cs:[PgScreenStrideBytes]
     push ds
     mov ax,word ptr [bp+0ah]
     mov bx,word ptr [bp+0ch]
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     mov di,bx
     mov dh,ah
     not dh
@@ -2134,10 +2165,11 @@ fill_rect_continue_71:
     pop si
     pop bp
     retf 8
-u9_106f endp
+PgFillRectangle endp
 
 ; fill rectangle clipped pixels
-u9_1105 proc far
+; src/asm/u9.asm u9_1105: fill rectangle clipped pixels.
+PgFillRectangleClippedPixels proc far
     push bp
     mov bp,sp
     push si
@@ -2147,39 +2179,39 @@ clip_fill_rect_repeat_7:
     jmp near ptr clip_fill_rect_continue_ea
 clip_fill_rect_continue_a:
     mov ax,word ptr [bp+0ch]
-    cmp ax,word ptr cs:[clip_right_pixels]
+    cmp ax,word ptr cs:[PgClipRightPixel]
     jg clip_fill_rect_repeat_7
-    cmp ax,word ptr cs:[clip_left_pixels]
+    cmp ax,word ptr cs:[PgClipLeftPixel]
     jge clip_fill_rect_ge_22
-    mov ax,word ptr cs:[clip_left_pixels]
+    mov ax,word ptr cs:[PgClipLeftPixel]
     mov word ptr [bp+0ch],ax
 clip_fill_rect_ge_22:
     mov ax,word ptr [bp+8]
-    cmp ax,word ptr cs:[clip_left_pixels]
+    cmp ax,word ptr cs:[PgClipLeftPixel]
     jl clip_fill_rect_repeat_7
-    cmp ax,word ptr cs:[clip_right_pixels]
+    cmp ax,word ptr cs:[PgClipRightPixel]
     jle clip_fill_rect_le_3a
-    mov ax,word ptr cs:[clip_right_pixels]
+    mov ax,word ptr cs:[PgClipRightPixel]
     mov word ptr [bp+8],ax
 clip_fill_rect_le_3a:
     mov ax,word ptr [bp+0ah]
-    cmp ax,word ptr cs:[clip_bottom]
+    cmp ax,word ptr cs:[PgClipBottomRow]
     jg clip_fill_rect_repeat_7
-    cmp ax,word ptr cs:[clip_top]
+    cmp ax,word ptr cs:[PgClipTopRow]
     jge clip_fill_rect_ge_52
-    mov ax,word ptr cs:[clip_top]
+    mov ax,word ptr cs:[PgClipTopRow]
     mov word ptr [bp+0ah],ax
 clip_fill_rect_ge_52:
     mov ax,word ptr [bp+6]
-    cmp ax,word ptr cs:[clip_top]
+    cmp ax,word ptr cs:[PgClipTopRow]
     jl clip_fill_rect_repeat_7
-    cmp ax,word ptr cs:[clip_bottom]
+    cmp ax,word ptr cs:[PgClipBottomRow]
     jle clip_fill_rect_le_6a
-    mov ax,word ptr cs:[clip_bottom]
+    mov ax,word ptr cs:[PgClipBottomRow]
     mov word ptr [bp+6],ax
 clip_fill_rect_le_6a:
     mov dx,3ceh
-    mov ax,word ptr cs:[draw_color]
+    mov ax,word ptr cs:[PgDrawColor]
     xchg ah,al
     xor al,al
     out dx,ax
@@ -2189,12 +2221,12 @@ clip_fill_rect_le_6a:
     mov al,3
     out dx,ax
 clip_fill_rect_repeat_7f:
-    mov si,word ptr cs:[screen_stride]
+    mov si,word ptr cs:[PgScreenStrideBytes]
     push ds
     mov ax,word ptr [bp+0ah]
     mov bx,word ptr [bp+0ch]
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     mov di,bx
     mov dh,ah
     not dh
@@ -2258,16 +2290,17 @@ clip_fill_rect_continue_ea:
     pop si
     pop bp
     retf 8
-u9_1105 endp
+PgFillRectangleClippedPixels endp
 
 ; draw horizontal span
-u9_1204 proc far
+; src/asm/u9.asm u9_1204: draw horizontal span.
+PgDrawHorizontalSpan proc far
     push bp
     mov bp,sp
     push si
     push di
     mov dx,3ceh
-    mov ah,byte ptr cs:[draw_color]
+    mov ah,byte ptr cs:[PgDrawColor]
     xor al,al
     out dx,ax
     mov ax,0f01h
@@ -2275,7 +2308,7 @@ u9_1204 proc far
     mov ah,0
     mov al,3
     out dx,ax
-    mov si,word ptr cs:[screen_stride]
+    mov si,word ptr cs:[PgScreenStrideBytes]
     mov ax,word ptr [bp+0ah]
     mov bx,word ptr [bp+8]
     cmp ax,bx
@@ -2287,7 +2320,7 @@ hspan_less_2e:
     mov ax,word ptr [bp+6]
     mov bx,word ptr [bp+0ah]
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     mov di,bx
     mov dh,ah
     not dh
@@ -2343,16 +2376,17 @@ hspan_continue_81:
     pop si
     pop bp
     retf 6
-u9_1204 endp
+PgDrawHorizontalSpan endp
 
 ; draw vertical span
-u9_129c proc far
+; src/asm/u9.asm u9_129c: draw vertical span.
+PgDrawVerticalSpan proc far
     push bp
     mov bp,sp
     push si
     push di
     mov dx,3ceh
-    mov ah,byte ptr cs:[draw_color]
+    mov ah,byte ptr cs:[PgDrawColor]
     xor al,al
     out dx,ax
     mov ax,0f01h
@@ -2360,7 +2394,7 @@ u9_129c proc far
     mov ah,0
     mov al,3
     out dx,ax
-    mov si,word ptr cs:[screen_stride]
+    mov si,word ptr cs:[PgScreenStrideBytes]
     mov ax,word ptr [bp+0ah]
     mov bx,word ptr [bp+8]
     mov cx,bx
@@ -2373,7 +2407,7 @@ vspan_ge_2e:
     mov bx,word ptr [bp+6]
     push cx
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     shl ah,cl
     mov al,8
     out dx,ax
@@ -2394,21 +2428,22 @@ vspan_loop_3d:
     pop si
     pop bp
     retf 6
-u9_129c endp
+PgDrawVerticalSpan endp
 
-circle_x               dw ?
-circle_y               dw ?
-circle_error           dw ?
-circle_x_delta         dw ?
-circle_y_delta         dw ?
+PgCircleX               dw ?
+PgCircleY               dw ?
+PgCircleError           dw ?
+PgCircleSpanLeft         dw ?
+PgCircleSpanRight         dw ?
 ; draw circle variant a
-u9_12fc proc far
+; Midpoint-circle error recurrence emits horizontal spans between center X +/- offset at symmetric rows.
+PgFillCircle proc far
     push bp
     mov bp,sp
     push si
     push di
     mov dx,3ceh
-    mov ah,byte ptr cs:[draw_color]
+    mov ah,byte ptr cs:[PgDrawColor]
     xor al,al
     out dx,ax
     mov ax,0f01h
@@ -2416,37 +2451,37 @@ u9_12fc proc far
     mov ah,0
     mov al,3
     out dx,ax
-    mov word ptr cs:[circle_x],0
+    mov word ptr cs:[PgCircleX],0
     mov si,word ptr [bp+6]
-    mov word ptr cs:[circle_y],si
+    mov word ptr cs:[PgCircleY],si
     mov si,3
     sub si,word ptr [bp+6]
     sub si,word ptr [bp+6]
-    mov word ptr cs:[circle_error],si
+    mov word ptr cs:[PgCircleError],si
 circle_a_repeat_36:
-    mov si,word ptr cs:[screen_stride]
+    mov si,word ptr cs:[PgScreenStrideBytes]
     push ds
     mov ax,word ptr [bp+8]
-    add ax,word ptr cs:[circle_y]
+    add ax,word ptr cs:[PgCircleY]
     mov bx,word ptr [bp+0ah]
-    sub bx,word ptr cs:[circle_x]
-    mov word ptr cs:[circle_x_delta],bx
+    sub bx,word ptr cs:[PgCircleX]
+    mov word ptr cs:[PgCircleSpanLeft],bx
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     mov di,bx
     mov dh,ah
     not dh
     shl dh,cl
     not dh
     mov cx,word ptr [bp+0ah]
-    add cx,word ptr cs:[circle_x]
-    mov word ptr cs:[circle_y_delta],cx
+    add cx,word ptr cs:[PgCircleX]
+    mov word ptr cs:[PgCircleSpanRight],cx
     and cl,7
     xor cl,7
     mov dl,0ffh
     shl dl,cl
-    mov ax,word ptr cs:[circle_y_delta]
-    mov bx,word ptr cs:[circle_x_delta]
+    mov ax,word ptr cs:[PgCircleSpanRight]
+    mov bx,word ptr cs:[PgCircleSpanLeft]
     mov cl,3
     shr ax,cl
     shr bx,cl
@@ -2477,28 +2512,28 @@ circle_a_continue_aa:
     mov ah,bl
     out dx,ax
     movsb
-    mov si,word ptr cs:[screen_stride]
+    mov si,word ptr cs:[PgScreenStrideBytes]
     mov ax,word ptr [bp+8]
-    sub ax,word ptr cs:[circle_y]
+    sub ax,word ptr cs:[PgCircleY]
     mov bx,word ptr [bp+0ah]
-    sub bx,word ptr cs:[circle_x]
-    mov word ptr cs:[circle_x_delta],bx
+    sub bx,word ptr cs:[PgCircleX]
+    mov word ptr cs:[PgCircleSpanLeft],bx
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     mov di,bx
     mov dh,ah
     not dh
     shl dh,cl
     not dh
     mov cx,word ptr [bp+0ah]
-    add cx,word ptr cs:[circle_x]
-    mov word ptr cs:[circle_y_delta],cx
+    add cx,word ptr cs:[PgCircleX]
+    mov word ptr cs:[PgCircleSpanRight],cx
     and cl,7
     xor cl,7
     mov dl,0ffh
     shl dl,cl
-    mov ax,word ptr cs:[circle_y_delta]
-    mov bx,word ptr cs:[circle_x_delta]
+    mov ax,word ptr cs:[PgCircleSpanRight]
+    mov bx,word ptr cs:[PgCircleSpanLeft]
     mov cl,3
     shr ax,cl
     shr bx,cl
@@ -2529,28 +2564,28 @@ circle_a_continue_121:
     mov ah,bl
     out dx,ax
     movsb
-    mov si,word ptr cs:[screen_stride]
+    mov si,word ptr cs:[PgScreenStrideBytes]
     mov ax,word ptr [bp+8]
-    add ax,word ptr cs:[circle_x]
+    add ax,word ptr cs:[PgCircleX]
     mov bx,word ptr [bp+0ah]
-    sub bx,word ptr cs:[circle_y]
-    mov word ptr cs:[circle_x_delta],bx
+    sub bx,word ptr cs:[PgCircleY]
+    mov word ptr cs:[PgCircleSpanLeft],bx
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     mov di,bx
     mov dh,ah
     not dh
     shl dh,cl
     not dh
     mov cx,word ptr [bp+0ah]
-    add cx,word ptr cs:[circle_y]
-    mov word ptr cs:[circle_y_delta],cx
+    add cx,word ptr cs:[PgCircleY]
+    mov word ptr cs:[PgCircleSpanRight],cx
     and cl,7
     xor cl,7
     mov dl,0ffh
     shl dl,cl
-    mov ax,word ptr cs:[circle_y_delta]
-    mov bx,word ptr cs:[circle_x_delta]
+    mov ax,word ptr cs:[PgCircleSpanRight]
+    mov bx,word ptr cs:[PgCircleSpanLeft]
     mov cl,3
     shr ax,cl
     shr bx,cl
@@ -2581,28 +2616,28 @@ circle_a_continue_198:
     mov ah,bl
     out dx,ax
     movsb
-    mov si,word ptr cs:[screen_stride]
+    mov si,word ptr cs:[PgScreenStrideBytes]
     mov ax,word ptr [bp+8]
-    sub ax,word ptr cs:[circle_x]
+    sub ax,word ptr cs:[PgCircleX]
     mov bx,word ptr [bp+0ah]
-    sub bx,word ptr cs:[circle_y]
-    mov word ptr cs:[circle_x_delta],bx
+    sub bx,word ptr cs:[PgCircleY]
+    mov word ptr cs:[PgCircleSpanLeft],bx
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     mov di,bx
     mov dh,ah
     not dh
     shl dh,cl
     not dh
     mov cx,word ptr [bp+0ah]
-    add cx,word ptr cs:[circle_y]
-    mov word ptr cs:[circle_y_delta],cx
+    add cx,word ptr cs:[PgCircleY]
+    mov word ptr cs:[PgCircleSpanRight],cx
     and cl,7
     xor cl,7
     mov dl,0ffh
     shl dl,cl
-    mov ax,word ptr cs:[circle_y_delta]
-    mov bx,word ptr cs:[circle_x_delta]
+    mov ax,word ptr cs:[PgCircleSpanRight]
+    mov bx,word ptr cs:[PgCircleSpanLeft]
     mov cl,3
     shr ax,cl
     shr bx,cl
@@ -2634,35 +2669,35 @@ circle_a_continue_20f:
     out dx,ax
     movsb
     pop ds
-    mov si,word ptr cs:[circle_error]
+    mov si,word ptr cs:[PgCircleError]
     cmp si,0
     jle circle_a_le_249
-    mov si,word ptr cs:[circle_error]
+    mov si,word ptr cs:[PgCircleError]
     add si,0ah
-    mov di,word ptr cs:[circle_x]
-    sub di,word ptr cs:[circle_y]
+    mov di,word ptr cs:[PgCircleX]
+    sub di,word ptr cs:[PgCircleY]
     shl di,1
     shl di,1
     add si,di
-    mov word ptr cs:[circle_error],si
-    mov si,word ptr cs:[circle_y]
+    mov word ptr cs:[PgCircleError],si
+    mov si,word ptr cs:[PgCircleY]
     dec si
-    mov word ptr cs:[circle_y],si
+    mov word ptr cs:[PgCircleY],si
     jmp short circle_a_continue_261
     nop
 circle_a_le_249:
-    mov si,word ptr cs:[circle_error]
+    mov si,word ptr cs:[PgCircleError]
     add si,6
-    mov di,word ptr cs:[circle_x]
+    mov di,word ptr cs:[PgCircleX]
     shl di,1
     shl di,1
     add si,di
-    mov word ptr cs:[circle_error],si
+    mov word ptr cs:[PgCircleError],si
 circle_a_continue_261:
-    mov di,word ptr cs:[circle_x]
+    mov di,word ptr cs:[PgCircleX]
     inc di
-    mov word ptr cs:[circle_x],di
-    mov si,word ptr cs:[circle_y]
+    mov word ptr cs:[PgCircleX],di
+    mov si,word ptr cs:[PgCircleY]
     cmp si,di
     jl circle_a_less_278
     jmp near ptr circle_a_repeat_36
@@ -2679,21 +2714,22 @@ circle_a_less_278:
     pop si
     pop bp
     retf 6
-u9_12fc endp
+PgFillCircle endp
 
-circle2_x              dw ?
-circle2_y              dw ?
-circle2_error          dw ?
-circle2_work1          dw ?
-circle2_work2          dw ?
+PgCircle2X              dw ?
+PgCircle2Y              dw ?
+PgCircle2Error          dw ?
+PgCircle2Work1          dw ?
+PgCircle2Work2          dw ?
 ; draw circle symmetric
-u9_1590 proc far
+; Midpoint-circle recurrence emits symmetric individual perimeter pixels rather than horizontal filled spans.
+PgDrawCircle proc far
     push bp
     mov bp,sp
     push si
     push di
     mov dx,3ceh
-    mov ah,byte ptr cs:[draw_color]
+    mov ah,byte ptr cs:[PgDrawColor]
     xor al,al
     out dx,ax
     mov ax,0f01h
@@ -2701,140 +2737,140 @@ u9_1590 proc far
     mov ah,0
     mov al,3
     out dx,ax
-    mov word ptr cs:[circle2_x],0
+    mov word ptr cs:[PgCircle2X],0
     mov si,word ptr [bp+6]
-    mov word ptr cs:[circle2_y],si
+    mov word ptr cs:[PgCircle2Y],si
     mov si,3
     sub si,word ptr [bp+6]
     sub si,word ptr [bp+6]
-    mov word ptr cs:[circle2_error],si
+    mov word ptr cs:[PgCircle2Error],si
 circle_b_repeat_36:
-    mov si,word ptr cs:[screen_stride]
+    mov si,word ptr cs:[PgScreenStrideBytes]
     mov ax,word ptr [bp+8]
-    add ax,word ptr cs:[circle2_y]
+    add ax,word ptr cs:[PgCircle2Y]
     mov bx,word ptr [bp+0ah]
-    add bx,word ptr cs:[circle2_x]
+    add bx,word ptr cs:[PgCircle2X]
     push cx
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     shl ah,cl
     mov al,8
     out dx,ax
     pop cx
     or byte ptr es:[bx],al
     mov ax,word ptr [bp+8]
-    sub ax,word ptr cs:[circle2_y]
+    sub ax,word ptr cs:[PgCircle2Y]
     mov bx,word ptr [bp+0ah]
-    add bx,word ptr cs:[circle2_x]
+    add bx,word ptr cs:[PgCircle2X]
     push cx
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     shl ah,cl
     mov al,8
     out dx,ax
     pop cx
     or byte ptr es:[bx],al
     mov ax,word ptr [bp+8]
-    add ax,word ptr cs:[circle2_y]
+    add ax,word ptr cs:[PgCircle2Y]
     mov bx,word ptr [bp+0ah]
-    sub bx,word ptr cs:[circle2_x]
+    sub bx,word ptr cs:[PgCircle2X]
     push cx
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     shl ah,cl
     mov al,8
     out dx,ax
     pop cx
     or byte ptr es:[bx],al
     mov ax,word ptr [bp+8]
-    sub ax,word ptr cs:[circle2_y]
+    sub ax,word ptr cs:[PgCircle2Y]
     mov bx,word ptr [bp+0ah]
-    sub bx,word ptr cs:[circle2_x]
+    sub bx,word ptr cs:[PgCircle2X]
     push cx
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     shl ah,cl
     mov al,8
     out dx,ax
     pop cx
     or byte ptr es:[bx],al
     mov ax,word ptr [bp+8]
-    add ax,word ptr cs:[circle2_x]
+    add ax,word ptr cs:[PgCircle2X]
     mov bx,word ptr [bp+0ah]
-    add bx,word ptr cs:[circle2_y]
+    add bx,word ptr cs:[PgCircle2Y]
     push cx
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     shl ah,cl
     mov al,8
     out dx,ax
     pop cx
     or byte ptr es:[bx],al
     mov ax,word ptr [bp+8]
-    sub ax,word ptr cs:[circle2_x]
+    sub ax,word ptr cs:[PgCircle2X]
     mov bx,word ptr [bp+0ah]
-    add bx,word ptr cs:[circle2_y]
+    add bx,word ptr cs:[PgCircle2Y]
     push cx
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     shl ah,cl
     mov al,8
     out dx,ax
     pop cx
     or byte ptr es:[bx],al
     mov ax,word ptr [bp+8]
-    add ax,word ptr cs:[circle2_x]
+    add ax,word ptr cs:[PgCircle2X]
     mov bx,word ptr [bp+0ah]
-    sub bx,word ptr cs:[circle2_y]
+    sub bx,word ptr cs:[PgCircle2Y]
     push cx
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     shl ah,cl
     mov al,8
     out dx,ax
     pop cx
     or byte ptr es:[bx],al
     mov ax,word ptr [bp+8]
-    sub ax,word ptr cs:[circle2_x]
+    sub ax,word ptr cs:[PgCircle2X]
     mov bx,word ptr [bp+0ah]
-    sub bx,word ptr cs:[circle2_y]
+    sub bx,word ptr cs:[PgCircle2Y]
     push cx
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     shl ah,cl
     mov al,8
     out dx,ax
     pop cx
     or byte ptr es:[bx],al
-    mov si,word ptr cs:[circle2_error]
+    mov si,word ptr cs:[PgCircle2Error]
     cmp si,0
     jle circle_b_le_160
-    mov si,word ptr cs:[circle2_error]
+    mov si,word ptr cs:[PgCircle2Error]
     add si,0ah
-    mov di,word ptr cs:[circle2_x]
-    sub di,word ptr cs:[circle2_y]
+    mov di,word ptr cs:[PgCircle2X]
+    sub di,word ptr cs:[PgCircle2Y]
     shl di,1
     shl di,1
     add si,di
-    mov word ptr cs:[circle2_error],si
-    mov si,word ptr cs:[circle2_y]
+    mov word ptr cs:[PgCircle2Error],si
+    mov si,word ptr cs:[PgCircle2Y]
     dec si
-    mov word ptr cs:[circle2_y],si
+    mov word ptr cs:[PgCircle2Y],si
     jmp short circle_b_continue_178
     nop
 circle_b_le_160:
-    mov si,word ptr cs:[circle2_error]
+    mov si,word ptr cs:[PgCircle2Error]
     add si,6
-    mov di,word ptr cs:[circle2_x]
+    mov di,word ptr cs:[PgCircle2X]
     shl di,1
     shl di,1
     add si,di
-    mov word ptr cs:[circle2_error],si
+    mov word ptr cs:[PgCircle2Error],si
 circle_b_continue_178:
-    mov di,word ptr cs:[circle2_x]
+    mov di,word ptr cs:[PgCircle2X]
     inc di
-    mov word ptr cs:[circle2_x],di
-    mov si,word ptr cs:[circle2_y]
+    mov word ptr cs:[PgCircle2X],di
+    mov si,word ptr cs:[PgCircle2Y]
     cmp si,di
     jl circle_b_less_18f
     jmp near ptr circle_b_repeat_36
@@ -2851,78 +2887,87 @@ circle_b_less_18f:
     pop si
     pop bp
     retf 6
-u9_1590 endp
+PgDrawCircle endp
 
 ; set clip rectangle
-u9_1731 proc far
+; Stores left/right byte-column bounds plus top/bottom pixel rows; defaults are 0..39 by 0..199.
+PgSetByteClipRectangle proc far
     push bp
     mov bp,sp
     mov ax,word ptr [bp+0ch]
-    mov word ptr cs:[clip_left],ax
+    mov word ptr cs:[PgClipLeftByte],ax
     mov ax,word ptr [bp+8]
-    mov word ptr cs:[clip_right],ax
+    mov word ptr cs:[PgClipRightByte],ax
     mov ax,word ptr [bp+0ah]
-    mov word ptr cs:[clip_top],ax
+    mov word ptr cs:[PgClipTopRow],ax
     mov ax,word ptr [bp+6]
-    mov word ptr cs:[clip_bottom],ax
+    mov word ptr cs:[PgClipBottomRow],ax
     pop bp
     retf 8
-u9_1731 endp
+PgSetByteClipRectangle endp
 
 ; get clip left
-u9_1754 proc far
-    mov ax,word ptr cs:[clip_left]
+; Returns CS:clip_left, the byte-column clip boundary.
+PgGetByteClipLeft proc far
+    mov ax,word ptr cs:[PgClipLeftByte]
     retf
-u9_1754 endp
+PgGetByteClipLeft endp
 
 ; get clip right
-u9_1759 proc far
-    mov ax,word ptr cs:[clip_right]
+; Returns CS:clip_right, the byte-column clip boundary.
+PgGetByteClipRight proc far
+    mov ax,word ptr cs:[PgClipRightByte]
     retf
-u9_1759 endp
+PgGetByteClipRight endp
 
 ; set clip rectangle variant
-u9_175e proc far
+; Stores pixel-column left/right bounds plus top/bottom rows; default horizontal bounds are 0..319.
+PgSetPixelClipRectangle proc far
     push bp
     mov bp,sp
     mov ax,word ptr [bp+0ch]
-    mov word ptr cs:[clip_left_pixels],ax
+    mov word ptr cs:[PgClipLeftPixel],ax
     mov ax,word ptr [bp+8]
-    mov word ptr cs:[clip_right_pixels],ax
+    mov word ptr cs:[PgClipRightPixel],ax
     mov ax,word ptr [bp+0ah]
-    mov word ptr cs:[clip_top],ax
+    mov word ptr cs:[PgClipTopRow],ax
     mov ax,word ptr [bp+6]
-    mov word ptr cs:[clip_bottom],ax
+    mov word ptr cs:[PgClipBottomRow],ax
     pop bp
     retf 8
-u9_175e endp
+PgSetPixelClipRectangle endp
 
 ; get clip left variant
-u9_1781 proc far
-    mov ax,word ptr cs:[clip_left_pixels]
+; Returns CS:clip_left_pixels.
+PgGetPixelClipLeft proc far
+    mov ax,word ptr cs:[PgClipLeftPixel]
     retf
-u9_1781 endp
+PgGetPixelClipLeft endp
 
 ; get clip right variant
-u9_1786 proc far
-    mov ax,word ptr cs:[clip_right_pixels]
+; Returns CS:clip_right_pixels.
+PgGetPixelClipRight proc far
+    mov ax,word ptr cs:[PgClipRightPixel]
     retf
-u9_1786 endp
+PgGetPixelClipRight endp
 
 ; get clip top
-u9_178b proc far
-    mov ax,word ptr cs:[clip_top]
+; src/asm/u9.asm u9_178b: get clip top.
+PgGetClipTop proc far
+    mov ax,word ptr cs:[PgClipTopRow]
     retf
-u9_178b endp
+PgGetClipTop endp
 
 ; get clip bottom
-u9_1790 proc far
-    mov ax,word ptr cs:[clip_bottom]
+; src/asm/u9.asm u9_1790: get clip bottom.
+PgGetClipBottom proc far
+    mov ax,word ptr cs:[PgClipBottomRow]
     retf
-u9_1790 endp
+PgGetClipBottom endp
 
 ; capture planar rectangle
-u9_1795 proc far
+; src/asm/u9.asm u9_1795: capture planar rectangle.
+PgCapturePlanarRectangle proc far
     push bp
     mov bp,sp
     push ds
@@ -2941,14 +2986,14 @@ u9_1795 proc far
     push di
     push ax
     mov ax,bx
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov ax,di
     pop di
     mov bx,word ptr [bp+0ch]
     add bx,ax
-    mov ax,word ptr cs:[draw_page]
+    mov ax,word ptr cs:[PgDrawPage]
     cmp al,0
     je capture_equal_41
     mov cx,ax
@@ -2962,10 +3007,10 @@ capture_equal_41:
     les di,dword ptr [bp+0eh]
     nop
     pop ax
-    mov word ptr cs:[transfer_width],ax
+    mov word ptr cs:[PgTransferWidth],ax
     stosw
     pop ax
-    mov word ptr cs:[transfer_height],ax
+    mov word ptr cs:[PgTransferHeight],ax
     stosw
     mov al,0ffh
     stosb
@@ -2976,10 +3021,10 @@ capture_equal_41:
 capture_repeat_62:
     out dx,ax
     push ax
-    push word ptr cs:[transfer_width]
+    push word ptr cs:[PgTransferWidth]
     push si
 capture_repeat_6a:
-    mov bx,word ptr cs:[transfer_height]
+    mov bx,word ptr cs:[PgTransferHeight]
     push si
 capture_repeat_70:
     lodsb
@@ -2987,11 +3032,11 @@ capture_repeat_70:
     dec bx
     jne capture_repeat_70
     pop si
-    add si,word ptr cs:[screen_stride]
-    dec word ptr cs:[transfer_width]
+    add si,word ptr cs:[PgScreenStrideBytes]
+    dec word ptr cs:[PgTransferWidth]
     jne capture_repeat_6a
     pop si
-    pop word ptr cs:[transfer_width]
+    pop word ptr cs:[PgTransferWidth]
     pop ax
     dec ah
     jns capture_repeat_62
@@ -3004,10 +3049,11 @@ capture_repeat_70:
     mov sp,bp
     pop bp
     retf 0ch
-u9_1795 endp
+PgCapturePlanarRectangle endp
 
 ; restore planar rectangle
-u9_1831 proc far
+; src/asm/u9.asm u9_1831: restore planar rectangle.
+PgRestorePlanarRectangle proc far
     push bp
     mov bp,sp
     push ds
@@ -3015,9 +3061,9 @@ u9_1831 proc far
     push di
     lds si,dword ptr [bp+0ah]
     lodsw
-    mov word ptr cs:[transfer_width],ax
+    mov word ptr cs:[PgTransferWidth],ax
     lodsw
-    mov word ptr cs:[transfer_height],ax
+    mov word ptr cs:[PgTransferHeight],ax
     lodsb
     mov dx,0a000h
     mov es,dx
@@ -3025,14 +3071,14 @@ u9_1831 proc far
     push di
     push ax
     mov ax,bx
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov ax,di
     pop di
     mov bx,word ptr [bp+8]
     add bx,ax
-    mov ax,word ptr cs:[draw_page]
+    mov ax,word ptr cs:[PgDrawPage]
     cmp al,0
     je restore_equal_40
     mov cx,ax
@@ -3050,22 +3096,22 @@ restore_repeat_4e:
     out dx,al
     shr ax,1
     push ax
-    push word ptr cs:[transfer_width]
+    push word ptr cs:[PgTransferWidth]
     push di
 restore_repeat_58:
-    mov bx,word ptr cs:[transfer_height]
+    mov bx,word ptr cs:[PgTransferHeight]
 restore_repeat_5d:
     lodsb
     xchg byte ptr es:[di],al
     inc di
     dec bx
     jne restore_repeat_5d
-    add di,word ptr cs:[screen_stride]
-    sub di,word ptr cs:[transfer_height]
-    dec word ptr cs:[transfer_width]
+    add di,word ptr cs:[PgScreenStrideBytes]
+    sub di,word ptr cs:[PgTransferHeight]
+    dec word ptr cs:[PgTransferWidth]
     jne restore_repeat_58
     pop di
-    pop word ptr cs:[transfer_width]
+    pop word ptr cs:[PgTransferWidth]
     pop ax
     cmp ax,0
     jg restore_repeat_4e
@@ -3078,18 +3124,19 @@ restore_repeat_5d:
     mov sp,bp
     pop bp
     retf 8
-u9_1831 endp
+PgRestorePlanarRectangle endp
 
-sprite_shift           db ?
-sprite_unshift         db ?
-sprite_mask_left       db ?
-sprite_mask_right      db ?
-sprite_rows            db ?
-sprite_plane1          db ?
-sprite_plane2          db ?
-sprite_plane3          db ?
+PgSpriteBytesRemaining           db ?
+PgSpriteRightShift         db ?
+PgSpriteLeftShift       db ?
+PgSpriteSourceMask      db ?
+PgSpritePlane0Byte            db ?
+PgSpritePlane1          db ?
+PgSpritePlane2          db ?
+PgSpritePlane3          db ?
 ; blit masked shifted sprite variant a
-u9_18ca proc far
+; Processes 16 rows of four mask-plus-plane byte groups.
+PgBlitMaskedShifted32x16 proc far
     push bp
     mov bp,sp
     push ds
@@ -3102,7 +3149,7 @@ u9_18ca proc far
     push di
     push ax
     mov ax,bx
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov ax,di
@@ -3113,11 +3160,11 @@ u9_18ca proc far
     add bx,ax
     mov ax,word ptr [bp+8]
     and ax,7
-    mov byte ptr cs:[sprite_unshift],al
+    mov byte ptr cs:[PgSpriteRightShift],al
     mov al,8
-    sub al,byte ptr cs:[sprite_unshift]
-    mov byte ptr cs:[sprite_mask_left],al
-    mov ax,word ptr cs:[draw_page]
+    sub al,byte ptr cs:[PgSpriteRightShift]
+    mov byte ptr cs:[PgSpriteLeftShift],al
+    mov ax,word ptr cs:[PgDrawPage]
     cmp al,0
     je masked_shift_equal_4e
     mov cx,ax
@@ -3130,17 +3177,17 @@ masked_shift_equal_4e:
     out dx,al
     mov cx,10h
 masked_shift_repeat_57:
-    mov byte ptr cs:[sprite_shift],4
+    mov byte ptr cs:[PgSpriteBytesRemaining],4
 masked_shift_repeat_5d:
-    mov dl,byte ptr cs:[sprite_shift]
+    mov dl,byte ptr cs:[PgSpriteBytesRemaining]
     dec dl
-    mov byte ptr cs:[sprite_shift],dl
+    mov byte ptr cs:[PgSpriteBytesRemaining],dl
     push cx
     mov dx,3ceh
     lodsb
-    mov byte ptr cs:[sprite_mask_right],al
-    mov ah,byte ptr cs:[sprite_mask_right]
-    mov cl,byte ptr cs:[sprite_unshift]
+    mov byte ptr cs:[PgSpriteSourceMask],al
+    mov ah,byte ptr cs:[PgSpriteSourceMask]
+    mov cl,byte ptr cs:[PgSpriteRightShift]
     shr ah,cl
     mov al,8
     out dx,ax
@@ -3148,25 +3195,25 @@ masked_shift_repeat_5d:
     mov al,1
     out dx,al
     lodsb
-    mov byte ptr cs:[sprite_rows],al
+    mov byte ptr cs:[PgSpritePlane0Byte],al
     shr al,cl
     xchg byte ptr es:[bx],al
     mov al,2
     out dx,al
     lodsb
-    mov byte ptr cs:[sprite_plane1],al
+    mov byte ptr cs:[PgSpritePlane1],al
     shr al,cl
     xchg byte ptr es:[bx],al
     mov al,4
     out dx,al
     lodsb
-    mov byte ptr cs:[sprite_plane2],al
+    mov byte ptr cs:[PgSpritePlane2],al
     shr al,cl
     xchg byte ptr es:[bx],al
     mov al,8
     out dx,al
     lodsb
-    mov byte ptr cs:[sprite_plane3],al
+    mov byte ptr cs:[PgSpritePlane3],al
     shr al,cl
     xchg byte ptr es:[bx],al
     jmp short masked_shift_continue_bf
@@ -3178,37 +3225,37 @@ masked_shift_repeat_bd:
 masked_shift_continue_bf:
     inc bx
     mov dx,3ceh
-    mov ah,byte ptr cs:[sprite_mask_right]
-    mov cl,byte ptr cs:[sprite_mask_left]
+    mov ah,byte ptr cs:[PgSpriteSourceMask]
+    mov cl,byte ptr cs:[PgSpriteLeftShift]
     shl ah,cl
     mov al,8
     out dx,ax
     mov dx,3c5h
     mov al,1
     out dx,al
-    mov al,byte ptr cs:[sprite_rows]
+    mov al,byte ptr cs:[PgSpritePlane0Byte]
     shl al,cl
     xchg byte ptr es:[bx],al
     mov al,2
     out dx,al
-    mov al,byte ptr cs:[sprite_plane1]
+    mov al,byte ptr cs:[PgSpritePlane1]
     shl al,cl
     xchg byte ptr es:[bx],al
     mov al,4
     out dx,al
-    mov al,byte ptr cs:[sprite_plane2]
+    mov al,byte ptr cs:[PgSpritePlane2]
     shl al,cl
     xchg byte ptr es:[bx],al
     mov al,8
     out dx,al
-    mov al,byte ptr cs:[sprite_plane3]
+    mov al,byte ptr cs:[PgSpritePlane3]
     shl al,cl
     xchg byte ptr es:[bx],al
     pop cx
-    mov dl,byte ptr cs:[sprite_shift]
+    mov dl,byte ptr cs:[PgSpriteBytesRemaining]
     cmp dl,0
     jg masked_shift_repeat_bd
-    add bx,word ptr cs:[screen_stride]
+    add bx,word ptr cs:[PgScreenStrideBytes]
     dec bx
     dec bx
     dec bx
@@ -3225,16 +3272,17 @@ masked_shift_continue_bf:
     pop ds
     pop bp
     retf 8
-u9_18ca endp
+PgBlitMaskedShifted32x16 endp
 
 ; blit masked shifted 16x16
-u9_19f9 proc far
+; src/asm/u9.asm u9_19f9: blit masked shifted 16x16.
+PgBlitMaskedShifted16x16 proc far
     push bp
     mov bp,sp
     push ds
     push si
     push di
-    mov di,word ptr cs:[screen_stride]
+    mov di,word ptr cs:[PgScreenStrideBytes]
     dec di
     dec di
     lds si,dword ptr [bp+0ah]
@@ -3244,7 +3292,7 @@ u9_19f9 proc far
     push di
     push ax
     mov ax,bx
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov ax,di
@@ -3255,27 +3303,27 @@ u9_19f9 proc far
     add bx,ax
     mov ax,word ptr [bp+8]
     and ax,7
-    mov byte ptr cs:[sprite_unshift],al
+    mov byte ptr cs:[PgSpriteRightShift],al
     mov al,8
-    sub al,byte ptr cs:[sprite_unshift]
-    mov byte ptr cs:[sprite_mask_left],al
+    sub al,byte ptr cs:[PgSpriteRightShift]
+    mov byte ptr cs:[PgSpriteLeftShift],al
     mov dx,3c4h
     mov al,2
     out dx,al
     mov cx,10h
 masked_shift16_repeat_4e:
-    mov byte ptr cs:[sprite_shift],2
+    mov byte ptr cs:[PgSpriteBytesRemaining],2
 masked_shift16_repeat_54:
-    mov dl,byte ptr cs:[sprite_shift]
+    mov dl,byte ptr cs:[PgSpriteBytesRemaining]
     dec dl
-    mov byte ptr cs:[sprite_shift],dl
+    mov byte ptr cs:[PgSpriteBytesRemaining],dl
     push cx
     push di
     mov dx,3ceh
     lodsb
     mov ah,al
     mov di,ax
-    mov cl,byte ptr cs:[sprite_unshift]
+    mov cl,byte ptr cs:[PgSpriteRightShift]
     shr ah,cl
     mov al,8
     out dx,ax
@@ -3284,28 +3332,28 @@ masked_shift16_repeat_54:
     mov al,ch
     out dx,al
     lodsb
-    mov byte ptr cs:[sprite_rows],al
+    mov byte ptr cs:[PgSpritePlane0Byte],al
     shr al,cl
     xchg byte ptr es:[bx],al
     shl ch,1
     mov al,ch
     out dx,al
     lodsb
-    mov byte ptr cs:[sprite_plane1],al
+    mov byte ptr cs:[PgSpritePlane1],al
     shr al,cl
     xchg byte ptr es:[bx],al
     shl ch,1
     mov al,ch
     out dx,al
     lodsb
-    mov byte ptr cs:[sprite_plane2],al
+    mov byte ptr cs:[PgSpritePlane2],al
     shr al,cl
     xchg byte ptr es:[bx],al
     shl ch,1
     mov al,ch
     out dx,al
     lodsb
-    mov byte ptr cs:[sprite_plane3],al
+    mov byte ptr cs:[PgSpritePlane3],al
     shr al,cl
     xchg byte ptr es:[bx],al
     jmp short masked_shift16_continue_ba
@@ -3318,7 +3366,7 @@ masked_shift16_continue_ba:
     inc bx
     mov dx,3ceh
     mov ax,di
-    mov cl,byte ptr cs:[sprite_mask_left]
+    mov cl,byte ptr cs:[PgSpriteLeftShift]
     shl ah,cl
     mov al,8
     out dx,ax
@@ -3326,30 +3374,30 @@ masked_shift16_continue_ba:
     mov ch,1
     mov al,ch
     out dx,al
-    mov al,byte ptr cs:[sprite_rows]
+    mov al,byte ptr cs:[PgSpritePlane0Byte]
     shl al,cl
     xchg byte ptr es:[bx],al
     shl ch,1
     mov al,ch
     out dx,al
-    mov al,byte ptr cs:[sprite_plane1]
+    mov al,byte ptr cs:[PgSpritePlane1]
     shl al,cl
     xchg byte ptr es:[bx],al
     shl ch,1
     mov al,ch
     out dx,al
-    mov al,byte ptr cs:[sprite_plane2]
+    mov al,byte ptr cs:[PgSpritePlane2]
     shl al,cl
     xchg byte ptr es:[bx],al
     shl ch,1
     mov al,ch
     out dx,al
-    mov al,byte ptr cs:[sprite_plane3]
+    mov al,byte ptr cs:[PgSpritePlane3]
     shl al,cl
     xchg byte ptr es:[bx],al
     pop di
     pop cx
-    mov dl,byte ptr cs:[sprite_shift]
+    mov dl,byte ptr cs:[PgSpriteBytesRemaining]
     cmp dl,0
     jg masked_shift16_repeat_b8
     add bx,di
@@ -3365,15 +3413,16 @@ masked_shift16_continue_ba:
     pop ds
     pop bp
     retf 8
-u9_19f9 endp
+PgBlitMaskedShifted16x16 endp
 
-sprite_width           db ?
-sprite_height          db ?
-sprite_work1           db ?
-sprite_work2           db ?
-sprite_stride          db ?
+PgGlyphMaskHigh           db ?
+PgGlyphMaskLow          db ?
+PgSpriteWork1           db ?
+PgSpriteWork2           db ?
+PgGlyphLeftShift          db ?
 ; blit masked variable sprite
-u9_1b27 proc far
+; Loops over exactly eight rows, splitting one mask and four plane bytes across two destination bytes.
+PgBlitMaskedShifted8x8 proc far
     push bp
     mov bp,sp
     push ds
@@ -3386,7 +3435,7 @@ u9_1b27 proc far
     push di
     push ax
     mov ax,bx
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov ax,di
@@ -3395,13 +3444,13 @@ u9_1b27 proc far
     and cx,7
     xor cl,7
     inc cl
-    mov byte ptr cs:[sprite_stride],cl
+    mov byte ptr cs:[PgGlyphLeftShift],cl
     mov bx,word ptr [bp+8]
     shr bx,1
     shr bx,1
     shr bx,1
     add bx,ax
-    mov ax,word ptr cs:[draw_page]
+    mov ax,word ptr cs:[PgDrawPage]
     cmp al,0
     je masked_var_equal_4b
     mov cx,ax
@@ -3417,24 +3466,24 @@ masked_var_repeat_54:
     push cx
     lodsb
     mov ah,0
-    mov cl,byte ptr cs:[sprite_stride]
+    mov cl,byte ptr cs:[PgGlyphLeftShift]
     rol ax,cl
-    mov byte ptr cs:[sprite_width],ah
-    mov byte ptr cs:[sprite_height],al
+    mov byte ptr cs:[PgGlyphMaskHigh],ah
+    mov byte ptr cs:[PgGlyphMaskLow],al
     mov dx,3c5h
     mov al,1
     out dx,al
     lodsb
     mov ah,0
-    mov cl,byte ptr cs:[sprite_stride]
+    mov cl,byte ptr cs:[PgGlyphLeftShift]
     rol ax,cl
     mov cx,ax
     mov dx,3ceh
     mov al,8
-    mov ah,byte ptr cs:[sprite_width]
+    mov ah,byte ptr cs:[PgGlyphMaskHigh]
     out dx,ax
     xchg byte ptr es:[bx],ch
-    mov ah,byte ptr cs:[sprite_height]
+    mov ah,byte ptr cs:[PgGlyphMaskLow]
     out dx,ax
     xchg byte ptr es:[bx+1],cl
     mov dx,3c5h
@@ -3442,15 +3491,15 @@ masked_var_repeat_54:
     out dx,al
     lodsb
     mov ah,0
-    mov cl,byte ptr cs:[sprite_stride]
+    mov cl,byte ptr cs:[PgGlyphLeftShift]
     rol ax,cl
     mov cx,ax
     mov dx,3ceh
     mov al,8
-    mov ah,byte ptr cs:[sprite_width]
+    mov ah,byte ptr cs:[PgGlyphMaskHigh]
     out dx,ax
     xchg byte ptr es:[bx],ch
-    mov ah,byte ptr cs:[sprite_height]
+    mov ah,byte ptr cs:[PgGlyphMaskLow]
     out dx,ax
     xchg byte ptr es:[bx+1],cl
     jmp short masked_var_continue_c1
@@ -3463,15 +3512,15 @@ masked_var_continue_c1:
     out dx,al
     lodsb
     mov ah,0
-    mov cl,byte ptr cs:[sprite_stride]
+    mov cl,byte ptr cs:[PgGlyphLeftShift]
     rol ax,cl
     mov cx,ax
     mov dx,3ceh
     mov al,8
-    mov ah,byte ptr cs:[sprite_width]
+    mov ah,byte ptr cs:[PgGlyphMaskHigh]
     out dx,ax
     xchg byte ptr es:[bx],ch
-    mov ah,byte ptr cs:[sprite_height]
+    mov ah,byte ptr cs:[PgGlyphMaskLow]
     out dx,ax
     xchg byte ptr es:[bx+1],cl
     mov dx,3c5h
@@ -3479,18 +3528,18 @@ masked_var_continue_c1:
     out dx,al
     lodsb
     mov ah,0
-    mov cl,byte ptr cs:[sprite_stride]
+    mov cl,byte ptr cs:[PgGlyphLeftShift]
     rol ax,cl
     mov cx,ax
     mov dx,3ceh
     mov al,8
-    mov ah,byte ptr cs:[sprite_width]
+    mov ah,byte ptr cs:[PgGlyphMaskHigh]
     out dx,ax
     xchg byte ptr es:[bx],ch
-    mov ah,byte ptr cs:[sprite_height]
+    mov ah,byte ptr cs:[PgGlyphMaskLow]
     out dx,ax
     xchg byte ptr es:[bx+1],cl
-    add bx,word ptr cs:[screen_stride]
+    add bx,word ptr cs:[PgScreenStrideBytes]
     pop cx
     loop masked_var_row_loop_bf
     mov dx,3c5h
@@ -3504,10 +3553,11 @@ masked_var_continue_c1:
     pop ds
     pop bp
     retf 8
-u9_1b27 endp
+PgBlitMaskedShifted8x8 endp
 
 ; draw ellipse or curve
-u9_1c58 proc far
+; Squares two independent radius operands and emits symmetric pixels around the supplied center.
+PgDrawEllipse proc far
     push bp
     mov bp,sp
     sub sp,28h
@@ -3519,7 +3569,7 @@ u9_1c58 proc far
     mov ah,0
     mov al,3
     out dx,ax
-    mov ax,word ptr cs:[draw_color]
+    mov ax,word ptr cs:[PgDrawColor]
     mov ah,al
     mov al,0
     out dx,ax
@@ -3541,14 +3591,14 @@ u9_1c58 proc far
     rcl dx,1
     mov word ptr [bp-2ch],ax
     mov word ptr [bp-2ah],dx
-    mov ax,word ptr cs:[screen_stride]
+    mov ax,word ptr cs:[PgScreenStrideBytes]
     mul word ptr [bp+6]
     mov si,ax
     mov di,ax
     mov ax,word ptr [bp+0ah]
     mov bx,word ptr [bp+0ch]
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     mov ah,1
     shl ah,cl
     mov byte ptr [bp-0eh],ah
@@ -3565,7 +3615,7 @@ u9_1c58 proc far
     mov ax,word ptr [bp-28h]
     mov dx,word ptr [bp-26h]
     mov cx,word ptr [bp+6]
-    call near ptr u9_1e73
+    call near ptr PgMultiplyPartialProductsHelper
     mov word ptr [bp-1ch],ax
     mov word ptr [bp-1ah],dx
     mov ax,word ptr [bp-20h]
@@ -3581,7 +3631,7 @@ u9_1c58 proc far
     mov ax,word ptr [bp-20h]
     mov dx,word ptr [bp-1eh]
     mov cx,word ptr [bp+6]
-    call near ptr u9_1e73
+    call near ptr PgMultiplyPartialProductsHelper
     sub word ptr [bp-14h],ax
     sbb word ptr [bp-12h],dx
     mov bx,word ptr [bp+6]
@@ -3592,7 +3642,7 @@ ellipse_repeat_c5:
     sub ax,word ptr [bp-1ch]
     sbb dx,word ptr [bp-1ah]
     jns ellipse_nonnegative_11a
-    call near ptr u9_1e02
+    call near ptr PgPlotEllipseSymmetricPixels
     mov cx,1
     cmp word ptr [bp-12h],0
     js ellipse_negative_fa
@@ -3642,7 +3692,7 @@ ellipse_nonnegative_11a:
     pop cx
     pop bx
 ellipse_repeat_14c:
-    call near ptr u9_1e02
+    call near ptr PgPlotEllipseSymmetricPixels
     mov cx,100h
     cmp word ptr [bp-12h],0
     jns ellipse_nonnegative_172
@@ -3680,10 +3730,11 @@ ellipse_nonnegative_172:
     mov sp,bp
     pop bp
     retf 8
-u9_1c58 endp
+PgDrawEllipse endp
 
 ; curve symmetric pixel helper
-u9_1e02 proc near
+; Private helper inherited from u9_1c58 updates symmetric pixel masks/addresses and writes the four.
+PgPlotEllipseSymmetricPixels proc near
     push ax
     push bx
     push dx
@@ -3691,7 +3742,7 @@ u9_1e02 proc near
     xor bx,bx
     test ch,ch
     je curve_pixels_equal_13
-    mov bx,word ptr cs:[screen_stride]
+    mov bx,word ptr cs:[PgScreenStrideBytes]
     neg bx
 curve_pixels_equal_13:
     mov al,8
@@ -3734,10 +3785,11 @@ curve_pixels_equal_13:
     pop bx
     pop ax
     ret
-u9_1e02 endp
+PgPlotEllipseSymmetricPixels endp
 
 ; multiply partial products helper
-u9_1e73 proc near
+; src/asm/u9.asm u9_1e73: multiply partial products helper.
+PgMultiplyPartialProductsHelper proc near
     push ax
     mov ax,dx
     mul cx
@@ -3746,24 +3798,25 @@ u9_1e73 proc near
     mul dx
     add dx,cx
     ret
-u9_1e73 endp
+PgMultiplyPartialProductsHelper endp
 
-sprite_clip_top        dw 0
-sprite_clip_bottom     dw 0
-sprite_clip_left       dw 0
-sprite_clip_right      dw 0
+PgSpriteTopClipped        dw 0
+PgSpriteBottomClipped     dw 0
+PgSpriteLeftClipped       dw 0
+PgSpriteRightClipped      dw 0
 ; blit masked 32x16 clipped
-u9_1e87 proc far
+; src/asm/u9.asm u9_1e87: blit masked 32x16 clipped.
+PgBlitMasked32x16Clipped proc far
     push bp
     mov bp,sp
     push ds
     push di
     push si
     push cx
-    mov word ptr cs:[sprite_clip_top],0
-    mov word ptr cs:[sprite_clip_bottom],0
-    mov word ptr cs:[sprite_clip_left],0
-    mov word ptr cs:[sprite_clip_right],0
+    mov word ptr cs:[PgSpriteTopClipped],0
+    mov word ptr cs:[PgSpriteBottomClipped],0
+    mov word ptr cs:[PgSpriteLeftClipped],0
+    mov word ptr cs:[PgSpriteRightClipped],0
     mov bx,word ptr [bp+8]
     cmp bx,-4
     jle clip_masked32_le_52
@@ -3773,7 +3826,7 @@ u9_1e87 proc far
     je clip_masked32_equal_60
     cmp bx,-1
     je clip_masked32_equal_67
-    mov cx,word ptr cs:[screen_stride]
+    mov cx,word ptr cs:[PgScreenStrideBytes]
     cmp bx,cx
     jge clip_masked32_le_52
     dec cx
@@ -3786,21 +3839,21 @@ u9_1e87 proc far
     cmp bx,cx
     je clip_masked32_equal_7f
 clip_masked32_le_52:
-    mov word ptr cs:[sprite_clip_right],1
+    mov word ptr cs:[PgSpriteRightClipped],1
 clip_masked32_equal_59:
-    mov word ptr cs:[sprite_clip_left],1
+    mov word ptr cs:[PgSpriteLeftClipped],1
 clip_masked32_equal_60:
-    mov word ptr cs:[sprite_clip_bottom],1
+    mov word ptr cs:[PgSpriteBottomClipped],1
 clip_masked32_equal_67:
-    mov word ptr cs:[sprite_clip_top],1
+    mov word ptr cs:[PgSpriteTopClipped],1
     jmp short clip_masked32_continue_86
     nop
 clip_masked32_equal_71:
-    mov word ptr cs:[sprite_clip_bottom],1
+    mov word ptr cs:[PgSpriteBottomClipped],1
 clip_masked32_equal_78:
-    mov word ptr cs:[sprite_clip_left],1
+    mov word ptr cs:[PgSpriteLeftClipped],1
 clip_masked32_equal_7f:
-    mov word ptr cs:[sprite_clip_right],1
+    mov word ptr cs:[PgSpriteRightClipped],1
 clip_masked32_continue_86:
     pop cx
     lds si,dword ptr [bp+0ah]
@@ -3810,14 +3863,14 @@ clip_masked32_continue_86:
     push di
     push ax
     mov ax,bx
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov ax,di
     pop di
     mov bx,word ptr [bp+8]
     add bx,ax
-    mov ax,word ptr cs:[draw_page]
+    mov ax,word ptr cs:[PgDrawPage]
     cmp al,0
     je clip_masked32_equal_b6
     mov cx,ax
@@ -3835,7 +3888,7 @@ clip_masked32_repeat_bf:
     mov ah,8
     xchg ah,al
     out dx,ax
-    mov dx,word ptr cs:[sprite_clip_top]
+    mov dx,word ptr cs:[PgSpriteTopClipped]
     cmp dx,1
     je clip_masked32_equal_f4
     mov dx,3c5h
@@ -3869,7 +3922,7 @@ clip_masked32_right_half:
     mov ah,8
     xchg ah,al
     out dx,ax
-    mov dx,word ptr cs:[sprite_clip_bottom]
+    mov dx,word ptr cs:[PgSpriteBottomClipped]
     cmp dx,1
     je clip_masked32_equal_12e
     mov dx,3c5h
@@ -3902,7 +3955,7 @@ clip_masked32_equal_12e:
     mov ah,8
     xchg ah,al
     out dx,ax
-    mov dx,word ptr cs:[sprite_clip_left]
+    mov dx,word ptr cs:[PgSpriteLeftClipped]
     cmp dx,1
     je clip_masked32_equal_16e
     mov dx,3c5h
@@ -3941,7 +3994,7 @@ clip_masked32_tail:
     mov ah,8
     xchg ah,al
     out dx,ax
-    mov dx,word ptr cs:[sprite_clip_right]
+    mov dx,word ptr cs:[PgSpriteRightClipped]
     cmp dx,1
     je clip_masked32_equal_1a8
     mov dx,3c5h
@@ -3970,7 +4023,7 @@ clip_masked32_equal_1a8:
     lodsb
 clip_masked32_continue_1ac:
     inc bx
-    add bx,word ptr cs:[screen_stride]
+    add bx,word ptr cs:[PgScreenStrideBytes]
     dec bx
     dec bx
     dec bx
@@ -3987,39 +4040,40 @@ clip_masked32_continue_1ac:
     pop ds
     pop bp
     retf 8
-u9_1e87 endp
+PgBlitMasked32x16Clipped endp
 
 ; blit masked 16x16 clipped
-u9_2053 proc far
+; src/asm/u9.asm u9_2053: blit masked 16x16 clipped.
+PgBlitMasked16x16Clipped proc far
     push bp
     mov bp,sp
     push ds
     push di
     push si
     push cx
-    mov word ptr cs:[sprite_clip_top],0
-    mov word ptr cs:[sprite_clip_bottom],0
-    mov word ptr cs:[sprite_clip_left],0
-    mov word ptr cs:[sprite_clip_right],0
+    mov word ptr cs:[PgSpriteTopClipped],0
+    mov word ptr cs:[PgSpriteBottomClipped],0
+    mov word ptr cs:[PgSpriteLeftClipped],0
+    mov word ptr cs:[PgSpriteRightClipped],0
     mov bx,word ptr [bp+8]
     cmp bx,-2
     jle clip_masked16_le_3e
     cmp bx,-1
     je clip_masked16_equal_45
-    mov cx,word ptr cs:[screen_stride]
+    mov cx,word ptr cs:[PgScreenStrideBytes]
     cmp bx,cx
     jge clip_masked16_le_3e
     dec cx
     cmp bx,cx
     je clip_masked16_equal_4f
 clip_masked16_le_3e:
-    mov word ptr cs:[sprite_clip_right],1
+    mov word ptr cs:[PgSpriteRightClipped],1
 clip_masked16_equal_45:
-    mov word ptr cs:[sprite_clip_top],1
+    mov word ptr cs:[PgSpriteTopClipped],1
     jmp short clip_masked16_continue_56
     nop
 clip_masked16_equal_4f:
-    mov word ptr cs:[sprite_clip_right],1
+    mov word ptr cs:[PgSpriteRightClipped],1
 clip_masked16_continue_56:
     pop cx
     lds si,dword ptr [bp+0ah]
@@ -4029,14 +4083,14 @@ clip_masked16_continue_56:
     push di
     push ax
     mov ax,bx
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov ax,di
     pop di
     mov bx,word ptr [bp+8]
     add bx,ax
-    mov ax,word ptr cs:[draw_page]
+    mov ax,word ptr cs:[PgDrawPage]
     cmp al,0
     je clip_masked16_equal_86
     mov cx,ax
@@ -4054,7 +4108,7 @@ clip_masked16_row_loop_8f:
     mov ah,8
     xchg ah,al
     out dx,ax
-    mov dx,word ptr cs:[sprite_clip_top]
+    mov dx,word ptr cs:[PgSpriteTopClipped]
     cmp dx,1
     je clip_masked16_equal_c4
     mov dx,3c5h
@@ -4088,7 +4142,7 @@ clip_masked16_continue_c8:
     mov ah,8
     xchg ah,al
     out dx,ax
-    mov dx,word ptr cs:[sprite_clip_bottom]
+    mov dx,word ptr cs:[PgSpriteBottomClipped]
     cmp dx,1
     je clip_masked16_equal_fe
     mov dx,3c5h
@@ -4117,7 +4171,7 @@ clip_masked16_equal_fe:
     lodsb
 clip_masked16_continue_102:
     inc bx
-    add bx,word ptr cs:[screen_stride]
+    add bx,word ptr cs:[PgScreenStrideBytes]
     dec bx
     dec bx
     loop clip_masked16_row_loop_8f
@@ -4132,10 +4186,11 @@ clip_masked16_continue_102:
     pop ds
     pop bp
     retf 8
-u9_2053 endp
+PgBlitMasked16x16Clipped endp
 
 ; capture planar rectangle variant
-u9_2173 proc far
+; Divides the horizontal width by eight and records edge masks for a rectangle specified in pixel coordinates.
+PgCapturePixelRectangle proc far
     push bp
     mov bp,sp
     push ds
@@ -4160,17 +4215,17 @@ u9_2173 proc far
     mov ax,word ptr [bp+0ah]
     mov bx,word ptr [bp+0ch]
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     xor cl,7
     push es
     pop ds
     mov si,bx
     les di,dword ptr [bp+0eh]
     pop ax
-    mov word ptr cs:[transfer_width],ax
+    mov word ptr cs:[PgTransferWidth],ax
     stosw
     pop ax
-    mov word ptr cs:[transfer_height],ax
+    mov word ptr cs:[PgTransferHeight],ax
     stosw
     pop ax
     mov ch,al
@@ -4182,10 +4237,10 @@ u9_2173 proc far
 capture_b_repeat_55:
     out dx,ax
     push ax
-    push word ptr cs:[transfer_width]
+    push word ptr cs:[PgTransferWidth]
     push si
 capture_b_repeat_5d:
-    mov bx,word ptr cs:[transfer_height]
+    mov bx,word ptr cs:[PgTransferHeight]
     push si
 capture_b_repeat_63:
     lodsw
@@ -4196,11 +4251,11 @@ capture_b_repeat_63:
     jne capture_b_repeat_63
     and byte ptr es:[di-1],ch
     pop si
-    add si,word ptr cs:[screen_stride]
-    dec word ptr cs:[transfer_width]
+    add si,word ptr cs:[PgScreenStrideBytes]
+    dec word ptr cs:[PgTransferWidth]
     jne capture_b_repeat_5d
     pop si
-    pop word ptr cs:[transfer_width]
+    pop word ptr cs:[PgTransferWidth]
     pop ax
     dec ah
     jns capture_b_repeat_55
@@ -4212,10 +4267,11 @@ capture_b_repeat_63:
     mov sp,bp
     pop bp
     retf 0ch
-u9_2173 endp
+PgCapturePixelRectangle endp
 
 ; restore planar rectangle variant
-u9_2208 proc far
+; Uses the pixel-address helper and saved edge masks to restore a captured rectangle at a pixel X/Y.
+PgRestorePixelRectangle proc far
     push bp
     mov bp,sp
     push ds
@@ -4224,15 +4280,15 @@ u9_2208 proc far
     mov ax,word ptr [bp+6]
     mov bx,word ptr [bp+8]
     push cs
-    call near ptr u9_098a
+    call near ptr PgPixelAddressAndBitHelper
     inc cl
     and cl,7
     mov di,bx
     lds si,dword ptr [bp+0ah]
     lodsw
-    mov word ptr cs:[transfer_width],ax
+    mov word ptr cs:[PgTransferWidth],ax
     lodsw
-    mov word ptr cs:[transfer_height],ax
+    mov word ptr cs:[PgTransferHeight],ax
     lodsb
     mov ch,al
     mov dx,3ceh
@@ -4255,12 +4311,12 @@ u9_2208 proc far
     mov ax,802h
     cmp cx,0ff00h
     jne restore_b_different_79
-    mov cx,word ptr cs:[transfer_height]
+    mov cx,word ptr cs:[PgTransferHeight]
 restore_b_repeat_55:
     out dx,ax
     push ax
     push di
-    mov bx,word ptr cs:[transfer_width]
+    mov bx,word ptr cs:[PgTransferWidth]
 restore_b_repeat_5d:
     push di
     push cx
@@ -4271,7 +4327,7 @@ restore_b_loop_5f:
     loop restore_b_loop_5f
     pop cx
     pop di
-    add di,word ptr cs:[screen_stride]
+    add di,word ptr cs:[PgScreenStrideBytes]
     dec bx
     jne restore_b_repeat_5d
     pop di
@@ -4284,7 +4340,7 @@ restore_b_different_79:
     mov bx,0ffh
     mov al,ch
     cbw
-    cmp word ptr cs:[transfer_height],1
+    cmp word ptr cs:[PgTransferHeight],1
     jne restore_b_different_8e
     mov bl,ch
     mov ah,ch
@@ -4294,25 +4350,25 @@ restore_b_different_8e:
     shl bx,cl
     mov bl,al
     mov al,8
-    mov word ptr cs:[transfer_x_start],ax
+    mov word ptr cs:[PgTransferXStart],ax
     mov ah,bl
-    mov word ptr cs:[transfer_y_start],ax
+    mov word ptr cs:[PgTransferYStart],ax
     mov ah,bh
-    mov word ptr cs:[transfer_y_end],ax
-    mov bx,word ptr cs:[transfer_height]
+    mov word ptr cs:[PgTransferYEnd],ax
+    mov bx,word ptr cs:[PgTransferHeight]
     pop ax
 restore_b_repeat_ac:
     out dx,ax
     push ax
     push di
     mov dl,0ceh
-    mov ax,word ptr cs:[transfer_width]
-    mov word ptr cs:[transfer_x_end],ax
+    mov ax,word ptr cs:[PgTransferWidth]
+    mov word ptr cs:[PgTransferXEnd],ax
 restore_b_repeat_b9:
     push di
     push si
     push bx
-    mov ax,word ptr cs:[transfer_y_end]
+    mov ax,word ptr cs:[PgTransferYEnd]
     out dx,ax
     lodsw
     dec si
@@ -4343,18 +4399,18 @@ restore_b_repeat_dc:
     jne restore_b_repeat_dc
 restore_b_continue_e7:
     mov bx,ax
-    mov ax,word ptr cs:[transfer_x_start]
+    mov ax,word ptr cs:[PgTransferXStart]
     out dx,ax
     and byte ptr es:[di],bl
-    mov ax,word ptr cs:[transfer_y_start]
+    mov ax,word ptr cs:[PgTransferYStart]
     out dx,ax
     and byte ptr es:[di+1],bh
     pop bx
     pop si
     add si,bx
     pop di
-    add di,word ptr cs:[screen_stride]
-    dec word ptr cs:[transfer_x_end]
+    add di,word ptr cs:[PgScreenStrideBytes]
+    dec word ptr cs:[PgTransferXEnd]
     jne restore_b_repeat_b9
     pop di
     pop ax
@@ -4379,10 +4435,11 @@ restore_b_continue_113:
     mov sp,bp
     pop bp
     retf 8
-u9_2208 endp
+PgRestorePixelRectangle endp
 
 ; blit opaque shifted sprite variant a
-u9_233a proc far
+; Processes 16 rows of four shifted byte groups using source masks and read-before-OR destination writes.
+PgOrShifted32x16 proc far
     push bp
     mov bp,sp
     push ds
@@ -4395,7 +4452,7 @@ u9_233a proc far
     push di
     push ax
     mov ax,bx
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov ax,di
@@ -4406,11 +4463,11 @@ u9_233a proc far
     add bx,ax
     mov ax,word ptr [bp+8]
     and ax,7
-    mov byte ptr cs:[sprite_unshift],al
+    mov byte ptr cs:[PgSpriteRightShift],al
     mov al,8
-    sub al,byte ptr cs:[sprite_unshift]
-    mov byte ptr cs:[sprite_mask_left],al
-    mov ax,word ptr cs:[draw_page]
+    sub al,byte ptr cs:[PgSpriteRightShift]
+    mov byte ptr cs:[PgSpriteLeftShift],al
+    mov ax,word ptr cs:[PgDrawPage]
     cmp al,0
     je opaque_shift_equal_4e
     mov cx,ax
@@ -4426,37 +4483,37 @@ opaque_shift_equal_4e:
     out dx,al
     mov cx,10h
 opaque_shift_repeat_5d:
-    mov byte ptr cs:[sprite_shift],4
+    mov byte ptr cs:[PgSpriteBytesRemaining],4
 opaque_shift_repeat_63:
-    mov dl,byte ptr cs:[sprite_shift]
+    mov dl,byte ptr cs:[PgSpriteBytesRemaining]
     dec dl
-    mov byte ptr cs:[sprite_shift],dl
+    mov byte ptr cs:[PgSpriteBytesRemaining],dl
     push cx
     mov dx,3ceh
     lodsb
-    mov byte ptr cs:[sprite_mask_right],al
-    mov ah,byte ptr cs:[sprite_mask_right]
-    mov cl,byte ptr cs:[sprite_unshift]
+    mov byte ptr cs:[PgSpriteSourceMask],al
+    mov ah,byte ptr cs:[PgSpriteSourceMask]
+    mov cl,byte ptr cs:[PgSpriteRightShift]
     shr ah,cl
     mov al,8
     out dx,ax
     lodsb
-    mov byte ptr cs:[sprite_rows],al
+    mov byte ptr cs:[PgSpritePlane0Byte],al
     shr al,cl
     mov di,word ptr es:[bx]
     or byte ptr es:[bx],al
     lodsb
-    mov byte ptr cs:[sprite_plane1],al
+    mov byte ptr cs:[PgSpritePlane1],al
     shr al,cl
     mov di,word ptr es:[bx]
     or byte ptr es:[bx],al
     lodsb
-    mov byte ptr cs:[sprite_plane2],al
+    mov byte ptr cs:[PgSpritePlane2],al
     shr al,cl
     mov di,word ptr es:[bx]
     or byte ptr es:[bx],al
     lodsb
-    mov byte ptr cs:[sprite_plane3],al
+    mov byte ptr cs:[PgSpritePlane3],al
     shr al,cl
     mov di,word ptr es:[bx]
     or byte ptr es:[bx],al
@@ -4469,32 +4526,32 @@ opaque_shift_repeat_c0:
 opaque_shift_continue_c2:
     inc bx
     mov dx,3ceh
-    mov ah,byte ptr cs:[sprite_mask_right]
-    mov cl,byte ptr cs:[sprite_mask_left]
+    mov ah,byte ptr cs:[PgSpriteSourceMask]
+    mov cl,byte ptr cs:[PgSpriteLeftShift]
     shl ah,cl
     mov al,8
     out dx,ax
-    mov al,byte ptr cs:[sprite_rows]
+    mov al,byte ptr cs:[PgSpritePlane0Byte]
     shl al,cl
     mov di,word ptr es:[bx]
     or byte ptr es:[bx],al
-    mov al,byte ptr cs:[sprite_plane1]
+    mov al,byte ptr cs:[PgSpritePlane1]
     shl al,cl
     mov di,word ptr es:[bx]
     or byte ptr es:[bx],al
-    mov al,byte ptr cs:[sprite_plane2]
+    mov al,byte ptr cs:[PgSpritePlane2]
     shl al,cl
     mov di,word ptr es:[bx]
     or byte ptr es:[bx],al
-    mov al,byte ptr cs:[sprite_plane3]
+    mov al,byte ptr cs:[PgSpritePlane3]
     shl al,cl
     mov di,word ptr es:[bx]
     or byte ptr es:[bx],al
     pop cx
-    mov dl,byte ptr cs:[sprite_shift]
+    mov dl,byte ptr cs:[PgSpriteBytesRemaining]
     cmp dl,0
     jg opaque_shift_repeat_c0
-    add bx,word ptr cs:[screen_stride]
+    add bx,word ptr cs:[PgScreenStrideBytes]
     dec bx
     dec bx
     dec bx
@@ -4508,16 +4565,17 @@ opaque_shift_continue_c2:
     pop ds
     pop bp
     retf 8
-u9_233a endp
+PgOrShifted32x16 endp
 
 ; blit opaque shifted 16x16
-u9_2463 proc far
+; Processes 16 rows of two shifted byte groups using source masks and read-before-OR destination writes.
+PgOrShifted16x16 proc far
     push bp
     mov bp,sp
     push ds
     push si
     push di
-    mov di,word ptr cs:[screen_stride]
+    mov di,word ptr cs:[PgScreenStrideBytes]
     dec di
     dec di
     lds si,dword ptr [bp+0ah]
@@ -4527,7 +4585,7 @@ u9_2463 proc far
     push di
     push ax
     mov ax,bx
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov ax,di
@@ -4538,26 +4596,26 @@ u9_2463 proc far
     add bx,ax
     mov ax,word ptr [bp+8]
     and ax,7
-    mov byte ptr cs:[sprite_unshift],al
+    mov byte ptr cs:[PgSpriteRightShift],al
     mov al,8
-    sub al,byte ptr cs:[sprite_unshift]
-    mov byte ptr cs:[sprite_mask_left],al
+    sub al,byte ptr cs:[PgSpriteRightShift]
+    mov byte ptr cs:[PgSpriteLeftShift],al
     mov dx,3c4h
     mov al,2
     out dx,al
     mov cx,10h
 opaque_shift16_repeat_4e:
-    mov byte ptr cs:[sprite_shift],2
+    mov byte ptr cs:[PgSpriteBytesRemaining],2
 opaque_shift16_repeat_54:
-    mov dl,byte ptr cs:[sprite_shift]
+    mov dl,byte ptr cs:[PgSpriteBytesRemaining]
     dec dl
-    mov byte ptr cs:[sprite_shift],dl
+    mov byte ptr cs:[PgSpriteBytesRemaining],dl
     push cx
     mov dx,3ceh
     lodsb
-    mov byte ptr cs:[sprite_mask_right],al
-    mov ah,byte ptr cs:[sprite_mask_right]
-    mov cl,byte ptr cs:[sprite_unshift]
+    mov byte ptr cs:[PgSpriteSourceMask],al
+    mov ah,byte ptr cs:[PgSpriteSourceMask]
+    mov cl,byte ptr cs:[PgSpriteRightShift]
     shr ah,cl
     mov al,8
     out dx,ax
@@ -4565,28 +4623,28 @@ opaque_shift16_repeat_54:
     mov al,0fh
     out dx,al
     lodsb
-    mov byte ptr cs:[sprite_rows],al
+    mov byte ptr cs:[PgSpritePlane0Byte],al
     shr al,cl
     mov ah,byte ptr es:[bx]
     or byte ptr es:[bx],al
     mov al,0fh
     out dx,al
     lodsb
-    mov byte ptr cs:[sprite_plane1],al
+    mov byte ptr cs:[PgSpritePlane1],al
     shr al,cl
     mov ah,byte ptr es:[bx]
     or byte ptr es:[bx],al
     mov al,0fh
     out dx,al
     lodsb
-    mov byte ptr cs:[sprite_plane2],al
+    mov byte ptr cs:[PgSpritePlane2],al
     shr al,cl
     mov ah,byte ptr es:[bx]
     or byte ptr es:[bx],al
     mov al,0fh
     out dx,al
     lodsb
-    mov byte ptr cs:[sprite_plane3],al
+    mov byte ptr cs:[PgSpritePlane3],al
     shr al,cl
     mov ah,byte ptr es:[bx]
     or byte ptr es:[bx],al
@@ -4599,38 +4657,38 @@ opaque_shift16_repeat_c0:
 opaque_shift16_continue_c2:
     inc bx
     mov dx,3ceh
-    mov ah,byte ptr cs:[sprite_mask_right]
-    mov cl,byte ptr cs:[sprite_mask_left]
+    mov ah,byte ptr cs:[PgSpriteSourceMask]
+    mov cl,byte ptr cs:[PgSpriteLeftShift]
     shl ah,cl
     mov al,8
     out dx,ax
     mov dx,3c5h
     mov al,0fh
     out dx,al
-    mov al,byte ptr cs:[sprite_rows]
+    mov al,byte ptr cs:[PgSpritePlane0Byte]
     shl al,cl
     mov ah,byte ptr es:[bx]
     or byte ptr es:[bx],al
     mov al,0fh
     out dx,al
-    mov al,byte ptr cs:[sprite_plane1]
+    mov al,byte ptr cs:[PgSpritePlane1]
     shl al,cl
     mov ah,byte ptr es:[bx]
     or byte ptr es:[bx],al
     mov al,0fh
     out dx,al
-    mov al,byte ptr cs:[sprite_plane2]
+    mov al,byte ptr cs:[PgSpritePlane2]
     shl al,cl
     mov ah,byte ptr es:[bx]
     or byte ptr es:[bx],al
     mov al,0fh
     out dx,al
-    mov al,byte ptr cs:[sprite_plane3]
+    mov al,byte ptr cs:[PgSpritePlane3]
     shl al,cl
     mov ah,byte ptr es:[bx]
     or byte ptr es:[bx],al
     pop cx
-    mov dl,byte ptr cs:[sprite_shift]
+    mov dl,byte ptr cs:[PgSpriteBytesRemaining]
     cmp dl,0
     jg opaque_shift16_repeat_c0
     add bx,di
@@ -4646,10 +4704,11 @@ opaque_shift16_continue_c2:
     pop ds
     pop bp
     retf 8
-u9_2463 endp
+PgOrShifted16x16 endp
 
 ; blit opaque variable sprite
-u9_259a proc far
+; Loops over exactly eight rows, rotates the mask/plane bytes by X alignment and performs read-before-OR.
+PgOrShifted8x8 proc far
     push bp
     mov bp,sp
     push ds
@@ -4662,7 +4721,7 @@ u9_259a proc far
     push di
     push ax
     mov ax,bx
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov ax,di
@@ -4671,13 +4730,13 @@ u9_259a proc far
     and cx,7
     xor cl,7
     inc cl
-    mov byte ptr cs:[sprite_stride],cl
+    mov byte ptr cs:[PgGlyphLeftShift],cl
     mov bx,word ptr [bp+8]
     shr bx,1
     shr bx,1
     shr bx,1
     add bx,ax
-    mov ax,word ptr cs:[draw_page]
+    mov ax,word ptr cs:[PgDrawPage]
     cmp al,0
     je opaque_var_equal_4b
     mov cx,ax
@@ -4696,37 +4755,37 @@ opaque_var_repeat_5a:
     push cx
     lodsb
     mov ah,0
-    mov cl,byte ptr cs:[sprite_stride]
+    mov cl,byte ptr cs:[PgGlyphLeftShift]
     rol ax,cl
-    mov byte ptr cs:[sprite_width],ah
-    mov byte ptr cs:[sprite_height],al
+    mov byte ptr cs:[PgGlyphMaskHigh],ah
+    mov byte ptr cs:[PgGlyphMaskLow],al
     lodsb
     mov ah,0
-    mov cl,byte ptr cs:[sprite_stride]
+    mov cl,byte ptr cs:[PgGlyphLeftShift]
     rol ax,cl
     mov cx,ax
     mov dx,3ceh
     mov al,8
-    mov ah,byte ptr cs:[sprite_width]
+    mov ah,byte ptr cs:[PgGlyphMaskHigh]
     out dx,ax
     mov di,word ptr es:[bx]
     or byte ptr es:[bx],ch
-    mov ah,byte ptr cs:[sprite_height]
+    mov ah,byte ptr cs:[PgGlyphMaskLow]
     out dx,ax
     mov di,word ptr es:[bx+1]
     or byte ptr es:[bx+1],cl
     lodsb
     mov ah,0
-    mov cl,byte ptr cs:[sprite_stride]
+    mov cl,byte ptr cs:[PgGlyphLeftShift]
     rol ax,cl
     mov cx,ax
     mov dx,3ceh
     mov al,8
-    mov ah,byte ptr cs:[sprite_width]
+    mov ah,byte ptr cs:[PgGlyphMaskHigh]
     out dx,ax
     mov di,word ptr es:[bx]
     or byte ptr es:[bx],ch
-    mov ah,byte ptr cs:[sprite_height]
+    mov ah,byte ptr cs:[PgGlyphMaskLow]
     out dx,ax
     mov di,word ptr es:[bx+1]
     or byte ptr es:[bx+1],cl
@@ -4737,35 +4796,35 @@ opaque_var_row_loop_c7:
 opaque_var_continue_c9:
     lodsb
     mov ah,0
-    mov cl,byte ptr cs:[sprite_stride]
+    mov cl,byte ptr cs:[PgGlyphLeftShift]
     rol ax,cl
     mov cx,ax
     mov dx,3ceh
     mov al,8
-    mov ah,byte ptr cs:[sprite_width]
+    mov ah,byte ptr cs:[PgGlyphMaskHigh]
     out dx,ax
     mov di,word ptr es:[bx]
     or byte ptr es:[bx],ch
-    mov ah,byte ptr cs:[sprite_height]
+    mov ah,byte ptr cs:[PgGlyphMaskLow]
     out dx,ax
     mov di,word ptr es:[bx+1]
     or byte ptr es:[bx+1],cl
     lodsb
     mov ah,0
-    mov cl,byte ptr cs:[sprite_stride]
+    mov cl,byte ptr cs:[PgGlyphLeftShift]
     rol ax,cl
     mov cx,ax
     mov dx,3ceh
     mov al,8
-    mov ah,byte ptr cs:[sprite_width]
+    mov ah,byte ptr cs:[PgGlyphMaskHigh]
     out dx,ax
     mov di,word ptr es:[bx]
     or byte ptr es:[bx],ch
-    mov ah,byte ptr cs:[sprite_height]
+    mov ah,byte ptr cs:[PgGlyphMaskLow]
     out dx,ax
     mov di,word ptr es:[bx+1]
     or byte ptr es:[bx+1],cl
-    add bx,word ptr cs:[screen_stride]
+    add bx,word ptr cs:[PgScreenStrideBytes]
     pop cx
     loop opaque_var_row_loop_c7
     mov dx,3ceh
@@ -4776,78 +4835,79 @@ opaque_var_continue_c9:
     pop ds
     pop bp
     retf 8
-u9_259a endp
+PgOrShifted8x8 endp
 
-font_offset            dw ?
-font_segment           dw ?
-font_height            dw ?
-font_default_offset    dw 0
-font_default_height    dw 8
-rom8_offset            dw ?
-rom8_segment           dw ?
-rom8_height            dw 8
-rom14_offset           dw ?
-rom14_segment          dw ?
-rom14_height           dw 14
-font_work3             dw ?
-text_direction         dw 0
+PgFontOffset            dw ?
+PgFontSegment           dw ?
+PgFontHeight            dw ?
+PgFontDefaultOffset    dw 0
+PgFontDefaultHeight    dw 8
+PgRom8Offset            dw ?
+PgRom8Segment           dw ?
+PgRom8Height            dw 8
+PgRom14Offset           dw ?
+PgRom14Segment          dw ?
+PgRom14Height           dw 14
+PgFontWork3             dw ?
+PgTextDirection         dw 0
 ; draw pascal string
 ; PUSH DS precedes BP: arguments start at BP+8.
-u9_26e9 proc far
+; src/asm/u9.asm u9_26e9: draw pascal string.
+PgDrawPascalString proc far
     push ds
     push bp
     mov bp,sp
     sub sp,4
     push di
     push si
-    call near ptr text_get_cs_base
-text_get_cs_base:
+    call near ptr PgLocateTextCodeBase
+PgLocateTextCodeBase:
     pop ax
-    sub ax,offset text_get_cs_base
-    mov word ptr cs:[text_cs_base],ax
-    mov word ptr cs:[text_char_index],0
+    sub ax,offset PgLocateTextCodeBase
+    mov word ptr cs:[PgTextCsBase],ax
+    mov word ptr cs:[PgTextCharIndex],0
 text_repeat_1b:
-    inc word ptr cs:[text_char_index]
+    inc word ptr cs:[PgTextCharIndex]
     les bx,dword ptr [bp+0ch]
     mov al,byte ptr es:[bx]
     xor ah,ah
-    cmp word ptr cs:[text_char_index],ax
+    cmp word ptr cs:[PgTextCharIndex],ax
     jbe text_branch_32
     jmp near ptr text_continue_f0
 text_branch_32:
-    add bx,word ptr cs:[text_char_index]
+    add bx,word ptr cs:[PgTextCharIndex]
     mov al,byte ptr es:[bx]
     xor ah,ah
-    mov word ptr cs:[text_char_code],ax
-    mov ax,word ptr cs:[font_height]
-    mov word ptr cs:[font_rows],ax
-    mul word ptr cs:[text_char_code]
-    mov si,word ptr cs:[font_offset]
-    mov bx,word ptr cs:[font_segment]
+    mov word ptr cs:[PgTextCharCode],ax
+    mov ax,word ptr cs:[PgFontHeight]
+    mov word ptr cs:[PgFontRowCount],ax
+    mul word ptr cs:[PgTextCharCode]
+    mov si,word ptr cs:[PgFontOffset]
+    mov bx,word ptr cs:[PgFontSegment]
     push bx
     pop ds
     add si,ax
-    mov word ptr cs:[glyph_offset],si
-    mov word ptr cs:[glyph_segment],ds
-    mov word ptr cs:[font_row_index],1
+    mov word ptr cs:[PgGlyphOffset],si
+    mov word ptr cs:[PgGlyphSegment],ds
+    mov word ptr cs:[PgFontRowIndex],1
 text_repeat_6c:
     mov ax,word ptr [bp+0ah]
-    mov word ptr cs:[text_x],ax
+    mov word ptr cs:[PgTextX],ax
     mov ax,word ptr [bp+8]
-    mov word ptr cs:[text_y],ax
-    lds si,dword ptr cs:[glyph_offset]
-    inc word ptr cs:[glyph_offset]
+    mov word ptr cs:[PgTextY],ax
+    lds si,dword ptr cs:[PgGlyphOffset]
+    inc word ptr cs:[PgGlyphOffset]
     mov dl,byte ptr [si]
     xor dh,dh
-    mov ax,word ptr cs:[text_direction]
+    mov ax,word ptr cs:[PgTextDirection]
     cmp ax,0
     jne text_different_99
-    call near ptr u9_2829
+    call near ptr PgDrawFontRowHorizontalHelper
     inc word ptr [bp+8]
     jmp short text_continue_ad
 text_different_99:
-    call near ptr u9_28a7
-    mov ax,word ptr cs:[text_direction]
+    call near ptr PgDrawFontRowVerticalHelper
+    mov ax,word ptr cs:[PgTextDirection]
     cmp ax,1
     jne text_different_aa
     inc word ptr [bp+0ah]
@@ -4855,15 +4915,15 @@ text_different_99:
 text_different_aa:
     dec word ptr [bp+0ah]
 text_continue_ad:
-    inc word ptr cs:[font_row_index]
-    mov ax,word ptr cs:[font_row_index]
-    cmp ax,word ptr cs:[font_rows]
+    inc word ptr cs:[PgFontRowIndex]
+    mov ax,word ptr cs:[PgFontRowIndex]
+    cmp ax,word ptr cs:[PgFontRowCount]
     ja text_branch_bf
     jmp short text_repeat_6c
 text_branch_bf:
-    mov ax,word ptr cs:[text_direction]
+    mov ax,word ptr cs:[PgTextDirection]
     mov bx,8
-    mov cx,word ptr cs:[font_rows]
+    mov cx,word ptr cs:[PgFontRowCount]
     cmp ax,0
     jne text_different_d9
     add word ptr [bp+0ah],bx
@@ -4886,10 +4946,11 @@ text_continue_f0:
     pop bp
     pop ds
     retf 8
-u9_26e9 endp
+PgDrawPascalString endp
 
 ; initialize rom fonts
-u9_27e2 proc far
+; src/asm/u9.asm u9_27e2: initialize rom fonts.
+PgInitializeRomFonts proc far
     push bp
     mov bp,sp
     push di
@@ -4904,79 +4965,81 @@ u9_27e2 proc far
     int 10h
     mov ax,bp
     pop bp
-    mov word ptr cs:[rom14_offset],ax
-    mov word ptr cs:[rom14_segment],es
-    mov word ptr cs:[rom14_height],0eh
+    mov word ptr cs:[PgRom14Offset],ax
+    mov word ptr cs:[PgRom14Segment],es
+    mov word ptr cs:[PgRom14Height],0eh
     push bp
     mov ax,1130h
     mov bx,300h
     int 10h
     mov ax,bp
     pop bp
-    mov word ptr cs:[rom8_offset],ax
-    mov word ptr cs:[rom8_segment],es
-    mov word ptr cs:[rom8_height],8
+    mov word ptr cs:[PgRom8Offset],ax
+    mov word ptr cs:[PgRom8Segment],es
+    mov word ptr cs:[PgRom8Height],8
     pop es
     pop ds
     pop si
     pop di
     pop bp
     retf
-u9_27e2 endp
+PgInitializeRomFonts endp
 
 ; draw font row horizontal helper
-u9_2829 proc near
-    mov ax,word ptr cs:[text_x]
+; src/asm/u9.asm u9_2829: draw font row horizontal helper.
+PgDrawFontRowHorizontalHelper proc near
+    mov ax,word ptr cs:[PgTextX]
     and ax,7
     mov si,ax
     mov cx,ax
     ror dl,cl
     xor dh,dh
-    add si,word ptr cs:[text_cs_base]
-    mov al,byte ptr cs:[si+left_masks]
+    add si,word ptr cs:[PgTextCsBase]
+    mov al,byte ptr cs:[si+PgLeftMasks]
     mov cx,ax
     and cx,dx
-    mov word ptr cs:[glyph_left],cx
+    mov word ptr cs:[PgGlyphLeft],cx
     not ax
     and ax,dx
-    mov word ptr cs:[glyph_right],ax
-    mov ax,word ptr cs:[text_x]
-    mov word ptr cs:[font_pixel_x],ax
-    mov ax,word ptr cs:[text_y]
-    mov word ptr cs:[font_pixel_y],ax
-    call near ptr u9_2908
-    mov ax,word ptr cs:[draw_color]
+    mov word ptr cs:[PgGlyphRight],ax
+    mov ax,word ptr cs:[PgTextX]
+    mov word ptr cs:[PgFontPixelX],ax
+    mov ax,word ptr cs:[PgTextY]
+    mov word ptr cs:[PgFontPixelY],ax
+    call near ptr PgFontPixelAddressHelper
+    mov ax,word ptr cs:[PgDrawColor]
     mov bx,0fh
-    call near ptr u9_28f1
-    mov al,byte ptr cs:[draw_operation]
+    call near ptr PgSetEgaSetResetHelper
+    mov al,byte ptr cs:[PgDrawOperation]
     mov ah,0
-    call near ptr u9_28ff
-    mov ax,word ptr cs:[glyph_left]
-    call near ptr u9_28e8
+    call near ptr PgSetEgaDataRotateHelper
+    mov ax,word ptr cs:[PgGlyphLeft]
+    call near ptr PgSetEgaBitMaskHelper
     mov al,byte ptr es:[di]
     mov byte ptr es:[di],al
     inc di
-    mov ax,word ptr cs:[glyph_right]
-    call near ptr u9_28e8
+    mov ax,word ptr cs:[PgGlyphRight]
+    call near ptr PgSetEgaBitMaskHelper
     mov al,byte ptr es:[di]
     mov byte ptr es:[di],al
     mov ax,0ffh
-    call near ptr u9_28e8
+    call near ptr PgSetEgaBitMaskHelper
     xor ax,ax
     xor bx,bx
-    call near ptr u9_28f1
+    call near ptr PgSetEgaSetResetHelper
     xor ax,ax
-    call near ptr u9_28ff
+    call near ptr PgSetEgaDataRotateHelper
     ret
-u9_2829 endp
+PgDrawFontRowHorizontalHelper endp
 
 ; draw font row vertical helper
-u9_28a7 proc near
-    mov ax,word ptr cs:[text_x]
-    mov word ptr cs:[font_pixel_x],ax
-    mov ax,word ptr cs:[text_y]
+; src/asm/u9.asm u9_28a7: draw font row vertical helper.
+PgDrawFontRowVerticalHelper proc near
+    mov ax,word ptr cs:[PgTextX]
+    mov word ptr cs:[PgFontPixelX],ax
+    mov ax,word ptr cs:[PgTextY]
     add ax,8
-    mov word ptr cs:[font_pixel_y],ax
+    mov word ptr cs:[PgFontPixelY],ax
     mov cx,8
     mov bx,80h
 font_vrow_loop_19:
@@ -4986,34 +5049,36 @@ font_vrow_loop_19:
     push dx
     push bx
     push cx
-    call near ptr u9_2936
+    call near ptr PgDrawFontPixelHelper
     pop cx
     pop bx
     pop dx
 font_vrow_equal_28:
     shr bx,1
-    cmp word ptr cs:[text_direction],1
+    cmp word ptr cs:[PgTextDirection],1
     jne font_vrow_different_39
-    dec word ptr cs:[font_pixel_y]
+    dec word ptr cs:[PgFontPixelY]
     jmp short font_vrow_continue_3e
 font_vrow_different_39:
-    inc word ptr cs:[font_pixel_y]
+    inc word ptr cs:[PgFontPixelY]
 font_vrow_continue_3e:
     loop font_vrow_loop_19
     ret
-u9_28a7 endp
+PgDrawFontRowVerticalHelper endp
 
 ; set ega bit mask helper
-u9_28e8 proc near
+; src/asm/u9.asm u9_28e8: set ega bit mask helper.
+PgSetEgaBitMaskHelper proc near
     mov ah,al
     mov al,8
     mov dx,3ceh
     out dx,ax
     ret
-u9_28e8 endp
+PgSetEgaBitMaskHelper endp
 
 ; set ega set reset helper
-u9_28f1 proc near
+; src/asm/u9.asm u9_28f1: set ega set reset helper.
+PgSetEgaSetResetHelper proc near
     mov ah,al
     mov al,0
     mov dx,3ceh
@@ -5022,28 +5087,30 @@ u9_28f1 proc near
     mov al,1
     out dx,ax
     ret
-u9_28f1 endp
+PgSetEgaSetResetHelper endp
 
 ; set ega data rotate helper
-u9_28ff proc near
+; src/asm/u9.asm u9_28ff: set ega data rotate helper.
+PgSetEgaDataRotateHelper proc near
     mov ah,al
     mov al,3
     mov dx,3ceh
     out dx,ax
     ret
-u9_28ff endp
+PgSetEgaDataRotateHelper endp
 
 ; font pixel address helper
-u9_2908 proc near
-    mov ax,word ptr cs:[font_pixel_y]
-    mov cx,word ptr cs:[screen_stride]
+; src/asm/u9.asm u9_2908: font pixel address helper.
+PgFontPixelAddressHelper proc near
+    mov ax,word ptr cs:[PgFontPixelY]
+    mov cx,word ptr cs:[PgScreenStrideBytes]
     mul cx
-    mov bx,word ptr cs:[font_pixel_x]
+    mov bx,word ptr cs:[PgFontPixelX]
     mov cx,3
     shr bx,cl
     add ax,bx
     mov di,ax
-    mov cx,word ptr cs:[draw_page]
+    mov cx,word ptr cs:[PgDrawPage]
     mov ax,0a000h
     cmp cx,0
     je font_address_equal_2b
@@ -5053,74 +5120,77 @@ font_address_loop_26:
 font_address_equal_2b:
     mov es,ax
     ret
-u9_2908 endp
+PgFontPixelAddressHelper endp
 
 ; draw font pixel helper
-u9_2936 proc near
-    call near ptr u9_2908
-    mov ax,word ptr cs:[font_pixel_x]
+; src/asm/u9.asm u9_2936: draw font pixel helper.
+PgDrawFontPixelHelper proc near
+    call near ptr PgFontPixelAddressHelper
+    mov ax,word ptr cs:[PgFontPixelX]
     and ax,7
-    mov bx,word ptr cs:[text_cs_base]
+    mov bx,word ptr cs:[PgTextCsBase]
     add bx,ax
-    mov ah,byte ptr cs:[bx+pixel_masks]
+    mov ah,byte ptr cs:[bx+PgPixelMasks]
     mov al,8
     mov dx,3ceh
     out dx,ax
-    mov al,byte ptr cs:[draw_operation]
+    mov al,byte ptr cs:[PgDrawOperation]
     mov ah,0
     mov ah,al
     mov al,3
     out dx,ax
-    mov ax,word ptr cs:[draw_color]
+    mov ax,word ptr cs:[PgDrawColor]
     mov bx,0fh
-    call near ptr u9_28f1
+    call near ptr PgSetEgaSetResetHelper
     mov ch,byte ptr es:[di]
     mov byte ptr es:[di],0ffh
     xor ax,ax
-    call near ptr u9_28ff
+    call near ptr PgSetEgaDataRotateHelper
     xor ax,ax
     xor bx,bx
-    call near ptr u9_28f1
+    call near ptr PgSetEgaSetResetHelper
     mov ax,0ffh
-    call near ptr u9_28e8
+    call near ptr PgSetEgaBitMaskHelper
     ret
-u9_2936 endp
+PgDrawFontPixelHelper endp
 
 ; select rom font
-u9_2981 proc far
+; src/asm/u9.asm u9_2981: select rom font.
+PgSelectRomFont proc far
     push bp
     mov bp,sp
     mov ax,word ptr [bp+6]
     cmp ax,1
     je selectfont_equal_26
-    mov ax,word ptr cs:[rom14_offset]
-    mov word ptr cs:[font_offset],ax
-    mov ax,word ptr cs:[rom14_segment]
-    mov word ptr cs:[font_segment],ax
-    mov ax,word ptr cs:[rom14_height]
-    mov word ptr cs:[font_height],ax
+    mov ax,word ptr cs:[PgRom14Offset]
+    mov word ptr cs:[PgFontOffset],ax
+    mov ax,word ptr cs:[PgRom14Segment]
+    mov word ptr cs:[PgFontSegment],ax
+    mov ax,word ptr cs:[PgRom14Height]
+    mov word ptr cs:[PgFontHeight],ax
     jmp short selectfont_continue_3e
     nop
 selectfont_equal_26:
-    mov ax,word ptr cs:[rom8_offset]
-    mov word ptr cs:[font_offset],ax
-    mov ax,word ptr cs:[rom8_segment]
-    mov word ptr cs:[font_segment],ax
-    mov ax,word ptr cs:[rom8_height]
-    mov word ptr cs:[font_height],ax
+    mov ax,word ptr cs:[PgRom8Offset]
+    mov word ptr cs:[PgFontOffset],ax
+    mov ax,word ptr cs:[PgRom8Segment]
+    mov word ptr cs:[PgFontSegment],ax
+    mov ax,word ptr cs:[PgRom8Height]
+    mov word ptr cs:[PgFontHeight],ax
 selectfont_continue_3e:
     pop bp
     retf 2
-u9_2981 endp
+PgSelectRomFont endp
 
 ; blit opaque 32x16
-u9_29c3 proc far
+; src/asm/u9.asm u9_29c3: blit opaque 32x16.
+PgBlitOpaque32x16 proc far
     push bp
     mov bp,sp
     push ds
     push di
     push si
-    mov di,word ptr cs:[screen_stride]
+    mov di,word ptr cs:[PgScreenStrideBytes]
     dec di
     dec di
     dec di
@@ -5132,14 +5202,14 @@ u9_29c3 proc far
     push di
     push ax
     mov ax,bx
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov ax,di
     pop di
     mov bx,word ptr [bp+8]
     add bx,ax
-    mov ax,word ptr cs:[draw_page]
+    mov ax,word ptr cs:[PgDrawPage]
     cmp al,0
     je opaque32_equal_3e
     mov cx,ax
@@ -5242,16 +5312,17 @@ opaque32_continue_8a:
     pop ds
     pop bp
     retf 8
-u9_29c3 endp
+PgBlitOpaque32x16 endp
 
 ; blit opaque 16x16
-u9_2a9f proc far
+; src/asm/u9.asm u9_2a9f: blit opaque 16x16.
+PgBlitOpaque16x16 proc far
     push bp
     mov bp,sp
     push ds
     push di
     push si
-    mov di,word ptr cs:[screen_stride]
+    mov di,word ptr cs:[PgScreenStrideBytes]
     dec di
     dec di
     lds si,dword ptr [bp+0ah]
@@ -5261,14 +5332,14 @@ u9_2a9f proc far
     push di
     push ax
     mov ax,bx
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov ax,di
     pop di
     mov bx,word ptr [bp+8]
     add bx,ax
-    mov ax,word ptr cs:[draw_page]
+    mov ax,word ptr cs:[PgDrawPage]
     cmp al,0
     je opaque16_equal_3c
     mov cx,ax
@@ -5330,21 +5401,22 @@ opaque16_row_loop_45:
     pop ds
     pop bp
     retf 8
-u9_2a9f endp
+PgBlitOpaque16x16 endp
 
 ; blit opaque 8x8
-u9_2b38 proc far
+; src/asm/u9.asm u9_2b38: blit opaque 8x8.
+PgBlitOpaque8x8 proc far
     push bp
     mov bp,sp
     push ds
     push di
     push si
-    mov di,word ptr cs:[screen_stride]
+    mov di,word ptr cs:[PgScreenStrideBytes]
     lds si,dword ptr [bp+0ah]
     mov dx,0a000h
     mov es,dx
     mov bx,word ptr [bp+8]
-    mov dx,word ptr cs:[draw_page]
+    mov dx,word ptr cs:[PgDrawPage]
     cmp dl,0
     je opaque8_equal_28
     mov cx,ax
@@ -5356,7 +5428,7 @@ opaque8_equal_28:
     push di
     push ax
     mov ax,dx
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov ax,di
@@ -5397,20 +5469,21 @@ opaque8_row_loop_45:
     pop ds
     pop bp
     retf 8
-u9_2b38 endp
+PgBlitOpaque8x8 endp
 
 ; blit opaque 32x16 clipped
-u9_2bb2 proc far
+; src/asm/u9.asm u9_2bb2: blit opaque 32x16 clipped.
+PgBlitOpaque32x16Clipped proc far
     push bp
     mov bp,sp
     push ds
     push di
     push si
     push cx
-    mov word ptr cs:[sprite_clip_top],0
-    mov word ptr cs:[sprite_clip_bottom],0
-    mov word ptr cs:[sprite_clip_left],0
-    mov word ptr cs:[sprite_clip_right],0
+    mov word ptr cs:[PgSpriteTopClipped],0
+    mov word ptr cs:[PgSpriteBottomClipped],0
+    mov word ptr cs:[PgSpriteLeftClipped],0
+    mov word ptr cs:[PgSpriteRightClipped],0
     mov bx,word ptr [bp+8]
     cmp bx,-4
     jle clip_opaque32_le_52
@@ -5420,7 +5493,7 @@ u9_2bb2 proc far
     je clip_opaque32_equal_60
     cmp bx,-1
     je clip_opaque32_equal_67
-    mov cx,word ptr cs:[screen_stride]
+    mov cx,word ptr cs:[PgScreenStrideBytes]
     cmp bx,cx
     jge clip_opaque32_le_52
     dec cx
@@ -5433,21 +5506,21 @@ u9_2bb2 proc far
     cmp bx,cx
     je clip_opaque32_equal_7f
 clip_opaque32_le_52:
-    mov word ptr cs:[sprite_clip_right],1
+    mov word ptr cs:[PgSpriteRightClipped],1
 clip_opaque32_equal_59:
-    mov word ptr cs:[sprite_clip_left],1
+    mov word ptr cs:[PgSpriteLeftClipped],1
 clip_opaque32_equal_60:
-    mov word ptr cs:[sprite_clip_bottom],1
+    mov word ptr cs:[PgSpriteBottomClipped],1
 clip_opaque32_equal_67:
-    mov word ptr cs:[sprite_clip_top],1
+    mov word ptr cs:[PgSpriteTopClipped],1
     jmp short clip_opaque32_continue_86
     nop
 clip_opaque32_equal_71:
-    mov word ptr cs:[sprite_clip_bottom],1
+    mov word ptr cs:[PgSpriteBottomClipped],1
 clip_opaque32_equal_78:
-    mov word ptr cs:[sprite_clip_left],1
+    mov word ptr cs:[PgSpriteLeftClipped],1
 clip_opaque32_equal_7f:
-    mov word ptr cs:[sprite_clip_right],1
+    mov word ptr cs:[PgSpriteRightClipped],1
 clip_opaque32_continue_86:
     pop cx
     lds si,dword ptr [bp+0ah]
@@ -5457,14 +5530,14 @@ clip_opaque32_continue_86:
     push di
     push ax
     mov ax,bx
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov ax,di
     pop di
     mov bx,word ptr [bp+8]
     add bx,ax
-    mov ax,word ptr cs:[draw_page]
+    mov ax,word ptr cs:[PgDrawPage]
     cmp al,0
     je clip_opaque32_equal_b6
     mov cx,ax
@@ -5478,7 +5551,7 @@ clip_opaque32_equal_b6:
     mov cx,10h
 clip_opaque32_repeat_bf:
     lodsb
-    mov dx,word ptr cs:[sprite_clip_top]
+    mov dx,word ptr cs:[PgSpriteTopClipped]
     cmp dx,1
     je clip_opaque32_equal_ec
     mov dx,3c5h
@@ -5506,7 +5579,7 @@ clip_opaque32_equal_ec:
     lodsb
     inc bx
     lodsb
-    mov dx,word ptr cs:[sprite_clip_bottom]
+    mov dx,word ptr cs:[PgSpriteBottomClipped]
     cmp dx,1
     je clip_opaque32_equal_11e
     mov dx,3c5h
@@ -5535,7 +5608,7 @@ clip_opaque32_equal_11e:
     lodsb
     inc bx
     lodsb
-    mov dx,word ptr cs:[sprite_clip_left]
+    mov dx,word ptr cs:[PgSpriteLeftClipped]
     cmp dx,1
     je clip_opaque32_equal_155
     mov dx,3c5h
@@ -5568,7 +5641,7 @@ clip_opaque32_equal_155:
     lodsb
     inc bx
     lodsb
-    mov dx,word ptr cs:[sprite_clip_right]
+    mov dx,word ptr cs:[PgSpriteRightClipped]
     cmp dx,1
     je clip_opaque32_equal_187
     mov dx,3c5h
@@ -5597,7 +5670,7 @@ clip_opaque32_equal_187:
     lodsb
 clip_opaque32_continue_18b:
     inc bx
-    add bx,word ptr cs:[screen_stride]
+    add bx,word ptr cs:[PgScreenStrideBytes]
     dec bx
     dec bx
     dec bx
@@ -5614,39 +5687,40 @@ clip_opaque32_continue_18b:
     pop ds
     pop bp
     retf 8
-u9_2bb2 endp
+PgBlitOpaque32x16Clipped endp
 
 ; blit opaque 16x16 clipped
-u9_2d5d proc far
+; src/asm/u9.asm u9_2d5d: blit opaque 16x16 clipped.
+PgBlitOpaque16x16Clipped proc far
     push bp
     mov bp,sp
     push ds
     push di
     push si
     push cx
-    mov word ptr cs:[sprite_clip_top],0
-    mov word ptr cs:[sprite_clip_bottom],0
-    mov word ptr cs:[sprite_clip_left],0
-    mov word ptr cs:[sprite_clip_right],0
+    mov word ptr cs:[PgSpriteTopClipped],0
+    mov word ptr cs:[PgSpriteBottomClipped],0
+    mov word ptr cs:[PgSpriteLeftClipped],0
+    mov word ptr cs:[PgSpriteRightClipped],0
     mov bx,word ptr [bp+8]
     cmp bx,-2
     jle clip_opaque16_le_3e
     cmp bx,-1
     je clip_opaque16_equal_45
-    mov cx,word ptr cs:[screen_stride]
+    mov cx,word ptr cs:[PgScreenStrideBytes]
     cmp bx,cx
     jge clip_opaque16_le_3e
     dec cx
     cmp bx,cx
     je clip_opaque16_equal_4f
 clip_opaque16_le_3e:
-    mov word ptr cs:[sprite_clip_right],1
+    mov word ptr cs:[PgSpriteRightClipped],1
 clip_opaque16_equal_45:
-    mov word ptr cs:[sprite_clip_top],1
+    mov word ptr cs:[PgSpriteTopClipped],1
     jmp short clip_opaque16_continue_56
     nop
 clip_opaque16_equal_4f:
-    mov word ptr cs:[sprite_clip_right],1
+    mov word ptr cs:[PgSpriteRightClipped],1
 clip_opaque16_continue_56:
     pop cx
     lds si,dword ptr [bp+0ah]
@@ -5656,14 +5730,14 @@ clip_opaque16_continue_56:
     push di
     push ax
     mov ax,bx
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov ax,di
     pop di
     mov bx,word ptr [bp+8]
     add bx,ax
-    mov ax,word ptr cs:[draw_page]
+    mov ax,word ptr cs:[PgDrawPage]
     cmp al,0
     je clip_opaque16_equal_86
     mov cx,ax
@@ -5677,7 +5751,7 @@ clip_opaque16_equal_86:
     mov cx,10h
 clip_opaque16_row_loop_8f:
     lodsb
-    mov dx,word ptr cs:[sprite_clip_top]
+    mov dx,word ptr cs:[PgSpriteTopClipped]
     cmp dx,1
     je clip_opaque16_equal_bc
     mov dx,3c5h
@@ -5707,7 +5781,7 @@ clip_opaque16_equal_bc:
 clip_opaque16_continue_c0:
     inc bx
     lodsb
-    mov dx,word ptr cs:[sprite_clip_bottom]
+    mov dx,word ptr cs:[PgSpriteBottomClipped]
     cmp dx,1
     je clip_opaque16_equal_ee
     mov dx,3c5h
@@ -5736,7 +5810,7 @@ clip_opaque16_equal_ee:
     lodsb
 clip_opaque16_continue_f2:
     inc bx
-    add bx,word ptr cs:[screen_stride]
+    add bx,word ptr cs:[PgScreenStrideBytes]
     dec bx
     dec bx
     loop clip_opaque16_row_loop_8f
@@ -5751,10 +5825,11 @@ clip_opaque16_continue_f2:
     pop ds
     pop bp
     retf 8
-u9_2d5d endp
+PgBlitOpaque16x16Clipped endp
 
 ; copy cached video tile 16x16
-u9_2e6d proc far
+; src/asm/u9.asm u9_2e6d: copy cached video tile 16x16.
+PgCopyCachedVideoTile16x16 proc far
     push bp
     mov bp,sp
     push si
@@ -5770,7 +5845,7 @@ u9_2e6d proc far
     push di
     push ax
     mov ax,bx
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,ax
     pop ax
     mov ax,di
@@ -5788,7 +5863,7 @@ u9_2e6d proc far
     out dx,al
     mov cx,1
     mov dl,10h
-    mov ax,word ptr cs:[screen_stride]
+    mov ax,word ptr cs:[PgScreenStrideBytes]
     dec ax
     dec ax
 cache_copy_repeat_48:
@@ -5807,10 +5882,11 @@ cache_copy_repeat_48:
     pop si
     pop bp
     retf 6
-u9_2e6d endp
+PgCopyCachedVideoTile16x16 endp
 
 ; copy video screen region 320x200
-u9_2ecf proc far
+; src/asm/u9.asm u9_2ecf: copy video screen region 320x200.
+PgCopyVideoScreenRegion320x200 proc far
     push bp
     mov bp,sp
     push si
@@ -5820,11 +5896,11 @@ u9_2ecf proc far
     mov es,dx
     mov ds,dx
     mov ax,word ptr [bp+0ah]
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov si,word ptr [bp+0ch]
     add si,ax
     mov ax,word ptr [bp+6]
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,word ptr [bp+8]
     add di,ax
     mov dx,3c4h
@@ -5839,7 +5915,7 @@ u9_2ecf proc far
     inc dx
     mov al,1
     out dx,al
-    mov ax,word ptr cs:[screen_stride]
+    mov ax,word ptr cs:[PgScreenStrideBytes]
     sub ax,28h
     mov bx,0c8h
 screen_copy_repeat_47:
@@ -5858,10 +5934,11 @@ screen_copy_repeat_47:
     pop si
     pop bp
     retf 8
-u9_2ecf endp
+PgCopyVideoScreenRegion320x200 endp
 
 ; copy video band 320x8
-u9_2f32 proc far
+; Copies eight 40-byte rows from VRAM offset 28h to offset 0; u3_0261 calls it before drawing the status bar.
+PgCopyStatusBandTemplate proc far
     push bp
     mov bp,sp
     push si
@@ -5902,11 +5979,12 @@ band_copy_repeat_2f:
     pop si
     pop bp
     retf
-u9_2f32 endp
+PgCopyStatusBandTemplate endp
 
 ; copy video tile 16x16 unused cdecl
 ; Active caller-cleanup RETF, then unreachable Pascal RETF n.
-u9_2f7b proc far
+; src/asm/u9.asm u9_2f7b: copy video tile 16x16 unused cdecl.
+PgCopyVideoTile16x16UnusedCdecl proc far
     push bp
     mov bp,sp
     push si
@@ -5916,11 +5994,11 @@ u9_2f7b proc far
     mov es,dx
     mov ds,dx
     mov ax,word ptr [bp+0ah]
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov si,word ptr [bp+0ch]
     add si,ax
     mov ax,word ptr [bp+6]
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,word ptr [bp+8]
     add di,ax
     mov dx,3c4h
@@ -5935,7 +6013,7 @@ u9_2f7b proc far
     inc dx
     mov al,1
     out dx,al
-    mov ax,word ptr cs:[screen_stride]
+    mov ax,word ptr cs:[PgScreenStrideBytes]
     dec ax
     dec ax
     mov cx,10h
@@ -5954,11 +6032,12 @@ tile_copy_row_loop_46:
     pop bp
     retf
     retf 8
-u9_2f7b endp
+PgCopyVideoTile16x16UnusedCdecl endp
 
 ; copy video rectangle unused cdecl
 ; Active caller-cleanup RETF, then unreachable Pascal RETF n.
-u9_2fd7 proc far
+; src/asm/u9.asm u9_2fd7: copy video rectangle unused cdecl.
+PgCopyVideoRectangleUnusedCdecl proc far
     push bp
     mov bp,sp
     push si
@@ -5968,11 +6047,11 @@ u9_2fd7 proc far
     mov es,dx
     mov ds,dx
     mov ax,word ptr [bp+0eh]
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov si,word ptr [bp+10h]
     add si,ax
     mov ax,word ptr [bp+0ah]
-    mul word ptr cs:[screen_stride]
+    mul word ptr cs:[PgScreenStrideBytes]
     mov di,word ptr [bp+0ch]
     add di,ax
     mov dx,3c4h
@@ -5987,7 +6066,7 @@ u9_2fd7 proc far
     inc dx
     mov al,1
     out dx,al
-    mov ax,word ptr cs:[screen_stride]
+    mov ax,word ptr cs:[PgScreenStrideBytes]
     mov bx,word ptr [bp+8]
     sub ax,bx
     mov cx,word ptr [bp+6]
@@ -6008,6 +6087,6 @@ rect_copy_row_loop_49:
     pop bp
     retf
     retf 0ch
-u9_2fd7 endp
+PgCopyVideoRectangleUnusedCdecl endp
 CODE ends
 end

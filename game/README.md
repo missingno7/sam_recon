@@ -7,14 +7,22 @@ this directory. Run BUILD 1, BUILD 2 or BUILD 3. Define exactly one SAMn
 symbol; BUILD selects it for both Pascal and assembly. The batch assembles
 all six objects, makes SAM.PAS and its units, copies SAM.EXE to SAMn.EXE,
 then packs that copy. SAM.EXE and SAM.MAP retain the unpacked build.
-BUILD removes the nine generated U*.TPU files before compiling, so changing
+BUILD removes the nine generated game-unit TPU files before compiling, so changing
 episodes rebuilds every game unit. The host verifier always stages fresh,
 isolated copies for each episode.
 
 | File | Contents |
 |---|---|
 | SAM.PAS | Program, interrupt handlers and main loop |
-| U1.PAS through U9.PAS | Original translation units; logical names retained |
+| SAMPLAY.PAS | Actor updates, movement, collision and pickups (U1) |
+| SAMLEVEL.PAS | Level loading and layer drawing (U2) |
+| SAMUI.PAS | Menus, HUD, saved games and resource loading (U3) |
+| TEXT80.PAS | Text-mode drawing and adapter detection (U4) |
+| PCXGENUS.PAS | Genus PCX toolkit interface (U5) |
+| GAMEJOY.PAS | Joystick interface (U6) |
+| SAMSOUND.PAS | PC-speaker effect selection (U7) |
+| SAMDATA.PAS | Shared declarations, defaults and asset decoder (U8) |
+| PROGRPHX.PAS | ProGraphx EGA/VGA toolbox interface (U9) |
 | CMOSPIT.ASM | Program CMOS/date/PIT routines |
 | TEXTOUT.ASM | U4 text writer |
 | GENUS.ASM | U5 Genus PCX Programmer's Toolkit 3.56 |
@@ -29,8 +37,8 @@ the game under DOS. The host comparison needs this reconstruction repo,
 the pinned tools in layout/toolchain.json and the original game files.
 From the repo run:
 
-    python tools/standalone.py build/workers/sol-standalone/game
-    python tools/standalone.py build/workers/sol-standalone/game --episodes sam2
+    python tools/standalone.py game
+    python tools/standalone.py game --episodes sam2
 
 The accepted whole-program reconstruction proves every defined code byte,
 the DATA image, relocation set, entry/stack/allocation fields, link order
@@ -49,6 +57,10 @@ therefore also differ from the originals; packed byte equality is not
 claimed. LZEXE must preserve the freshly linked load image exactly.
 
 Episode conditionals preserve whole declarations/statements and shared
-source appears once. Address identifiers and U1..U9 names are retained
-for the later readability phase. Original binaries/assets and historical
-tool binaries are not included in this tree.
+source appears once. Semantic identifiers come from layout/names.json, which
+keeps their logical coordinates, confidence and behavioral evidence. Routine
+comments describe the existing code; main/unit initialization blocks retain
+their original structure. SAM.PAS stays the build entry file and its program
+identifier is SAMMAIN. The six object filenames and link directives remain
+unchanged. Original binaries/assets and historical tool binaries are not
+included in this tree.

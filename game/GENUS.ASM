@@ -4,42 +4,43 @@
 ; Original register preservation, Pascal cleanup and hardware paths retained.
 ; Address words are OMF fixups; no instruction-byte emission or offset steering.
 DATA segment byte public
-extrn d_0000:byte
-extrn d_008A:byte
-extrn d_21E0:byte
-extrn d_21E2:byte
-extrn d_21E4:byte
-extrn d_21E6:byte
-extrn d_2280:byte
-extrn d_2A8A:byte
-extrn d_2A9C:byte
-extrn d_2E9C:byte
-extrn d_2E9E:byte
-extrn d_2EA0:byte
-extrn d_2EA2:byte
-extrn d_3372:byte
-extrn d_337E:byte
-extrn d_338A:byte
+extrn GenusPcxIdentity:byte
+extrn PcxDisplayDescriptions:byte
+extrn PcxSelectedDisplay:byte
+extrn PcxGraphicsModeState:byte
+extrn PcxDisplayPageState:byte
+extrn PcxModeCheckPolicy:byte
+extrn PcxDefaultReadBuffer:byte
+extrn PcxReadState:byte
+extrn PcxPrinterScanline:byte
+extrn PcxPrintedSourceRow:byte
+extrn PcxPrinterDeviceClass:byte
+extrn PcxPrinterResolutionClass:byte
+extrn PcxDisplayTable:byte
+extrn PcxHerculesGraphicsCrtc:byte
+extrn PcxHerculesTextCrtc:byte
+extrn PcxPrinterState:byte
 DATA ends
 
 CODE segment byte public
 assume cs:CODE,ds:DATA
-public u5_000f
-public u5_0047
-public u5_00eb
-public u5_01ac
-public u5_026b
-public u5_0d2d
-public u5_0dc7
-public u5_1915
-public u5_1ac6
-public u5_1bf7
-public u5_2020
-public u5_20a2
+public PcxSetDisplayType
+public PcxSetGraphicsOrTextMode
+public PcxGetDisplayType
+public PcxGetDisplayDescriptor
+public PcxInitializeVideoDescriptors
+public PcxDisplayBuffer
+public PcxInitializeDisplayDispatch
+public PcxDisplayFile
+public PcxBeginPrinterImage
+public PcxEndPrinterImage
+public PcxFormatUnsignedDecimal
+public PcxInitializePrinterState
 
 
 ; pcx set display type
-u5_000f proc far
+; src/asm/u5.asm u5_000f: pcx set display type.
+PcxSetDisplayType proc far
     push bp
     mov bp, sp
     sub sp, 2
@@ -47,7 +48,7 @@ u5_000f proc far
     push es
     push si
     push di
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov ds, ax
     mov ax, word ptr [bp + 6]
     cmp ax, 0
@@ -58,7 +59,7 @@ set_display_type_error_1:
     mov word ptr [bp - 2], 0fffah
     jmp short set_display_type_done_1
 set_display_type_next_1:
-    mov word ptr [d_21E0], ax
+    mov word ptr [PcxSelectedDisplay], ax
     mov word ptr [bp - 2], 0
 set_display_type_done_1:
     mov ax, word ptr [bp - 2]
@@ -69,10 +70,11 @@ set_display_type_done_1:
     mov sp, bp
     pop bp
     retf 2
-u5_000f endp
+PcxSetDisplayType endp
 
 ; pcx set graphics or text mode
-u5_0047 proc far
+; src/asm/u5.asm u5_0047: pcx set graphics or text mode.
+PcxSetGraphicsOrTextMode proc far
     push bp
     mov bp, sp
     sub sp, 2
@@ -80,12 +82,12 @@ u5_0047 proc far
     push es
     push si
     push di
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov ds, ax
     mov word ptr [bp - 2], 0
-    mov ax, word ptr [d_21E0]
+    mov ax, word ptr [PcxSelectedDisplay]
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     cmp ax, 0
     jae set_graphics_or_text_mode_next_1
     mov word ptr [bp - 2], ax
@@ -97,8 +99,8 @@ set_graphics_or_text_mode_next_1:
     mov bx, word ptr [bp + 6]
     cmp bx, 1
     jne set_graphics_or_text_mode_next_3
-    mov word ptr [d_21E2], bx
-    mov word ptr [d_21E4], 0
+    mov word ptr [PcxGraphicsModeState], bx
+    mov word ptr [PcxDisplayPageState], 0
     cmp byte ptr es:[di], 9
     je set_graphics_or_text_mode_next_2
     push bx
@@ -117,13 +119,13 @@ set_graphics_or_text_mode_next_1:
     jmp short set_graphics_or_text_mode_done_1
 set_graphics_or_text_mode_next_2:
     mov ax, 2
-    call far ptr u5_0c70
+    call far ptr PcxHerculesModeHelper
     jmp short set_graphics_or_text_mode_done_1
 set_graphics_or_text_mode_next_3:
     cmp bx, 0
     jne set_graphics_or_text_mode_error_1
-    mov word ptr [d_21E2], bx
-    mov word ptr [d_21E4], 0
+    mov word ptr [PcxGraphicsModeState], bx
+    mov word ptr [PcxDisplayPageState], 0
     cmp byte ptr es:[di], 9
     je set_graphics_or_text_mode_next_4
     mov al, 3
@@ -134,7 +136,7 @@ set_graphics_or_text_mode_next_3:
     jmp short set_graphics_or_text_mode_done_1
 set_graphics_or_text_mode_next_4:
     mov ax, 20h
-    call far ptr u5_0c70
+    call far ptr PcxHerculesModeHelper
     jmp short set_graphics_or_text_mode_done_1
 set_graphics_or_text_mode_error_1:
     mov word ptr [bp - 2], 0fff9h
@@ -147,10 +149,11 @@ set_graphics_or_text_mode_done_1:
     mov sp, bp
     pop bp
     retf 2
-u5_0047 endp
+PcxSetGraphicsOrTextMode endp
 
 ; pcx get display type
-u5_00eb proc far
+; src/asm/u5.asm u5_00eb: pcx get display type.
+PcxGetDisplayType proc far
     push bp
     mov bp, sp
     sub sp, 2
@@ -158,9 +161,9 @@ u5_00eb proc far
     push es
     push si
     push di
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov ds, ax
-    mov ax, word ptr [d_21E0]
+    mov ax, word ptr [PcxSelectedDisplay]
     mov word ptr [bp - 2], ax
     cmp ax, 0
     jl get_display_type_error_1
@@ -177,10 +180,11 @@ get_display_type_done_1:
     mov sp, bp
     pop bp
     retf
-u5_00eb endp
+PcxGetDisplayType endp
 
 ; pcx get version string
-u5_011a proc far
+; src/asm/u5.asm u5_011a: pcx get version string.
+PcxGetVersionString proc far
     push bp
     mov bp, sp
     sub sp, 2
@@ -188,14 +192,14 @@ u5_011a proc far
     push es
     push si
     push di
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov ds, ax
     mov ax, word ptr [bp + 8]
     mov es, ax
     mov di, word ptr [bp + 6]
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov ds, ax
-    mov si, offset d_0000 + 01Ah
+    mov si, offset GenusPcxIdentity + 01Ah
     mov cx, 4
     cld
     mov byte ptr es:[di], cl
@@ -210,10 +214,11 @@ u5_011a proc far
     mov sp, bp
     pop bp
     retf 4
-u5_011a endp
+PcxGetVersionString endp
 
 ; pcx set work buffer
-u5_0155 proc far
+; src/asm/u5.asm u5_0155: pcx set work buffer.
+PcxSetWorkBuffer proc far
     push bp
     mov bp, sp
     sub sp, 2
@@ -221,14 +226,14 @@ u5_0155 proc far
     push es
     push si
     push di
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov ds, ax
     mov ax, word ptr [bp + 6]
     cmp ax, 800h
     jae set_work_buffer_next_1
     cmp ax, 0
     jne set_work_buffer_error_1
-    mov word ptr [d_2A8A + 02h], 0ffffh
+    mov word ptr [PcxReadState + 02h], 0ffffh
     mov word ptr [bp - 2], 0
     jmp short set_work_buffer_done_1
 set_work_buffer_error_1:
@@ -236,12 +241,12 @@ set_work_buffer_error_1:
     jmp short set_work_buffer_done_1
 set_work_buffer_next_1:
     mov ax, word ptr [bp + 0ah]
-    mov word ptr [d_2A8A + 02h], ax
+    mov word ptr [PcxReadState + 02h], ax
     mov ax, word ptr [bp + 8]
-    mov word ptr [d_2A8A + 04h], ax
+    mov word ptr [PcxReadState + 04h], ax
     mov ax, word ptr [bp + 6]
     sub ax, 0ah
-    mov word ptr [d_2A8A], ax
+    mov word ptr [PcxReadState], ax
     mov word ptr [bp - 2], 0
 set_work_buffer_done_1:
     mov ax, word ptr [bp - 2]
@@ -252,10 +257,11 @@ set_work_buffer_done_1:
     mov sp, bp
     pop bp
     retf 6
-u5_0155 endp
+PcxSetWorkBuffer endp
 
 ; pcx get display descriptor
-u5_01ac proc far
+; src/asm/u5.asm u5_01ac: pcx get display descriptor.
+PcxGetDisplayDescriptor proc far
     push bp
     mov bp, sp
     sub sp, 2
@@ -263,7 +269,7 @@ u5_01ac proc far
     push es
     push si
     push di
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov ds, ax
     mov ax, word ptr [bp + 6]
     cmp ax, 0
@@ -274,12 +280,12 @@ get_display_descriptor_error_1:
     mov word ptr [bp - 2], 0fffah
     jmp short get_display_descriptor_done_1
 get_display_descriptor_next_1:
-    mov di, offset d_2EA2
+    mov di, offset PcxDisplayTable
     mov ax, 38h
     mov cx, word ptr [bp + 6]
     mul cx
     add di, ax
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov es, ax
     mov ax, di
     mov dx, es
@@ -299,10 +305,11 @@ get_display_descriptor_done_1:
     mov sp, bp
     pop bp
     retf 2
-u5_01ac endp
+PcxGetDisplayDescriptor endp
 
 ; pcx get display information
-u5_0204 proc far
+; src/asm/u5.asm u5_0204: pcx get display information.
+PcxGetDisplayInformation proc far
     push bp
     mov bp, sp
     sub sp, 2
@@ -310,11 +317,11 @@ u5_0204 proc far
     push es
     push si
     push di
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov ds, ax
     mov ax, word ptr [bp + 0ah]
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     cmp ax, 0
     jae get_display_information_next_1
     mov word ptr [bp - 2], 0fc19h
@@ -329,9 +336,9 @@ get_display_information_next_1:
     mov cx, 38h
     cld
     rep movsb
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov ds, ax
-    mov si, offset d_008A
+    mov si, offset PcxDisplayDescriptions
     mov ax, 15h
     mov cx, word ptr [bp + 0ah]
     mul cx
@@ -350,10 +357,11 @@ get_display_information_done_1:
     mov sp, bp
     pop bp
     retf 6
-u5_0204 endp
+PcxGetDisplayInformation endp
 
 ; pcx initialize video descriptors
-u5_026b proc far
+; src/asm/u5.asm u5_026b: pcx initialize video descriptors.
+PcxInitializeVideoDescriptors proc far
     push bp
     mov bp, sp
     sub sp, 2
@@ -361,25 +369,25 @@ u5_026b proc far
     push es
     push si
     push di
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov ds, ax
     mov word ptr [bp - 2], 0
-    mov word ptr [d_21E0], 0ffffh
-    mov word ptr [d_21E2], 0ffffh
-    mov word ptr [d_21E4], 0ffffh
-    mov word ptr [d_21E6], 1
-    mov word ptr [d_2A8A + 06h], 0ffffh
-    mov word ptr [d_2A8A + 02h], 0ffffh
-    mov word ptr [d_2A8A + 04h], 0ffffh
-    mov word ptr [d_2A8A], 800h
-    mov byte ptr [d_2A8A + 0Ch], 0
-    mov byte ptr [d_2A8A + 0Dh], 0
-    mov byte ptr [d_2A8A + 0Eh], 0
-    mov byte ptr [d_2A8A + 0Fh], 0
-    mov byte ptr [d_2A8A + 010h], 0
-    mov ax, seg d_21E0
+    mov word ptr [PcxSelectedDisplay], 0ffffh
+    mov word ptr [PcxGraphicsModeState], 0ffffh
+    mov word ptr [PcxDisplayPageState], 0ffffh
+    mov word ptr [PcxModeCheckPolicy], 1
+    mov word ptr [PcxReadState + 06h], 0ffffh
+    mov word ptr [PcxReadState + 02h], 0ffffh
+    mov word ptr [PcxReadState + 04h], 0ffffh
+    mov word ptr [PcxReadState], 800h
+    mov byte ptr [PcxReadState + 0Ch], 0
+    mov byte ptr [PcxReadState + 0Dh], 0
+    mov byte ptr [PcxReadState + 0Eh], 0
+    mov byte ptr [PcxReadState + 0Fh], 0
+    mov byte ptr [PcxReadState + 010h], 0
+    mov ax, seg PcxSelectedDisplay
     mov es, ax
-    mov bx, offset d_2EA2
+    mov bx, offset PcxDisplayTable
     mov ax, 38h
     mov cx, 0
     mul cx
@@ -404,7 +412,7 @@ u5_026b proc far
     mov word ptr [bx + 32h], 0
     mov word ptr [bx + 34h], 0
     mov word ptr [bx + 36h], 0
-    mov bx, offset d_2EA2
+    mov bx, offset PcxDisplayTable
     mov ax, 38h
     mov cx, 1
     mul cx
@@ -429,7 +437,7 @@ u5_026b proc far
     mov word ptr [bx + 32h], 0
     mov word ptr [bx + 34h], 0
     mov word ptr [bx + 36h], 0
-    mov bx, offset d_2EA2
+    mov bx, offset PcxDisplayTable
     mov ax, 38h
     mov cx, 2
     mul cx
@@ -454,7 +462,7 @@ u5_026b proc far
     mov word ptr [bx + 32h], 0
     mov word ptr [bx + 34h], 0
     mov word ptr [bx + 36h], 0
-    mov bx, offset d_2EA2
+    mov bx, offset PcxDisplayTable
     mov ax, 38h
     mov cx, 3
     mul cx
@@ -479,7 +487,7 @@ u5_026b proc far
     mov word ptr [bx + 32h], 0
     mov word ptr [bx + 34h], 0
     mov word ptr [bx + 36h], 0
-    mov bx, offset d_2EA2
+    mov bx, offset PcxDisplayTable
     mov ax, 38h
     mov cx, 4
     mul cx
@@ -504,7 +512,7 @@ u5_026b proc far
     mov word ptr [bx + 32h], 0
     mov word ptr [bx + 34h], 0
     mov word ptr [bx + 36h], 0
-    mov bx, offset d_2EA2
+    mov bx, offset PcxDisplayTable
     mov ax, 38h
     mov cx, 5
     mul cx
@@ -529,7 +537,7 @@ u5_026b proc far
     mov word ptr [bx + 32h], 0
     mov word ptr [bx + 34h], 0
     mov word ptr [bx + 36h], 0
-    mov bx, offset d_2EA2
+    mov bx, offset PcxDisplayTable
     mov ax, 38h
     mov cx, 6
     mul cx
@@ -554,7 +562,7 @@ u5_026b proc far
     mov word ptr [bx + 32h], 0
     mov word ptr [bx + 34h], 0
     mov word ptr [bx + 36h], 0
-    mov bx, offset d_2EA2
+    mov bx, offset PcxDisplayTable
     mov ax, 38h
     mov cx, 7
     mul cx
@@ -579,7 +587,7 @@ u5_026b proc far
     mov word ptr [bx + 32h], 0
     mov word ptr [bx + 34h], 0
     mov word ptr [bx + 36h], 0
-    mov bx, offset d_2EA2
+    mov bx, offset PcxDisplayTable
     mov ax, 38h
     mov cx, 8
     mul cx
@@ -604,7 +612,7 @@ u5_026b proc far
     mov word ptr [bx + 32h], 0
     mov word ptr [bx + 34h], 0
     mov word ptr [bx + 36h], 0
-    mov bx, offset d_2EA2
+    mov bx, offset PcxDisplayTable
     mov ax, 38h
     mov cx, 9
     mul cx
@@ -629,7 +637,7 @@ u5_026b proc far
     mov word ptr [bx + 32h], 0
     mov word ptr [bx + 34h], 0
     mov word ptr [bx + 36h], 0
-    mov bx, offset d_2EA2
+    mov bx, offset PcxDisplayTable
     mov ax, 38h
     mov cx, 0ah
     mul cx
@@ -654,7 +662,7 @@ u5_026b proc far
     mov word ptr [bx + 32h], 0
     mov word ptr [bx + 34h], 0
     mov word ptr [bx + 36h], 0
-    mov bx, offset d_2EA2
+    mov bx, offset PcxDisplayTable
     mov ax, 38h
     mov cx, 0bh
     mul cx
@@ -679,7 +687,7 @@ u5_026b proc far
     mov word ptr [bx + 32h], 0
     mov word ptr [bx + 34h], 0
     mov word ptr [bx + 36h], 0
-    mov bx, offset d_2EA2
+    mov bx, offset PcxDisplayTable
     mov ax, 38h
     mov cx, 0ch
     mul cx
@@ -704,7 +712,7 @@ u5_026b proc far
     mov word ptr [bx + 32h], 0
     mov word ptr [bx + 34h], 0
     mov word ptr [bx + 36h], 0
-    mov bx, offset d_2EA2
+    mov bx, offset PcxDisplayTable
     mov ax, 38h
     mov cx, 0dh
     mul cx
@@ -729,7 +737,7 @@ u5_026b proc far
     mov word ptr [bx + 32h], 0
     mov word ptr [bx + 34h], 0
     mov word ptr [bx + 36h], 0
-    mov bx, offset d_2EA2
+    mov bx, offset PcxDisplayTable
     mov ax, 38h
     mov cx, 0eh
     mul cx
@@ -754,7 +762,7 @@ u5_026b proc far
     mov word ptr [bx + 32h], 0
     mov word ptr [bx + 34h], 0
     mov word ptr [bx + 36h], 0
-    mov bx, offset d_2EA2
+    mov bx, offset PcxDisplayTable
     mov ax, 38h
     mov cx, 0fh
     mul cx
@@ -779,7 +787,7 @@ u5_026b proc far
     mov word ptr [bx + 32h], 0
     mov word ptr [bx + 34h], 0
     mov word ptr [bx + 36h], 0
-    mov bx, offset d_2EA2
+    mov bx, offset PcxDisplayTable
     mov ax, 38h
     mov cx, 10h
     mul cx
@@ -804,7 +812,7 @@ u5_026b proc far
     mov word ptr [bx + 32h], 0
     mov word ptr [bx + 34h], 0
     mov word ptr [bx + 36h], 0
-    mov bx, offset d_2EA2
+    mov bx, offset PcxDisplayTable
     mov ax, 38h
     mov cx, 11h
     mul cx
@@ -829,7 +837,7 @@ u5_026b proc far
     mov word ptr [bx + 32h], 0
     mov word ptr [bx + 34h], 0
     mov word ptr [bx + 36h], 0
-    mov bx, offset d_2EA2
+    mov bx, offset PcxDisplayTable
     mov ax, 38h
     mov cx, 12h
     mul cx
@@ -854,7 +862,7 @@ u5_026b proc far
     mov word ptr [bx + 32h], 0
     mov word ptr [bx + 34h], 0
     mov word ptr [bx + 36h], 0
-    mov bx, offset d_2EA2
+    mov bx, offset PcxDisplayTable
     mov ax, 38h
     mov cx, 13h
     mul cx
@@ -879,7 +887,7 @@ u5_026b proc far
     mov word ptr [bx + 32h], 0
     mov word ptr [bx + 34h], 0
     mov word ptr [bx + 36h], 0
-    mov bx, offset d_2EA2
+    mov bx, offset PcxDisplayTable
     mov ax, 38h
     mov cx, 14h
     mul cx
@@ -904,7 +912,7 @@ u5_026b proc far
     mov word ptr [bx + 32h], 0
     mov word ptr [bx + 34h], 0
     mov word ptr [bx + 36h], 0
-    mov bx, offset d_2EA2
+    mov bx, offset PcxDisplayTable
     mov ax, 38h
     mov cx, 15h
     mul cx
@@ -929,7 +937,7 @@ u5_026b proc far
     mov word ptr [bx + 32h], 0
     mov word ptr [bx + 34h], 0
     mov word ptr [bx + 36h], 0
-    mov si, offset d_3372
+    mov si, offset PcxHerculesGraphicsCrtc
     mov byte ptr [si], 35h
     inc si
     mov byte ptr [si], 2dh
@@ -954,7 +962,7 @@ u5_026b proc far
     inc si
     mov byte ptr [si], 0
     inc si
-    mov si, offset d_337E
+    mov si, offset PcxHerculesTextCrtc
     mov byte ptr [si], 61h
     inc si
     mov byte ptr [si], 50h
@@ -987,21 +995,22 @@ u5_026b proc far
     mov sp, bp
     pop bp
     retf
-u5_026b endp
+PcxInitializeVideoDescriptors endp
 
 ; pcx hercules mode helper
-u5_0c70 proc far
+; src/asm/u5.asm u5_0c70: pcx hercules mode helper.
+PcxHerculesModeHelper proc far
     push ax
     cmp al, 2
     je hercules_mode_helper_next_1
-    mov si, offset d_337E
+    mov si, offset PcxHerculesTextCrtc
     mov bx, 720h
     push bx
     mov bx, 7d0h
     push bx
     jmp short hercules_mode_helper_next_2
 hercules_mode_helper_next_1:
-    mov si, offset d_3372
+    mov si, offset PcxHerculesGraphicsCrtc
     mov bx, 0
     push bx
     mov bx, 4000h
@@ -1037,10 +1046,11 @@ hercules_mode_helper_loop_1:
     mov dx, 3b8h
     out dx, al
     retf
-u5_0c70 endp
+PcxHerculesModeHelper endp
 
 ; pcx set cga palette
-u5_0cc4 proc far
+; Writes a validated control byte (1 or 3) to port 3BFh; no palette register is written.
+PcxSetHerculesControl proc far
     push bp
     mov bp, sp
     sub sp, 2
@@ -1048,7 +1058,7 @@ u5_0cc4 proc far
     push es
     push si
     push di
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov ds, ax
     mov ax, word ptr [bp + 6]
     cmp ax, 3
@@ -1068,10 +1078,11 @@ set_cga_palette_next_1:
     mov sp, bp
     pop bp
     retf 2
-u5_0cc4 endp
+PcxSetHerculesControl endp
 
 ; pcx set mode change policy
-u5_0cf9 proc far
+; Stores a validated 0/1 policy; u5_0d2d checks the selected BIOS video mode when the policy is 1.
+PcxSetModeCheckPolicy proc far
     push bp
     mov bp, sp
     sub sp, 2
@@ -1079,7 +1090,7 @@ u5_0cf9 proc far
     push es
     push si
     push di
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov ds, ax
     mov ax, word ptr [bp + 6]
     cmp ax, 1
@@ -1088,7 +1099,7 @@ u5_0cf9 proc far
     je set_mode_change_policy_next_1
     mov ax, 1
 set_mode_change_policy_next_1:
-    mov word ptr [d_21E6], ax
+    mov word ptr [PcxModeCheckPolicy], ax
     mov word ptr [bp - 2], 0
     mov ax, word ptr [bp - 2]
     pop di
@@ -1098,10 +1109,11 @@ set_mode_change_policy_next_1:
     mov sp, bp
     pop bp
     retf 2
-u5_0cf9 endp
+PcxSetModeCheckPolicy endp
 
 ; pcx display buffer
-u5_0d2d proc far
+; src/asm/u5.asm u5_0d2d: pcx display buffer.
+PcxDisplayBuffer proc far
     push bp
     mov bp, sp
     sub sp, 1eh
@@ -1109,13 +1121,13 @@ u5_0d2d proc far
     push es
     push si
     push di
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov ds, ax
-    cmp byte ptr [d_2A8A + 0Ch], 1
+    cmp byte ptr [PcxReadState + 0Ch], 1
     je display_buffer_next_1
-    call far ptr u5_0dc7
+    call far ptr PcxInitializeDisplayDispatch
 display_buffer_next_1:
-    mov ax, word ptr [d_21E6]
+    mov ax, word ptr [PcxModeCheckPolicy]
     mov word ptr [bp - 4], ax
     mov ax, word ptr [bp + 10h]
     mov ds, ax
@@ -1131,14 +1143,14 @@ display_buffer_next_1:
     mov word ptr [bp - 2], 0fffbh
     jmp short display_buffer_done_1
 display_buffer_next_2:
-    call far ptr u5_00eb
+    call far ptr PcxGetDisplayType
     cmp ax, 0
     jge display_buffer_next_3
     mov word ptr [bp - 2], ax
     jmp short display_buffer_done_1
 display_buffer_next_3:
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     cmp ax, 0
     jae display_buffer_next_4
     mov word ptr [bp - 2], 0fc19h
@@ -1170,149 +1182,151 @@ display_buffer_done_1:
     mov sp, bp
     pop bp
     retf 0ch
-u5_0d2d endp
+PcxDisplayBuffer endp
 
 ; pcx initialize display dispatch
-u5_0dc7 proc far
+; src/asm/u5.asm u5_0dc7: pcx initialize display dispatch.
+PcxInitializeDisplayDispatch proc far
     mov ax, 0
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     mov bx, ax
-    mov word ptr [bx + 24h], offset u5_0f9b
+    mov word ptr [bx + 24h], offset PcxCgaDecodeContinuation
     mov word ptr [bx + 26h], seg CODE
     mov ax, 1
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     mov bx, ax
-    mov word ptr [bx + 24h], offset u5_0f9b
+    mov word ptr [bx + 24h], offset PcxCgaDecodeContinuation
     mov word ptr [bx + 26h], seg CODE
     mov ax, 2
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     mov bx, ax
-    mov word ptr [bx + 24h], offset u5_10d7
+    mov word ptr [bx + 24h], offset PcxEgaDecodeContinuation
     mov word ptr [bx + 26h], seg CODE
     mov ax, 3
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     mov bx, ax
-    mov word ptr [bx + 24h], offset u5_10d7
+    mov word ptr [bx + 24h], offset PcxEgaDecodeContinuation
     mov word ptr [bx + 26h], seg CODE
     mov ax, 4
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     mov bx, ax
-    mov word ptr [bx + 24h], offset u5_10d7
+    mov word ptr [bx + 24h], offset PcxEgaDecodeContinuation
     mov word ptr [bx + 26h], seg CODE
     mov ax, 5
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     mov bx, ax
-    mov word ptr [bx + 24h], offset u5_10d7
+    mov word ptr [bx + 24h], offset PcxEgaDecodeContinuation
     mov word ptr [bx + 26h], seg CODE
     mov ax, 6
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     mov bx, ax
-    mov word ptr [bx + 24h], offset u5_10d7
+    mov word ptr [bx + 24h], offset PcxEgaDecodeContinuation
     mov word ptr [bx + 26h], seg CODE
     mov ax, 7
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     mov bx, ax
-    mov word ptr [bx + 24h], offset u5_10d7
+    mov word ptr [bx + 24h], offset PcxEgaDecodeContinuation
     mov word ptr [bx + 26h], seg CODE
     mov ax, 8
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     mov bx, ax
-    mov word ptr [bx + 24h], offset u5_12b6
+    mov word ptr [bx + 24h], offset PcxVga256DecodeContinuation
     mov word ptr [bx + 26h], seg CODE
     mov ax, 9
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     mov bx, ax
-    mov word ptr [bx + 24h], offset u5_137a
+    mov word ptr [bx + 24h], offset PcxHerculesDecodeContinuation
     mov word ptr [bx + 26h], seg CODE
     mov ax, 0ah
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     mov bx, ax
-    mov word ptr [bx + 24h], offset u5_10d7
+    mov word ptr [bx + 24h], offset PcxEgaDecodeContinuation
     mov word ptr [bx + 26h], seg CODE
     mov ax, 0bh
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     mov bx, ax
-    mov word ptr [bx + 24h], offset u5_15d1
+    mov word ptr [bx + 24h], offset PcxTsengDecodeContinuation
     mov word ptr [bx + 26h], seg CODE
     mov ax, 0ch
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     mov bx, ax
-    mov word ptr [bx + 24h], offset u5_15d1
+    mov word ptr [bx + 24h], offset PcxTsengDecodeContinuation
     mov word ptr [bx + 26h], seg CODE
     mov ax, 0dh
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     mov bx, ax
-    mov word ptr [bx + 24h], offset u5_15d1
+    mov word ptr [bx + 24h], offset PcxTsengDecodeContinuation
     mov word ptr [bx + 26h], seg CODE
     mov ax, 0eh
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     mov bx, ax
-    mov word ptr [bx + 24h], offset u5_10d7
+    mov word ptr [bx + 24h], offset PcxEgaDecodeContinuation
     mov word ptr [bx + 26h], seg CODE
     mov ax, 0fh
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     mov bx, ax
-    mov word ptr [bx + 24h], offset u5_10d7
+    mov word ptr [bx + 24h], offset PcxEgaDecodeContinuation
     mov word ptr [bx + 26h], seg CODE
     mov ax, 10h
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     mov bx, ax
-    mov word ptr [bx + 24h], offset u5_14a7
+    mov word ptr [bx + 24h], offset PcxParadiseDecodeContinuation
     mov word ptr [bx + 26h], seg CODE
     mov ax, 11h
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     mov bx, ax
-    mov word ptr [bx + 24h], offset u5_14a7
+    mov word ptr [bx + 24h], offset PcxParadiseDecodeContinuation
     mov word ptr [bx + 26h], seg CODE
     mov ax, 12h
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     mov bx, ax
-    mov word ptr [bx + 24h], offset u5_10d7
+    mov word ptr [bx + 24h], offset PcxEgaDecodeContinuation
     mov word ptr [bx + 26h], seg CODE
     mov ax, 13h
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     mov bx, ax
-    mov word ptr [bx + 24h], offset u5_16f5
+    mov word ptr [bx + 24h], offset PcxVideo7DecodeContinuation
     mov word ptr [bx + 26h], seg CODE
     mov ax, 14h
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     mov bx, ax
-    mov word ptr [bx + 24h], offset u5_16f5
+    mov word ptr [bx + 24h], offset PcxVideo7DecodeContinuation
     mov word ptr [bx + 26h], seg CODE
     mov ax, 15h
     push ax
-    call far ptr u5_01ac
+    call far ptr PcxGetDisplayDescriptor
     mov bx, ax
-    mov word ptr [bx + 24h], offset u5_16f5
+    mov word ptr [bx + 24h], offset PcxVideo7DecodeContinuation
     mov word ptr [bx + 26h], seg CODE
-    mov byte ptr [d_2A8A + 0Ch], 1
+    mov byte ptr [PcxReadState + 0Ch], 1
     retf
-u5_0dc7 endp
+PcxInitializeDisplayDispatch endp
 
 ; pcx cga decode continuation
 ; Far-jump continuation: BP and saved registers belong to u5_0d2d.
-u5_0f9b proc far
+; src/asm/u5.asm u5_0f9b: pcx cga decode continuation. RLE-decodes a PCX image using the u5_0d2d frame.
+PcxCgaDecodeContinuation proc far
     mov ax, word ptr [si + 8]
     sub ax, word ptr [si + 4]
     inc ax
@@ -1435,7 +1449,7 @@ cga_decode_next_9:
     cmp si, word ptr [bp - 0ah]
     jbe cga_decode_next_10
     push si
-    call far ptr u5_19e3
+    call far ptr PcxRefillReadBuffer
     mov si, ax
     jae cga_decode_next_10
     mov word ptr [bp - 2], 0fffdh
@@ -1453,11 +1467,12 @@ cga_decode_done_1:
     mov sp, bp
     pop bp
     retf 0ch
-u5_0f9b endp
+PcxCgaDecodeContinuation endp
 
 ; pcx ega decode continuation
 ; Far-jump continuation: BP and saved registers belong to u5_0d2d.
-u5_10d7 proc far
+; src/asm/u5.asm u5_10d7: pcx ega decode continuation. RLE-decodes a PCX image using the u5_0d2d frame.
+PcxEgaDecodeContinuation proc far
     mov ax, word ptr es:[di + 18h]
     mov cl, 3
     shr ax, cl
@@ -1657,7 +1672,7 @@ ega_decode_next_13:
     cmp si, word ptr [bp - 0ah]
     jbe ega_decode_next_14
     push si
-    call far ptr u5_19e3
+    call far ptr PcxRefillReadBuffer
     mov si, ax
     jae ega_decode_next_14
     mov word ptr [bp - 2], 0fffdh
@@ -1681,11 +1696,12 @@ ega_decode_done_1:
     mov sp, bp
     pop bp
     retf 0ch
-u5_10d7 endp
+PcxEgaDecodeContinuation endp
 
 ; pcx vga 256 decode continuation
 ; Far-jump continuation: BP and saved registers belong to u5_0d2d.
-u5_12b6 proc far
+; src/asm/u5.asm u5_12b6: pcx vga 256 decode continuation. RLE-decodes a PCX image using the u5_0d2d frame.
+PcxVga256DecodeContinuation proc far
     mov ax, word ptr es:[di + 18h]
     mov word ptr [bp - 16h], ax
     mov ax, word ptr [si + 8]
@@ -1756,7 +1772,7 @@ vga_256_decode_next_5:
     cmp si, word ptr [bp - 0ah]
     jbe vga_256_decode_next_6
     push si
-    call far ptr u5_19e3
+    call far ptr PcxRefillReadBuffer
     mov si, ax
     jae vga_256_decode_next_6
     mov word ptr [bp - 2], 0fffdh
@@ -1774,11 +1790,12 @@ vga_256_decode_done_1:
     mov sp, bp
     pop bp
     retf 0ch
-u5_12b6 endp
+PcxVga256DecodeContinuation endp
 
 ; pcx hercules decode continuation
 ; Far-jump continuation: BP and saved registers belong to u5_0d2d.
-u5_137a proc far
+; src/asm/u5.asm u5_137a: pcx hercules decode continuation. RLE-decodes a PCX image using the u5_0d2d.
+PcxHerculesDecodeContinuation proc far
     mov ax, word ptr [si + 8]
     sub ax, word ptr [si + 4]
     inc ax
@@ -1894,7 +1911,7 @@ hercules_decode_next_8:
     cmp si, word ptr [bp - 0ah]
     jbe hercules_decode_next_9
     push si
-    call far ptr u5_19e3
+    call far ptr PcxRefillReadBuffer
     mov si, ax
     jae hercules_decode_next_9
     mov word ptr [bp - 2], 0fffdh
@@ -1912,11 +1929,12 @@ hercules_decode_done_1:
     mov sp, bp
     pop bp
     retf 0ch
-u5_137a endp
+PcxHerculesDecodeContinuation endp
 
 ; pcx paradise decode continuation
 ; Far-jump continuation: BP and saved registers belong to u5_0d2d.
-u5_14a7 proc far
+; src/asm/u5.asm u5_14a7: pcx paradise decode continuation. RLE-decodes a PCX image using the u5_0d2d.
+PcxParadiseDecodeContinuation proc far
     mov ax, word ptr es:[di + 18h]
     mov word ptr [bp - 16h], ax
     mov ax, word ptr [si + 8]
@@ -2028,7 +2046,7 @@ paradise_decode_next_5:
     cmp si, word ptr [bp - 0ah]
     jbe paradise_decode_next_6
     push si
-    call far ptr u5_19e3
+    call far ptr PcxRefillReadBuffer
     mov si, ax
     jae paradise_decode_next_6
     mov word ptr [bp - 2], 0fffdh
@@ -2058,11 +2076,12 @@ paradise_decode_next_8:
     mov sp, bp
     pop bp
     retf 0ch
-u5_14a7 endp
+PcxParadiseDecodeContinuation endp
 
 ; pcx tseng decode continuation
 ; Far-jump continuation: BP and saved registers belong to u5_0d2d.
-u5_15d1 proc far
+; src/asm/u5.asm u5_15d1: pcx tseng decode continuation. RLE-decodes a PCX image using the u5_0d2d frame.
+PcxTsengDecodeContinuation proc far
     mov ax, word ptr [si + 8]
     sub ax, word ptr [si + 4]
     inc ax
@@ -2173,7 +2192,7 @@ tseng_decode_next_7:
     cmp si, word ptr [bp - 0ah]
     jbe tseng_decode_next_8
     push si
-    call far ptr u5_19e3
+    call far ptr PcxRefillReadBuffer
     mov si, ax
     jae tseng_decode_next_8
     mov word ptr [bp - 2], 0fffdh
@@ -2202,11 +2221,12 @@ tseng_decode_done_1:
     mov sp, bp
     pop bp
     retf 0ch
-u5_15d1 endp
+PcxTsengDecodeContinuation endp
 
 ; pcx video7 decode continuation
 ; Far-jump continuation: BP and saved registers belong to u5_0d2d.
-u5_16f5 proc far
+; src/asm/u5.asm u5_16f5: pcx video7 decode continuation. RLE-decodes a PCX image using the u5_0d2d frame.
+PcxVideo7DecodeContinuation proc far
     mov ax, word ptr es:[di + 18h]
     mov word ptr [bp - 16h], ax
     mov ax, word ptr [si + 8]
@@ -2415,7 +2435,7 @@ video7_decode_next_8:
     cmp si, word ptr [bp - 0ah]
     jbe video7_decode_next_9
     push si
-    call far ptr u5_19e3
+    call far ptr PcxRefillReadBuffer
     mov si, ax
     jae video7_decode_next_9
     mov word ptr [bp - 2], 0fffdh
@@ -2479,11 +2499,12 @@ video7_decode_done_1:
     mov sp, bp
     pop bp
     retf 0ch
-u5_16f5 endp
+PcxVideo7DecodeContinuation endp
 
 ; pcx decode or print buffer
 ; The original caller enters at INT3, before the BP prologue.
-u5_1915 proc far
+; Converts a Pascal filename, opens/reads/closes it with DOS INT 21h.
+PcxDisplayFile proc far
     int 3
     push bp
     mov bp, sp
@@ -2492,7 +2513,7 @@ u5_1915 proc far
     push es
     push si
     push di
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov ds, ax
     push ds
     cld
@@ -2519,25 +2540,25 @@ u5_1915 proc far
     mov ah, 3dh
     int 21h
     pop ds
-    mov word ptr [d_2A8A + 06h], ax
+    mov word ptr [PcxReadState + 06h], ax
     jae decode_or_print_buffer_next_1
     mov word ptr [bp - 2], 0ffffh
     jmp short decode_or_print_buffer_next_5
 decode_or_print_buffer_next_1:
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov es, ax
-    mov di, offset d_2280
-    cmp word ptr [d_2A8A + 02h], -1
+    mov di, offset PcxDefaultReadBuffer
+    cmp word ptr [PcxReadState + 02h], -1
     je decode_or_print_buffer_next_2
-    mov ax, word ptr [d_2A8A + 02h]
+    mov ax, word ptr [PcxReadState + 02h]
     mov es, ax
-    mov di, word ptr [d_2A8A + 04h]
+    mov di, word ptr [PcxReadState + 04h]
 decode_or_print_buffer_next_2:
-    mov word ptr [d_2A8A + 08h], 0
-    mov word ptr [d_2A8A + 0Ah], 0
+    mov word ptr [PcxReadState + 08h], 0
+    mov word ptr [PcxReadState + 0Ah], 0
     push ds
-    mov bx, word ptr [d_2A8A + 06h]
-    mov cx, word ptr [d_2A8A]
+    mov bx, word ptr [PcxReadState + 06h]
+    mov cx, word ptr [PcxReadState]
     mov dx, di
     mov ax, es
     mov ds, ax
@@ -2551,7 +2572,7 @@ decode_or_print_buffer_next_3:
     mov ax, es
     push ax
     push di
-    mov ax, word ptr [d_2A8A]
+    mov ax, word ptr [PcxReadState]
     sub ax, 0ah
     push ax
     mov ax, word ptr [bp + 0ah]
@@ -2560,14 +2581,14 @@ decode_or_print_buffer_next_3:
     push ax
     mov ax, word ptr [bp + 6]
     push ax
-    call far ptr u5_0d2d
+    call far ptr PcxDisplayBuffer
     mov word ptr [bp - 2], ax
 decode_or_print_buffer_next_4:
-    mov bx, word ptr [d_2A8A + 06h]
+    mov bx, word ptr [PcxReadState + 06h]
     mov ah, 3eh
     int 21h
 decode_or_print_buffer_next_5:
-    mov word ptr [d_2A8A + 06h], 0ffffh
+    mov word ptr [PcxReadState + 06h], 0ffffh
     mov ax, word ptr [bp - 2]
     pop di
     pop si
@@ -2576,10 +2597,11 @@ decode_or_print_buffer_next_5:
     mov sp, bp
     pop bp
     retf 0ah
-u5_1915 endp
+PcxDisplayFile endp
 
 ; pcx flush print buffer
-u5_19e3 proc far
+; Advances the tracked file position, seeks and reads more bytes with DOS INT 21h AH=42h/3Fh.
+PcxRefillReadBuffer proc far
     push bp
     mov bp, sp
     sub sp, 2
@@ -2587,40 +2609,40 @@ u5_19e3 proc far
     push es
     push si
     push di
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov ds, ax
     push bx
     push cx
     push dx
-    cmp word ptr [d_2A8A + 06h], -1
+    cmp word ptr [PcxReadState + 06h], -1
     jne flush_print_buffer_next_1
     stc
     jmp short flush_print_buffer_done_1
 flush_print_buffer_next_1:
     mov ax, ds
     mov es, ax
-    mov di, offset d_2280
-    cmp word ptr [d_2A8A + 02h], -1
+    mov di, offset PcxDefaultReadBuffer
+    cmp word ptr [PcxReadState + 02h], -1
     je flush_print_buffer_next_2
-    mov ax, word ptr [d_2A8A + 02h]
+    mov ax, word ptr [PcxReadState + 02h]
     mov es, ax
-    mov di, word ptr [d_2A8A + 04h]
+    mov di, word ptr [PcxReadState + 04h]
 flush_print_buffer_next_2:
     mov ax, word ptr [bp + 6]
     sub ax, di
-    add word ptr [d_2A8A + 0Ah], ax
+    add word ptr [PcxReadState + 0Ah], ax
     jae flush_print_buffer_next_3
-    add word ptr [d_2A8A + 08h], 1
+    add word ptr [PcxReadState + 08h], 1
 flush_print_buffer_next_3:
-    mov bx, word ptr [d_2A8A + 06h]
-    mov cx, word ptr [d_2A8A + 08h]
-    mov dx, word ptr [d_2A8A + 0Ah]
+    mov bx, word ptr [PcxReadState + 06h]
+    mov cx, word ptr [PcxReadState + 08h]
+    mov dx, word ptr [PcxReadState + 0Ah]
     mov al, 0
     mov ah, 42h
     int 21h
     push ds
-    mov bx, word ptr [d_2A8A + 06h]
-    mov cx, word ptr [d_2A8A]
+    mov bx, word ptr [PcxReadState + 06h]
+    mov cx, word ptr [PcxReadState]
     mov dx, di
     mov ax, es
     mov ds, ax
@@ -2640,10 +2662,11 @@ flush_print_buffer_done_1:
     mov sp, bp
     pop bp
     retf 2
-u5_19e3 endp
+PcxRefillReadBuffer endp
 
 ; pcx configure printer
-u5_1a5f proc far
+; src/asm/u5.asm u5_1a5f: pcx configure printer.
+PcxConfigurePrinter proc far
     push bp
     mov bp, sp
     sub sp, 2
@@ -2651,7 +2674,7 @@ u5_1a5f proc far
     push es
     push si
     push di
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov ds, ax
     mov ax, word ptr [bp + 0eh]
     cmp ax, 0
@@ -2662,7 +2685,7 @@ configure_printer_error_1:
     mov word ptr [bp - 2], 0fff0h
     jmp short configure_printer_done_1
 configure_printer_next_1:
-    mov word ptr [d_2E9E], ax
+    mov word ptr [PcxPrinterDeviceClass], ax
     mov ax, word ptr [bp + 10h]
     cmp ax, 0
     jb configure_printer_error_2
@@ -2672,15 +2695,15 @@ configure_printer_error_2:
     mov word ptr [bp - 2], 0ffefh
     jmp short configure_printer_done_1
 configure_printer_next_2:
-    mov word ptr [d_338A], ax
+    mov word ptr [PcxPrinterState], ax
     mov ax, word ptr [bp + 0ch]
-    mov word ptr [d_2EA0], ax
+    mov word ptr [PcxPrinterResolutionClass], ax
     mov ax, word ptr [bp + 0ah]
-    mov word ptr [d_338A + 02h], ax
+    mov word ptr [PcxPrinterState + 02h], ax
     mov ax, word ptr [bp + 6]
-    mov word ptr [d_338A + 04h], ax
+    mov word ptr [PcxPrinterState + 04h], ax
     mov ax, word ptr [bp + 8]
-    mov word ptr [d_338A + 06h], ax
+    mov word ptr [PcxPrinterState + 06h], ax
     mov word ptr [bp - 2], 0
 configure_printer_done_1:
     mov ax, word ptr [bp - 2]
@@ -2691,10 +2714,11 @@ configure_printer_done_1:
     mov sp, bp
     pop bp
     retf 0ch
-u5_1a5f endp
+PcxConfigurePrinter endp
 
 ; pcx begin printer image
-u5_1ac6 proc far
+; src/asm/u5.asm u5_1ac6: pcx begin printer image.
+PcxBeginPrinterImage proc far
     push bp
     mov bp, sp
     sub sp, 2
@@ -2702,13 +2726,13 @@ u5_1ac6 proc far
     push es
     push si
     push di
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov ds, ax
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov es, ax
-    mov byte ptr [d_338A + 0Ah], 1
+    mov byte ptr [PcxPrinterState + 0Ah], 1
     mov ax, word ptr [bp + 0ah]
-    mov cx, word ptr [d_338A + 02h]
+    mov cx, word ptr [PcxPrinterState + 02h]
     cmp cx, 0
     je begin_printer_image_next_4
     cmp cx, 1
@@ -2735,10 +2759,10 @@ begin_printer_image_next_3:
     jne begin_printer_image_next_4
     shl ax, 1
 begin_printer_image_next_4:
-    mov word ptr [d_338A + 08h], ax
-    cmp word ptr [d_2EA0], 1
+    mov word ptr [PcxPrinterState + 08h], ax
+    cmp word ptr [PcxPrinterResolutionClass], 1
     je begin_printer_image_next_5
-    cmp word ptr [d_2EA0], 2
+    cmp word ptr [PcxPrinterResolutionClass], 2
     je begin_printer_image_next_5
     shr ax, 1
 begin_printer_image_next_5:
@@ -2746,10 +2770,10 @@ begin_printer_image_next_5:
     push bx
     push ax
     push es
-    mov di, offset d_338A + 05Dh
+    mov di, offset PcxPrinterState + 05Dh
     push di
-    call far ptr u5_2020
-    mov di, offset d_338A + 059h
+    call far ptr PcxFormatUnsignedDecimal
+    mov di, offset PcxPrinterState + 059h
     add al, 3
     mov byte ptr es:[di], al
     mov ax, 0
@@ -2757,9 +2781,9 @@ begin_printer_image_next_5:
     mov ax, word ptr [bp + 8]
     push ax
     push es
-    mov di, offset d_338A + 02Ch
+    mov di, offset PcxPrinterState + 02Ch
     push di
-    call far ptr u5_2020
+    call far ptr PcxFormatUnsignedDecimal
     add di, ax
     mov byte ptr es:[di], 78h
     inc ax
@@ -2771,16 +2795,16 @@ begin_printer_image_next_5:
     push ax
     push es
     push di
-    call far ptr u5_2020
+    call far ptr PcxFormatUnsignedDecimal
     pop bx
     add di, ax
     mov byte ptr es:[di], 59h
     inc ax
     add ax, bx
-    mov di, offset d_338A + 028h
+    mov di, offset PcxPrinterState + 028h
     add al, 3
     mov byte ptr es:[di], al
-    mov dx, word ptr [d_338A]
+    mov dx, word ptr [PcxPrinterState]
     mov ah, 2
     int 17h
     test ah, 29h
@@ -2788,34 +2812,34 @@ begin_printer_image_next_5:
     mov word ptr [bp - 2], 0ffeeh
     jmp short begin_printer_image_done_1
 begin_printer_image_next_6:
-    cmp word ptr [d_338A + 06h], 1
+    cmp word ptr [PcxPrinterState + 06h], 1
     jne begin_printer_image_next_7
-    mov si, offset d_338A + 0Bh
-    call far ptr u5_1d60
-    mov si, offset d_338A + 0Eh
-    call far ptr u5_1d60
+    mov si, offset PcxPrinterState + 0Bh
+    call far ptr PcxSendPrinterString
+    mov si, offset PcxPrinterState + 0Eh
+    call far ptr PcxSendPrinterString
 begin_printer_image_next_7:
-    mov si, offset d_338A + 014h
-    call far ptr u5_1d60
-    mov si, offset d_338A + 028h
-    call far ptr u5_1d60
-    cmp word ptr [d_2EA0], 1
+    mov si, offset PcxPrinterState + 014h
+    call far ptr PcxSendPrinterString
+    mov si, offset PcxPrinterState + 028h
+    call far ptr PcxSendPrinterString
+    cmp word ptr [PcxPrinterResolutionClass], 1
     je begin_printer_image_next_9
-    cmp word ptr [d_2EA0], 2
+    cmp word ptr [PcxPrinterResolutionClass], 2
     je begin_printer_image_next_8
-    mov si, offset d_338A + 03Eh
-    call far ptr u5_1d60
+    mov si, offset PcxPrinterState + 03Eh
+    call far ptr PcxSendPrinterString
     jmp short begin_printer_image_next_10
 begin_printer_image_next_8:
-    mov si, offset d_338A + 036h
-    call far ptr u5_1d60
+    mov si, offset PcxPrinterState + 036h
+    call far ptr PcxSendPrinterString
     jmp short begin_printer_image_next_10
 begin_printer_image_next_9:
-    mov si, offset d_338A + 046h
-    call far ptr u5_1d60
+    mov si, offset PcxPrinterState + 046h
+    call far ptr PcxSendPrinterString
 begin_printer_image_next_10:
-    mov si, offset d_338A + 04Eh
-    call far ptr u5_1d60
+    mov si, offset PcxPrinterState + 04Eh
+    call far ptr PcxSendPrinterString
 begin_printer_image_done_1:
     mov ax, word ptr [bp - 2]
     pop di
@@ -2825,10 +2849,11 @@ begin_printer_image_done_1:
     mov sp, bp
     pop bp
     retf 6
-u5_1ac6 endp
+PcxBeginPrinterImage endp
 
 ; pcx end printer image
-u5_1bf7 proc far
+; src/asm/u5.asm u5_1bf7: pcx end printer image.
+PcxEndPrinterImage proc far
     push bp
     mov bp, sp
     sub sp, 2
@@ -2836,14 +2861,14 @@ u5_1bf7 proc far
     push es
     push si
     push di
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov ds, ax
-    mov si, offset d_338A + 054h
-    call far ptr u5_1d60
-    cmp word ptr [d_338A + 04h], 1
+    mov si, offset PcxPrinterState + 054h
+    call far ptr PcxSendPrinterString
+    cmp word ptr [PcxPrinterState + 04h], 1
     jne end_printer_image_done_1
-    mov si, offset d_338A + 022h
-    call far ptr u5_1d60
+    mov si, offset PcxPrinterState + 022h
+    call far ptr PcxSendPrinterString
 end_printer_image_done_1:
     mov ax, word ptr [bp - 2]
     pop di
@@ -2853,10 +2878,11 @@ end_printer_image_done_1:
     mov sp, bp
     pop bp
     retf
-u5_1bf7 endp
+PcxEndPrinterImage endp
 
 ; pcx print buffer
-u5_1c28 proc far
+; src/asm/u5.asm u5_1c28: pcx print buffer.
+PcxPrintBuffer proc far
     push bp
     mov bp, sp
     sub sp, 0eh
@@ -2864,12 +2890,12 @@ u5_1c28 proc far
     push es
     push si
     push di
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov ds, ax
     mov ax, word ptr [bp + 0eh]
     mov ds, ax
     mov si, word ptr [bp + 0ch]
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov es, ax
     mov word ptr [bp - 0ch], si
     mov bx, word ptr [bp + 0ah]
@@ -2913,7 +2939,7 @@ print_buffer_next_3:
     mov bx, word ptr [si + 0ah]
     sub bx, word ptr [si + 6]
     inc bx
-    mov word ptr es:[d_2E9C], bx
+    mov word ptr es:[PcxPrintedSourceRow], bx
     mov ax, word ptr [si + 42h]
     mov word ptr [bp - 0ah], ax
     push ax
@@ -2921,10 +2947,10 @@ print_buffer_next_3:
     push ax
     mov ax, word ptr [bp + 6]
     push ax
-    call far ptr u5_1ac6
-    mov ax, seg d_21E0
+    call far ptr PcxBeginPrinterImage
+    mov ax, seg PcxSelectedDisplay
     mov es, ax
-    mov di, offset d_2A9C
+    mov di, offset PcxPrinterScanline
     mov ax, word ptr [bp + 0eh]
     mov ds, ax
     mov si, word ptr [bp + 0ch]
@@ -2964,7 +2990,7 @@ print_buffer_next_6:
     mov byte ptr es:[bx + di - 1], 0ffh
     push ax
     push cx
-    call far ptr u5_1d71
+    call far ptr PcxPrintScanline
     pop cx
     pop ax
     jae print_buffer_next_7
@@ -2972,14 +2998,14 @@ print_buffer_next_6:
     jmp short print_buffer_next_11
 print_buffer_next_7:
     xor bx, bx
-    dec word ptr es:[d_2E9C]
+    dec word ptr es:[PcxPrintedSourceRow]
     je print_buffer_next_10
 print_buffer_next_8:
     loop print_buffer_next_4
     cmp si, word ptr [bp - 0eh]
     jb print_buffer_next_9
     push si
-    call far ptr u5_19e3
+    call far ptr PcxRefillReadBuffer
     jb print_buffer_done_1
     mov si, ax
 print_buffer_next_9:
@@ -2987,7 +3013,7 @@ print_buffer_next_9:
 print_buffer_next_10:
     mov word ptr [bp - 2], 0
 print_buffer_next_11:
-    call far ptr u5_1bf7
+    call far ptr PcxEndPrinterImage
 print_buffer_done_1:
     mov ax, word ptr [bp - 2]
     pop di
@@ -2997,24 +3023,26 @@ print_buffer_done_1:
     mov sp, bp
     pop bp
     retf 0ah
-u5_1c28 endp
+PcxPrintBuffer endp
 
 ; pcx send printer string
-u5_1d60 proc far
+; src/asm/u5.asm u5_1d60: pcx send printer string.
+PcxSendPrinterString proc far
     lodsb
     mov cl, al
     xor ch, ch
-    mov dx, word ptr [d_338A]
+    mov dx, word ptr [PcxPrinterState]
 send_printer_string_loop_1:
     lodsb
     mov ah, 0
     int 17h
     loop send_printer_string_loop_1
     retf
-u5_1d60 endp
+PcxSendPrinterString endp
 
 ; pcx print scanline
-u5_1d71 proc far
+; src/asm/u5.asm u5_1d71: pcx print scanline.
+PcxPrintScanline proc far
     push bp
     mov bp, sp
     sub sp, 4
@@ -3022,28 +3050,28 @@ u5_1d71 proc far
     push es
     push si
     push di
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov ds, ax
     mov word ptr [bp - 4], 0
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov es, ax
-    mov si, offset d_2A9C
+    mov si, offset PcxPrinterScanline
     mov di, si
-    cmp word ptr [d_338A + 02h], 0
+    cmp word ptr [PcxPrinterState + 02h], 0
     jne print_scanline_next_1
     jmp near ptr print_scanline_next_10
 print_scanline_next_1:
-    cmp word ptr [d_338A + 02h], 1
+    cmp word ptr [PcxPrinterState + 02h], 1
     je print_scanline_next_2
     jmp near ptr print_scanline_next_4
 print_scanline_next_2:
-    mov ax, word ptr [d_2E9C]
+    mov ax, word ptr [PcxPrintedSourceRow]
     and ax, 3
     cmp ax, 0
     jne print_scanline_next_3
     jmp near ptr print_scanline_next_15
 print_scanline_next_3:
-    mov cx, word ptr [d_338A + 08h]
+    mov cx, word ptr [PcxPrinterState + 08h]
 print_scanline_loop_1:
     mov ah, byte ptr [si]
     and ah, 0e0h
@@ -3101,15 +3129,15 @@ print_scanline_loop_1:
     jg print_scanline_loop_1
     jmp near ptr print_scanline_next_10
 print_scanline_next_4:
-    cmp word ptr [d_338A + 02h], 2
+    cmp word ptr [PcxPrinterState + 02h], 2
     jne print_scanline_next_6
-    mov ax, word ptr [d_2E9C]
+    mov ax, word ptr [PcxPrintedSourceRow]
     and ax, 1
     cmp ax, 0
     je print_scanline_next_5
     jmp near ptr print_scanline_next_15
 print_scanline_next_5:
-    mov cx, word ptr [d_338A + 08h]
+    mov cx, word ptr [PcxPrinterState + 08h]
 print_scanline_loop_2:
     mov ah, byte ptr [si]
     and ah, 0c0h
@@ -3136,15 +3164,15 @@ print_scanline_loop_2:
     loop print_scanline_loop_2
     jmp near ptr print_scanline_next_10
 print_scanline_next_6:
-    cmp word ptr [d_338A + 02h], 3
+    cmp word ptr [PcxPrinterState + 02h], 3
     jne print_scanline_next_8
-    mov ax, word ptr [d_2E9C]
+    mov ax, word ptr [PcxPrintedSourceRow]
     and ax, 3
     cmp ax, 0
     je print_scanline_next_7
     jmp near ptr print_scanline_next_15
 print_scanline_next_7:
-    mov cx, word ptr [d_338A + 08h]
+    mov cx, word ptr [PcxPrinterState + 08h]
 print_scanline_loop_3:
     mov ah, byte ptr [si]
     and ah, 80h
@@ -3191,11 +3219,11 @@ print_scanline_loop_3:
     loop print_scanline_loop_3
     jmp short print_scanline_next_10
 print_scanline_next_8:
-    cmp word ptr [d_338A + 02h], 4
+    cmp word ptr [PcxPrinterState + 02h], 4
     je print_scanline_next_9
     jmp short print_scanline_next_10
 print_scanline_next_9:
-    mov cx, word ptr [d_338A + 08h]
+    mov cx, word ptr [PcxPrinterState + 08h]
 print_scanline_loop_4:
     mov bx, cx
     dec bx
@@ -3242,18 +3270,18 @@ print_scanline_loop_5:
     pop cx
     loop print_scanline_loop_4
 print_scanline_next_10:
-    cmp word ptr [d_2EA0], 1
+    cmp word ptr [PcxPrinterResolutionClass], 1
     je print_scanline_next_12
-    cmp word ptr [d_2EA0], 2
+    cmp word ptr [PcxPrinterResolutionClass], 2
     je print_scanline_next_12
-    xor byte ptr [d_338A + 0Ah], 1
-    cmp byte ptr [d_338A + 0Ah], 1
+    xor byte ptr [PcxPrinterState + 0Ah], 1
+    cmp byte ptr [PcxPrinterState + 0Ah], 1
     jne print_scanline_next_11
     jmp near ptr print_scanline_next_15
 print_scanline_next_11:
-    mov si, offset d_2A9C
+    mov si, offset PcxPrinterScanline
     mov di, si
-    mov cx, word ptr [d_338A + 08h]
+    mov cx, word ptr [PcxPrinterState + 08h]
     shr cx, 1
 print_scanline_loop_6:
     mov ah, byte ptr [si]
@@ -3280,18 +3308,18 @@ print_scanline_loop_6:
     inc di
     loop print_scanline_loop_6
 print_scanline_next_12:
-    mov si, offset d_338A + 059h
-    call far ptr u5_1d60
+    mov si, offset PcxPrinterState + 059h
+    call far ptr PcxSendPrinterString
     mov al, 57h
-    mov dx, word ptr [d_338A]
+    mov dx, word ptr [PcxPrinterState]
     mov ah, 0
     int 17h
-    mov si, offset d_2A9C
-    mov dx, word ptr [d_338A]
-    mov cx, word ptr [d_338A + 08h]
-    cmp word ptr [d_2EA0], 1
+    mov si, offset PcxPrinterScanline
+    mov dx, word ptr [PcxPrinterState]
+    mov cx, word ptr [PcxPrinterState + 08h]
+    cmp word ptr [PcxPrinterResolutionClass], 1
     je print_scanline_next_13
-    cmp word ptr [d_2EA0], 2
+    cmp word ptr [PcxPrinterResolutionClass], 2
     je print_scanline_next_13
     shr cx, 1
 print_scanline_next_13:
@@ -3300,7 +3328,7 @@ print_scanline_next_13:
     mov ah, 0
     int 17h
     loop print_scanline_next_13
-    cmp word ptr [d_338A + 02h], 4
+    cmp word ptr [PcxPrinterState + 02h], 4
     jne print_scanline_next_14
     inc word ptr [bp - 4]
     cmp word ptr [bp - 4], 2
@@ -3331,11 +3359,12 @@ print_scanline_done_1:
     mov sp, bp
     pop bp
     retf
-u5_1d71 endp
+PcxPrintScanline endp
     retf                    ; Unreachable second RETF retained from the object.
 
 ; pcx format unsigned decimal
-u5_2020 proc far
+; src/asm/u5.asm u5_2020: pcx format unsigned decimal.
+PcxFormatUnsignedDecimal proc far
     push bp
     mov bp, sp
     sub sp, 4
@@ -3343,7 +3372,7 @@ u5_2020 proc far
     push es
     push si
     push di
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov ds, ax
     mov ax, word ptr [bp + 8]
     mov es, ax
@@ -3354,16 +3383,16 @@ u5_2020 proc far
     xor si, si
     mov byte ptr [bp - 4], 30h
 format_unsigned_decimal_loop_1:
-    cmp dx, word ptr [si + d_338A + 06Bh]
+    cmp dx, word ptr [si + PcxPrinterState + 06Bh]
     je format_unsigned_decimal_next_1
     jb format_unsigned_decimal_next_3
     jmp short format_unsigned_decimal_next_2
 format_unsigned_decimal_next_1:
-    cmp ax, word ptr [si + d_338A + 069h]
+    cmp ax, word ptr [si + PcxPrinterState + 069h]
     jb format_unsigned_decimal_next_3
 format_unsigned_decimal_next_2:
-    sub ax, word ptr [si + d_338A + 069h]
-    sbb dx, word ptr [si + d_338A + 06Bh]
+    sub ax, word ptr [si + PcxPrinterState + 069h]
+    sbb dx, word ptr [si + PcxPrinterState + 06Bh]
     inc byte ptr [bp - 4]
     jmp short format_unsigned_decimal_loop_1
 format_unsigned_decimal_next_3:
@@ -3399,10 +3428,11 @@ format_unsigned_decimal_next_7:
     mov sp, bp
     pop bp
     retf 8
-u5_2020 endp
+PcxFormatUnsignedDecimal endp
 
 ; pcx initialize printer state
-u5_20a2 proc far
+; src/asm/u5.asm u5_20a2: pcx initialize printer state.
+PcxInitializePrinterState proc far
     push bp
     mov bp, sp
     sub sp, 2
@@ -3410,23 +3440,23 @@ u5_20a2 proc far
     push es
     push si
     push di
-    mov ax, seg d_21E0
+    mov ax, seg PcxSelectedDisplay
     mov ds, ax
     mov word ptr [bp - 2], 0
-    mov word ptr [d_2E9E], 0
-    mov word ptr [d_2EA0], 1
-    mov word ptr [d_338A], 0
-    mov word ptr [d_338A + 02h], 0
-    mov word ptr [d_338A + 04h], 1
-    mov word ptr [d_338A + 06h], 1
-    mov si, offset d_338A + 0Bh
+    mov word ptr [PcxPrinterDeviceClass], 0
+    mov word ptr [PcxPrinterResolutionClass], 1
+    mov word ptr [PcxPrinterState], 0
+    mov word ptr [PcxPrinterState + 02h], 0
+    mov word ptr [PcxPrinterState + 04h], 1
+    mov word ptr [PcxPrinterState + 06h], 1
+    mov si, offset PcxPrinterState + 0Bh
     mov byte ptr [si], 2
     inc si
     mov byte ptr [si], 1bh
     inc si
     mov byte ptr [si], 45h
     inc si
-    mov si, offset d_338A + 0Eh
+    mov si, offset PcxPrinterState + 0Eh
     mov byte ptr [si], 5
     inc si
     mov byte ptr [si], 1bh
@@ -3439,7 +3469,7 @@ u5_20a2 proc far
     inc si
     mov byte ptr [si], 58h
     inc si
-    mov si, offset d_338A + 014h
+    mov si, offset PcxPrinterState + 014h
     mov byte ptr [si], 5
     inc si
     mov byte ptr [si], 1bh
@@ -3452,7 +3482,7 @@ u5_20a2 proc far
     inc si
     mov byte ptr [si], 4fh
     inc si
-    mov si, offset d_338A + 01Ah
+    mov si, offset PcxPrinterState + 01Ah
     mov byte ptr [si], 7
     inc si
     mov byte ptr [si], 1bh
@@ -3469,7 +3499,7 @@ u5_20a2 proc far
     inc si
     mov byte ptr [si], 39h
     inc si
-    mov si, offset d_338A + 022h
+    mov si, offset PcxPrinterState + 022h
     mov byte ptr [si], 5
     inc si
     mov byte ptr [si], 1bh
@@ -3482,7 +3512,7 @@ u5_20a2 proc far
     inc si
     mov byte ptr [si], 48h
     inc si
-    mov si, offset d_338A + 028h
+    mov si, offset PcxPrinterState + 028h
     mov byte ptr [si], 3
     inc si
     mov byte ptr [si], 1bh
@@ -3491,7 +3521,7 @@ u5_20a2 proc far
     inc si
     mov byte ptr [si], 70h
     inc si
-    mov si, offset d_338A + 036h
+    mov si, offset PcxPrinterState + 036h
     mov byte ptr [si], 7
     inc si
     mov byte ptr [si], 1bh
@@ -3508,7 +3538,7 @@ u5_20a2 proc far
     inc si
     mov byte ptr [si], 52h
     inc si
-    mov si, offset d_338A + 03Eh
+    mov si, offset PcxPrinterState + 03Eh
     mov byte ptr [si], 7
     inc si
     mov byte ptr [si], 1bh
@@ -3525,7 +3555,7 @@ u5_20a2 proc far
     inc si
     mov byte ptr [si], 52h
     inc si
-    mov si, offset d_338A + 046h
+    mov si, offset PcxPrinterState + 046h
     mov byte ptr [si], 7
     inc si
     mov byte ptr [si], 1bh
@@ -3542,7 +3572,7 @@ u5_20a2 proc far
     inc si
     mov byte ptr [si], 52h
     inc si
-    mov si, offset d_338A + 04Eh
+    mov si, offset PcxPrinterState + 04Eh
     mov byte ptr [si], 5
     inc si
     mov byte ptr [si], 1bh
@@ -3555,7 +3585,7 @@ u5_20a2 proc far
     inc si
     mov byte ptr [si], 41h
     inc si
-    mov si, offset d_338A + 054h
+    mov si, offset PcxPrinterState + 054h
     mov byte ptr [si], 4
     inc si
     mov byte ptr [si], 1bh
@@ -3566,7 +3596,7 @@ u5_20a2 proc far
     inc si
     mov byte ptr [si], 42h
     inc si
-    mov si, offset d_338A + 059h
+    mov si, offset PcxPrinterState + 059h
     mov byte ptr [si], 3
     inc si
     mov byte ptr [si], 1bh
@@ -3575,7 +3605,7 @@ u5_20a2 proc far
     inc si
     mov byte ptr [si], 62h
     inc si
-    mov si, offset d_338A + 069h
+    mov si, offset PcxPrinterState + 069h
     mov word ptr [si], 0ca00h
     add si, 2
     mov word ptr [si], 3b9ah
@@ -3624,6 +3654,6 @@ u5_20a2 proc far
     mov sp, bp
     pop bp
     retf
-u5_20a2 endp
+PcxInitializePrinterState endp
 CODE ends
 end

@@ -1,393 +1,403 @@
-program SAM;
+program SAMMAIN;
 {$M 16384,0,655360}
 {$A+}{$D+}{$L+}{$F-}
-uses Dos, U9, Crt, U8, U7, U6, U5, U4, U3, U2, U1;
+uses Dos, PROGRPHX, Crt, SAMDATA, SAMSOUND, GAMEJOY, PCXGENUS, TEXT80, SAMUI, SAMLEVEL, SAMPLAY;
 var
-  d_0294: array[0..1] of byte;
+  TimerSubticks: array[0..1] of byte;
 {$IFDEF SAM1}
 {$ELSE}
-  d_sam2_02A4: t_p_sam2_107a_tregisterblock;
-  d_sam2_02B8: Word;
-  d_sam2_02BA: Byte;
+  VideoBiosRegisters: TVideoBiosRegs;
+  DetectedBiosVideoMode: Word;
+  DetectedVideoAdapter: Byte;
   reserved_02bb: Byte;
 {$ENDIF}
 {$L CMOSPIT.OBJ}
 {$F+}
-procedure p_516d; external;
+{ p.asm reads CMOS time/date and invokes DOS INT 21h AH=$2D and $2B to set DOS time/date. }
+procedure SyncDosClockFromCmos; external;
 {$F-}
 {$F+}
-procedure p_51df; external;
+{ Programs PIT channel 0 via ports $43/$40 with mode $36 and divisor $2147; called before the game loop. }
+procedure SetFastGameTimer; external;
 {$F-}
 {$F+}
-procedure p_51f3; external;
+{ Programs PIT channel 0 with mode $36 and zero divisor, restoring the default 65536-count period. }
+procedure RestoreDefaultTimer; external;
 {$F-}
 {$F-}
-procedure p_0000; interrupt;
+{ Reads scan codes from port $60, handles make/break controls and cheat chords. }
+procedure KeyboardInterrupt; interrupt;
 label
-  done;
+  ChainKeyboardHandler;
 var
-  i: Integer;
-  changed: Byte;
+  ShotSlot: Integer;
+  ShotSpawned: Byte;
 begin
-  d_6824 := Port[$60];
-  if d_69AD = 1 then
+  LastKeyboardScanCode := Port[$60];
+  if PlayerControlsReversed = 1 then
   begin
-    if d_6824 = Integer(d_70BE) then
-      d_6824 := Integer(d_70C0)
-    else if Integer(d_70BE) + 128 = d_6824 then
-      d_6824 := Integer(d_70C0) + 128
-    else if d_6824 = Integer(d_70C0) then
-      d_6824 := Integer(d_70BE)
-    else if Integer(d_70C0) + 128 = d_6824 then
-      d_6824 := Integer(d_70BE) + 128;
+    if LastKeyboardScanCode = Integer(LeftKeyScanCode) then
+      LastKeyboardScanCode := Integer(RightKeyScanCode)
+    else if Integer(LeftKeyScanCode) + 128 = LastKeyboardScanCode then
+      LastKeyboardScanCode := Integer(RightKeyScanCode) + 128
+    else if LastKeyboardScanCode = Integer(RightKeyScanCode) then
+      LastKeyboardScanCode := Integer(LeftKeyScanCode)
+    else if Integer(RightKeyScanCode) + 128 = LastKeyboardScanCode then
+      LastKeyboardScanCode := Integer(LeftKeyScanCode) + 128;
   end;
 
-  if d_69B4 <> 0 then
-    goto done;
+  if PlayerInputLocked <> 0 then
+    goto ChainKeyboardHandler;
 
-  if d_6824 = Integer(d_70BE) then
+  if LastKeyboardScanCode = Integer(LeftKeyScanCode) then
   begin
-    d_6ECA := 1;
-    d_6ECB := 0;
-    d_6EC2 := 0;
-    d_34EC[1].Sprite := 5;
-    if d_6EC1 <> 0 then
-      d_34EC[1].Sprite := 14;
+    PlayerLeftHeld := 1;
+    PlayerRightHeld := 0;
+    PlayerOnMovingSupport := 0;
+    GameActors[1].ActorSpriteBase := 5;
+    if PlayerJumping <> 0 then
+      GameActors[1].ActorSpriteBase := 14;
   end
-  else if Integer(d_70BE) + 128 = d_6824 then
+  else if Integer(LeftKeyScanCode) + 128 = LastKeyboardScanCode then
   begin
-    d_6ECA := 0;
-    if d_6EC1 = 0 then
+    PlayerLeftHeld := 0;
+    if PlayerJumping = 0 then
     begin
-      if d_6ECB = 0 then
-        d_34EC[1].Sprite := 10
+      if PlayerRightHeld = 0 then
+        GameActors[1].ActorSpriteBase := 10
       else
-        d_34EC[1].Sprite := 1;
+        GameActors[1].ActorSpriteBase := 1;
     end
-    else if d_6ECB = 1 then
-      d_34EC[1].Sprite := 13
+    else if PlayerRightHeld = 1 then
+      GameActors[1].ActorSpriteBase := 13
     else
-      d_34EC[1].Sprite := 14;
+      GameActors[1].ActorSpriteBase := 14;
   end
-  else if d_6824 = Integer(d_70C0) then
+  else if LastKeyboardScanCode = Integer(RightKeyScanCode) then
   begin
-    d_6ECB := 1;
-    d_6ECA := 0;
-    d_6EC2 := 0;
-    d_34EC[1].Sprite := 1;
-    if d_6EC1 <> 0 then
-      d_34EC[1].Sprite := 13;
+    PlayerRightHeld := 1;
+    PlayerLeftHeld := 0;
+    PlayerOnMovingSupport := 0;
+    GameActors[1].ActorSpriteBase := 1;
+    if PlayerJumping <> 0 then
+      GameActors[1].ActorSpriteBase := 13;
   end
-  else if Integer(d_70C0) + 128 = d_6824 then
+  else if Integer(RightKeyScanCode) + 128 = LastKeyboardScanCode then
   begin
-    d_6ECB := 0;
-    if d_6EC1 = 0 then
+    PlayerRightHeld := 0;
+    if PlayerJumping = 0 then
     begin
-      if d_6ECA = 0 then
-        d_34EC[1].Sprite := 9
+      if PlayerLeftHeld = 0 then
+        GameActors[1].ActorSpriteBase := 9
       else
-        d_34EC[1].Sprite := 5;
+        GameActors[1].ActorSpriteBase := 5;
     end
-    else if d_6ECA = 1 then
-      d_34EC[1].Sprite := 14
+    else if PlayerLeftHeld = 1 then
+      GameActors[1].ActorSpriteBase := 14
     else
-      d_34EC[1].Sprite := 13;
+      GameActors[1].ActorSpriteBase := 13;
   end
-  else if d_6824 = Integer(d_70C2) then
+  else if LastKeyboardScanCode = Integer(FireKeyScanCode) then
   begin
-    if d_6858 = 0 then
-      u7_0000(20)
-    else if d_6858 > 0 then
+    if PlayerAmmo = 0 then
+      StartSoundEffect(20)
+    else if PlayerAmmo > 0 then
     begin
-      if d_69F5 = 0 then
+      if PlayerDying = 0 then
       begin
-        if d_681C > 1 then
+        if CurrentLevelNumber > 1 then
         begin
-          changed := 0;
-          i := 0;
+          ShotSpawned := 0;
+          ShotSlot := 0;
           repeat
-            Inc(i);
-            if d_685A[i].Inactive = 1 then
+            Inc(ShotSlot);
+            if PlayerShots[ShotSlot].ActorSlotInactive = 1 then
             begin
-              d_685A[i].X := d_34EC[1].X;
-              d_685A[i].Y := d_34EC[1].Y;
-              d_685A[i].OldX := d_34EC[1].OldX;
-              d_685A[i].OldY := d_34EC[1].OldY;
-              d_685A[i].Sprite := 39;
-              if (d_34EC[1].Sprite = 1) or (d_34EC[1].Sprite = 13) or (d_34EC[1].Sprite = 9) or (d_34EC[1].Sprite = 11) then
+              PlayerShots[ShotSlot].ActorWorldX := GameActors[1].ActorWorldX;
+              PlayerShots[ShotSlot].ActorWorldY := GameActors[1].ActorWorldY;
+              PlayerShots[ShotSlot].ActorPreviousX := GameActors[1].ActorPreviousX;
+              PlayerShots[ShotSlot].ActorPreviousY := GameActors[1].ActorPreviousY;
+              PlayerShots[ShotSlot].ActorSpriteBase := 39;
+              if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 13) or (GameActors[1].ActorSpriteBase
+              = 9) or (GameActors[1].ActorSpriteBase = 11) then
               begin
-                d_685A[i].DX := 1;
-                d_34EC[1].Sprite := 11;
+                PlayerShots[ShotSlot].ActorDirectionX := 1;
+                GameActors[1].ActorSpriteBase := 11;
               end
               else
               begin
-                d_685A[i].DX := -1;
-                d_34EC[1].Sprite := 12;
+                PlayerShots[ShotSlot].ActorDirectionX := -1;
+                GameActors[1].ActorSpriteBase := 12;
               end;
-              d_685A[i].DY := 0;
-              d_685A[i].Frame := 1;
-              d_685A[i].Speed := 8;
-              d_685A[i].Tick := 0;
-              d_685A[i].Limit := 0;
-              d_685A[i].Kind := 7;
-              d_685A[i].Inactive := 0;
-              d_685A[i].Marked := 0;
-              changed := 1;
-              Dec(d_6858);
-              d_6832 := -1;
-              u7_0000(2);
-              if (d_34EC[1].Sprite = 1) or (d_34EC[1].Sprite = 9) or (d_34EC[1].Sprite = 13) or (d_34EC[1].Sprite = 11) then
-                d_34EC[1].Sprite := 11
+              PlayerShots[ShotSlot].DirectionY := 0;
+              PlayerShots[ShotSlot].ActorAnimationCounter := 1;
+              PlayerShots[ShotSlot].ActorMovementStep := 8;
+              PlayerShots[ShotSlot].ActorCounterA := 0;
+              PlayerShots[ShotSlot].ActorCounterB := 0;
+              PlayerShots[ShotSlot].ActorKindCode := 7;
+              PlayerShots[ShotSlot].ActorSlotInactive := 0;
+              PlayerShots[ShotSlot].ActorRemovalPending := 0;
+              ShotSpawned := 1;
+              Dec(PlayerAmmo);
+              StatusBarCameraX := -1;
+              StartSoundEffect(2);
+              if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 9) or (GameActors[1].ActorSpriteBase
+              = 13) or (GameActors[1].ActorSpriteBase = 11) then
+                GameActors[1].ActorSpriteBase := 11
               else
-                d_34EC[1].Sprite := 12;
+                GameActors[1].ActorSpriteBase := 12;
             end;
-          until (i = d_69A2) or (changed <> 0);
+          until (ShotSlot = PlayerProjectileLimit) or (ShotSpawned <> 0);
         end;
       end;
     end;
-  end  else if Integer(d_70C2) + 128 = d_6824 then
+  end  else if Integer(FireKeyScanCode) + 128 = LastKeyboardScanCode then
   begin
-    if d_34EC[1].Sprite = 11 then
-      d_34EC[1].Sprite := 9
-    else if d_34EC[1].Sprite = 12 then
-      d_34EC[1].Sprite := 10;
+    if GameActors[1].ActorSpriteBase = 11 then
+      GameActors[1].ActorSpriteBase := 9
+    else if GameActors[1].ActorSpriteBase = 12 then
+      GameActors[1].ActorSpriteBase := 10;
   end
-  else if d_6824 = Integer(d_70C4) then
+  else if LastKeyboardScanCode = Integer(JumpKeyScanCode) then
   begin
-    d_6ECD := 1;
+    PlayerJumpHeld := 1;
   end
-  else if Integer(d_70C4) + 128 = d_6824 then
+  else if Integer(JumpKeyScanCode) + 128 = LastKeyboardScanCode then
   begin
-    d_6ECD := 0;
+    PlayerJumpHeld := 0;
   end
-  else if d_6824 = Integer(d_70BA) then
+  else if LastKeyboardScanCode = Integer(UpKeyScanCode) then
   begin
-    if d_681C = 1 then
+    if CurrentLevelNumber = 1 then
     begin
-      d_6EC3 := 1;
-      d_6EC4 := 0;
-      if (d_34EC[1].Sprite = 1) or (d_34EC[1].Sprite = 9) or (d_34EC[1].Sprite = 11) then
-        d_34EC[1].Sprite := 1
+      PlayerUpHeld := 1;
+      PlayerDownHeld := 0;
+      if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 9) or (GameActors[1].ActorSpriteBase = 11)
+      then
+        GameActors[1].ActorSpriteBase := 1
       else
-        d_34EC[1].Sprite := 5;
+        GameActors[1].ActorSpriteBase := 5;
     end;
   end
-  else if Integer(d_70BA) + 128 = d_6824 then
+  else if Integer(UpKeyScanCode) + 128 = LastKeyboardScanCode then
   begin
-    if d_681C = 1 then
+    if CurrentLevelNumber = 1 then
     begin
-      d_6EC3 := 0;
-      if (d_34EC[1].Sprite = 1) or (d_34EC[1].Sprite = 9) or (d_34EC[1].Sprite = 11) then
-        d_34EC[1].Sprite := 9
+      PlayerUpHeld := 0;
+      if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 9) or (GameActors[1].ActorSpriteBase = 11)
+      then
+        GameActors[1].ActorSpriteBase := 9
       else
-        d_34EC[1].Sprite := 10;
+        GameActors[1].ActorSpriteBase := 10;
     end;
   end
-  else if d_6824 = Integer(d_70BC) then
+  else if LastKeyboardScanCode = Integer(DownKeyScanCode) then
   begin
-    if d_681C = 1 then
+    if CurrentLevelNumber = 1 then
     begin
-      d_6EC4 := 1;
-      d_6EC3 := 0;
-      if (d_34EC[1].Sprite = 1) or (d_34EC[1].Sprite = 9) or (d_34EC[1].Sprite = 11) then
-        d_34EC[1].Sprite := 1
+      PlayerDownHeld := 1;
+      PlayerUpHeld := 0;
+      if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 9) or (GameActors[1].ActorSpriteBase = 11)
+      then
+        GameActors[1].ActorSpriteBase := 1
       else
-        d_34EC[1].Sprite := 5;
+        GameActors[1].ActorSpriteBase := 5;
     end;
   end
-  else if Integer(d_70BC) + 128 = d_6824 then
+  else if Integer(DownKeyScanCode) + 128 = LastKeyboardScanCode then
   begin
-    if d_681C = 1 then
+    if CurrentLevelNumber = 1 then
     begin
-      d_6EC4 := 0;
-      if (d_34EC[1].Sprite = 1) or (d_34EC[1].Sprite = 9) or (d_34EC[1].Sprite = 11) then
-        d_34EC[1].Sprite := 9
+      PlayerDownHeld := 0;
+      if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 9) or (GameActors[1].ActorSpriteBase = 11)
+      then
+        GameActors[1].ActorSpriteBase := 9
       else
-        d_34EC[1].Sprite := 10;
+        GameActors[1].ActorSpriteBase := 10;
     end;
   end
-  else if d_6824 = 1 then
+  else if LastKeyboardScanCode = 1 then
   begin
-    d_6EC5 := 1;
-    d_6816 := 1;
+    EscapePressed := 1;
+    GameOptionsRequested := 1;
   end
-  else if d_6824 = 16 then
-    d_6816 := 1
-  else if d_6824 = 59 then
-    d_6816 := 1
-  else if d_6824 = 60 then
-    d_6816 := 1
-  else if d_6824 = 61 then
-    d_6816 := 1
-  else if d_6824 = 62 then
-    d_6816 := 1
-  else if d_6824 = 63 then
-    d_6816 := 1
-  else if d_6824 = 64 then
-    d_6816 := 1
-  else if d_6824 = 65 then
-    d_6816 := 1
-  else if d_6824 = 66 then
-    d_6816 := 1
-  else if d_6824 = 67 then
-    d_6816 := 1
-  else if d_6824 = 68 then
-    d_6816 := 1
-  else if d_6824 = $16 then
+  else if LastKeyboardScanCode = 16 then
+    GameOptionsRequested := 1
+  else if LastKeyboardScanCode = 59 then
+    GameOptionsRequested := 1
+  else if LastKeyboardScanCode = 60 then
+    GameOptionsRequested := 1
+  else if LastKeyboardScanCode = 61 then
+    GameOptionsRequested := 1
+  else if LastKeyboardScanCode = 62 then
+    GameOptionsRequested := 1
+  else if LastKeyboardScanCode = 63 then
+    GameOptionsRequested := 1
+  else if LastKeyboardScanCode = 64 then
+    GameOptionsRequested := 1
+  else if LastKeyboardScanCode = 65 then
+    GameOptionsRequested := 1
+  else if LastKeyboardScanCode = 66 then
+    GameOptionsRequested := 1
+  else if LastKeyboardScanCode = 67 then
+    GameOptionsRequested := 1
+  else if LastKeyboardScanCode = 68 then
+    GameOptionsRequested := 1
+  else if LastKeyboardScanCode = $16 then
   begin
-    d_69D9 := 1;
-    if (d_69DA <> 0) and (d_69DB <> 0) and (d_69DC = 0) then
+    AmmoChordUHeld := 1;
+    if (AmmoChordVHeld <> 0) and (AmmoChordKHeld <> 0) and (ExtraAmmoCheatUsed = 0) then
     begin
-      d_6858 := d_6858 + 25;
-      d_69DC := 1;
-      d_6832 := -1;
+      PlayerAmmo := PlayerAmmo + 25;
+      ExtraAmmoCheatUsed := 1;
+      StatusBarCameraX := -1;
     end;
   end
-  else if d_6824 = $96 then
-    d_69D9 := 0
-  else if d_6824 = $2F then
+  else if LastKeyboardScanCode = $96 then
+    AmmoChordUHeld := 0
+  else if LastKeyboardScanCode = $2F then
   begin
-    d_69DA := 1;
-    if (d_69D9 <> 0) and (d_69DB <> 0) and (d_69DC = 0) then
+    AmmoChordVHeld := 1;
+    if (AmmoChordUHeld <> 0) and (AmmoChordKHeld <> 0) and (ExtraAmmoCheatUsed = 0) then
     begin
-      d_6858 := d_6858 + 25;
-      d_69DC := 1;
-      d_6832 := -1;
+      PlayerAmmo := PlayerAmmo + 25;
+      ExtraAmmoCheatUsed := 1;
+      StatusBarCameraX := -1;
     end;
   end
-  else if d_6824 = $AF then
-    d_69DA := 0
-  else if d_6824 = $25 then
+  else if LastKeyboardScanCode = $AF then
+    AmmoChordVHeld := 0
+  else if LastKeyboardScanCode = $25 then
   begin
-    d_69DB := 1;
-    if (d_69D9 <> 0) and (d_69DA <> 0) and (d_69DC = 0) then
+    AmmoChordKHeld := 1;
+    if (AmmoChordUHeld <> 0) and (AmmoChordVHeld <> 0) and (ExtraAmmoCheatUsed = 0) then
     begin
-      d_6858 := d_6858 + 25;
-      d_69DC := 1;
-      d_6832 := -1;
+      PlayerAmmo := PlayerAmmo + 25;
+      ExtraAmmoCheatUsed := 1;
+      StatusBarCameraX := -1;
     end;
   end
-  else if d_6824 = $A5 then
-    d_69DB := 0
-  else if d_6824 = $2C then
+  else if LastKeyboardScanCode = $A5 then
+    AmmoChordKHeld := 0
+  else if LastKeyboardScanCode = $2C then
   begin
-    d_69DD := 1;
-    if (d_69DE <> 0) and (d_69DF <> 0) then
+    InventoryChordZHeld := 1;
+    if (InventoryChordGHeld <> 0) and (InventoryChordIHeld <> 0) then
     begin
-      d_69EC := 1;
-      d_69F4 := 1;
-      d_6832 := -1;
+      PlayerHasFloppyDisk := 1;
+      PlayerHasDynamite := 1;
+      StatusBarCameraX := -1;
     end;
   end
-  else if d_6824 = $AC then
-    d_69DD := 0
-  else if d_6824 = $22 then
+  else if LastKeyboardScanCode = $AC then
+    InventoryChordZHeld := 0
+  else if LastKeyboardScanCode = $22 then
   begin
-    d_69DE := 1;
-    if (d_69DD <> 0) and (d_69DF <> 0) then
+    InventoryChordGHeld := 1;
+    if (InventoryChordZHeld <> 0) and (InventoryChordIHeld <> 0) then
     begin
-      d_69EC := 1;
-      d_69F4 := 1;
-      d_6832 := -1;
+      PlayerHasFloppyDisk := 1;
+      PlayerHasDynamite := 1;
+      StatusBarCameraX := -1;
     end;
   end
-  else if d_6824 = $A2 then
-    d_69DE := 0
-  else if d_6824 = $17 then
+  else if LastKeyboardScanCode = $A2 then
+    InventoryChordGHeld := 0
+  else if LastKeyboardScanCode = $17 then
   begin
-    d_69DF := 1;
-    if (d_69DE <> 0) and (d_69DD <> 0) then
+    InventoryChordIHeld := 1;
+    if (InventoryChordGHeld <> 0) and (InventoryChordZHeld <> 0) then
     begin
-      d_69EC := 1;
-      d_69F4 := 1;
-      d_6832 := -1;
+      PlayerHasFloppyDisk := 1;
+      PlayerHasDynamite := 1;
+      StatusBarCameraX := -1;
     end;
   end
-  else if d_6824 = $97 then
-    d_69DF := 0
-  else if d_6824 = $19 then
+  else if LastKeyboardScanCode = $97 then
+    InventoryChordIHeld := 0
+  else if LastKeyboardScanCode = $19 then
   begin
-    d_69D4 := 1;
-    if (d_69D5 <> 0) and (d_69D6 <> 0) then
+    GodChordPHeld := 1;
+    if (GodChordJHeld <> 0) and (GodChordXHeld <> 0) then
     begin
-      if d_69F3 = 0 then
-        d_69F3 := 1
+      if PlayerGodMode = 0 then
+        PlayerGodMode := 1
       else
-        d_69F3 := 0;
-      d_69D7 := 1;
+        PlayerGodMode := 0;
+      GodModeMessagePending := 1;
     end;
-    d_69D2 := 1;
-    if (d_69CF <> 0) and (d_69D0 <> 0) and (d_69D1 <> 0) then
-      d_69D3 := 1;
+    LevelCheatPBHeld := 1;
+    if (WarpChordOHeld <> 0) and (WarpChordNHeld <> 0) and (WarpChordDHeld <> 0) then
+      WarpLevelRequested := 1;
   end
-  else if d_6824 = $99 then
+  else if LastKeyboardScanCode = $99 then
   begin
-    d_69D4 := 0;
-    d_69D2 := 0;
+    GodChordPHeld := 0;
+    LevelCheatPBHeld := 0;
   end
-  else if d_6824 = $24 then
+  else if LastKeyboardScanCode = $24 then
   begin
-    d_69D5 := 1;
-    if (d_69D4 <> 0) and (d_69D6 <> 0) then
+    GodChordJHeld := 1;
+    if (GodChordPHeld <> 0) and (GodChordXHeld <> 0) then
     begin
-      if d_69F3 = 0 then
-        d_69F3 := 1
+      if PlayerGodMode = 0 then
+        PlayerGodMode := 1
       else
-        d_69F3 := 0;
-      d_69D7 := 1;
+        PlayerGodMode := 0;
+      GodModeMessagePending := 1;
     end;
   end
-  else if d_6824 = $A4 then
-    d_69D5 := 0
-  else if d_6824 = $2D then
+  else if LastKeyboardScanCode = $A4 then
+    GodChordJHeld := 0
+  else if LastKeyboardScanCode = $2D then
   begin
-    d_69D6 := 1;
-    if (d_69D4 <> 0) and (d_69D5 <> 0) then
+    GodChordXHeld := 1;
+    if (GodChordPHeld <> 0) and (GodChordJHeld <> 0) then
     begin
-      if d_69F3 = 0 then
-        d_69F3 := 1
+      if PlayerGodMode = 0 then
+        PlayerGodMode := 1
       else
-        d_69F3 := 0;
-      d_69D7 := 1;
+        PlayerGodMode := 0;
+      GodModeMessagePending := 1;
     end;
   end
-  else if d_6824 = $30 then
-    d_69D2 := 1
-  else if d_6824 = $B0 then
-    d_69D2 := 0
-  else if d_6824 = $AD then
-    d_69D6 := 0
-  else if d_6824 = $18 then
+  else if LastKeyboardScanCode = $30 then
+    LevelCheatPBHeld := 1
+  else if LastKeyboardScanCode = $B0 then
+    LevelCheatPBHeld := 0
+  else if LastKeyboardScanCode = $AD then
+    GodChordXHeld := 0
+  else if LastKeyboardScanCode = $18 then
   begin
-    d_69CF := 1;
-    if (d_69D2 <> 0) and (d_69D0 <> 0) and (d_69D1 <> 0) then
-      d_69D3 := 1;
+    WarpChordOHeld := 1;
+    if (LevelCheatPBHeld <> 0) and (WarpChordNHeld <> 0) and (WarpChordDHeld <> 0) then
+      WarpLevelRequested := 1;
   end
-  else if d_6824 = $98 then
-    d_69CF := 0
-  else if d_6824 = $31 then
+  else if LastKeyboardScanCode = $98 then
+    WarpChordOHeld := 0
+  else if LastKeyboardScanCode = $31 then
   begin
-    d_69D0 := 1;
-    if (d_69CF <> 0) and (d_69D2 <> 0) and (d_69D1 <> 0) then
-      d_69D3 := 1;
+    WarpChordNHeld := 1;
+    if (WarpChordOHeld <> 0) and (LevelCheatPBHeld <> 0) and (WarpChordDHeld <> 0) then
+      WarpLevelRequested := 1;
   end
-  else if d_6824 = $B1 then
-    d_69D0 := 0
-  else if d_6824 = $20 then
+  else if LastKeyboardScanCode = $B1 then
+    WarpChordNHeld := 0
+  else if LastKeyboardScanCode = $20 then
   begin
-    d_69D1 := 1;
-    if (d_69CF <> 0) and (d_69D0 <> 0) and (d_69D2 <> 0) then
-      d_69D3 := 1;
+    WarpChordDHeld := 1;
+    if (WarpChordOHeld <> 0) and (WarpChordNHeld <> 0) and (LevelCheatPBHeld <> 0) then
+      WarpLevelRequested := 1;
   end
-  else if d_6824 = $A0 then
-    d_69D1 := 0;
+  else if LastKeyboardScanCode = $A0 then
+    WarpChordDHeld := 0;
 
-done:
-  if (d_6EC3 = 0) and (d_6EC4 = 0) and (d_6ECB = 0) and (d_6ECA = 0) then
-    d_681E := 0;
+ChainKeyboardHandler:
+  if (PlayerUpHeld = 0) and (PlayerDownHeld = 0) and (PlayerRightHeld = 0) and (PlayerLeftHeld = 0) then
+    MoveRampTicks := 0;
   { chain to the previous INT 9 handler (d_70D2, saved by p_0e67) }
-  inline($FF/$36/>d_70D2+2/     { push word ptr OldInt9+2 }
-         $FF/$36/>d_70D2/       { push word ptr OldInt9 }
+  inline($FF/$36/>SavedKeyboardVector+2/     { push word ptr OldInt9+2 }
+         $FF/$36/>SavedKeyboardVector/       { push word ptr OldInt9 }
          $5B/$58/$87/$5E/$0E/$87/$46/$10/$89/$EC/$5D/$07/$1F/$5F/$5E/$5A/$59/$CB);
   { acknowledge the keyboard and send EOI (unreachable after the chain; the original
     has $80 where MOV AL,20h would be $B0) }
@@ -395,216 +405,223 @@ done:
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
-procedure p_08a2;
+{ Reads joystick axes, compares each with calibrated center +/-50. }
+procedure PollJoystickControls;
 var
-  i: Integer;
-  changed: Byte;
+  PollJoystickControls_ShotSlot: Integer;
+  PollJoystickControl_ShotSpawned: Byte;
 begin
-  d_6D6C := u6_00cc(0);
-  d_6D6E := u6_00cc(1);
-  if d_6EBF <> 0 then
+  JoystickAxisX := ReadJoystickAxis(0);
+  JoystickAxisY := ReadJoystickAxis(1);
+  if JoystickFirePosePending <> 0 then
   begin
-    d_6EBF := 0;
-    if d_34EC[1].Sprite = 11 then
-      d_34EC[1].Sprite := 9
-    else if d_34EC[1].Sprite = 12 then
-      d_34EC[1].Sprite := 10;
+    JoystickFirePosePending := 0;
+    if GameActors[1].ActorSpriteBase = 11 then
+      GameActors[1].ActorSpriteBase := 9
+    else if GameActors[1].ActorSpriteBase = 12 then
+      GameActors[1].ActorSpriteBase := 10;
   end;
-  if d_6D68 - 50 > d_6D6C then
+  if JoystickCenterX - 50 > JoystickAxisX then
   begin
-    d_6ECA := 1;
-    d_6ECB := 0;
-    d_6EC2 := 0;
-    d_6D70 := 1;
-    if (d_6EC1 = 0) and (d_6EC0 = 0) then
-      d_34EC[1].Sprite := 5
+    PlayerLeftHeld := 1;
+    PlayerRightHeld := 0;
+    PlayerOnMovingSupport := 0;
+    JoystickHorizontalMoved := 1;
+    if (PlayerJumping = 0) and (PlayerFalling = 0) then
+      GameActors[1].ActorSpriteBase := 5
     else
-      d_34EC[1].Sprite := 14;
+      GameActors[1].ActorSpriteBase := 14;
   end
-  else if d_6D68 + 50 < d_6D6C then
+  else if JoystickCenterX + 50 < JoystickAxisX then
   begin
-    d_6ECB := 1;
-    d_6ECA := 0;
-    d_6EC2 := 0;
-    d_6D70 := 1;
-    if (d_6EC1 = 0) and (d_6EC0 = 0) then
-      d_34EC[1].Sprite := 1
+    PlayerRightHeld := 1;
+    PlayerLeftHeld := 0;
+    PlayerOnMovingSupport := 0;
+    JoystickHorizontalMoved := 1;
+    if (PlayerJumping = 0) and (PlayerFalling = 0) then
+      GameActors[1].ActorSpriteBase := 1
     else
-      d_34EC[1].Sprite := 13;
+      GameActors[1].ActorSpriteBase := 13;
   end
-  else if d_6D70 <> 0 then
+  else if JoystickHorizontalMoved <> 0 then
   begin
-    if (d_6ECB = 1) or (d_34EC[1].Sprite = 1) then
-      d_34EC[1].Sprite := 9
+    if (PlayerRightHeld = 1) or (GameActors[1].ActorSpriteBase = 1) then
+      GameActors[1].ActorSpriteBase := 9
     else
-      d_34EC[1].Sprite := 10;
-    d_6ECB := 0;
-    d_6ECA := 0;
-    d_6D70 := 0;
+      GameActors[1].ActorSpriteBase := 10;
+    PlayerRightHeld := 0;
+    PlayerLeftHeld := 0;
+    JoystickHorizontalMoved := 0;
   end;
 
-  if d_681C = 1 then
+  if CurrentLevelNumber = 1 then
   begin
-    if d_6D6A - 50 > d_6D6E then
+    if JoystickCenterY - 50 > JoystickAxisY then
     begin
-      d_6EC3 := 1;
-      d_6D71 := 1;
-      if (d_34EC[1].Sprite = 1) or (d_34EC[1].Sprite = 9) or (d_34EC[1].Sprite = 11) then
-        d_34EC[1].Sprite := 1
+      PlayerUpHeld := 1;
+      JoystickVerticalMoved := 1;
+      if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 9) or (GameActors[1].ActorSpriteBase = 11)
+      then
+        GameActors[1].ActorSpriteBase := 1
       else
-        d_34EC[1].Sprite := 5;
+        GameActors[1].ActorSpriteBase := 5;
     end
-    else if d_6D6A + 50 < d_6D6E then
+    else if JoystickCenterY + 50 < JoystickAxisY then
     begin
-      d_6EC4 := 1;
-      d_6D71 := 1;
-      if (d_34EC[1].Sprite = 1) or (d_34EC[1].Sprite = 9) or (d_34EC[1].Sprite = 11) then
-        d_34EC[1].Sprite := 1
+      PlayerDownHeld := 1;
+      JoystickVerticalMoved := 1;
+      if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 9) or (GameActors[1].ActorSpriteBase = 11)
+      then
+        GameActors[1].ActorSpriteBase := 1
       else
-        d_34EC[1].Sprite := 5;
+        GameActors[1].ActorSpriteBase := 5;
     end
-    else if d_6D71 <> 0 then
+    else if JoystickVerticalMoved <> 0 then
     begin
-      d_6D71 := 0;
-      d_6EC3 := 0;
-      d_6EC4 := 0;
-      if (d_34EC[1].Sprite = 1) or (d_34EC[1].Sprite = 9) or (d_34EC[1].Sprite = 11) then
-        d_34EC[1].Sprite := 9
+      JoystickVerticalMoved := 0;
+      PlayerUpHeld := 0;
+      PlayerDownHeld := 0;
+      if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 9) or (GameActors[1].ActorSpriteBase = 11)
+      then
+        GameActors[1].ActorSpriteBase := 9
       else
-        d_34EC[1].Sprite := 10;
+        GameActors[1].ActorSpriteBase := 10;
     end;
   end;
 
-  if not u6_0058 then
+  if not IsJoystickButton1Pressed then
     Exit;
-  if d_6858 <= 0 then
+  if PlayerAmmo <= 0 then
     Exit;
-  if d_681C <= 1 then
+  if CurrentLevelNumber <= 1 then
     Exit;
-  if d_69F5 <> 0 then
+  if PlayerDying <> 0 then
     Exit;
 
-  changed := 0;
-  i := 0;
+  PollJoystickControl_ShotSpawned := 0;
+  PollJoystickControls_ShotSlot := 0;
   repeat
-    Inc(i);
-    if d_685A[i].Inactive = 1 then
+    Inc(PollJoystickControls_ShotSlot);
+    if PlayerShots[PollJoystickControls_ShotSlot].ActorSlotInactive = 1 then
     begin
-      d_685A[i].X := d_34EC[1].X;
-      d_685A[i].Y := d_34EC[1].Y;
-      d_685A[i].OldX := d_34EC[1].OldX;
-      d_685A[i].OldY := d_34EC[1].OldY;
-      d_685A[i].Sprite := 39;
-      if (d_34EC[1].Sprite = 1) or (d_34EC[1].Sprite = 13) or (d_34EC[1].Sprite = 9) or (d_34EC[1].Sprite = 11) then
+      PlayerShots[PollJoystickControls_ShotSlot].ActorWorldX := GameActors[1].ActorWorldX;
+      PlayerShots[PollJoystickControls_ShotSlot].ActorWorldY := GameActors[1].ActorWorldY;
+      PlayerShots[PollJoystickControls_ShotSlot].ActorPreviousX := GameActors[1].ActorPreviousX;
+      PlayerShots[PollJoystickControls_ShotSlot].ActorPreviousY := GameActors[1].ActorPreviousY;
+      PlayerShots[PollJoystickControls_ShotSlot].ActorSpriteBase := 39;
+      if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 13) or (GameActors[1].ActorSpriteBase = 9) or
+      (GameActors[1].ActorSpriteBase = 11) then
       begin
-        d_685A[i].DX := 1;
-        d_6EBF := 1;
-        d_34EC[1].Sprite := 11;
+        PlayerShots[PollJoystickControls_ShotSlot].ActorDirectionX := 1;
+        JoystickFirePosePending := 1;
+        GameActors[1].ActorSpriteBase := 11;
       end
       else
       begin
-        d_685A[i].DX := -1;
-        d_6EBF := 1;
-        d_34EC[1].Sprite := 12;
+        PlayerShots[PollJoystickControls_ShotSlot].ActorDirectionX := -1;
+        JoystickFirePosePending := 1;
+        GameActors[1].ActorSpriteBase := 12;
       end;
-      d_685A[i].DY := 0;
-      d_685A[i].Frame := 1;
-      d_685A[i].Speed := 8;
-      d_685A[i].Tick := 0;
-      d_685A[i].Limit := 0;
-      d_685A[i].Kind := 7;
-      d_685A[i].Inactive := 0;
-      d_685A[i].Marked := 0;
-      changed := 1;
-      Dec(d_6858);
-      d_6832 := -1;
-      u7_0000(2);
-      if (d_34EC[1].Sprite = 1) or (d_34EC[1].Sprite = 9) or (d_34EC[1].Sprite = 13) or (d_34EC[1].Sprite = 11) then
-        d_34EC[1].Sprite := 11
+      PlayerShots[PollJoystickControls_ShotSlot].DirectionY := 0;
+      PlayerShots[PollJoystickControls_ShotSlot].ActorAnimationCounter := 1;
+      PlayerShots[PollJoystickControls_ShotSlot].ActorMovementStep := 8;
+      PlayerShots[PollJoystickControls_ShotSlot].ActorCounterA := 0;
+      PlayerShots[PollJoystickControls_ShotSlot].ActorCounterB := 0;
+      PlayerShots[PollJoystickControls_ShotSlot].ActorKindCode := 7;
+      PlayerShots[PollJoystickControls_ShotSlot].ActorSlotInactive := 0;
+      PlayerShots[PollJoystickControls_ShotSlot].ActorRemovalPending := 0;
+      PollJoystickControl_ShotSpawned := 1;
+      Dec(PlayerAmmo);
+      StatusBarCameraX := -1;
+      StartSoundEffect(2);
+      if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 9) or (GameActors[1].ActorSpriteBase = 13) or
+      (GameActors[1].ActorSpriteBase = 11) then
+        GameActors[1].ActorSpriteBase := 11
       else
-        d_34EC[1].Sprite := 12;
+        GameActors[1].ActorSpriteBase := 12;
     end;
-  until (i = d_69A2) or (changed <> 0);
+  until (PollJoystickControls_ShotSlot = PlayerProjectileLimit) or (PollJoystickControl_ShotSpawned <> 0);
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F-}
-procedure p_0be5; interrupt;
+{ INT 1Ch handler increments timing counters, expires speed/confusion/slow effects and advances PC-speaker. }
+procedure TimerInterrupt; interrupt;
 begin
   inline($FA);
-  Inc(d_682C);
-  Inc(d_0294[0]);
-  if d_0294[0] = 20 then
+  Inc(GameTickCounter);
+  Inc(TimerSubticks[0]);
+  if TimerSubticks[0] = 20 then
   begin
-    d_0294[0] := 0;
-    if d_69A6 > 0 then
+    TimerSubticks[0] := 0;
+    if SpeedBoostTimeLeft > 0 then
     begin
-      Dec(d_69A6);
-      if d_69A6 = 0 then
+      Dec(SpeedBoostTimeLeft);
+      if SpeedBoostTimeLeft = 0 then
       begin
-        d_69A4 := 0;
-        d_6832 := -1;
+        PlayerSpeedBoost := 0;
+        StatusBarCameraX := -1;
       end;
     end;
-    if d_69AE > 0 then
+    if SlowMovementTimeLeft > 0 then
     begin
-      Dec(d_69AE, 2);
-      if d_69AE = 0 then
+      Dec(SlowMovementTimeLeft, 2);
+      if SlowMovementTimeLeft = 0 then
       begin
-        d_69B0 := 0;
-        d_6832 := -1;
+        PlayerSlowMovement := 0;
+        StatusBarCameraX := -1;
       end;
     end;
-    if d_69AA > 0 then
+    if ConfusionTimeLeft > 0 then
     begin
-      Dec(d_69AA, 2);
-      if d_69AA = 0 then
+      Dec(ConfusionTimeLeft, 2);
+      if ConfusionTimeLeft = 0 then
       begin
-        d_69AC := 1;
-        d_69AD := 0;
-        d_6832 := -1;
+        ConfusionEndedMessagePending := 1;
+        PlayerControlsReversed := 0;
+        StatusBarCameraX := -1;
       end;
     end;
   end;
 
-  if (d_34AE <> 0) and (d_34AF <> 0) then
+  if (SoundPlaying <> 0) and (SoundEnabled <> 0) then
   begin
-    case d_34AA of
+    case CurrentSoundEffect of
       1..12:
         begin
-          Sound(d_341E^[d_34AA, d_34AC]);
-          Inc(d_34AC);
-          if d_34AC mod d_341E^[d_34AA, 303] = 0 then
+          Sound(SoundBankOne^[CurrentSoundEffect, SoundSampleIndex]);
+          Inc(SoundSampleIndex);
+          if SoundSampleIndex mod SoundBankOne^[CurrentSoundEffect, 303] = 0 then
             NoSound;
-          if d_341E^[d_34AA, d_34AC] = -1 then
+          if SoundBankOne^[CurrentSoundEffect, SoundSampleIndex] = -1 then
           begin
-            d_34AE := 0;
-            d_34AC := 1;
+            SoundPlaying := 0;
+            SoundSampleIndex := 1;
             NoSound;
           end;
         end;
       13..24:
         begin
-          Sound(d_3422^[d_34AA - 12, d_34AC]);
-          Inc(d_34AC);
-          if d_34AC mod d_3422^[d_34AA - 12, 303] = 0 then
+          Sound(SoundBankTwo^[CurrentSoundEffect - 12, SoundSampleIndex]);
+          Inc(SoundSampleIndex);
+          if SoundSampleIndex mod SoundBankTwo^[CurrentSoundEffect - 12, 303] = 0 then
             NoSound;
-          if d_3422^[d_34AA - 12, d_34AC] = -1 then
+          if SoundBankTwo^[CurrentSoundEffect - 12, SoundSampleIndex] = -1 then
           begin
-            d_34AE := 0;
-            d_34AC := 1;
+            SoundPlaying := 0;
+            SoundSampleIndex := 1;
             NoSound;
           end;
         end;
       25..36:
         begin
-          Sound(d_3426^[d_34AA - 24, d_34AC]);
-          Inc(d_34AC);
-          if d_34AC mod d_3426^[d_34AA - 24, 303] = 0 then
+          Sound(SoundBankThree^[CurrentSoundEffect - 24, SoundSampleIndex]);
+          Inc(SoundSampleIndex);
+          if SoundSampleIndex mod SoundBankThree^[CurrentSoundEffect - 24, 303] = 0 then
             NoSound;
-          if d_3426^[d_34AA - 24, d_34AC] = -1 then
+          if SoundBankThree^[CurrentSoundEffect - 24, SoundSampleIndex] = -1 then
           begin
-            d_34AE := 0;
-            d_34AC := 1;
+            SoundPlaying := 0;
+            SoundSampleIndex := 1;
             NoSound;
           end;
         end;
@@ -614,112 +631,117 @@ begin
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
-procedure p_0e33;
+{ Restores ExitProc and the saved INT 1Ch and INT 9 vectors. }
+procedure RestoreExitHandlers;
 begin
-  ExitProc := d_70CA;
-  SetIntVec($1C, d_70CE);
-  SetIntVec($09, d_70D2);
+  ExitProc := SavedExitProc;
+  SetIntVec($1C, SavedTimerVector);
+  SetIntVec($09, SavedKeyboardVector);
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F-}
-procedure p_0e67;
+{ Saves ExitProc/INT 1Ch/INT 9 and installs p_0e33, p_0be5 and p_0000. }
+procedure InstallGameHandlers;
 begin
-  d_70CA := ExitProc;
-  ExitProc := @p_0e33;
-  GetIntVec($1C, d_70CE);
-  SetIntVec($1C, @p_0be5);
-  GetIntVec($09, d_70D2);
-  SetIntVec($09, @p_0000);
+  SavedExitProc := ExitProc;
+  ExitProc := @RestoreExitHandlers;
+  GetIntVec($1C, SavedTimerVector);
+  SetIntVec($1C, @TimerInterrupt);
+  GetIntVec($09, SavedKeyboardVector);
+  SetIntVec($09, @KeyboardInterrupt);
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F-}
-procedure p_0ec2;
+{ Restores only the two saved timer and keyboard interrupt vectors. }
+procedure RestoreGameInterrupts;
 begin
-  SetIntVec($1C, d_70CE);
-  SetIntVec($09, d_70D2);
+  SetIntVec($1C, SavedTimerVector);
+  SetIntVec($09, SavedKeyboardVector);
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
-procedure p_0ef2;
+{ Copies sound/input/video settings into d_6B44 and writes SAM1.CFG/SAM2.CFG/SAM3.CFG. }
+procedure SaveGameConfig;
 var
-  f: t_p_0ef2_tconfigfile;
+  ConfigFile: TGameConfigFile;
 begin
-  d_6B44.OldMode := d_34AF;
-  d_6B44.Old70BA := d_70BA;
-  d_6B44.Old70BC := d_70BC;
-  d_6B44.Old70BE := d_70BE;
-  d_6B44.Old70C0 := d_70C0;
-  d_6B44.Old70C4 := d_70C4;
-  d_6B44.Old70C2 := d_70C2;
-  d_6B44.Old70C6 := d_70C6;
-  d_6B44.Old70C8 := d_70C8;
+  GameConfiguration.ConfigSoundEnabled := SoundEnabled;
+  GameConfiguration.ConfigUpScanCode := UpKeyScanCode;
+  GameConfiguration.ConfigDownScanCode := DownKeyScanCode;
+  GameConfiguration.ConfigLeftScanCode := LeftKeyScanCode;
+  GameConfiguration.ConfigRightScanCode := RightKeyScanCode;
+  GameConfiguration.ConfigJumpScanCode := JumpKeyScanCode;
+  GameConfiguration.ConfigFireScanCode := FireKeyScanCode;
+  GameConfiguration.ConfigAlternateVideo := AlternateVideoTiming;
+  GameConfiguration.ConfigJoystickEnabled := JoystickSettingEnabled;
 {$I-}
 {$IFDEF SAM1}
-  Assign(f, 'SAM1.CFG');
+  Assign(ConfigFile, 'SAM1.CFG');
 {$ENDIF}
 {$IFDEF SAM2}
-  Assign(f, 'SAM2.CFG');
+  Assign(ConfigFile, 'SAM2.CFG');
 {$ENDIF}
 {$IFDEF SAM3}
-  Assign(f, 'SAM3.CFG');
+  Assign(ConfigFile, 'SAM3.CFG');
 {$ENDIF}
-  Rewrite(f);
-  Write(f, d_6B44);
-  Close(f);
+  Rewrite(ConfigFile);
+  Write(ConfigFile, GameConfiguration);
+  Close(ConfigFile);
 {$I+}
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
-procedure p_0f75;
+{ Reads the episode CFG into high scores/settings or installs default arrows, Ctrl jump. }
+procedure LoadGameConfig;
 var
-  f: t_p_0f75_tconfigfile;
-  OK: Boolean;
+  LoadGameConfig_ConfigFile: t_p_0f75_tconfi_TGameConfigFile;
+  ConfigOpened: Boolean;
 begin
 {$I-}
 {$IFDEF SAM1}
-  Assign(f, 'SAM1.CFG');
+  Assign(LoadGameConfig_ConfigFile, 'SAM1.CFG');
 {$ENDIF}
 {$IFDEF SAM2}
-  Assign(f, 'SAM2.CFG');
+  Assign(LoadGameConfig_ConfigFile, 'SAM2.CFG');
 {$ENDIF}
 {$IFDEF SAM3}
-  Assign(f, 'SAM3.CFG');
+  Assign(LoadGameConfig_ConfigFile, 'SAM3.CFG');
 {$ENDIF}
-  Reset(f);
-  OK := IOResult = 0;
-  Reset(f);
-  OK := IOResult = 0;
+  Reset(LoadGameConfig_ConfigFile);
+  ConfigOpened := IOResult = 0;
+  Reset(LoadGameConfig_ConfigFile);
+  ConfigOpened := IOResult = 0;
 
-  if OK then
+  if ConfigOpened then
   begin
-    Read(f, d_6B44);
-    Close(f);
-    d_34AF := d_6B44.OldMode;
-    d_70BA := d_6B44.Old70BA;
-    d_70BC := d_6B44.Old70BC;
-    d_70BE := d_6B44.Old70BE;
-    d_70C0 := d_6B44.Old70C0;
-    d_70C4 := d_6B44.Old70C4;
-    d_70C2 := d_6B44.Old70C2;
-    d_70C6 := d_6B44.Old70C6;
-    d_70C8 := d_6B44.Old70C8;
-    if d_70C8 = 1 then
-      d_341C := u6_0000
+    Read(LoadGameConfig_ConfigFile, GameConfiguration);
+    Close(LoadGameConfig_ConfigFile);
+    SoundEnabled := GameConfiguration.ConfigSoundEnabled;
+    UpKeyScanCode := GameConfiguration.ConfigUpScanCode;
+    DownKeyScanCode := GameConfiguration.ConfigDownScanCode;
+    LeftKeyScanCode := GameConfiguration.ConfigLeftScanCode;
+    RightKeyScanCode := GameConfiguration.ConfigRightScanCode;
+    JumpKeyScanCode := GameConfiguration.ConfigJumpScanCode;
+    FireKeyScanCode := GameConfiguration.ConfigFireScanCode;
+    AlternateVideoTiming := GameConfiguration.ConfigAlternateVideo;
+    JoystickSettingEnabled := GameConfiguration.ConfigJoystickEnabled;
+    if JoystickSettingEnabled = 1 then
+      JoystickActive := IsJoystickPresent
     else
-      d_341C := False;
+      JoystickActive := False;
   end
   else
   begin
-    d_34AF := 1;
-    d_70BA := $48;
-    d_70BC := $50;
-    d_70BE := $4B;
-    d_70C0 := $4D;
-    d_70C4 := $1D;
-    d_70C2 := $38;
-    d_70C6 := 0;
-    d_70C8 := 0;
-    d_341C := False;
+    SoundEnabled := 1;
+    UpKeyScanCode := $48;
+    DownKeyScanCode := $50;
+    LeftKeyScanCode := $4B;
+    RightKeyScanCode := $4D;
+    JumpKeyScanCode := $1D;
+    FireKeyScanCode := $38;
+    AlternateVideoTiming := 0;
+    JoystickSettingEnabled := 0;
+    JoystickActive := False;
   end;
 {$I+}
 end;
@@ -727,30 +749,32 @@ end;
 {$IFDEF SAM1}
 {$ELSE}
 {$F+}
-procedure p_sam2_107a;
+{ Uses INT 10h AH=$0F, AX=$1A00 and AH=$12/BL=$10 to obtain the video mode and mapped adapter class. }
+procedure DetectBiosVideoAdapter;
 begin
-  d_sam2_02BA := 1;
-  d_sam2_02A4.AH := $0F;
-  Intr($10, Registers(d_sam2_02A4));
-  d_sam2_02B8 := d_sam2_02A4.AL and $7F;
-  d_sam2_02A4.AX := $1A00;
-  Intr($10, Registers(d_sam2_02A4));
-  if d_sam2_02A4.AL = $1A then
+  DetectedVideoAdapter := 1;
+  VideoBiosRegisters.AH := $0F;
+  Intr($10, Registers(VideoBiosRegisters));
+  DetectedBiosVideoMode := VideoBiosRegisters.AL and $7F;
+  VideoBiosRegisters.AX := $1A00;
+  Intr($10, Registers(VideoBiosRegisters));
+  if VideoBiosRegisters.AL = $1A then
   begin
-    if d_sam2_02A4.BL <> $FF then
-      d_sam2_02BA := d_sam2_0000[d_sam2_02A4.BL];
+    if VideoBiosRegisters.BL <> $FF then
+      DetectedVideoAdapter := BiosAdapterClassMap[VideoBiosRegisters.BL];
   end
   else
   begin
-    d_sam2_02A4.AH := $12;
-    d_sam2_02A4.BL := $10;
-    Intr($10, Registers(d_sam2_02A4));
-    if d_sam2_02A4.BL <> $10 then
-      d_sam2_02BA := 3;
+    VideoBiosRegisters.AH := $12;
+    VideoBiosRegisters.BL := $10;
+    Intr($10, Registers(VideoBiosRegisters));
+    if VideoBiosRegisters.BL <> $10 then
+      DetectedVideoAdapter := 3;
   end;
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$ENDIF}
+{ Main program body checks memory/video, loads three SND banks, runs title/game loops. }
 begin
   if MemAvail < 200000 then
   begin
@@ -758,933 +782,1128 @@ begin
     Halt;
   end;
 {$IFDEF SAM1}
-  if u3_0000 <> 'U' then
+  if DetectGameVideoAdapter <> 'U' then
 {$ELSE}
-  p_sam2_107a;
-  if (d_sam2_02BA=3) or (d_sam2_02BA=4) then
+  DetectBiosVideoAdapter;
+  if (DetectedVideoAdapter=3) or (DetectedVideoAdapter=4) then
 {$ENDIF}
   begin
-    p_0e67;
-    p_51df;
-    d_34AE := 0;
-    GetMem(d_341E, 7320);
+    InstallGameHandlers;
+    SetFastGameTimer;
+    SoundPlaying := 0;
+    GetMem(SoundBankOne, 7320);
 {$IFDEF SAM1}
-    Assign(d_342A, 'SAM101E.SND');
+    Assign(SoundResourceFile, 'SAM101E.SND');
 {$ENDIF}
 {$IFDEF SAM2}
-    Assign(d_342A, 'SAM201E.SND');
+    Assign(SoundResourceFile, 'SAM201E.SND');
 {$ENDIF}
 {$IFDEF SAM3}
-    Assign(d_342A, 'SAM301E.SND');
+    Assign(SoundResourceFile, 'SAM301E.SND');
 {$ENDIF}
-    Reset(d_342A);
-    Read(d_342A, d_341E^);
-    u8_0c14(d_341E^, 7320);
-    Close(d_342A);
-    GetMem(d_3422, 7320);
+    Reset(SoundResourceFile);
+    Read(SoundResourceFile, SoundBankOne^);
+    DecryptGameAssetBuffer(SoundBankOne^, 7320);
+    Close(SoundResourceFile);
+    GetMem(SoundBankTwo, 7320);
 {$IFDEF SAM1}
-    Assign(d_342A, 'SAM102E.SND');
+    Assign(SoundResourceFile, 'SAM102E.SND');
 {$ENDIF}
 {$IFDEF SAM2}
-    Assign(d_342A, 'SAM202E.SND');
+    Assign(SoundResourceFile, 'SAM202E.SND');
 {$ENDIF}
 {$IFDEF SAM3}
-    Assign(d_342A, 'SAM302E.SND');
+    Assign(SoundResourceFile, 'SAM302E.SND');
 {$ENDIF}
-    Reset(d_342A);
-    Read(d_342A, d_3422^);
-    u8_0c14(d_3422^, 7320);
-    Close(d_342A);
-    GetMem(d_3426, 7320);
+    Reset(SoundResourceFile);
+    Read(SoundResourceFile, SoundBankTwo^);
+    DecryptGameAssetBuffer(SoundBankTwo^, 7320);
+    Close(SoundResourceFile);
+    GetMem(SoundBankThree, 7320);
 {$IFDEF SAM1}
-    Assign(d_342A, 'SAM103E.SND');
+    Assign(SoundResourceFile, 'SAM103E.SND');
 {$ENDIF}
 {$IFDEF SAM2}
-    Assign(d_342A, 'SAM203E.SND');
+    Assign(SoundResourceFile, 'SAM203E.SND');
 {$ENDIF}
 {$IFDEF SAM3}
-    Assign(d_342A, 'SAM303E.SND');
+    Assign(SoundResourceFile, 'SAM303E.SND');
 {$ENDIF}
-    Reset(d_342A);
-    Read(d_342A, d_3426^);
-    u8_0c14(d_3426^, 7320);
-    Close(d_342A);
-    d_34AF := 1;
-    u8_0136;
-    u3_3cb8;
-    d_380C := 0;
-    d_380E := 0;
-    d_3810 := 0;
-    u3_00db(0);
-    d_341C := u6_0000;
-    d_6D70 := 0;
-    if d_341C then
+    Reset(SoundResourceFile);
+    Read(SoundResourceFile, SoundBankThree^);
+    DecryptGameAssetBuffer(SoundBankThree^, 7320);
+    Close(SoundResourceFile);
+    SoundEnabled := 1;
+    InitializeGameDefaults;
+    CaptureGameSnapshot;
+    StartupWorkOne := 0;
+    StartupWorkTwo := 0;
+    StartupWorkThree := 0;
+    RestoreGamePalette(0);
+    JoystickActive := IsJoystickPresent;
+    JoystickHorizontalMoved := 0;
+    if JoystickActive then
     begin
-      d_6D68 := u6_00cc(0);
-      d_6D6A := u6_00cc(1);
+      JoystickCenterX := ReadJoystickAxis(0);
+      JoystickCenterY := ReadJoystickAxis(1);
     end;
-    p_0f75;
+    LoadGameConfig;
     Writeln('Decompressing Graphics Files...');
-    u3_38ae;
-    u9_01a3(0);
-    u3_344c;
-    while d_6EC6 = 0 do
+    LoadGameSpriteBanks;
+    PgSetToolboxVideoMode(0);
+    ShowApogeeSplash;
+    while QuitGameRequested = 0 do
     begin
-      u9_01a3(0);
-      u3_3505;
-      if d_6EC6 = 0 then u8_07d5;
-      if (d_6EC6 = 0) and (d_6EC7 = 0) then
+      PgSetToolboxVideoMode(0);
+      ShowTitleAndCredits;
+      if QuitGameRequested = 0 then ResetNewGameState;
+      if (QuitGameRequested = 0) and (ReturnToTitleRequested = 0) then
       begin
-        d_6822 := u9_01d3(80);
-        u9_0337(4);
-        u3_3c93;
-        if d_70C6 = 0 then u9_01f9(0,16)
-        else u9_024c(0,16);
-        u8_0a89;
-        if d_6D60 <> 0 then
+        VideoStrideResult := PgSetScreenStride(80);
+        PgSetBorderColor(4);
+        BlackenGamePalette;
+        if AlternateVideoTiming = 0 then PgPanDisplayAtRetraceStart(0,16)
+        else PgPanDisplayAtRetraceEnd(0,16);
+        ResetLevelTransientState;
+        if PendingRestoreScanCode <> 0 then
         begin
-          case d_6D60 of
-            2..10: if u3_3f8c(d_6D60-1) then;
-            11: if u3_3f8c(0) then;
+          case PendingRestoreScanCode of
+            2..10: if ReadSavedGame(PendingRestoreScanCode-1) then;
+            11: if ReadSavedGame(0) then;
           end;
-          d_6D60 := 0;
+          PendingRestoreScanCode := 0;
         end;
-        u2_a1ae(1);
+        LoadLevelMap(1);
 {$IFDEF SAM1}
-        if u3_0000 = 'V' then
+        if DetectGameVideoAdapter = 'V' then
 {$ELSE}
-        if d_sam2_02BA=4 then
+        if DetectedVideoAdapter=4 then
 {$ENDIF}
-          u9_02fa(384)
-        else u9_029f(190);
-        while (d_6EC6 = 0) and (d_6EC7 = 0) do
+          PgSetVgaSplitScanline(384)
+        else PgSetEgaSplitScanline(190);
+        while (QuitGameRequested = 0) and (ReturnToTitleRequested = 0) do
         begin
-          if d_6832 <> d_6838 then u3_0261;
-          if d_682C > 7 then
+          if StatusBarCameraX <> CameraX then DrawGameStatusBar;
+          if GameTickCounter > 7 then
           begin
-            d_682C := 0;
-            if d_341C then p_08a2;
-            if (d_34EC[1].Sprite = 9) and (d_6ECB <> 0) then
-              d_34EC[1].Sprite := 1
-            else if (d_34EC[1].Sprite = 10) and (d_6ECA <> 0) then
-              d_34EC[1].Sprite := 5
-            else if ((d_34EC[1].Sprite = 10) or (d_34EC[1].Sprite = 9))
-              and ((d_6EC4 <> 0) or (d_6EC3 <> 0)) then
-              d_34EC[1].Sprite := 1;
-            u3_007c;
-            u2_0000(d_34EC[1].OldX-16,d_34EC[1].OldY-16);
-            u2_0000(d_34EC[1].OldX-16,d_34EC[1].OldY);
-            u2_0000(d_34EC[1].OldX-16,d_34EC[1].OldY+16);
-            u2_0000(d_34EC[1].OldX,d_34EC[1].OldY-16);
-            u2_0000(d_34EC[1].OldX,d_34EC[1].OldY);
-            u2_0000(d_34EC[1].OldX,d_34EC[1].OldY+16);
-            u2_0000(d_34EC[1].OldX+16,d_34EC[1].OldY-16);
-            u2_0000(d_34EC[1].OldX+16,d_34EC[1].OldY);
-            u2_0000(d_34EC[1].OldX+16,d_34EC[1].OldY+16);
+            GameTickCounter := 0;
+            if JoystickActive then PollJoystickControls;
+            if (GameActors[1].ActorSpriteBase = 9) and (PlayerRightHeld <> 0) then
+              GameActors[1].ActorSpriteBase := 1
+            else if (GameActors[1].ActorSpriteBase = 10) and (PlayerLeftHeld <> 0) then
+              GameActors[1].ActorSpriteBase := 5
+            else if ((GameActors[1].ActorSpriteBase = 10) or (GameActors[1].ActorSpriteBase = 9))
+              and ((PlayerDownHeld <> 0) or (PlayerUpHeld <> 0)) then
+              GameActors[1].ActorSpriteBase := 1;
+            ToggleGameDrawBuffer;
+            RedrawLevelCell(GameActors[1].ActorPreviousX-16,GameActors[1].ActorPreviousY-16);
+            RedrawLevelCell(GameActors[1].ActorPreviousX-16,GameActors[1].ActorPreviousY);
+            RedrawLevelCell(GameActors[1].ActorPreviousX-16,GameActors[1].ActorPreviousY+16);
+            RedrawLevelCell(GameActors[1].ActorPreviousX,GameActors[1].ActorPreviousY-16);
+            RedrawLevelCell(GameActors[1].ActorPreviousX,GameActors[1].ActorPreviousY);
+            RedrawLevelCell(GameActors[1].ActorPreviousX,GameActors[1].ActorPreviousY+16);
+            RedrawLevelCell(GameActors[1].ActorPreviousX+16,GameActors[1].ActorPreviousY-16);
+            RedrawLevelCell(GameActors[1].ActorPreviousX+16,GameActors[1].ActorPreviousY);
+            RedrawLevelCell(GameActors[1].ActorPreviousX+16,GameActors[1].ActorPreviousY+16);
             {1554}
-            for d_6826 := 2 to 25 do
-              if d_34EC[d_6826].Inactive = 0 then
-                if d_34EC[d_6826].Marked <> 0 then
+            for SharedLoopIndexA := 2 to 25 do
+              if GameActors[SharedLoopIndexA].ActorSlotInactive = 0 then
+                if GameActors[SharedLoopIndexA].ActorRemovalPending <> 0 then
                 begin
-                  d_34EC[d_6826].Inactive := 1;
-                  u2_0000(d_34EC[d_6826].OldX,d_34EC[d_6826].OldY);
-                  u2_0000(d_34EC[d_6826].OldX-16,d_34EC[d_6826].OldY);
-                  u2_0000(d_34EC[d_6826].OldX+16,d_34EC[d_6826].OldY);
-                  u2_0000(d_34EC[d_6826].OldX+32,d_34EC[d_6826].OldY);
-                  u2_0000(d_34EC[d_6826].OldX-16,d_34EC[d_6826].OldY-16);
-                  u2_0000(d_34EC[d_6826].OldX-16,d_34EC[d_6826].OldY+16);
-                  u2_0000(d_34EC[d_6826].OldX+16,d_34EC[d_6826].OldY-16);
-                  u2_0000(d_34EC[d_6826].OldX+16,d_34EC[d_6826].OldY+16);
-                  u2_0000(d_34EC[d_6826].OldX,d_34EC[d_6826].OldY-16);
-                  u2_0000(d_34EC[d_6826].OldX,d_34EC[d_6826].OldY+16);
+                  GameActors[SharedLoopIndexA].ActorSlotInactive := 1;
+                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX,GameActors[SharedLoopIndexA].ActorPreviousY);
+                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX-16,GameActors[SharedLoopIndexA].ActorPreviousY);
+                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX+16,GameActors[SharedLoopIndexA].ActorPreviousY);
+                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX+32,GameActors[SharedLoopIndexA].ActorPreviousY);
+                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX-16,GameActors[SharedLoopIndexA].ActorPreviousY-
+                  16);
+                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX-16,GameActors[SharedLoopIndexA].ActorPreviousY+
+                  16);
+                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX+16,GameActors[SharedLoopIndexA].ActorPreviousY-
+                  16);
+                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX+16,GameActors[SharedLoopIndexA].ActorPreviousY+
+                  16);
+                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX,GameActors[SharedLoopIndexA].ActorPreviousY-16);
+                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX,GameActors[SharedLoopIndexA].ActorPreviousY+16);
                 end
-                else if u1_0000(40,d_6826) or (d_34EC[d_6826].Kind=28)
-                  or (d_34EC[d_6826].Kind=21) or (d_34EC[d_6828].Kind=14)
-                  or (d_34EC[d_6828].Marked<>0) then
+                else if ActorNearViewport(40,SharedLoopIndexA) or (GameActors[SharedLoopIndexA].ActorKindCode=28)
+                  or (GameActors[SharedLoopIndexA].ActorKindCode=21) or (GameActors[SharedLoopIndexB].ActorKindCode=14)
+                  or (GameActors[SharedLoopIndexB].ActorRemovalPending<>0) then
                 begin
-                  u2_0000(d_34EC[d_6826].OldX,d_34EC[d_6826].OldY);
-                  if d_34EC[d_6826].OldX and 15 > 0 then
-                    u2_0000(d_34EC[d_6826].OldX+16,d_34EC[d_6826].OldY);
-                  case d_34EC[d_6826].Sprite of
+                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX,GameActors[SharedLoopIndexA].ActorPreviousY);
+                  if GameActors[SharedLoopIndexA].ActorPreviousX and 15 > 0 then
+                    RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX+16,
+                    GameActors[SharedLoopIndexA].ActorPreviousY);
+                  case GameActors[SharedLoopIndexA].ActorSpriteBase of
                     851: begin
-                      u2_0000(d_34EC[d_6826].OldX+48,d_34EC[d_6826].OldY);
-                      u2_0000(d_34EC[d_6826].OldX+32,d_34EC[d_6826].OldY);
-                      u2_0000(d_34EC[d_6826].OldX+16,d_34EC[d_6826].OldY);
+                      RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX+48,
+                      GameActors[SharedLoopIndexA].ActorPreviousY);
+                      RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX+32,
+                      GameActors[SharedLoopIndexA].ActorPreviousY);
+                      RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX+16,
+                      GameActors[SharedLoopIndexA].ActorPreviousY);
                     end;
                     801..899,5001: begin
-                      u2_0000(d_34EC[d_6826].OldX,d_34EC[d_6826].OldY-16);
-                      if d_34EC[d_6826].OldX and 15 > 0 then
-                        u2_0000(d_34EC[d_6826].OldX+15,d_34EC[d_6826].OldY-16);
+                      RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX,GameActors[SharedLoopIndexA].ActorPreviousY-
+                      16);
+                      if GameActors[SharedLoopIndexA].ActorPreviousX and 15 > 0 then
+                        RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX+15,
+                        GameActors[SharedLoopIndexA].ActorPreviousY-16);
                     end;
                     114: begin
-                      u2_0000(d_34EC[d_6826].OldX,d_34EC[d_6826].OldY-16);
-                      u2_0000(d_34EC[d_6826].OldX,d_34EC[d_6826].OldY+16);
-                      if d_34EC[d_6826].OldX and 15 > 0 then
+                      RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX,GameActors[SharedLoopIndexA].ActorPreviousY-
+                      16);
+                      RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX,GameActors[SharedLoopIndexA].ActorPreviousY+
+                      16);
+                      if GameActors[SharedLoopIndexA].ActorPreviousX and 15 > 0 then
                       begin
-                        u2_0000(d_34EC[d_6826].OldX+15,d_34EC[d_6826].OldY+16);
-                        u2_0000(d_34EC[d_6826].OldX+15,d_34EC[d_6826].OldY-16);
+                        RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX+15,
+                        GameActors[SharedLoopIndexA].ActorPreviousY+16);
+                        RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX+15,
+                        GameActors[SharedLoopIndexA].ActorPreviousY-16);
                       end;
                     end;
                     101: begin
-                      u2_0000(d_34EC[d_6826].OldX,d_34EC[d_6826].OldY-16);
-                      if d_34EC[d_6826].OldX and 15 > 0 then
-                        u2_0000(d_34EC[d_6826].OldX+15,d_34EC[d_6826].OldY-16);
+                      RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX,GameActors[SharedLoopIndexA].ActorPreviousY-
+                      16);
+                      if GameActors[SharedLoopIndexA].ActorPreviousX and 15 > 0 then
+                        RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX+15,
+                        GameActors[SharedLoopIndexA].ActorPreviousY-16);
                     end;
                   end;
                 end;
             {1978}
-            for d_6826 := 1 to d_69A2 do
+            for SharedLoopIndexA := 1 to PlayerProjectileLimit do
             begin
-              u2_0000(d_685A[d_6826].OldX,d_685A[d_6826].OldY);
-              u2_0000(d_685A[d_6826].OldX+16,d_685A[d_6826].OldY);
-              u2_0000(d_685A[d_6826].OldX,d_685A[d_6826].OldY+16);
-              u2_0000(d_685A[d_6826].OldX+16,d_685A[d_6826].OldY+16);
+              RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorPreviousX,PlayerShots[SharedLoopIndexA].ActorPreviousY);
+              RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorPreviousX+16,PlayerShots[SharedLoopIndexA].ActorPreviousY);
+              RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorPreviousX,PlayerShots[SharedLoopIndexA].ActorPreviousY+16);
+              RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorPreviousX+16,PlayerShots[SharedLoopIndexA].ActorPreviousY+
+              16);
             end;
             {1a21}
-            if (d_69F5=0) and (d_6A3E=0) then
+            if (PlayerDying=0) and (PlayerLeavingLevel=0) then
             begin
-              u1_68f5;
-              if d_681C > 1 then u1_6a0e;
+              MovePlayerAndCamera;
+              if CurrentLevelNumber > 1 then UpdatePlayerJump;
               MemW[0:$41C] := MemW[0:$41A];
-              u1_86df;
-              d_6EC2 := 0;
+              CheckPlayerTileContacts;
+              PlayerOnMovingSupport := 0;
             end
-            else if d_69F5 <> 0 then
+            else if PlayerDying <> 0 then
             begin
-              d_34EC[1].OldX := d_34EC[1].X;
-              d_34EC[1].OldY := d_34EC[1].Y;
-              if d_34EC[1].Sprite <> 15 then d_34EC[1].Sprite := 15
-              else d_34EC[1].Sprite := 16;
-              if d_69F6=35 then u7_0000(22);
-              Dec(d_69F6);
-              if d_69F6=0 then u1_011a;
-              if d_69F6>0 then
+              GameActors[1].ActorPreviousX := GameActors[1].ActorWorldX;
+              GameActors[1].ActorPreviousY := GameActors[1].ActorWorldY;
+              if GameActors[1].ActorSpriteBase <> 15 then GameActors[1].ActorSpriteBase := 15
+              else GameActors[1].ActorSpriteBase := 16;
+              if DeathAnimationTick=35 then StartSoundEffect(22);
+              Dec(DeathAnimationTick);
+              if DeathAnimationTick=0 then RequestIslandReturn;
+              if DeathAnimationTick>0 then
               begin
-                Dec(d_34EC[1].Y,d_69F8[d_69F6]);
-                if d_34EC[1].Y < 16 then d_34EC[1].Y := 16
-                else if d_683A+184 < d_34EC[1].Y then
-                  d_34EC[1].Y := d_683A+184;
+                Dec(GameActors[1].ActorWorldY,DeathVerticalMotionTable[DeathAnimationTick]);
+                if GameActors[1].ActorWorldY < 16 then GameActors[1].ActorWorldY := 16
+                else if CameraY+184 < GameActors[1].ActorWorldY then
+                  GameActors[1].ActorWorldY := CameraY+184;
               end;
             end
-            else if d_6A3E<>0 then
+            else if PlayerLeavingLevel<>0 then
             begin
-              d_34EC[1].OldX := d_34EC[1].X;
-              d_34EC[1].OldY := d_34EC[1].Y;
-              if d_6A3F=8 then u7_0000(8);
-              Dec(d_6A3F);
-              if d_6A3F=0 then
+              GameActors[1].ActorPreviousX := GameActors[1].ActorWorldX;
+              GameActors[1].ActorPreviousY := GameActors[1].ActorWorldY;
+              if LevelExitAnimationTick=8 then StartSoundEffect(8);
+              Dec(LevelExitAnimationTick);
+              if LevelExitAnimationTick=0 then
               begin
-                u3_0232(20);
-                d_681C := 1;
-                u8_0a89;
-                u2_a1ae(d_681C);
-                if d_6842<>0 then u3_d645;
+                FadeGamePaletteToBlack(20);
+                CurrentLevelNumber := 1;
+                ResetLevelTransientState;
+                LoadLevelMap(CurrentLevelNumber);
+                if AllMissionsComplete<>0 then ShowFortressUnlockedMessage;
               end
-              else if d_6A3F>0 then
-                if d_34EC[1].DX=-1 then Dec(d_34EC[1].X,2)
-                else Inc(d_34EC[1].X,2);
+              else if LevelExitAnimationTick>0 then
+                if GameActors[1].ActorDirectionX=-1 then Dec(GameActors[1].ActorWorldX,2)
+                else Inc(GameActors[1].ActorWorldX,2);
             end;
-            u1_2f6b;
+            UpdateActorsAndShots;
             {1b62}
-            for d_6826 := 1 to d_69A2 do
-              if d_685A[d_6826].Inactive=0 then
+            for SharedLoopIndexA := 1 to PlayerProjectileLimit do
+              if PlayerShots[SharedLoopIndexA].ActorSlotInactive=0 then
               begin
-                if d_685A[d_6826].Marked<>0 then
+                if PlayerShots[SharedLoopIndexA].ActorRemovalPending<>0 then
                 begin
-                  u2_0000(d_685A[d_6826].X,d_685A[d_6826].Y);
-                  u2_0000(d_685A[d_6826].X+16,d_685A[d_6826].Y);
-                  u2_2530(d_685A[d_6826].X,d_685A[d_6826].Y);
-                  u2_2530(d_685A[d_6826].X+16,d_685A[d_6826].Y);
-                  u2_0000(d_685A[d_6826].X,d_685A[d_6826].Y+16);
-                  u2_0000(d_685A[d_6826].X+16,d_685A[d_6826].Y+16);
-                  u2_2530(d_685A[d_6826].X,d_685A[d_6826].Y+16);
-                  u2_2530(d_685A[d_6826].X+16,d_685A[d_6826].Y+16);
-                  d_685A[d_6826].Inactive := 1;
+                  RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX,PlayerShots[SharedLoopIndexA].ActorWorldY);
+                  RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX+16,PlayerShots[SharedLoopIndexA].ActorWorldY);
+                  DrawCellForeground(PlayerShots[SharedLoopIndexA].ActorWorldX,PlayerShots[SharedLoopIndexA].ActorWorldY);
+                  DrawCellForeground(PlayerShots[SharedLoopIndexA].ActorWorldX+16,PlayerShots[SharedLoopIndexA].ActorWorldY);
+                  RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX,PlayerShots[SharedLoopIndexA].ActorWorldY+16);
+                  RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX+16,PlayerShots[SharedLoopIndexA].ActorWorldY+16);
+                  DrawCellForeground(PlayerShots[SharedLoopIndexA].ActorWorldX,PlayerShots[SharedLoopIndexA].ActorWorldY+16);
+                  DrawCellForeground(PlayerShots[SharedLoopIndexA].ActorWorldX+16,PlayerShots[SharedLoopIndexA].ActorWorldY+
+                  16);
+                  PlayerShots[SharedLoopIndexA].ActorSlotInactive := 1;
                 end
                 else
                 begin
-                  if d_685A[d_6826].Sprite=626 then
+                  if PlayerShots[SharedLoopIndexA].ActorSpriteBase=626 then
                   begin
-                    u9_19f9(d_6D86^.Images[(d_685A[d_6826].Limit shr 1)+25].Pixels[1],
-    d_685A[d_6826].X,
-    d_685A[d_6826].Y+d_6840);
-                    Dec(d_685A[d_6826].Limit);
-                    if d_685A[d_6826].Limit<=0 then
+                    PgBlitMaskedShifted16x16(SpriteBank601^.SpriteEntries[(PlayerShots[SharedLoopIndexA].ActorCounterB shr
+                    1)+25].SpriteDataBytes[1],
+    PlayerShots[SharedLoopIndexA].ActorWorldX,
+    PlayerShots[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+                    Dec(PlayerShots[SharedLoopIndexA].ActorCounterB);
+                    if PlayerShots[SharedLoopIndexA].ActorCounterB<=0 then
                     begin
-                      d_685A[d_6826].Marked := 1;
-                  u2_0000(d_685A[d_6826].X,d_685A[d_6826].Y);
-                  u2_0000(d_685A[d_6826].X-16,d_685A[d_6826].Y);
-                  u2_0000(d_685A[d_6826].X+16,d_685A[d_6826].Y);
-                  u2_0000(d_685A[d_6826].X,d_685A[d_6826].Y+16);
-                  u2_0000(d_685A[d_6826].X-16,d_685A[d_6826].Y+16);
-                  u2_0000(d_685A[d_6826].X+16,d_685A[d_6826].Y+16);
+                      PlayerShots[SharedLoopIndexA].ActorRemovalPending := 1;
+                  RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX,PlayerShots[SharedLoopIndexA].ActorWorldY);
+                  RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX-16,PlayerShots[SharedLoopIndexA].ActorWorldY);
+                  RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX+16,PlayerShots[SharedLoopIndexA].ActorWorldY);
+                  RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX,PlayerShots[SharedLoopIndexA].ActorWorldY+16);
+                  RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX-16,PlayerShots[SharedLoopIndexA].ActorWorldY+16);
+                  RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX+16,PlayerShots[SharedLoopIndexA].ActorWorldY+16);
                     end;
                   end
-                  else if not u1_008d(40,d_6826) then
+                  else if not ShotNearViewport(40,SharedLoopIndexA) then
                   begin
-                  u2_0000(d_685A[d_6826].X,d_685A[d_6826].Y);
-                  u2_0000(d_685A[d_6826].X+16,d_685A[d_6826].Y);
-                  u2_0000(d_685A[d_6826].X,d_685A[d_6826].Y+16);
-                  u2_0000(d_685A[d_6826].X+16,d_685A[d_6826].Y+16);
-                    d_685A[d_6826].Marked := 1;
+                  RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX,PlayerShots[SharedLoopIndexA].ActorWorldY);
+                  RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX+16,PlayerShots[SharedLoopIndexA].ActorWorldY);
+                  RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX,PlayerShots[SharedLoopIndexA].ActorWorldY+16);
+                  RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX+16,PlayerShots[SharedLoopIndexA].ActorWorldY+16);
+                    PlayerShots[SharedLoopIndexA].ActorRemovalPending := 1;
                   end
                   else
                   begin
-                  u2_0000(d_685A[d_6826].X,d_685A[d_6826].Y);
-                  u2_0000(d_685A[d_6826].X+16,d_685A[d_6826].Y);
-                  u2_0000(d_685A[d_6826].X,d_685A[d_6826].Y+16);
-                  u2_0000(d_685A[d_6826].X+16,d_685A[d_6826].Y+16);
-                    u9_0475(d_6D72^.Images[d_685A[d_6826].Sprite-1+d_685A[d_6826].Frame].Pixels[1],
-    d_685A[d_6826].X shr 3,
+                  RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX,PlayerShots[SharedLoopIndexA].ActorWorldY);
+                  RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX+16,PlayerShots[SharedLoopIndexA].ActorWorldY);
+                  RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX,PlayerShots[SharedLoopIndexA].ActorWorldY+16);
+                  RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX+16,PlayerShots[SharedLoopIndexA].ActorWorldY+16);
+                    PgBlitMasked16x16(SpriteBank001^.SpriteEntries[PlayerShots[SharedLoopIndexA].ActorSpriteBase-1+
+                    PlayerShots[SharedLoopIndexA].ActorAnimationCounter].SpriteDataBytes[1],
+    PlayerShots[SharedLoopIndexA].ActorWorldX shr 3,
     
-                  d_685A[d_6826].Y+d_6840);
+                  PlayerShots[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
                   end;
-                  u2_2530(d_685A[d_6826].X,d_685A[d_6826].Y);
-                  u2_2530(d_685A[d_6826].X+16,d_685A[d_6826].Y);
-                  u2_2530(d_685A[d_6826].X,d_685A[d_6826].Y+16);
-                  u2_2530(d_685A[d_6826].X+16,d_685A[d_6826].Y+16);
+                  DrawCellForeground(PlayerShots[SharedLoopIndexA].ActorWorldX,PlayerShots[SharedLoopIndexA].ActorWorldY);
+                  DrawCellForeground(PlayerShots[SharedLoopIndexA].ActorWorldX+16,PlayerShots[SharedLoopIndexA].ActorWorldY);
+                  DrawCellForeground(PlayerShots[SharedLoopIndexA].ActorWorldX,PlayerShots[SharedLoopIndexA].ActorWorldY+16);
+                  DrawCellForeground(PlayerShots[SharedLoopIndexA].ActorWorldX+16,PlayerShots[SharedLoopIndexA].ActorWorldY+
+                  16);
                 end;
               end;
             {2014}
-            if d_69E0<>0 then
+            if PlayerTeleporting<>0 then
             begin
-              Dec(d_69E2);
-              if d_69E2=0 then d_69D8 := 1
-              else if d_69E2=-19 then
+              Dec(TeleportAnimationTick);
+              if TeleportAnimationTick=0 then TeleportRelocatePending := 1
+              else if TeleportAnimationTick=-19 then
               begin
-                d_69B4 := 0;
-                d_69E0 := 0;
+                PlayerInputLocked := 0;
+                PlayerTeleporting := 0;
               end;
             end;
-            if d_69D8<>0 then
+            if TeleportRelocatePending<>0 then
             begin
-              d_69D8 := 0;
-              d_34EC[1].X := d_69E4;
-              d_34EC[1].Y := d_69E6;
-              d_6838 := d_34EC[1].X-160;
-              if d_6838<0 then d_6838 := 0;
-              if d_6838>320 then d_6838 := 320;
-              d_683A := d_34EC[1].Y-100;
-              if d_683A<0 then d_683A := 0;
-              if d_683A>184 then d_683A := 184;
-              if d_70C6=0 then u9_01f9(d_6838,d_683A+16)
-              else u9_024c(d_6838,d_683A+16);
+              TeleportRelocatePending := 0;
+              GameActors[1].ActorWorldX := TeleportDestinationX;
+              GameActors[1].ActorWorldY := TeleportDestinationY;
+              CameraX := GameActors[1].ActorWorldX-160;
+              if CameraX<0 then CameraX := 0;
+              if CameraX>320 then CameraX := 320;
+              CameraY := GameActors[1].ActorWorldY-100;
+              if CameraY<0 then CameraY := 0;
+              if CameraY>184 then CameraY := 184;
+              if AlternateVideoTiming=0 then PgPanDisplayAtRetraceStart(CameraX,CameraY+16)
+              else PgPanDisplayAtRetraceEnd(CameraX,CameraY+16);
             end;
-            d_6826 := 1;
-            if (d_34EC[1].Sprite=1) or (d_34EC[1].Sprite=5) then
+            SharedLoopIndexA := 1;
+            if (GameActors[1].ActorSpriteBase=1) or (GameActors[1].ActorSpriteBase=5) then
             begin
-              Inc(d_34EC[1].Frame,d_34EC[1].Speed);
-              if d_34EC[1].Frame>19 then d_34EC[1].Frame := 1;
+              Inc(GameActors[1].ActorAnimationCounter,GameActors[1].ActorMovementStep);
+              if GameActors[1].ActorAnimationCounter>19 then GameActors[1].ActorAnimationCounter := 1;
             end
-            else d_34EC[1].Frame := 1;
-            if d_6A41<>0 then
+            else GameActors[1].ActorAnimationCounter := 1;
+            if PlayerDamageGraceActive<>0 then
             begin
-              Dec(d_6A42);
-              case d_6A42 of
-                0: d_6A41 := 0;
-                10: d_34EC[1].State := 5;
-                20: d_34EC[1].State := 5;
-                30: d_34EC[1].State := 5;
+              Dec(PlayerDamageGraceTick);
+              case PlayerDamageGraceTick of
+                0: PlayerDamageGraceActive := 0;
+                10: GameActors[1].FlashFrames := 5;
+                20: GameActors[1].FlashFrames := 5;
+                30: GameActors[1].FlashFrames := 5;
               end;
             end;
             {2139}
-            if d_34EC[1].State>0 then
+            if GameActors[1].FlashFrames>0 then
             begin
-              u9_2463(d_6D7A^.Images[d_34EC[1].Frame div 5+d_34EC[1].Sprite].Pixels[1],
-    d_34EC[1].X,
-    d_34EC[1].Y+d_6840);
-              Dec(d_34EC[1].State);
+              PgOrShifted16x16(PlayerSpriteBank^.SpriteEntries[GameActors[1].ActorAnimationCounter div
+              5+GameActors[1].ActorSpriteBase].SpriteDataBytes[1],
+    GameActors[1].ActorWorldX,
+    GameActors[1].ActorWorldY+GameDrawBufferRow);
+              Dec(GameActors[1].FlashFrames);
             end
-            else if d_34EC[1].X and 7 = 0 then
-              u9_0475(d_6D7A^.Images[d_34EC[1].Frame div 5+d_34EC[1].Sprite].Pixels[1],
-    d_34EC[1].X shr 3,
-    d_34EC[1].Y+d_6840)
+            else if GameActors[1].ActorWorldX and 7 = 0 then
+              PgBlitMasked16x16(PlayerSpriteBank^.SpriteEntries[GameActors[1].ActorAnimationCounter div
+              5+GameActors[1].ActorSpriteBase].SpriteDataBytes[1],
+    GameActors[1].ActorWorldX shr 3,
+    GameActors[1].ActorWorldY+GameDrawBufferRow)
             else
-              u9_19f9(d_6D7A^.Images[d_34EC[1].Frame div 5+d_34EC[1].Sprite].Pixels[1],
-    d_34EC[1].X,
-    d_34EC[1].Y+d_6840);
-            if d_69E0<>0 then
-              if d_69E2<0 then
-                u9_19f9(d_6D96^.Images[d_69E2 div 5+40].Pixels[1],d_34EC[1].X,d_34EC[1].Y+d_6840)
+              PgBlitMaskedShifted16x16(PlayerSpriteBank^.SpriteEntries[GameActors[1].ActorAnimationCounter div
+              5+GameActors[1].ActorSpriteBase].SpriteDataBytes[1],
+    GameActors[1].ActorWorldX,
+    GameActors[1].ActorWorldY+GameDrawBufferRow);
+            if PlayerTeleporting<>0 then
+              if TeleportAnimationTick<0 then
+                PgBlitMaskedShifted16x16(SpriteBank151^.SpriteEntries[TeleportAnimationTick div
+                5+40].SpriteDataBytes[1],GameActors[1].ActorWorldX,GameActors[1].ActorWorldY+GameDrawBufferRow)
               else
-                u9_19f9(d_6D96^.Images[40-d_69E2 div 5].Pixels[1],d_34EC[1].X,d_34EC[1].Y+d_6840);
-            if (d_6ECA<>0) and (d_34EC[1].Sprite=12) then
-              d_34EC[1].Sprite := 5
-            else if (d_6ECB<>0) and (d_34EC[1].Sprite=11) then
-              d_34EC[1].Sprite := 1;
+                PgBlitMaskedShifted16x16(SpriteBank151^.SpriteEntries[40-TeleportAnimationTick div
+                5].SpriteDataBytes[1],GameActors[1].ActorWorldX,GameActors[1].ActorWorldY+GameDrawBufferRow);
+            if (PlayerLeftHeld<>0) and (GameActors[1].ActorSpriteBase=12) then
+              GameActors[1].ActorSpriteBase := 5
+            else if (PlayerRightHeld<>0) and (GameActors[1].ActorSpriteBase=11) then
+              GameActors[1].ActorSpriteBase := 1;
             {227e}
-            for d_6826 := 2 to 25 do
-              if d_34EC[d_6826].Inactive=0 then
-                if d_34EC[d_6826].Marked=0 then
-                  if u1_0000(32,d_6826) or (d_34EC[d_6826].Kind=28)
-                    or (d_34EC[d_6826].Kind=21) or (d_34EC[d_6828].Kind=14) then
-                    if d_34EC[d_6826].State>0 then
+            for SharedLoopIndexA := 2 to 25 do
+              if GameActors[SharedLoopIndexA].ActorSlotInactive=0 then
+                if GameActors[SharedLoopIndexA].ActorRemovalPending=0 then
+                  if ActorNearViewport(32,SharedLoopIndexA) or (GameActors[SharedLoopIndexA].ActorKindCode=28)
+                    or (GameActors[SharedLoopIndexA].ActorKindCode=21) or (GameActors[SharedLoopIndexB].ActorKindCode=14) then
+                    if GameActors[SharedLoopIndexA].FlashFrames>0 then
                     begin
-case d_34EC[d_6826].Sprite of
-1..50: u9_2463(d_6D72^.Images[d_34EC[d_6826].Sprite+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
-    d_34EC[d_6826].Y+d_6840);
+case GameActors[SharedLoopIndexA].ActorSpriteBase of
+1..50:
+  PgOrShifted16x16(SpriteBank001^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
+    GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 101: begin
-    if d_34EC[d_6826].Aux2=0 then
+    if GameActors[SharedLoopIndexA].StateValueB=0 then
     begin
-      u9_2463(d_6D76^.Images[d_34EC[d_6826].Sprite-100+d_34EC[d_6826].Frame div 5].Pixels[1],d_34EC[d_6826].X,
-      d_34EC[d_6826].Y+d_6840-16);
-      if d_34EC[d_6826].DX<0 then
-        u9_2463(d_6D76^.Images[5].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840)
+      PgOrShifted16x16(SpriteBank101^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-100+
+      GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16);
+      if GameActors[SharedLoopIndexA].ActorDirectionX<0 then
+        PgOrShifted16x16(SpriteBank101^.SpriteEntries[5].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX,
+        GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow)
       else
-        u9_2463(d_6D76^.Images[45].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
+        PgOrShifted16x16(SpriteBank101^.SpriteEntries[45].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX,
+        GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
     end
     else
     begin
-      if d_34EC[d_6826].DX<0 then
-        u9_2463(d_6D76^.Images[1].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16)
+      if GameActors[SharedLoopIndexA].ActorDirectionX<0 then
+        PgOrShifted16x16(SpriteBank101^.SpriteEntries[1].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX,
+        GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16)
       else
-        u9_2463(d_6D76^.Images[41].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16);
-      u9_2463(d_6D76^.Images[d_34EC[d_6826].Sprite-96+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
-    d_34EC[d_6826].Y+d_6840);
+        PgOrShifted16x16(SpriteBank101^.SpriteEntries[41].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX,
+        GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16);
+      PgOrShifted16x16(SpriteBank101^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-96+
+      GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
+    GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
     end;
   end;
-102..150: u9_2463(d_6D76^.Images[d_34EC[d_6826].Sprite-100+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+102..150:
+  PgOrShifted16x16(SpriteBank101^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-100+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-151..200: u9_2463(d_6D96^.Images[d_34EC[d_6826].Sprite-150+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+151..200:
+  PgOrShifted16x16(SpriteBank151^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-150+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-251..300: u9_2463(d_6DAA^.Images[d_34EC[d_6826].Sprite-250+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+251..300:
+  PgOrShifted16x16(SpriteBank251^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-250+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-301..350: u9_2463(d_6DA2^.Images[d_34EC[d_6826].Sprite-300+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+301..350:
+  PgOrShifted16x16(SpriteBank301^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-300+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-351..400: u9_2463(d_6DAE^.Images[d_34EC[d_6826].Sprite-350+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+351..400:
+  PgOrShifted16x16(SpriteBank351^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-350+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-401..450: u9_2463(d_6D7E^.Images[d_34EC[d_6826].Sprite-400+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+401..450:
+  PgOrShifted16x16(SpriteBank401^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-400+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-451..487: u9_2463(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+451..487:
+  PgOrShifted16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-488..490: u9_2463(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame shr 3].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+488..490:
+  PgOrShifted16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter shr 3].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-491: u9_2463(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
-    d_34EC[d_6826].Y+d_6840);
-492..494: u9_2463(d_6D82^.Images[d_34EC[d_6826].Sprite-450+(d_34EC[d_6826].Frame-21) shr 3].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+491:
+  PgOrShifted16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
+    GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+492..494:
+  PgOrShifted16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+(
+  GameActors[SharedLoopIndexA].ActorAnimationCounter-21) shr 3].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-495..500: u9_2463(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+495..500:
+  PgOrShifted16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-501..550: u9_2463(d_6D72^.Images[d_34EC[d_6826].Sprite-500+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+501..550:
+  PgOrShifted16x16(SpriteBank001^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-500+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-601..650: u9_2463(d_6D86^.Images[d_34EC[d_6826].Sprite-600+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+601..650:
+  PgOrShifted16x16(SpriteBank601^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-600+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-651..700: u9_2463(d_6D8A^.Images[d_34EC[d_6826].Sprite-650+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+651..700:
+  PgOrShifted16x16(SpriteBank651^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-650+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-701..750: u9_2463(d_6D8E^.Images[d_34EC[d_6826].Sprite-700+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+701..750:
+  PgOrShifted16x16(SpriteBank701^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-700+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-751..800: u9_2463(d_6D92^.Images[d_34EC[d_6826].Sprite-750+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+751..800:
+  PgOrShifted16x16(SpriteBank751^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-750+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 801: begin
-u9_2463(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
-    d_34EC[d_6826].Y+d_6840-16);
-u9_2463(d_6D9E^.Images[d_34EC[d_6826].Sprite-796+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
-    d_34EC[d_6826].Y+d_6840);
+PgOrShifted16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-800+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
+    GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16);
+PgOrShifted16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-796+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
+    GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 end;
 817: begin
-    if d_34EC[d_6826].Aux2=0 then
+    if GameActors[SharedLoopIndexA].StateValueB=0 then
     begin
-      u9_2463(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],d_34EC[d_6826].X,
-      d_34EC[d_6826].Y+d_6840-16);
-      if d_34EC[d_6826].DX<0 then
-        u9_2463(d_6D9E^.Images[21].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840)
+      PgOrShifted16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-800+
+      GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16);
+      if GameActors[SharedLoopIndexA].ActorDirectionX<0 then
+        PgOrShifted16x16(SpriteBank801^.SpriteEntries[21].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX,
+        GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow)
       else
-        u9_2463(d_6D9E^.Images[33].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
+        PgOrShifted16x16(SpriteBank801^.SpriteEntries[33].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX,
+        GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
     end
     else
     begin
-      if d_34EC[d_6826].DX<0 then
-        u9_2463(d_6D9E^.Images[17].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16)
+      if GameActors[SharedLoopIndexA].ActorDirectionX<0 then
+        PgOrShifted16x16(SpriteBank801^.SpriteEntries[17].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX,
+        GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16)
       else
-        u9_2463(d_6D9E^.Images[29].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16);
-      u9_2463(d_6D9E^.Images[d_34EC[d_6826].Sprite-796+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
-    d_34EC[d_6826].Y+d_6840);
+        PgOrShifted16x16(SpriteBank801^.SpriteEntries[29].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX,
+        GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16);
+      PgOrShifted16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-796+
+      GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
+    GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
     end;
   end;
-825..828: u9_2463(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+825..828:
+  PgOrShifted16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-800+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-837..850: u9_2463(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+837..850:
+  PgOrShifted16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-800+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 851: begin
-u9_2463(d_6DA6^.Images[d_34EC[d_6826].Sprite-850+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
-    d_34EC[d_6826].Y+d_6840);
-u9_2463(d_6DA6^.Images[d_34EC[d_6826].Sprite-846+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X+16,
-    d_34EC[d_6826].Y+d_6840);
+PgOrShifted16x16(SpriteBank851^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-850+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
+    GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+PgOrShifted16x16(SpriteBank851^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-846+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX+16,
+    GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 end;
 end;
-                      Dec(d_34EC[d_6826].State);
+                      Dec(GameActors[SharedLoopIndexA].FlashFrames);
                     end
-                    else if d_34EC[d_6826].X and 7 = 0 then
+                    else if GameActors[SharedLoopIndexA].ActorWorldX and 7 = 0 then
                     begin
-case d_34EC[d_6826].Sprite of
-1..50: u9_0475(d_6D72^.Images[d_34EC[d_6826].Sprite+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+case GameActors[SharedLoopIndexA].ActorSpriteBase of
+1..50:
+  PgBlitMasked16x16(SpriteBank001^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 101: begin
-    if d_34EC[d_6826].Aux2=0 then
+    if GameActors[SharedLoopIndexA].StateValueB=0 then
     begin
-      u9_0475(d_6D76^.Images[d_34EC[d_6826].Sprite-100+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+      PgBlitMasked16x16(SpriteBank101^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-100+
+      GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840-16);
-      if d_34EC[d_6826].DX<0 then
-        u9_0475(d_6D76^.Images[5].Pixels[1],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840)
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16);
+      if GameActors[SharedLoopIndexA].ActorDirectionX<0 then
+        PgBlitMasked16x16(SpriteBank101^.SpriteEntries[5].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX shr
+        3,GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow)
       else
-        u9_0475(d_6D76^.Images[45].Pixels[1],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840);
+        PgBlitMasked16x16(SpriteBank101^.SpriteEntries[45].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX shr
+        3,GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
     end
     else
     begin
-      if d_34EC[d_6826].DX<0 then
-        u9_0475(d_6D76^.Images[1].Pixels[1],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840-16)
+      if GameActors[SharedLoopIndexA].ActorDirectionX<0 then
+        PgBlitMasked16x16(SpriteBank101^.SpriteEntries[1].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX shr
+        3,GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16)
       else
-        u9_0475(d_6D76^.Images[41].Pixels[1],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840-16);
-      u9_0475(d_6D76^.Images[d_34EC[d_6826].Sprite-96+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+        PgBlitMasked16x16(SpriteBank101^.SpriteEntries[41].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX shr
+        3,GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16);
+      PgBlitMasked16x16(SpriteBank101^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-96+
+      GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
     end;
   end;
-102..150: u9_0475(d_6D76^.Images[d_34EC[d_6826].Sprite-100+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+102..150:
+  PgBlitMasked16x16(SpriteBank101^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-100+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
-151..200: u9_0475(d_6D96^.Images[d_34EC[d_6826].Sprite-150+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+151..200:
+  PgBlitMasked16x16(SpriteBank151^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-150+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
-251..300: u9_0475(d_6DAA^.Images[d_34EC[d_6826].Sprite-250+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+251..300:
+  PgBlitMasked16x16(SpriteBank251^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-250+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
-301..350: u9_0475(d_6DA2^.Images[d_34EC[d_6826].Sprite-300+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+301..350:
+  PgBlitMasked16x16(SpriteBank301^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-300+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
-351..400: u9_0475(d_6DAE^.Images[d_34EC[d_6826].Sprite-350+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+351..400:
+  PgBlitMasked16x16(SpriteBank351^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-350+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
-401..450: u9_0475(d_6D7E^.Images[d_34EC[d_6826].Sprite-400+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+401..450:
+  PgBlitMasked16x16(SpriteBank401^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-400+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
-451..487: u9_0475(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+451..487:
+  PgBlitMasked16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
-488..490: u9_0475(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame shr 3].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+488..490:
+  PgBlitMasked16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter shr 3].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
-491: u9_0475(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+491:
+  PgBlitMasked16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
-492..494: u9_0475(d_6D82^.Images[d_34EC[d_6826].Sprite-450+(d_34EC[d_6826].Frame-21) shr 3].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+492..494:
+  PgBlitMasked16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+(
+  GameActors[SharedLoopIndexA].ActorAnimationCounter-21) shr 3].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
-495..500: u9_0475(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+495..500:
+  PgBlitMasked16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
-501..550: u9_0475(d_6D72^.Images[d_34EC[d_6826].Sprite-500+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+501..550:
+  PgBlitMasked16x16(SpriteBank001^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-500+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
-601..624: u9_0475(d_6D86^.Images[d_34EC[d_6826].Sprite-600+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+601..624:
+  PgBlitMasked16x16(SpriteBank601^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-600+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
-625: u9_0475(d_6D86^.Images[d_34EC[d_6826].Sprite-600+d_34EC[d_6826].Frame div 3].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+625:
+  PgBlitMasked16x16(SpriteBank601^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-600+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 3].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
-626..650: u9_0475(d_6D86^.Images[d_34EC[d_6826].Sprite-600+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+626..650:
+  PgBlitMasked16x16(SpriteBank601^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-600+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
-651..700: u9_0475(d_6D8A^.Images[d_34EC[d_6826].Sprite-650+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+651..700:
+  PgBlitMasked16x16(SpriteBank651^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-650+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
-701..750: u9_0475(d_6D8E^.Images[d_34EC[d_6826].Sprite-700+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+701..750:
+  PgBlitMasked16x16(SpriteBank701^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-700+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
-751..800: u9_0475(d_6D92^.Images[d_34EC[d_6826].Sprite-750+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+751..800:
+  PgBlitMasked16x16(SpriteBank751^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-750+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 801: begin
-u9_0475(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],d_34EC[d_6826].X shr 3,
-      d_34EC[d_6826].Y+d_6840-16);
-u9_0475(d_6D9E^.Images[d_34EC[d_6826].Sprite-796+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
-    d_34EC[d_6826].Y+d_6840);
+PgBlitMasked16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-800+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX shr 3,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16);
+PgBlitMasked16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-796+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
+    GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 end;
 817: begin
-    if d_34EC[d_6826].Aux2=0 then
+    if GameActors[SharedLoopIndexA].StateValueB=0 then
     begin
-      u9_0475(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+      PgBlitMasked16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-800+
+      GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840-16);
-      if d_34EC[d_6826].DX<0 then
-        u9_0475(d_6D9E^.Images[21].Pixels[1],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840)
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16);
+      if GameActors[SharedLoopIndexA].ActorDirectionX<0 then
+        PgBlitMasked16x16(SpriteBank801^.SpriteEntries[21].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX shr
+        3,GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow)
       else
-        u9_0475(d_6D9E^.Images[33].Pixels[1],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840);
+        PgBlitMasked16x16(SpriteBank801^.SpriteEntries[33].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX shr
+        3,GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
     end
     else
     begin
-      if d_34EC[d_6826].DX<0 then
-        u9_0475(d_6D9E^.Images[17].Pixels[1],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840-16)
+      if GameActors[SharedLoopIndexA].ActorDirectionX<0 then
+        PgBlitMasked16x16(SpriteBank801^.SpriteEntries[17].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX shr
+        3,GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16)
       else
-        u9_0475(d_6D9E^.Images[29].Pixels[1],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840-16);
-      u9_0475(d_6D9E^.Images[d_34EC[d_6826].Sprite-796+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+        PgBlitMasked16x16(SpriteBank801^.SpriteEntries[29].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX shr
+        3,GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16);
+      PgBlitMasked16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-796+
+      GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
     end;
   end;
-825..828: u9_0475(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+825..828:
+  PgBlitMasked16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-800+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
-837..850: u9_0475(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+837..850:
+  PgBlitMasked16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-800+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
     
-      d_34EC[d_6826].Y+d_6840);
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 851: begin
-u9_0475(d_6DA6^.Images[d_34EC[d_6826].Sprite-850+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3,
-    d_34EC[d_6826].Y+d_6840);
-u9_0475(d_6DA6^.Images[d_34EC[d_6826].Sprite-846+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X shr 3+2,
-    d_34EC[d_6826].Y+d_6840);
+PgBlitMasked16x16(SpriteBank851^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-850+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3,
+    GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+PgBlitMasked16x16(SpriteBank851^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-846+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX shr 3+2,
+    GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 end;
 end;
                     end
                     else
                     begin
-case d_34EC[d_6826].Sprite of
-1..50: u9_19f9(d_6D72^.Images[d_34EC[d_6826].Sprite+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
-    d_34EC[d_6826].Y+d_6840);
+case GameActors[SharedLoopIndexA].ActorSpriteBase of
+1..50:
+  PgBlitMaskedShifted16x16(SpriteBank001^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
+    GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 101: begin
-    if d_34EC[d_6826].Aux2=0 then
+    if GameActors[SharedLoopIndexA].StateValueB=0 then
     begin
-      u9_19f9(d_6D76^.Images[d_34EC[d_6826].Sprite-100+d_34EC[d_6826].Frame div 5].Pixels[1],d_34EC[d_6826].X,
-      d_34EC[d_6826].Y+d_6840-16);
-      if d_34EC[d_6826].DX<0 then
-        u9_19f9(d_6D76^.Images[5].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840)
+      PgBlitMaskedShifted16x16(SpriteBank101^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-100+
+      GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16);
+      if GameActors[SharedLoopIndexA].ActorDirectionX<0 then
+        PgBlitMaskedShifted16x16(SpriteBank101^.SpriteEntries[5].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX,
+        GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow)
       else
-        u9_19f9(d_6D76^.Images[45].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
+        PgBlitMaskedShifted16x16(SpriteBank101^.SpriteEntries[45].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX,
+        GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
     end
     else
     begin
-      if d_34EC[d_6826].DX<0 then
-        u9_19f9(d_6D76^.Images[1].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16)
+      if GameActors[SharedLoopIndexA].ActorDirectionX<0 then
+        PgBlitMaskedShifted16x16(SpriteBank101^.SpriteEntries[1].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX,
+        GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16)
       else
-        u9_19f9(d_6D76^.Images[41].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16);
-      u9_19f9(d_6D76^.Images[d_34EC[d_6826].Sprite-96+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
-    d_34EC[d_6826].Y+d_6840);
+        PgBlitMaskedShifted16x16(SpriteBank101^.SpriteEntries[41].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX,
+        GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16);
+      PgBlitMaskedShifted16x16(SpriteBank101^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-96+
+      GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
+    GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
     end;
   end;
-102..150: u9_19f9(d_6D76^.Images[d_34EC[d_6826].Sprite-100+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+102..150:
+  PgBlitMaskedShifted16x16(SpriteBank101^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-100+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-151..200: u9_19f9(d_6D96^.Images[d_34EC[d_6826].Sprite-150+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+151..200:
+  PgBlitMaskedShifted16x16(SpriteBank151^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-150+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-251..300: u9_19f9(d_6DAA^.Images[d_34EC[d_6826].Sprite-250+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+251..300:
+  PgBlitMaskedShifted16x16(SpriteBank251^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-250+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-301..350: u9_19f9(d_6DA2^.Images[d_34EC[d_6826].Sprite-300+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+301..350:
+  PgBlitMaskedShifted16x16(SpriteBank301^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-300+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-351..400: u9_19f9(d_6DAE^.Images[d_34EC[d_6826].Sprite-350+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+351..400:
+  PgBlitMaskedShifted16x16(SpriteBank351^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-350+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-401..450: u9_19f9(d_6D7E^.Images[d_34EC[d_6826].Sprite-400+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+401..450:
+  PgBlitMaskedShifted16x16(SpriteBank401^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-400+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-451..487: u9_19f9(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+451..487:
+  PgBlitMaskedShifted16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-488..490: u9_19f9(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame shr 3].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+488..490:
+  PgBlitMaskedShifted16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter shr 3].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-491: u9_19f9(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
-    d_34EC[d_6826].Y+d_6840);
-492..494: u9_19f9(d_6D82^.Images[d_34EC[d_6826].Sprite-450+(d_34EC[d_6826].Frame-21) shr 3].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+491:
+  PgBlitMaskedShifted16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
+    GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+492..494:
+  PgBlitMaskedShifted16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+(
+  GameActors[SharedLoopIndexA].ActorAnimationCounter-21) shr 3].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-495..500: u9_19f9(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+495..500:
+  PgBlitMaskedShifted16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-501..550: u9_19f9(d_6D72^.Images[d_34EC[d_6826].Sprite-500+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+501..550:
+  PgBlitMaskedShifted16x16(SpriteBank001^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-500+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-601..650: u9_19f9(d_6D86^.Images[d_34EC[d_6826].Sprite-600+d_34EC[d_6826].Frame div 5].Pixels[1],
-      d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
-651..700: u9_19f9(d_6D8A^.Images[d_34EC[d_6826].Sprite-650+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+601..650:
+  PgBlitMaskedShifted16x16(SpriteBank601^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-600+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+      GameActors[SharedLoopIndexA].ActorWorldX,GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+651..700:
+  PgBlitMaskedShifted16x16(SpriteBank651^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-650+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-701..750: u9_19f9(d_6D8E^.Images[d_34EC[d_6826].Sprite-700+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+701..750:
+  PgBlitMaskedShifted16x16(SpriteBank701^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-700+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-751..800: u9_19f9(d_6D92^.Images[d_34EC[d_6826].Sprite-750+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+751..800:
+  PgBlitMaskedShifted16x16(SpriteBank751^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-750+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 801: begin
-u9_19f9(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
-    d_34EC[d_6826].Y+d_6840-16);
-u9_19f9(d_6D9E^.Images[d_34EC[d_6826].Sprite-796+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
-    d_34EC[d_6826].Y+d_6840);
+PgBlitMaskedShifted16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-800+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
+    GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16);
+PgBlitMaskedShifted16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-796+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
+    GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 end;
 817: begin
-    if d_34EC[d_6826].Aux2=0 then
+    if GameActors[SharedLoopIndexA].StateValueB=0 then
     begin
-      u9_19f9(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],d_34EC[d_6826].X,
-      d_34EC[d_6826].Y+d_6840-16);
-      if d_34EC[d_6826].DX<0 then
-        u9_19f9(d_6D9E^.Images[21].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840)
+      PgBlitMaskedShifted16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-800+
+      GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16);
+      if GameActors[SharedLoopIndexA].ActorDirectionX<0 then
+        PgBlitMaskedShifted16x16(SpriteBank801^.SpriteEntries[21].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX,
+        GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow)
       else
-        u9_19f9(d_6D9E^.Images[33].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
+        PgBlitMaskedShifted16x16(SpriteBank801^.SpriteEntries[33].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX,
+        GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
     end
     else
     begin
-      if d_34EC[d_6826].DX<0 then
-        u9_19f9(d_6D9E^.Images[17].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16)
+      if GameActors[SharedLoopIndexA].ActorDirectionX<0 then
+        PgBlitMaskedShifted16x16(SpriteBank801^.SpriteEntries[17].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX,
+        GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16)
       else
-        u9_19f9(d_6D9E^.Images[29].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16);
-      u9_19f9(d_6D9E^.Images[d_34EC[d_6826].Sprite-796+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
-    d_34EC[d_6826].Y+d_6840);
+        PgBlitMaskedShifted16x16(SpriteBank801^.SpriteEntries[29].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX,
+        GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16);
+      PgBlitMaskedShifted16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-796+
+      GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
+    GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
     end;
   end;
-825..828: u9_19f9(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+825..828:
+  PgBlitMaskedShifted16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-800+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
-837..850: u9_19f9(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+837..850:
+  PgBlitMaskedShifted16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-800+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
     
-      d_34EC[d_6826].Y+d_6840);
+      GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 851: begin
-u9_19f9(d_6DA6^.Images[d_34EC[d_6826].Sprite-850+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X,
-    d_34EC[d_6826].Y+d_6840);
-u9_19f9(d_6DA6^.Images[d_34EC[d_6826].Sprite-846+d_34EC[d_6826].Frame div 5].Pixels[1],
-    d_34EC[d_6826].X+16,
-    d_34EC[d_6826].Y+d_6840);
+PgBlitMaskedShifted16x16(SpriteBank851^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-850+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX,
+    GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
+PgBlitMaskedShifted16x16(SpriteBank851^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-846+
+  GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
+    GameActors[SharedLoopIndexA].ActorWorldX+16,
+    GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 end;
 end;
                     end;
             {49d1}
-  u2_2530(d_34EC[1].OldX-16,d_34EC[1].OldY-16);
-  u2_2530(d_34EC[1].OldX-16,d_34EC[1].OldY);
-  u2_2530(d_34EC[1].OldX-16,d_34EC[1].OldY+16);
-  u2_2530(d_34EC[1].OldX,d_34EC[1].OldY-16);
-  u2_2530(d_34EC[1].OldX,d_34EC[1].OldY);
-  u2_2530(d_34EC[1].OldX,d_34EC[1].OldY+16);
-  u2_2530(d_34EC[1].OldX+16,d_34EC[1].OldY-16);
-  u2_2530(d_34EC[1].OldX+16,d_34EC[1].OldY);
-  u2_2530(d_34EC[1].OldX+16,d_34EC[1].OldY+16);
-for d_6826 := 2 to 25 do
-  if d_34EC[d_6826].Inactive=0 then
-    if d_34EC[d_6826].Marked<>0 then
+  DrawCellForeground(GameActors[1].ActorPreviousX-16,GameActors[1].ActorPreviousY-16);
+  DrawCellForeground(GameActors[1].ActorPreviousX-16,GameActors[1].ActorPreviousY);
+  DrawCellForeground(GameActors[1].ActorPreviousX-16,GameActors[1].ActorPreviousY+16);
+  DrawCellForeground(GameActors[1].ActorPreviousX,GameActors[1].ActorPreviousY-16);
+  DrawCellForeground(GameActors[1].ActorPreviousX,GameActors[1].ActorPreviousY);
+  DrawCellForeground(GameActors[1].ActorPreviousX,GameActors[1].ActorPreviousY+16);
+  DrawCellForeground(GameActors[1].ActorPreviousX+16,GameActors[1].ActorPreviousY-16);
+  DrawCellForeground(GameActors[1].ActorPreviousX+16,GameActors[1].ActorPreviousY);
+  DrawCellForeground(GameActors[1].ActorPreviousX+16,GameActors[1].ActorPreviousY+16);
+for SharedLoopIndexA := 2 to 25 do
+  if GameActors[SharedLoopIndexA].ActorSlotInactive=0 then
+    if GameActors[SharedLoopIndexA].ActorRemovalPending<>0 then
     begin
-  u2_2530(d_34EC[d_6826].OldX,d_34EC[d_6826].OldY);
-  u2_2530(d_34EC[d_6826].OldX-16,d_34EC[d_6826].OldY);
-  u2_2530(d_34EC[d_6826].OldX+16,d_34EC[d_6826].OldY);
-  u2_2530(d_34EC[d_6826].OldX-16,d_34EC[d_6826].OldY-16);
-  u2_2530(d_34EC[d_6826].OldX-16,d_34EC[d_6826].OldY+16);
-  u2_2530(d_34EC[d_6826].OldX+16,d_34EC[d_6826].OldY-16);
-  u2_2530(d_34EC[d_6826].OldX+16,d_34EC[d_6826].OldY+16);
-  u2_2530(d_34EC[d_6826].OldX,d_34EC[d_6826].OldY-16);
-  u2_2530(d_34EC[d_6826].OldX,d_34EC[d_6826].OldY+16);
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX,GameActors[SharedLoopIndexA].ActorPreviousY);
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX-16,GameActors[SharedLoopIndexA].ActorPreviousY);
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX+16,GameActors[SharedLoopIndexA].ActorPreviousY);
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX-16,GameActors[SharedLoopIndexA].ActorPreviousY-16);
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX-16,GameActors[SharedLoopIndexA].ActorPreviousY+16);
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX+16,GameActors[SharedLoopIndexA].ActorPreviousY-16);
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX+16,GameActors[SharedLoopIndexA].ActorPreviousY+16);
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX,GameActors[SharedLoopIndexA].ActorPreviousY-16);
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX,GameActors[SharedLoopIndexA].ActorPreviousY+16);
     end
-    else if u1_0000(32,d_6826) or (d_34EC[d_6826].Kind=28) or (d_34EC[d_6826].Kind=27)
-      or (d_34EC[d_6826].Kind=21) or (d_34EC[d_6828].Kind=14) then
+    else if ActorNearViewport(32,SharedLoopIndexA) or (GameActors[SharedLoopIndexA].ActorKindCode=28) or
+    (GameActors[SharedLoopIndexA].ActorKindCode=27)
+      or (GameActors[SharedLoopIndexA].ActorKindCode=21) or (GameActors[SharedLoopIndexB].ActorKindCode=14) then
     begin
-  u2_2530(d_34EC[d_6826].X,d_34EC[d_6826].Y);
-      if d_34EC[d_6826].X and 15>0 then
-  u2_2530(d_34EC[d_6826].X+15,d_34EC[d_6826].Y);
-      if d_34EC[d_6826].Kind=27 then
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX,GameActors[SharedLoopIndexA].ActorWorldY);
+      if GameActors[SharedLoopIndexA].ActorWorldX and 15>0 then
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX+15,GameActors[SharedLoopIndexA].ActorWorldY);
+      if GameActors[SharedLoopIndexA].ActorKindCode=27 then
       begin
-  u2_2530(d_34EC[d_6826].X,d_34EC[d_6826].Y-16);
-  u2_2530(d_34EC[d_6826].X+16,d_34EC[d_6826].Y-16);
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX,GameActors[SharedLoopIndexA].ActorWorldY-16);
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX+16,GameActors[SharedLoopIndexA].ActorWorldY-16);
       end
       else
-        case d_34EC[d_6826].Sprite of
+        case GameActors[SharedLoopIndexA].ActorSpriteBase of
           851: begin
-  u2_2530(d_34EC[d_6826].X+48,d_34EC[d_6826].Y);
-  u2_2530(d_34EC[d_6826].X+32,d_34EC[d_6826].Y);
-  u2_2530(d_34EC[d_6826].X+16,d_34EC[d_6826].Y);
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX+48,GameActors[SharedLoopIndexA].ActorWorldY);
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX+32,GameActors[SharedLoopIndexA].ActorWorldY);
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX+16,GameActors[SharedLoopIndexA].ActorWorldY);
           end;
           801..899,5001: begin
-  u2_2530(d_34EC[d_6826].X,d_34EC[d_6826].Y-16);
-            if d_34EC[d_6826].X and 15>0 then
-  u2_2530(d_34EC[d_6826].X+15,d_34EC[d_6826].Y-16);
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX,GameActors[SharedLoopIndexA].ActorWorldY-16);
+            if GameActors[SharedLoopIndexA].ActorWorldX and 15>0 then
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX+15,GameActors[SharedLoopIndexA].ActorWorldY-16);
           end;
           114: begin
-            if d_34EC[d_6826].Y>15 then
-  u2_2530(d_34EC[d_6826].X,d_34EC[d_6826].Y-16);
-  u2_2530(d_34EC[d_6826].X,d_34EC[d_6826].Y+16);
-            if d_34EC[d_6826].X and 15>0 then
+            if GameActors[SharedLoopIndexA].ActorWorldY>15 then
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX,GameActors[SharedLoopIndexA].ActorWorldY-16);
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX,GameActors[SharedLoopIndexA].ActorWorldY+16);
+            if GameActors[SharedLoopIndexA].ActorWorldX and 15>0 then
             begin
-  u2_2530(d_34EC[d_6826].X+15,d_34EC[d_6826].Y+16);
-              if d_34EC[d_6826].Y>15 then
-  u2_2530(d_34EC[d_6826].X+15,d_34EC[d_6826].Y-16);
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX+15,GameActors[SharedLoopIndexA].ActorWorldY+16);
+              if GameActors[SharedLoopIndexA].ActorWorldY>15 then
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX+15,GameActors[SharedLoopIndexA].ActorWorldY-16);
             end;
           end;
           101: begin
-  u2_2530(d_34EC[d_6826].X,d_34EC[d_6826].Y-16);
-            if d_34EC[d_6826].X and 15>0 then
-  u2_2530(d_34EC[d_6826].X+15,d_34EC[d_6826].Y-16);
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX,GameActors[SharedLoopIndexA].ActorWorldY-16);
+            if GameActors[SharedLoopIndexA].ActorWorldX and 15>0 then
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX+15,GameActors[SharedLoopIndexA].ActorWorldY-16);
           end;
         end;
     end
-    else if (d_34EC[d_6826].Kind=7) or (d_34EC[d_6826].Kind=14) or (d_34EC[d_6826].Kind=19)
-      or (d_34EC[d_6826].Kind=5000) then
+    else if (GameActors[SharedLoopIndexA].ActorKindCode=7) or (GameActors[SharedLoopIndexA].ActorKindCode=14) or
+    (GameActors[SharedLoopIndexA].ActorKindCode=19)
+      or (GameActors[SharedLoopIndexA].ActorKindCode=5000) then
     begin
-      d_34EC[d_6826].Marked := 1;
-  u2_2530(d_34EC[d_6826].X,d_34EC[d_6826].Y);
-      if d_34EC[d_6826].X and 15>0 then
+      GameActors[SharedLoopIndexA].ActorRemovalPending := 1;
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX,GameActors[SharedLoopIndexA].ActorWorldY);
+      if GameActors[SharedLoopIndexA].ActorWorldX and 15>0 then
       begin
-  u2_2530(d_34EC[d_6826].X+15,d_34EC[d_6826].Y);
-  u2_2530(d_34EC[d_6826].X-15,d_34EC[d_6826].Y);
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX+15,GameActors[SharedLoopIndexA].ActorWorldY);
+  DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX-15,GameActors[SharedLoopIndexA].ActorWorldY);
       end;
     end;
-if d_69F5<>0 then
-  u9_19f9(d_6D7A^.Images[d_34EC[1].Frame div 5+d_34EC[1].Sprite].Pixels[1],
-    d_34EC[1].X,d_34EC[1].Y+d_6840);
+if PlayerDying<>0 then
+  PgBlitMaskedShifted16x16(PlayerSpriteBank^.SpriteEntries[GameActors[1].ActorAnimationCounter div
+  5+GameActors[1].ActorSpriteBase].SpriteDataBytes[1],
+    GameActors[1].ActorWorldX,GameActors[1].ActorWorldY+GameDrawBufferRow);
             {4fd4}
-            u3_00a3;
-            if d_69AC <> 0 then
+            ShowGameDrawBuffer;
+            if ConfusionEndedMessagePending <> 0 then
             begin
-              d_69AC := 0;
-              u3_9b3e('YOU FEEL LESS CONFUSED');
+              ConfusionEndedMessagePending := 0;
+              ShowGameMessage('YOU FEEL LESS CONFUSED');
             end;
-            if d_6816 <> 0 then
+            if GameOptionsRequested <> 0 then
             begin
-              d_6EBE := Ord(u3_97bb);
-              d_6816 := 0;
+              GameMenuResult := Ord(RunGameOptionsMenu);
+              GameOptionsRequested := 0;
             end;
-            if d_6EC8 <> 0 then
+            if RestoreSnapshotRequested <> 0 then
             begin
-              u3_0232(20);
-              if d_6858 < 15 then d_6858 := 15;
-              d_69BA[d_69B8] := 0;
-              if d_69F5 = 0 then d_681C := 1;
-              u8_0a89;
-              u3_3d6b;
-              u2_a1ae(d_681C);
-              d_6832 := -1;
+              FadeGamePaletteToBlack(20);
+              if PlayerAmmo < 15 then PlayerAmmo := 15;
+              LevelCompletedFlags[EnteredLevelNumber] := 0;
+              if PlayerDying = 0 then CurrentLevelNumber := 1;
+              ResetLevelTransientState;
+              RestoreGameSnapshot;
+              LoadLevelMap(CurrentLevelNumber);
+              StatusBarCameraX := -1;
             end;
-            if d_69D3 <> 0 then
+            if WarpLevelRequested <> 0 then
             begin
-              d_69D3 := 0;
-              d_6826 := u3_8ea3;
-              if (d_6826 >= 1) and (d_6826 <= 16) then
+              WarpLevelRequested := 0;
+              SharedLoopIndexA := AskWarpLevel;
+              if (SharedLoopIndexA >= 1) and (SharedLoopIndexA <= 16) then
               begin
-                d_681C := d_6826+1;
-                u3_0232(20);
-                d_69BA[d_69B8] := 0;
-                u3_3d6b;
-                u2_a1ae(d_681C);
-                u8_0a89;
-                d_6832 := -1;
+                CurrentLevelNumber := SharedLoopIndexA+1;
+                FadeGamePaletteToBlack(20);
+                LevelCompletedFlags[EnteredLevelNumber] := 0;
+                RestoreGameSnapshot;
+                LoadLevelMap(CurrentLevelNumber);
+                ResetLevelTransientState;
+                StatusBarCameraX := -1;
               end;
             end;
-            if d_69D7 <> 0 then
+            if GodModeMessagePending <> 0 then
             begin
-              d_69D7 := 0;
-              if d_69F3 <> 0 then u3_9b3e('GOD Mode On')
-              else u3_9b3e('GOD Mode Off');
+              GodModeMessagePending := 0;
+              if PlayerGodMode <> 0 then ShowGameMessage('GOD Mode On')
+              else ShowGameMessage('GOD Mode Off');
             end;
           end;
         end;
       end;
-      if d_6D66 <> 0 then u3_ddd2;
+      if EpisodeBlueprintCollected <> 0 then ShowEpisodeEnding;
     end;
-    u3_0232(20);
-    u9_01c5(3);
-    if d_34AF <> 0 then
-      while d_34AE <> 0 do;
+    FadeGamePaletteToBlack(20);
+    PgSetBiosVideoMode(3);
+    if SoundEnabled <> 0 then
+      while SoundPlaying <> 0 do;
     NoSound;
-    u3_dbc2;
-    p_51f3;
-    p_0ec2;
-    p_516d;
-    p_0ef2;
+    ShowDosExitScreen;
+    RestoreDefaultTimer;
+    RestoreGameInterrupts;
+    SyncDosClockFromCmos;
+    SaveGameConfig;
   end
   else
   begin
-    u9_01c5(3);
+    PgSetBiosVideoMode(3);
 {$IFDEF SAM1}
     Writeln('This game requires and EGA or VGA Adapter!');
 {$ELSE}

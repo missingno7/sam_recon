@@ -45,6 +45,33 @@ LEX = re.compile(r"'(?:[^']|'')*'|\{[^}]*\}|\(\*.*?\*\)|[A-Za-z_][A-Za-z_0-9]*",
 HEADER_RX = re.compile(r"(?im)^\s*(procedure|function)\s+(\w+)\b")
 
 
+def semantic_names() -> dict:
+    """Optional readability aliases; canonical recipe builds remain unchanged."""
+    path = ROOT / "layout/names.json"
+    return load_json(path) if path.is_file() else {}
+
+
+def canonical_symbols(names: dict | None = None) -> dict:
+    names = semantic_names() if names is None else names
+    aliases = {row["name"].upper(): old.upper()
+               for category in ("units", "routines", "globals", "types")
+               for old, row in names.get(category, {}).items() if "." not in old}
+    if "p" in names.get("units", {}):
+        aliases[names["units"]["p"]["name"].upper()] = "SAM"
+    return aliases
+
+
+def canonical_map(map_text: str, names: dict | None = None) -> str:
+    """Translate names only, retaining all measured addresses and map rows.
+
+    Normalize before parsing so segment/public/line-module lookups and link
+    order use exactly the same comparison path for both source spellings.
+    """
+    aliases = canonical_symbols(names)
+    return re.sub(r"\b[A-Za-z_][A-Za-z_0-9]*\b",
+                  lambda m: aliases.get(m[0].upper(), m[0]), map_text)
+
+
 def norm(text: str) -> str:
     return re.sub(r"\s+", " ", text.strip().rstrip(";")).lower()
 
@@ -647,7 +674,7 @@ def compare_image(project: Project, generation: Generation, cen: dict, original:
                   relocs: tuple, original_header: dict, executable: bytes, map_text: str,
                   anchors: dict) -> dict:
     """Raw segment, full image, MZ header and relocation-set comparison."""
-    candidate, m = mz.parse(executable), tpmap.parse(map_text)
+    candidate, m = mz.parse(executable), tpmap.parse(canonical_map(map_text))
     report = {"image_equal": candidate.image == original, "original_image_size": len(original),
               "candidate_image_size": len(candidate.image), "segments": [], "globals": [], "anchors": []}
     rows = list(zip(project.atlas["units"], cen["segments"]))
@@ -727,10 +754,11 @@ def compare_image(project: Project, generation: Generation, cen: dict, original:
     report["init_chain"] = {"expected": expected_chain, "actual": actual_chain,
                             "equal": expected_chain == actual_chain}
     report["routine_entries"] = []
+    required = {n.lower() for n in getattr(generation, "expected_routines", ())}
     for lid, row in project.atlas["routines"].items():
         e = row["episodes"].get(generation.episode)
-        if e and e["unit"] in GAME and lid.upper() in m.publics:
-            para, off = m.publics[lid.upper()]
+        if e and e["unit"] in GAME and (lid.upper() in m.publics or lid.lower() in required):
+            para, off = m.publics.get(lid.upper(), (None, None))
             unit = names_by_para.get(para)
             report["routine_entries"].append({"name": lid, "expected_unit": e["unit"], "actual_unit": unit,
                 "expected_offset": e["entry"], "actual_offset": off, "equal": unit == e["unit"] and off == e["entry"]})
@@ -742,7 +770,8 @@ def object_holes(project: Project, ep: str, cen: dict, image: bytes, objects: di
                  executable: bytes | None = None, map_text: str | None = None) -> list:
     """Record undefined OMF storage verbatim on both sides; never waive it."""
     parsed = mz.parse(executable) if executable else None
-    m = tpmap.parse(map_text) if map_text else None
+    m = tpmap.parse(canonical_map(map_text)) if map_text else None
+    aliases = canonical_symbols()
     segs = dict(zip(project.atlas["units"], cen["segments"]))
     result = []
     for unit, obj in objects.items():
@@ -751,7 +780,8 @@ def object_holes(project: Project, ep: str, cen: dict, image: bytes, objects: di
         placement = set()
         if m:
             for public in obj.publics_in(code):
-                address = m.publics.get(public["name"].upper())
+                name = public["name"].upper()
+                address = m.publics.get(aliases.get(name, name))
                 if address:
                     placement.add(address[1] - public["offset"])
         linked_start = next(iter(placement)) if len(placement) == 1 else None

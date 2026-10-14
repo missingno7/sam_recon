@@ -3,16 +3,17 @@
 CODE segment byte public
 assume cs:CODE
 ; p_5151 is private: CMOS index in AL, result in AX.
-public p_516d,p_51df,p_51f3
+public SyncDosClockFromCmos,SetFastGameTimer,RestoreDefaultTimer
 
-cmos_hour   db ?
-cmos_minute db ?
-cmos_second db ?
-cmos_month  db ?
-cmos_day    db ?
-cmos_year   dw ?
+CmosHourWork   db ?
+CmosMinuteWork db ?
+CmosSecondWork db ?
+CmosMonthWork  db ?
+CmosDayWork    db ?
+CmosYearWork   dw ?
 
-p_5151 proc far
+; p.asm selects CMOS register through port $70, reads $71, masks BCD nibbles and uses AAD to convert them.
+ReadCmosDecimal proc far
     out 70h,al
     jmp short cmos_wait1
 cmos_wait1:
@@ -31,45 +32,47 @@ cmos_wait4:
     and ax,0f0fh
     aad
     ret
-p_5151 endp
+ReadCmosDecimal endp
 
-p_516d proc far
+; p.asm reads CMOS time/date and invokes DOS INT 21h AH=$2D and $2B to set DOS time/date.
+SyncDosClockFromCmos proc far
     sub ax,ax
-    call p_5151
-    mov cs:cmos_second,al
+    call ReadCmosDecimal
+    mov cs:CmosSecondWork,al
     mov al,2
-    call p_5151
-    mov cs:cmos_minute,al
+    call ReadCmosDecimal
+    mov cs:CmosMinuteWork,al
     mov al,4
-    call p_5151
-    mov cs:cmos_hour,al
+    call ReadCmosDecimal
+    mov cs:CmosHourWork,al
     mov al,7
-    call p_5151
-    mov cs:cmos_day,al
+    call ReadCmosDecimal
+    mov cs:CmosDayWork,al
     mov al,8
-    call p_5151
-    mov cs:cmos_month,al
+    call ReadCmosDecimal
+    mov cs:CmosMonthWork,al
     mov al,9
-    call p_5151
-    mov cs:cmos_year,ax
+    call ReadCmosDecimal
+    mov cs:CmosYearWork,ax
     sub ax,ax
     mov ah,2dh
-    mov ch,cs:cmos_hour
-    mov cl,cs:cmos_minute
-    mov dh,cs:cmos_second
+    mov ch,cs:CmosHourWork
+    mov cl,cs:CmosMinuteWork
+    mov dh,cs:CmosSecondWork
     mov dl,50
     int 21h
     sub ax,ax
     mov ah,2bh
     mov cx,1900
-    add cx,cs:cmos_year
-    mov dh,cs:cmos_month
-    mov dl,cs:cmos_day
+    add cx,cs:CmosYearWork
+    mov dh,cs:CmosMonthWork
+    mov dl,cs:CmosDayWork
     int 21h
     ret
-p_516d endp
+SyncDosClockFromCmos endp
 
-p_51df proc far
+; Programs PIT channel 0 via ports $43/$40 with mode $36 and divisor $2147; called before the game loop.
+SetFastGameTimer proc far
     mov bx,2147h
     cli
     mov al,36h
@@ -81,9 +84,10 @@ p_51df proc far
     out 40h,al
     sti
     ret
-p_51df endp
+SetFastGameTimer endp
 
-p_51f3 proc far
+; Programs PIT channel 0 with mode $36 and zero divisor, restoring the default 65536-count period.
+RestoreDefaultTimer proc far
     cli
     mov al,36h
     out 43h,al
@@ -92,6 +96,6 @@ p_51f3 proc far
     out 40h,al
     sti
     ret
-p_51f3 endp
+RestoreDefaultTimer endp
 CODE ends
 end
