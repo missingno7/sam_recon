@@ -10,6 +10,13 @@ Original game files and anything derived from them are ignored by git and never 
 
 ## Status
 
+**Phase 1 complete (2026-10-14):** all 170 game routines (including nested routines, unit
+initialisation blocks and the 16.6 KB program body) and all six linked assembly objects are proven
+byte-identical in SAM1, SAM2 and SAM3: 181.7 KB of the 187.9 KB code image
+([docs/progress.md](docs/progress.md); re-proven by `python tools/validate.py`). The remaining
+6.2 KB is the Borland runtime, proven by the whole-program build (phase 2,
+[docs/roadmap.md](docs/roadmap.md)).
+
 * **Oracles locked:** all three LZEXE 0.91 executables are hashed, unpacked by `tools/lz91.py`,
   cross-checked by executing each file's own LZEXE stub in unicorn at two load segments
   (`tools/oracle.py --crosscheck`), and **repacked byte-identically** by the pinned LZEXE 0.91
