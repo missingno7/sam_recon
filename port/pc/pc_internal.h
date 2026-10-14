@@ -1,5 +1,6 @@
 #ifndef SAM_PC_INTERNAL_H
 #define SAM_PC_INTERNAL_H
+/* Private shared device, scheduler, and SDL hooks for the emulated PC implementation. */
 #include "platform.h"
 #include <SDL3/SDL.h>
 #include <stdio.h>
@@ -24,7 +25,6 @@ void speaker_reset(void);
 void speaker_change(uint32_t divisor, uint8_t gate, int restart);
 int speaker_init(int enabled);
 void speaker_shutdown(void);
-void speaker_render(float *out, size_t count, uint64_t *sample_index,
-                    size_t *event_index, uint32_t *divisor, uint8_t *gate,
-                    double *phase, float *filter);
+void speaker_render(float *out, size_t count, uint64_t *sample_index, size_t *event_index,
+                    uint32_t *divisor, uint8_t *gate, double *phase, float *filter);
 #endif
