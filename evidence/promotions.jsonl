@@ -87,3 +87,4 @@
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_3505", "note": "wave 6", "source_sha256": "fcf6f39e1c8f41402b3d939d11fc274fb564a25ed45642d04230b2bb50e28b66", "time": "2026-10-14T16:02:14"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_97bb", "note": "wave 6", "source_sha256": "dfc9f8bfae0e41121c4233b4c00da80853134336f7ba878329163fdf19ac467d", "time": "2026-10-14T16:02:15"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_a6f6", "note": "wave 6", "source_sha256": "c4f17ac7125d8d57129cfd6caca97fc4989d1ee890d75133edc9e3a002fc980c", "time": "2026-10-14T16:02:16"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "p_1148", "note": "Sol: main program body (MAIN mode)", "source_sha256": "c23ab9900c0c36c432c1c5b789b27616d6a8252889d2cda111f9d6f3819315f4", "time": "2026-10-14T16:03:17"}
