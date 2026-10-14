@@ -1,6 +1,6 @@
 """Phase 2: generate and compare the actual linked Turbo Pascal program.
 
-    python tools/progbuild.py [--episodes sam1,sam2,sam3] [--keep]
+    python tools/progbuild.py [--episodes sam1,sam2,sam3] [--keep] [--unit-processes]
 
 Only accepted recipe sources are inputs. No harness stubs, retention calls,
 absolute overlays, copied oracle initializers, or post-link edits are used.
@@ -769,13 +769,36 @@ def object_holes(project: Project, ep: str, cen: dict, image: bytes, objects: di
     return result
 
 
-def build_episode(project: Project, ep: str, directory: Path, keep: bool) -> dict:
+def compile_sources(sources: dict, binaries: dict, options: list, *,
+                    unit_processes: bool = False) -> tuple:
+    """Optionally build U9..U1 in separate TPC processes, then link SAM.
+
+    Only freshly generated units and the unchanged assembled objects are inputs.
+    A unit's TPU becomes a binary input to subsequent invocations; no TPU bytes
+    are edited. This controls compilation history, not undefined-storage values.
+    """
+    staged, units = dict(binaries), {}
+    if unit_processes:
+        for i in range(9, 0, -1):
+            main = f"U{i}.PAS"
+            receipt = tpc.compile_program(sources, main, options, binaries=staged, fresh=True)
+            units[f"u{i}"] = receipt
+            if not receipt.ok or f"U{i}.TPU" not in receipt.outputs:
+                return receipt, units
+            staged.update({n: b for n, b in receipt.outputs.items() if n.endswith(".TPU")})
+    return tpc.compile_program(sources, "SAM.PAS", options, binaries=staged,
+                               fresh=unit_processes), units
+
+
+def build_episode(project: Project, ep: str, directory: Path, keep: bool, *,
+                  unit_processes: bool = False) -> dict:
     directory.mkdir(parents=True, exist_ok=True)
     # A failed rerun must not leave a previous successful EXE beside its report.
     for name in ("SAM.EXE", "SAM.MAP", "SAM-PACKED.EXE"):
         (directory / name).unlink(missing_ok=True)
     report = {"episode": ep, "status": "BLOCKED", "inputs": dict(project.input_hashes), "problems": [],
               "comparison": None, "packed": {"status": "SKIPPED", "reason": "no equal load image"}}
+    report["build_arrangement"] = "unit-processes" if unit_processes else "make"
     try:
         # Avoid oracle.load_image's materialization fallback: this worker reads oracles only.
         for name in ("image.bin", "relocs.json", "unpacked.exe"):
@@ -831,7 +854,14 @@ def build_episode(project: Project, ep: str, directory: Path, keep: bool) -> dic
         report["object_holes"] = object_holes(project, ep, cen, image, objects)
         if len(binaries) != len(project.objects):
             raise RuntimeError("one or more linked objects failed assembly")
-        receipt = tpc.compile_program(generated.sources, "SAM.PAS", ["/GD", *options], binaries=binaries)
+        receipt, unit_receipts = compile_sources(generated.sources, binaries, ["/GD", *options],
+                                                 unit_processes=unit_processes)
+        report["unit_compiles"] = {u: r.data for u, r in unit_receipts.items()}
+        for unit, compiled in unit_receipts.items():
+            atomic_bytes(directory / (unit.upper() + "-compiler.log"), compiled.log.encode("latin1"))
+            if keep:
+                for name, blob in compiled.outputs.items():
+                    atomic_bytes(directory / name, blob)
         report["compile"] = receipt.data
         atomic_bytes(directory / "compiler.log", receipt.log.encode("latin1"))
         if not receipt.ok or receipt.exe("SAM") is None:
@@ -878,6 +908,7 @@ def render_report(report: dict) -> str:
     lines = [f"# {report['episode']}: {report['status']}", "",
              "Generated from accepted sources with no oracle initializers, absolute views, retention calls or post-link patching.",
              "Source previews are not a proof while any input blocker remains.", ""]
+    lines += ["Build arrangement: " + report.get("build_arrangement", "make") + ".", ""]
     comparison = report.get("comparison")
     rows = comparison["segments"] if comparison else report.get("segments", [])
     lines += ["| Segment | Result | First difference | Original owner |", "|---|---|---|---|"]
@@ -911,6 +942,8 @@ def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--episodes", default=",".join(EPISODES))
     parser.add_argument("--keep", action="store_true", help="also copy diagnostic sources, objects and TPUs into each episode directory")
+    parser.add_argument("--unit-processes", action="store_true",
+                        help="compile U9..U1 in separate fresh TPC processes before linking SAM; does not zero object holes")
     args = parser.parse_args(argv)
     episodes = args.episodes.split(",")
     if not episodes or any(e not in EPISODES for e in episodes) or len(set(episodes)) != len(episodes):
@@ -920,7 +953,7 @@ def main(argv=None) -> int:
     with isolated_tools(OUT):
         for ep in episodes:
             print(f"{ep}: generating and compiling accepted program sources", flush=True)
-            report = build_episode(project, ep, OUT / ep, args.keep)
+            report = build_episode(project, ep, OUT / ep, args.keep, unit_processes=args.unit_processes)
             reports.append(report)
             comparison = report.get("comparison")
             if comparison:

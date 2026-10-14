@@ -4,6 +4,7 @@ import sys
 import unittest
 from pathlib import Path
 from unittest.mock import patch
+from types import SimpleNamespace
 
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "tools"))
@@ -275,6 +276,51 @@ class Comparisons(unittest.TestCase):
         with pb.isolated_tools(pb.OUT / "test-isolation"):
             self.assertEqual(pb.tpc.CACHE, pb.OUT / "test-isolation" / "cc-cache")
         self.assertEqual((pb.tpc.CACHE, pb.tpc.SCRATCH, pb.tpc.INFLIGHT), old)
+
+
+class BuildArrangements(unittest.TestCase):
+    def test_separate_processes_use_only_freshly_compiled_tpus(self):
+        sources = {"SAM.PAS": "program SAM; begin end.",
+                   **{f"U{i}.PAS": f"unit U{i}; interface implementation end." for i in range(1, 10)}}
+        binaries, calls = {"P.OBJ": b"unaltered object"}, []
+
+        def compile(sources_in, main, options, *, binaries, fresh):
+            self.assertEqual(sources_in, sources)
+            self.assertEqual(options, ["/GD"])
+            self.assertTrue(fresh)
+            self.assertEqual(binaries["P.OBJ"], b"unaltered object")
+            calls.append((main, dict(binaries)))
+            outputs = {main[:-4] + ".TPU": main.encode()} if main != "SAM.PAS" else {"SAM.EXE": b"result"}
+            return SimpleNamespace(ok=True, outputs=outputs)
+
+        with patch.object(pb.tpc, "compile_program", side_effect=compile):
+            final, units = pb.compile_sources(sources, binaries, ["/GD"], unit_processes=True)
+        self.assertEqual([n for n, _ in calls], [*(f"U{i}.PAS" for i in range(9, 0, -1)), "SAM.PAS"])
+        self.assertEqual(set(units), {f"u{i}" for i in range(1, 10)})
+        self.assertEqual(final.outputs, {"SAM.EXE": b"result"})
+        self.assertEqual(binaries, {"P.OBJ": b"unaltered object"})
+        for index, (_, staged) in enumerate(calls):
+            self.assertEqual({n for n in staged if n.endswith(".TPU")},
+                             {f"U{i}.TPU" for i in range(9, 9-index, -1)})
+
+    def test_failed_unit_never_reaches_program_link(self):
+        failure = SimpleNamespace(ok=False, outputs={})
+        with patch.object(pb.tpc, "compile_program", return_value=failure) as compiler:
+            final, units = pb.compile_sources({"SAM.PAS": "program SAM; begin end."}, {}, [],
+                                               unit_processes=True)
+        self.assertIs(final, failure)
+        self.assertEqual(units, {"u9": failure})
+        self.assertEqual(compiler.call_count, 1)
+        self.assertEqual(compiler.call_args.args[1], "U9.PAS")
+
+    def test_default_arrangement_preserves_single_make_invocation(self):
+        receipt = SimpleNamespace(ok=True, outputs={"SAM.EXE": b"result"})
+        with patch.object(pb.tpc, "compile_program", return_value=receipt) as compiler:
+            final, units = pb.compile_sources({"SAM.PAS": "source"}, {"P.OBJ": b"object"}, ["/GD"])
+        self.assertIs(final, receipt)
+        self.assertEqual(units, {})
+        compiler.assert_called_once_with({"SAM.PAS": "source"}, "SAM.PAS", ["/GD"],
+                                         binaries={"P.OBJ": b"object"}, fresh=False)
 
 
 if __name__ == "__main__":
