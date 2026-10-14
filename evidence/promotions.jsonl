@@ -50,3 +50,5 @@
 {"equal": ["sam1", "sam2", "sam3"], "function": "u1_03f0", "note": "wave 4", "source_sha256": "a1b9a366f14115243420c8060ad9e0c82d96aec0a962c8df7425cde9956460b3", "time": "2026-10-14T15:44:32"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_3712", "note": "wave 4", "source_sha256": "d48aaca8a4189436cd45df6529b12635bcf0331d808e2e602b8e769e51f584c0", "time": "2026-10-14T15:44:33"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "u1_65d9", "note": "luna (resumed); single map global d_0296 via layout/data-extra.json", "source_sha256": "43d73047146801b2096b0cf8fd498a193063649f15d18a8c2dc5da4be61be844", "time": "2026-10-14T15:47:08"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u2_3a91", "note": "sol giant / luna wave 5", "source_sha256": "3313dd8b9652a583fd0234123d406d727e088ef9c36e07d1b5426e505b0cc03d", "time": "2026-10-14T15:48:13"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u3_a3b6", "note": "sol giant / luna wave 5", "source_sha256": "55cd65a52897a037fe76eaaaa6fc5063f02e82f1d8169ecb8a5876055467969e", "time": "2026-10-14T15:48:14"}
