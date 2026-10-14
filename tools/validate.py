@@ -142,6 +142,8 @@ def main() -> int:
                 ok = False
                 failures.append(f"{f} {ep}: {res.short()}")
         results[f] = {"ok": ok}
+        for c in rec.get("covers", []):
+            results[c] = {"ok": ok}
         print(f"{f}: {'OK' if ok else 'REGRESSED'} ({','.join(rec['equal'])})")
     decl = declarations()
     for p in decl:

@@ -58,7 +58,9 @@ def kinds() -> dict:
 
 def route_all() -> list:
     atlas = load_json(EVIDENCE / "atlas.json")
-    accepted = {p.stem for p in RECIPES.glob("*.json")}
+    accepted = set()
+    for rp in RECIPES.glob("*.json"):
+        accepted |= {rp.stem, *load_json(rp).get("covers", [])}
     cur = kinds()
     cen = load_json(BUILD / "census" / "sam1.json")
     inits = {(atlas["units"][[s["para"] for s in cen["segments"]].index(s)], o) for s, o in cen["inits"]}
