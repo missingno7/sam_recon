@@ -24,7 +24,9 @@
 
 Every change to `game/` must keep `python tools/validate.py` green.
 
-## Next phase: SDL3 / Android port (planned)
+## Next phase: SDL3 / Android port (started 2026-10-14)
+
+Design, memory model and contract: [port.md](port.md); platform API: `port/pc/pc.h`.
 
 Keep `game/` (Turbo Pascal 5.0) as the single source of truth and generate the port's C from it with
 a purpose-built translator, as duke1_recon does with `tools/port_gen.py`:
