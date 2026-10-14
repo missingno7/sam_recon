@@ -5,8 +5,8 @@ unit TEXT80;
 interface
 uses SAMDATA;
 var
-  TextVideoSegment: word;
-  TextRetraceSyncEnabled: byte;
+  TextVideoSegment: Word;
+  TextRetraceSyncEnabled: Byte;
 {$IFDEF SAM1}
   { Unused storage retains DATA layout. }
   UnusedTextSyncPadSam1: Byte;
@@ -15,11 +15,11 @@ var
   UnusedTextSyncPadLater: Byte;
 {$ENDIF}
   { Unused storage retains DATA layout. }
-  UnusedTextAuxiliaryValue: longint;
-  TextSavedBiosMode: byte;
-  TextVideoAdapterClass: byte;
+  UnusedTextAuxiliaryValue: LongInt;
+  TextSavedBiosMode: Byte;
+  TextVideoAdapterClass: Byte;
 function MakeTextAttribute(ForegroundColor, BackgroundColor: Byte): Byte;
-function RepeatTextCharacter(RepeatCount: Byte; RepeatedChar: Char): string;
+function RepeatTextCharacter(RepeatCount: Byte; RepeatedChar: Char): String;
 procedure FillTextRectangle(LeftColumn, TopRow, RightColumn,
   BottomRow, ForegroundColor, BackgroundColor: Integer);
 procedure DrawTextBoxBorder(LeftColumn, TopRow, RightColumn,
@@ -28,41 +28,85 @@ procedure DrawFilledTextBox(LeftColumn, TopRow, RightColumn,
   BottomRow, ForegroundColor, BackgroundColor,
   BorderStyle: Integer);
 procedure WriteCenteredText(TextRow, ForegroundColor, BackgroundColor: Word;
-  DisplayText: string);
+  DisplayText: String);
 procedure WriteVerticalText(TextColumn: Word; FirstTextRow: Integer; ForegroundColor,
   BackgroundColor: Word; DisplayText: String);
 procedure ConfigureTextVideoMemory;
 procedure WriteColoredText(TextColumn, TextRow, ColorAttribute: Byte;
-  DisplayText: string);
+  DisplayText: String);
 function DetectTextVideoAdapter: Byte;
 function GetTextVideoMode: Byte;
 implementation
 uses Dos, PROGRPHX, Crt, SAMSOUND, GAMEJOY, PCXGENUS;
 
+const
+  { Geometry of the 80-column, 25-row DOS text screen. }
+  TextScreenColumns = 80;
+  TextScreenRows = 25;
+  TextCenterColumn = 40;
+  TextBackgroundShift = 4;
+
+  { Border styles accepted by DrawTextBoxBorder. Other values are characters. }
+  TextBorderBlank = 0;
+  TextBorderSingle = 1;
+  TextBorderDouble = 2;
+  TextBorderSingleHorizontal = 3;
+  TextBorderDoubleHorizontal = 4;
+
+  { CP437 single, double and mixed box-drawing characters. }
+  TextSingleTopLeft = #218;
+  TextSingleTopRight = #191;
+  TextSingleBottomLeft = #192;
+  TextSingleBottomRight = #217;
+  TextSingleHorizontal = #196;
+  TextSingleVertical = #179;
+  TextDoubleTopLeft = #201;
+  TextDoubleTopRight = #187;
+  TextDoubleBottomLeft = #200;
+  TextDoubleBottomRight = #188;
+  TextDoubleHorizontal = #205;
+  TextDoubleVertical = #186;
+  TextMixedSingleTopLeft = #214;
+  TextMixedSingleTopRight = #183;
+  TextMixedSingleBottomLeft = #211;
+  TextMixedSingleBottomRight = #189;
+  TextMixedDoubleTopLeft = #213;
+  TextMixedDoubleTopRight = #184;
+  TextMixedDoubleBottomLeft = #212;
+  TextMixedDoubleBottomRight = #190;
+
+  { BIOS mode, VRAM segments and the adapter class requiring CGA synchronization. }
+  TextMonochromeMode = 7;
+  TextMonochromeSegment = $B000;
+  TextColorSegment = $B800;
+  TextCgaAdapterClass = 1;
+
 { Assembly text output and BIOS queries. }
 {$L TEXTOUT.OBJ}
-{ Writes Pascal-string characters and attribute bytes to text VRAM, with optional CGA synchronization. }
+{ Writes Pascal-String characters and attribute bytes to text VRAM, with optional CGA synchronization. }
 procedure WriteColoredText; external;
-{ BIOS capability calls classify the display adapter and return the class byte saved in TextVideoAdapterClass. }
+{ BIOS capability calls classify the display adapter and return the class Byte saved in
+  TextVideoAdapterClass. }
 function DetectTextVideoAdapter; external;
 { Calls the BIOS-mode helper and returns its AL result. }
 function GetTextVideoMode; external;
 
-{ Text attributes and string helpers. }
+{ Text attributes and String helpers. }
 {$F+}
 { Packs background in the high nibble and foreground in the low nibble. }
 function MakeTextAttribute(ForegroundColor, BackgroundColor: Byte): Byte;
 begin
-  MakeTextAttribute := (BackgroundColor shl 4) or ForegroundColor;
+  MakeTextAttribute := (BackgroundColor shl TextBackgroundShift) or ForegroundColor;
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
 { Creates a length-prefixed string of a repeated character, limiting the count to 1..80. }
-function RepeatTextCharacter(RepeatCount: Byte; RepeatedChar: Char): string;
+function RepeatTextCharacter(RepeatCount: Byte; RepeatedChar: Char): String;
 var
-  RepeatedText: string;
+  RepeatedText: String;
 begin
-  if not (RepeatCount in [1..80]) then
+  { Invalid widths become one character; this is not saturation at 80. }
+  if not (RepeatCount in [1 .. TextScreenColumns]) then
     RepeatCount := 1;
   FillChar(RepeatedText, RepeatCount + 1, RepeatedChar);
   RepeatedText[0] := Chr(RepeatCount);
@@ -79,12 +123,11 @@ var
   FillRow: Integer;
   FillAttr: Byte;
 begin
-  if RightColumn > 80 then
-    RightColumn := 80;
+  if RightColumn > TextScreenColumns then
+    RightColumn := TextScreenColumns;
   FillAttr := MakeTextAttribute(ForegroundColor, BackgroundColor);
   for FillRow := TopRow to BottomRow do
-    WriteColoredText(LeftColumn, FillRow, FillAttr, RepeatTextCharacter(RightColumn -
-    LeftColumn + 1, ' '));
+    WriteColoredText(LeftColumn, FillRow, FillAttr, RepeatTextCharacter(RightColumn - LeftColumn + 1, ' '));
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
@@ -97,66 +140,66 @@ var
   BorderAttr: Byte;
 begin
   case BorderStyle of
-    0:
-    begin
-      TopLeftChar := ' ';
-      TopRightChar := ' ';
-      BottomLeftChar := ' ';
-      BottomRightChar := ' ';
-      HorizontalChar := ' ';
-      VerticalChar := ' ';
-    end;
-    1:
-    begin
-      TopLeftChar := #218;
-      TopRightChar := #191;
-      BottomLeftChar := #192;
-      BottomRightChar := #217;
-      HorizontalChar := #196;
-      VerticalChar := #179;
-    end;
-    2:
-    begin
-      TopLeftChar := #201;
-      TopRightChar := #187;
-      BottomLeftChar := #200;
-      BottomRightChar := #188;
-      HorizontalChar := #205;
-      VerticalChar := #186;
-    end;
-    3:
-    begin
-      TopLeftChar := #214;
-      TopRightChar := #183;
-      BottomLeftChar := #211;
-      BottomRightChar := #189;
-      HorizontalChar := #196;
-      VerticalChar := #186;
-    end;
-    4:
-    begin
-      TopLeftChar := #213;
-      TopRightChar := #184;
-      BottomLeftChar := #212;
-      BottomRightChar := #190;
-      HorizontalChar := #205;
-      VerticalChar := #179;
-    end;
-  else
-    begin
-      TopLeftChar := Chr(BorderStyle);
-      TopRightChar := Chr(BorderStyle);
-      BottomLeftChar := Chr(BorderStyle);
-      BottomRightChar := Chr(BorderStyle);
-      HorizontalChar := Chr(BorderStyle);
-      VerticalChar := Chr(BorderStyle);
-    end;
+    TextBorderBlank:
+      begin
+        TopLeftChar := ' ';
+        TopRightChar := ' ';
+        BottomLeftChar := ' ';
+        BottomRightChar := ' ';
+        HorizontalChar := ' ';
+        VerticalChar := ' ';
+      end;
+    TextBorderSingle:
+      begin
+        TopLeftChar := TextSingleTopLeft;
+        TopRightChar := TextSingleTopRight;
+        BottomLeftChar := TextSingleBottomLeft;
+        BottomRightChar := TextSingleBottomRight;
+        HorizontalChar := TextSingleHorizontal;
+        VerticalChar := TextSingleVertical;
+      end;
+    TextBorderDouble:
+      begin
+        TopLeftChar := TextDoubleTopLeft;
+        TopRightChar := TextDoubleTopRight;
+        BottomLeftChar := TextDoubleBottomLeft;
+        BottomRightChar := TextDoubleBottomRight;
+        HorizontalChar := TextDoubleHorizontal;
+        VerticalChar := TextDoubleVertical;
+      end;
+    TextBorderSingleHorizontal:
+      begin
+        TopLeftChar := TextMixedSingleTopLeft;
+        TopRightChar := TextMixedSingleTopRight;
+        BottomLeftChar := TextMixedSingleBottomLeft;
+        BottomRightChar := TextMixedSingleBottomRight;
+        HorizontalChar := TextSingleHorizontal;
+        VerticalChar := TextDoubleVertical;
+      end;
+    TextBorderDoubleHorizontal:
+      begin
+        TopLeftChar := TextMixedDoubleTopLeft;
+        TopRightChar := TextMixedDoubleTopRight;
+        BottomLeftChar := TextMixedDoubleBottomLeft;
+        BottomRightChar := TextMixedDoubleBottomRight;
+        HorizontalChar := TextDoubleHorizontal;
+        VerticalChar := TextSingleVertical;
+      end;
+    else
+      begin
+        TopLeftChar := Chr(BorderStyle);
+        TopRightChar := Chr(BorderStyle);
+        BottomLeftChar := Chr(BorderStyle);
+        BottomRightChar := Chr(BorderStyle);
+        HorizontalChar := Chr(BorderStyle);
+        VerticalChar := Chr(BorderStyle);
+      end;
   end;
 
   BorderAttr := MakeTextAttribute(ForegroundColor, BackgroundColor);
   WriteColoredText(LeftColumn, TopRow, BorderAttr, TopLeftChar);
-  WriteColoredText(LeftColumn + 1, TopRow, BorderAttr,
-  RepeatTextCharacter(RightColumn - LeftColumn - 1, HorizontalChar));
+  WriteColoredText(LeftColumn + 1, TopRow, BorderAttr, RepeatTextCharacter(RightColumn - LeftColumn - 1,
+    HorizontalChar));
   WriteColoredText(RightColumn, TopRow, BorderAttr, TopRightChar);
   for BorderRow := TopRow + 1 to BottomRow - 1 do
   begin
@@ -164,8 +207,8 @@ begin
     WriteColoredText(RightColumn, BorderRow, BorderAttr, VerticalChar);
   end;
   WriteColoredText(LeftColumn, BottomRow, BorderAttr, BottomLeftChar);
-  WriteColoredText(LeftColumn + 1, BottomRow, BorderAttr,
-  RepeatTextCharacter(RightColumn - LeftColumn - 1, HorizontalChar));
+  WriteColoredText(LeftColumn + 1, BottomRow, BorderAttr, RepeatTextCharacter(RightColumn - LeftColumn - 1,
+    HorizontalChar));
   WriteColoredText(RightColumn, BottomRow, BorderAttr, BottomRightChar);
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
@@ -175,23 +218,19 @@ procedure DrawFilledTextBox(LeftColumn, TopRow, RightColumn,
   BottomRow, ForegroundColor, BackgroundColor,
   BorderStyle: Integer);
 begin
-  DrawTextBoxBorder(LeftColumn, TopRow, RightColumn,
-  BottomRow, ForegroundColor, BackgroundColor,
-  BorderStyle);
-  FillTextRectangle(LeftColumn + 1, TopRow + 1, RightColumn - 1,
-  BottomRow - 1, ForegroundColor, BackgroundColor);
+  DrawTextBoxBorder(LeftColumn, TopRow, RightColumn, BottomRow, ForegroundColor, BackgroundColor, BorderStyle);
+  FillTextRectangle(LeftColumn + 1, TopRow + 1, RightColumn - 1, BottomRow - 1, ForegroundColor, BackgroundColor);
 end;
 
 { Centered and vertical text. }
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
-{ Computes column 40-Length(Text) div 2 and writes the colored string on the selected row. }
+{ Computes column 40-Length(Text) div 2 and writes the colored String on the selected row. }
 procedure WriteCenteredText(TextRow, ForegroundColor, BackgroundColor: Word;
-  DisplayText: string);
+  DisplayText: String);
 begin
-  WriteColoredText(40 - Ord(DisplayText[0]) div 2, Byte(TextRow),
-  MakeTextAttribute(Byte(ForegroundColor), Byte(BackgroundColor)),
-  DisplayText);
+  WriteColoredText(TextCenterColumn - Ord(DisplayText[0]) div 2, Byte(TextRow),
+    MakeTextAttribute(Byte(ForegroundColor), Byte(BackgroundColor)), DisplayText);
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
@@ -202,14 +241,15 @@ var
   CharacterIndex: Integer;
   CharacterText: String;
 begin
-  if Ord(DisplayText[0]) > Integer(26 - FirstTextRow) then
-    Delete(DisplayText, 27 - FirstTextRow, 80);
+  { Keep rows through 25, inclusive; Delete starts at the first hidden character. }
+  if Ord(DisplayText[0]) > Integer(TextScreenRows + 1 - FirstTextRow) then
+    Delete(DisplayText, TextScreenRows + 2 - FirstTextRow, TextScreenColumns);
   for CharacterIndex := 1 to Ord(DisplayText[0]) do
   begin
+    { This unused string assignment is retained for byte exactness. }
     CharacterText := DisplayText[CharacterIndex];
-    WriteColoredText(Byte(TextColumn), FirstTextRow - 1 + CharacterIndex,
-    MakeTextAttribute(Byte(ForegroundColor), Byte(BackgroundColor)),
-    DisplayText[CharacterIndex]);
+    WriteColoredText(Byte(TextColumn), FirstTextRow - 1 + CharacterIndex, MakeTextAttribute(Byte(ForegroundColor),
+      Byte(BackgroundColor)), DisplayText[CharacterIndex]);
   end;
 end;
 
@@ -219,11 +259,11 @@ end;
 { Selects B000 for mode 7 or B800 otherwise and enables CGA retrace synchronization for adapter class 1. }
 procedure ConfigureTextVideoMemory;
 begin
-  if GetTextVideoMode = 7 then
-    TextVideoSegment := $B000
+  if GetTextVideoMode = TextMonochromeMode then
+    TextVideoSegment := TextMonochromeSegment
   else
-    TextVideoSegment := $B800;
-  TextRetraceSyncEnabled := Ord(DetectTextVideoAdapter = 1);
+    TextVideoSegment := TextColorSegment;
+  TextRetraceSyncEnabled := Ord(DetectTextVideoAdapter = TextCgaAdapterClass);
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 begin

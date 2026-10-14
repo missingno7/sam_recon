@@ -13,7 +13,7 @@ procedure RestoreGamePalette(PaletteDelayMs: Word);
 procedure FadeGamePaletteToBlack(PaletteDelayMs: Word);
 procedure DrawGameStatusBar;
 procedure ClearPopupText;
-procedure DrawGameText(TextColumn, TextRow: Integer; DisplayText: string);
+procedure DrawGameText(TextColumn, TextRow: Integer; DisplayText: String);
 function ReadPopupScanCode(AcceptAnyKey: Byte): Byte;
 function ReadPopupText(MaxInputLength: Integer): String;
 function ReadScrollablePopupScanCode(AcceptAnyKey: Byte): Byte;
@@ -37,14 +37,14 @@ function ShowRestoreGameMenu: Integer;
 function RunMainMenu: Char;
 function RunGameOptionsMenu: Char;
 procedure ShowHighScores;
-procedure ShowGameMessage(MessageText: string);
+procedure ShowGameMessage(MessageText: String);
 procedure ConfirmQuitToDos;
 procedure ShowQuitDestinationMenu;
 procedure SelectSoundSetting;
 procedure SelectVideoCompatibility;
 procedure SelectJoystickSetting;
 procedure CalibrateJoystickCenter;
-function ScanCodeDisplayName(ScanCode: Word): string;
+function ScanCodeDisplayName(ScanCode: Word): String;
 procedure PopupNoOpHook;
 procedure ShowOrderContactDetails;
 procedure ShowOrderPackageDetails;
@@ -59,6 +59,179 @@ procedure ShowEpisodeEnding;
 implementation
 uses Dos, PROGRPHX, Crt, SAMSOUND, GAMEJOY, PCXGENUS, TEXT80;
 
+const
+  { Set-1 keyboard codes used by popup choices and the displayed key names. }
+  UiScanEscape = $01;
+  UiScanDigit1 = $02;
+  UiScanDigit2 = $03;
+  UiScanDigit3 = $04;
+  UiScanDigit4 = $05;
+  UiScanDigit5 = $06;
+  UiScanDigit6 = $07;
+  UiScanDigit7 = $08;
+  UiScanDigit8 = $09;
+  UiScanDigit9 = $0A;
+  UiScanDigit0 = $0B;
+  UiScanQ = $10;
+  UiScanW = $11;
+  UiScanE = $12;
+  UiScanR = $13;
+  UiScanT = $14;
+  UiScanY = $15;
+  UiScanU = $16;
+  UiScanI = $17;
+  UiScanO = $18;
+  UiScanP = $19;
+  UiScanEnter = $1C;
+  UiScanCtrl = $1D;
+  UiScanA = $1E;
+  UiScanS = $1F;
+  UiScanD = $20;
+  UiScanF = $21;
+  UiScanG = $22;
+  UiScanH = $23;
+  UiScanJ = $24;
+  UiScanK = $25;
+  UiScanL = $26;
+  UiScanLeftShift = $2A;
+  UiScanZ = $2C;
+  UiScanX = $2D;
+  UiScanC = $2E;
+  UiScanV = $2F;
+  UiScanB = $30;
+  UiScanN = $31;
+  UiScanM = $32;
+  UiScanComma = $33;
+  UiScanPeriod = $34;
+  UiScanSlash = $35;
+  UiScanRightShift = $36;
+  UiScanAlt = $38;
+  UiScanSpace = $39;
+  UiScanNumLock = $45;
+  UiScanHome = $47;
+  UiScanUp = $48;
+  UiScanPageUp = $49;
+  UiScanLeft = $4B;
+  UiScanRight = $4D;
+  UiScanEnd = $4F;
+  UiScanDown = $50;
+  UiScanPageDown = $51;
+  UiScanInsert = $52;
+  UiScanDelete = $53;
+  UiScanBreak = $80;
+  UiScanExtendedPrefix = $E0;
+
+  { Extended keys are accepted on release; these two sentinels are outside make codes. }
+  UiScanEnterRelease = UiScanEnter + UiScanBreak;
+  UiScanCtrlRelease = UiScanCtrl + UiScanBreak;
+  UiScanLeftShiftRelease = UiScanLeftShift + UiScanBreak;
+  UiScanSlashRelease = UiScanSlash + UiScanBreak;
+  UiScanAltRelease = UiScanAlt + UiScanBreak;
+  UiScanNumLockRelease = UiScanNumLock + UiScanBreak;
+  UiScanHomeRelease = UiScanHome + UiScanBreak;
+  UiScanUpRelease = UiScanUp + UiScanBreak;
+  UiScanPageUpRelease = UiScanPageUp + UiScanBreak;
+  UiScanLeftRelease = UiScanLeft + UiScanBreak;
+  UiScanRightRelease = UiScanRight + UiScanBreak;
+  UiScanEndRelease = UiScanEnd + UiScanBreak;
+  UiScanDownRelease = UiScanDown + UiScanBreak;
+  UiScanPageDownRelease = UiScanPageDown + UiScanBreak;
+  UiScanInsertRelease = UiScanInsert + UiScanBreak;
+  UiScanDeleteRelease = UiScanDelete + UiScanBreak;
+  UiIgnoredExtendedKey = 500;
+  UiReleasedKeySentinel = 999;
+
+  { BIOS keyboard-buffer offsets in segment zero: copying head to tail discards queued keys. }
+  UiBiosKeyboardHead = $041A;
+  UiBiosKeyboardTail = $041C;
+  UiKeyboardDataPort = $60;
+  UiVideoBiosInterrupt = $10;
+  UiEquipmentBiosInterrupt = $11;
+  UiBiosVideoStateQuery = $1B00;
+  UiBiosVideoStateReply = $1B;
+  UiBiosEgaFlagsOffset = $0487;
+  UiBiosColorTextMode = 3;
+
+  { Graphics modes and byte/pixel geometry of the planar screen and glyphs. }
+  UiPcxEga320x200 = 2;
+  UiPcxGraphicsEnabled = 1;
+  UiImageScreenStride = 40;
+  UiViewportWidth = 320;
+  UiViewportHeight = 200;
+  UiGlyphPixels = 8;
+  UiGlyphPixelShift = 3;
+  UiPlanarPixelMask = 7;
+  UiFirstDrawBufferRow = 16;
+  UiSecondDrawBufferRow = 416;
+  UiPaletteLastRegister = 15;
+
+  { Resource/file-record sizes and the popup backing-store allocation. }
+  UiSpriteBankBytes = $1F80;
+  UiGlyphBankBytes = $0800;
+  UiPopupBackgroundBytes = 30000;
+
+  { Popup capacities, scroll step and animation limits. }
+  UiPopupTextLineLimit = 299;
+  UiPopupShortLineLimit = 20;
+  UiPopupAcceptedKeyLimit = 20;
+  UiScrollContentRowCap = 16;
+  UiScrollPageStep = 17;
+  UiPopupAnimationThreshold = 20;
+  UiCursorFrameCount = 5;
+  UiSparkFrameCount = 4;
+  UiCursorGlyphBias = 45;
+  UiSparkGlyphBias = 37;
+
+  { Popup-frame glyphs and their data offsets: three header bytes per 40-byte glyph. }
+  UiPopupTopLeftGlyph = 1;
+  UiPopupTopEdgeGlyph = 2;
+  UiPopupTopRightGlyph = 3;
+  UiPopupBottomRightGlyph = 4;
+  UiPopupBottomLeftGlyph = 5;
+  UiPopupLeftEdgeGlyph = 6;
+  UiPopupBottomEdgeGlyph = 7;
+  UiPopupRightEdgeGlyph = 8;
+  UiPopupFillGlyph = 9;
+  UiPopupShadowGlyph = 10;
+  UiPopupTopLeftData = 3;
+  UiPopupTopEdgeData = 43;
+  UiPopupTopRightData = 83;
+  UiPopupBottomRightData = 123;
+  UiPopupBottomLeftData = 163;
+  UiPopupLeftEdgeData = 203;
+  UiPopupBottomEdgeData = 243;
+  UiPopupRightEdgeData = 283;
+  UiPopupFillData = 323;
+  UiPopupShadowData = 363;
+
+  { HUD digit mapping and inventory/health glyphs in the status bank. }
+  UiStatusDigitBias = $2F;
+  UiStatusHealthGlyph = 12;
+  UiStatusSpeedGlyph = 14;
+  UiStatusKeyTwoGlyph = 18;
+  UiStatusKeyThreeGlyph = 19;
+  UiStatusKeyOneGlyph = 20;
+  UiStatusDynamiteGlyph = 21;
+  UiStatusFloppyGlyph = 22;
+
+  { Campaign/high-score limits and rounding a saved position to a 16-pixel tile. }
+  UiCampaignFlagCount = 20;
+  UiHighScoreCount = 10;
+  UiHighScoreNamePadLimit = 22;
+  UiHighScoreInputLimit = 20;
+  UiSavePositionRoundBias = 8;
+  UiSavePositionMask = $FFF0;
+
+  { Screen delays and sound ids used by menus and the title sequence. }
+  UiPaletteStepDelay = 20;
+  UiSplashTimeoutTicks = 720;
+  UiTitleInitialPauseTicks = 144;
+  UiTitlePauseTicks = 432;
+  UiSoundPopupOpen = 17;
+  UiSoundQuitMenu = 18;
+  UiSoundApogeeSplash = 21;
+  UiSoundLeaveTitle = 12;
+
 { Video adapter discovery for episode 1. }
 {$IFDEF SAM1}
 {$F+}
@@ -68,7 +241,7 @@ var
   { Unused locals retain the original stack frame. }
   UnusedVideoProbeByte: Byte;
   BiosRegs: Registers;
-  EquipmentDisplayBits: Word;
+  UnusedEquipmentDisplayBits: Word;
   { Unused locals retain the original stack frame. }
   UnusedVideoProbePad: array[1..6] of Byte;
   EgaDisplayFlags: Byte;
@@ -77,18 +250,19 @@ var
 begin
   BiosRegs.ES := Seg(VideoStateBuffer);
   BiosRegs.DI := Ofs(VideoStateBuffer);
-  BiosRegs.AX := $1B00;
+  BiosRegs.AX := UiBiosVideoStateQuery;
   BiosRegs.BX := 0;
-  Intr($10, BiosRegs);
-  if Lo(BiosRegs.AX) = $1B then
+  Intr(UiVideoBiosInterrupt, BiosRegs);
+  if Lo(BiosRegs.AX) = UiBiosVideoStateReply then
   begin
     AdapterCode := 'V';
   end
   else
   begin
-    Intr($11, BiosRegs);
-    EquipmentDisplayBits := (Lo(BiosRegs.AX) and $30) shr 4;
-    EgaDisplayFlags := PVideoFlagByte(PVideoFlagPointer(Ptr(0, $0487))^)^;
+    Intr(UiEquipmentBiosInterrupt, BiosRegs);
+    { The equipment-display bits are computed but never consumed; keep the write. }
+    UnusedEquipmentDisplayBits := (Lo(BiosRegs.AX) and $30) shr 4;
+    EgaDisplayFlags := PVideoFlagByte(PVideoFlagPointer(Ptr(0, UiBiosEgaFlagsOffset))^)^;
     if EgaDisplayFlags <> 0 then
       AdapterCode := 'E'
     else
@@ -107,12 +281,12 @@ begin
   if GameDrawBufferIndex = 0 then
   begin
     GameDrawBufferIndex := 1;
-    GameDrawBufferRow := $01A0;
+    GameDrawBufferRow := UiSecondDrawBufferRow;
   end
   else
   begin
     GameDrawBufferIndex := 0;
-    GameDrawBufferRow := $0010;
+    GameDrawBufferRow := UiFirstDrawBufferRow;
   end;
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
@@ -171,7 +345,7 @@ procedure FadeGamePaletteToBlack(PaletteDelayMs: Word);
 var
   PaletteIndex: Integer;
 begin
-  for PaletteIndex := 0 to 15 do
+  for PaletteIndex := 0 to UiPaletteLastRegister do
   begin
     Delay(PaletteDelayMs);
     PgSetPaletteRegister(PaletteIndex, 0);
@@ -179,79 +353,91 @@ begin
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
-{ Formats the six-digit score, ammo, inventory indicators and health glyphs; handles horizontal pixel panning. }
+{ Formats the six-digit score, ammo, inventory indicators and health glyphs; handles horizontal pixel
+  panning. }
 procedure DrawGameStatusBar;
 var
   DigitOrHealthIndex: Integer;
-  PanSubByteOffset: Word;
+  StatusPanPixelOffset: Word;
   ScoreText: String[11];
 begin
   PgCopyStatusBandTemplate;
   StatusBarCameraX := CameraX;
-  PanSubByteOffset := CameraX and 7;
-  Str(PlayerScore:6, ScoreText);
+  StatusPanPixelOffset := CameraX and UiPlanarPixelMask;
+  Str(PlayerScore: 6, ScoreText);
   for DigitOrHealthIndex := 1 to 6 do
     if ScoreText[DigitOrHealthIndex] = ' ' then
       ScoreText[DigitOrHealthIndex] := '0';
 
-  if PanSubByteOffset = 0 then
+  if StatusPanPixelOffset = 0 then
   begin
-    PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[1]) - $2F].GlyphDataBytes[1], 0, 1);
-    PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[2]) - $2F].GlyphDataBytes[1], 1, 1);
-    PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[3]) - $2F].GlyphDataBytes[1], 2, 1);
-    PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[4]) - $2F].GlyphDataBytes[1], 3, 1);
-    PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[5]) - $2F].GlyphDataBytes[1], 4, 1);
-    PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[6]) - $2F].GlyphDataBytes[1], 5, 1);
+    PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[1]) - UiStatusDigitBias].GlyphDataBytes[1], 0, 1);
+    PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[2]) - UiStatusDigitBias].GlyphDataBytes[1], 1, 1);
+    PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[3]) - UiStatusDigitBias].GlyphDataBytes[1], 2, 1);
+    PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[4]) - UiStatusDigitBias].GlyphDataBytes[1], 3, 1);
+    PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[5]) - UiStatusDigitBias].GlyphDataBytes[1], 4, 1);
+    PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[6]) - UiStatusDigitBias].GlyphDataBytes[1], 5, 1);
     PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[13].GlyphDataBytes[1], 12, 1);
     PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[11].GlyphDataBytes[1], 13, 1);
     PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[PlayerAmmo div 10 + 1].GlyphDataBytes[1], 14, 1);
     PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[PlayerAmmo mod 10 + 1].GlyphDataBytes[1], 15, 1);
     if PlayerSpeedBoost > 0 then
-      PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[14].GlyphDataBytes[1], 20, 1);
+      PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[UiStatusSpeedGlyph].GlyphDataBytes[1], 20, 1);
     if PlayerHasDynamite <> 0 then
-      PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[21].GlyphDataBytes[1], 25, 1);
+      PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[UiStatusDynamiteGlyph].GlyphDataBytes[1], 25, 1);
     if HasKeyTwo <> 0 then
-      PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[18].GlyphDataBytes[1], 27, 1);
+      PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[UiStatusKeyTwoGlyph].GlyphDataBytes[1], 27, 1);
     if HasKeyThree <> 0 then
-      PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[19].GlyphDataBytes[1], 28, 1);
+      PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[UiStatusKeyThreeGlyph].GlyphDataBytes[1], 28, 1);
     if HasKeyOne <> 0 then
-      PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[20].GlyphDataBytes[1], 29, 1);
+      PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[UiStatusKeyOneGlyph].GlyphDataBytes[1], 29, 1);
     if PlayerHasFloppyDisk <> 0 then
-      PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[22].GlyphDataBytes[1], 30, 1);
+      PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[UiStatusFloppyGlyph].GlyphDataBytes[1], 30, 1);
     for DigitOrHealthIndex := 1 to Integer(PlayerHealth) do
-      PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[12].GlyphDataBytes[1], DigitOrHealthIndex + 32, 1);
+      PgBlitOpaque8x8(StatusGlyphBank^.GlyphEntries[UiStatusHealthGlyph].GlyphDataBytes[1], DigitOrHealthIndex + 32,
+        1);
   end
   else
   begin
-    PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[1]) - $2F].GlyphDataBytes[1], PanSubByteOffset, 1);
-    PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[2]) - $2F].GlyphDataBytes[1], PanSubByteOffset + 8, 1);
-    PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[3]) - $2F].GlyphDataBytes[1], PanSubByteOffset + 16,
-    1);
-    PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[4]) - $2F].GlyphDataBytes[1], PanSubByteOffset + 24,
-    1);
-    PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[5]) - $2F].GlyphDataBytes[1], PanSubByteOffset + 32,
-    1);
-    PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[6]) - $2F].GlyphDataBytes[1], PanSubByteOffset + 40,
-    1);
-    PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[13].GlyphDataBytes[1], PanSubByteOffset + 96, 1);
-    PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[11].GlyphDataBytes[1], PanSubByteOffset + 104, 1);
-    PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[PlayerAmmo div 10 + 1].GlyphDataBytes[1], PanSubByteOffset + 112, 1);
-    PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[PlayerAmmo mod 10 + 1].GlyphDataBytes[1], PanSubByteOffset + 120, 1);
+    PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[1]) - UiStatusDigitBias].GlyphDataBytes[1],
+      StatusPanPixelOffset, 1);
+    PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[2]) - UiStatusDigitBias].GlyphDataBytes[1],
+      StatusPanPixelOffset + 8, 1);
+    PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[3]) - UiStatusDigitBias].GlyphDataBytes[1],
+      StatusPanPixelOffset + 16, 1);
+    PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[4]) - UiStatusDigitBias].GlyphDataBytes[1],
+      StatusPanPixelOffset + 24, 1);
+    PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[5]) - UiStatusDigitBias].GlyphDataBytes[1],
+      StatusPanPixelOffset + 32, 1);
+    PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[Ord(ScoreText[6]) - UiStatusDigitBias].GlyphDataBytes[1],
+      StatusPanPixelOffset + 40, 1);
+    PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[13].GlyphDataBytes[1], StatusPanPixelOffset + 96, 1);
+    PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[11].GlyphDataBytes[1], StatusPanPixelOffset + 104, 1);
+    PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[PlayerAmmo div 10 + 1].GlyphDataBytes[1],
+      StatusPanPixelOffset + 112, 1);
+    PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[PlayerAmmo mod 10 + 1].GlyphDataBytes[1],
+      StatusPanPixelOffset + 120, 1);
     if PlayerSpeedBoost > 0 then
-      PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[14].GlyphDataBytes[1], PanSubByteOffset + 160, 1);
+      PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[UiStatusSpeedGlyph].GlyphDataBytes[1],
+        StatusPanPixelOffset + 160, 1);
     if PlayerHasDynamite <> 0 then
-      PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[21].GlyphDataBytes[1], PanSubByteOffset + 200, 1);
+      PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[UiStatusDynamiteGlyph].GlyphDataBytes[1],
+        StatusPanPixelOffset + UiViewportHeight, 1);
     if HasKeyTwo <> 0 then
-      PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[18].GlyphDataBytes[1], PanSubByteOffset + 216, 1);
+      PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[UiStatusKeyTwoGlyph].GlyphDataBytes[1],
+        StatusPanPixelOffset + 216, 1);
     if HasKeyThree <> 0 then
-      PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[19].GlyphDataBytes[1], PanSubByteOffset + 224, 1);
+      PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[UiStatusKeyThreeGlyph].GlyphDataBytes[1],
+        StatusPanPixelOffset + 224, 1);
     if HasKeyOne <> 0 then
-      PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[20].GlyphDataBytes[1], PanSubByteOffset + 232, 1);
+      PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[UiStatusKeyOneGlyph].GlyphDataBytes[1],
+        StatusPanPixelOffset + 232, 1);
     if PlayerHasFloppyDisk <> 0 then
-      PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[22].GlyphDataBytes[1], PanSubByteOffset + 240, 1);
+      PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[UiStatusFloppyGlyph].GlyphDataBytes[1],
+        StatusPanPixelOffset + 240, 1);
     for DigitOrHealthIndex := 1 to Integer(PlayerHealth) do
-      PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[12].GlyphDataBytes[1], PanSubByteOffset + $100 +
-      (Word(DigitOrHealthIndex) shl 3), 1);
+      PgBlitMaskedShifted8x8(StatusGlyphBank^.GlyphEntries[UiStatusHealthGlyph].GlyphDataBytes[1],
+        StatusPanPixelOffset + $100 + (Word(DigitOrHealthIndex) shl UiGlyphPixelShift), 1);
   end;
 end;
 
@@ -263,181 +449,247 @@ procedure ClearPopupText;
 var
   LineOrKeyIndex: Integer;
 begin
-  for LineOrKeyIndex := 1 to 299 do
+  for LineOrKeyIndex := 1 to UiPopupTextLineLimit do
     PopupTextLines[LineOrKeyIndex][0] := #0;
-  for LineOrKeyIndex := 1 to 20 do
+  for LineOrKeyIndex := 1 to UiPopupAcceptedKeyLimit do
     PopupAcceptedScanCodes[LineOrKeyIndex] := 0;
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
-{ Maps characters to the 8x8 glyph banks and embedded item sprites; caret marks the popup cursor. }
-procedure DrawGameText(TextColumn, TextRow: Integer; DisplayText: string);
+{ Maps characters to 8x8 glyphs or 16x16 item sprites using byte columns.
+  Caret marks the popup cursor and is not drawn; unsupported symbols retain the original mapping. }
+procedure DrawGameText(TextColumn, TextRow: Integer; DisplayText: String);
 var
   CharacterIndex, GlyphIndex: Integer;
-  FontCharacterMap: string;
+  FontCharacterMap: String;
 begin
-  FontCharacterMap := '~~~~~~~~~~~~~~~~~~|||||||||||||| !"#$%& ()*+,-./0123456789:;'
-    + '<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'
-    + #127#128#129#130#131#132#133#134#135#136#137#138#139#140
-    + #141#142#143#144#145#146#147#148#149#150#151#152#153#154
-    + #155#156#157#158#159#160#161#162#163#164#165#166#167#168
-    + #169#170#171#172#173#174#175#176#177#178#179#180#181#182#183#184;
+  FontCharacterMap := '~~~~~~~~~~~~~~~~~~|||||||||||||| !"#$%& ()*+,-./0123456789:;' +
+    '<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz' +
+    #127#128#129#130#131#132#133#134#135#136#137#138#139#140 +
+    #141#142#143#144#145#146#147#148#149#150#151#152#153#154 +
+    #155#156#157#158#159#160#161#162#163#164#165#166#167#168 +
+    #169#170#171#172#173#174#175#176#177#178#179#180#181#182#183#184;
   for CharacterIndex := 1 to Length(DisplayText) do
   begin
     GlyphIndex := Pos(Copy(DisplayText, CharacterIndex, 1), FontCharacterMap);
     if Copy(DisplayText, CharacterIndex, 1) <> '^' then
       if (GlyphIndex >= 93) and (GlyphIndex < 118) then
         PgBlitMasked8x8(PopupExtendedGlyphBank^.GlyphEntries[GlyphIndex - 93 + 21].GlyphDataBytes[1], TextColumn +
-        CharacterIndex - 1,
-                 (TextRow shl 3) + DisplayedBufferRow)
+          CharacterIndex - 1, (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow)
       else if GlyphIndex <= 72 then
       begin
         case GlyphIndex of
-          32..72: PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[GlyphIndex - 32 + 10].GlyphDataBytes[1],
-                           TextColumn + CharacterIndex - 1, (TextRow shl 3) + DisplayedBufferRow);
+          32 .. 72:
+            PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[GlyphIndex - 32 + 10].GlyphDataBytes[1], TextColumn
+              + CharacterIndex - 1, (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
         end;
       end
       else if GlyphIndex >= 118 then
       begin
         case GlyphIndex of
-          118: PgBlitMasked16x16(SpriteBank851^.SpriteEntries[1].SpriteDataBytes[1], TextColumn + CharacterIndex - 1, (TextRow
-          shl 3) + DisplayedBufferRow);
-          119: PgBlitMasked16x16(SpriteBank851^.SpriteEntries[7].SpriteDataBytes[1], TextColumn + CharacterIndex - 1, (TextRow
-          shl 3) + DisplayedBufferRow);
-          120: PgBlitMasked16x16(SpriteBank001^.SpriteEntries[15].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          121: PgBlitMasked16x16(SpriteBank001^.SpriteEntries[16].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          122: PgBlitMasked16x16(SpriteBank001^.SpriteEntries[13].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          123: PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          124: PgBlitMasked16x16(SpriteBank101^.SpriteEntries[4].SpriteDataBytes[1], TextColumn + CharacterIndex - 1, (TextRow
-          shl 3) + DisplayedBufferRow);
-          125: PgBlitMasked16x16(SpriteBank101^.SpriteEntries[8].SpriteDataBytes[1], TextColumn + CharacterIndex - 1, (TextRow
-          shl 3) + DisplayedBufferRow);
-          126: PgBlitMasked16x16(SpriteBank101^.SpriteEntries[34].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          127: PgBlitMasked16x16(SpriteBank101^.SpriteEntries[21].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          128: PgBlitMasked16x16(SpriteBank401^.SpriteEntries[21].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          129: PgBlitMasked16x16(SpriteBank401^.SpriteEntries[23].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          130: PgBlitMasked16x16(SpriteBank401^.SpriteEntries[25].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          131: PgBlitMasked16x16(SpriteBank401^.SpriteEntries[22].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          132: PgBlitMasked16x16(SpriteBank401^.SpriteEntries[24].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          133: PgBlitMasked16x16(SpriteBank401^.SpriteEntries[26].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          134: PgBlitMasked16x16(SpriteBank401^.SpriteEntries[47].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          135: PgBlitMasked16x16(SpriteBank601^.SpriteEntries[4].SpriteDataBytes[1], TextColumn + CharacterIndex - 1, (TextRow
-          shl 3) + DisplayedBufferRow);
-          136: PgBlitMasked16x16(SpriteBank601^.SpriteEntries[5].SpriteDataBytes[1], TextColumn + CharacterIndex - 1, (TextRow
-          shl 3) + DisplayedBufferRow);
-          137: PgBlitMasked16x16(SpriteBank601^.SpriteEntries[33].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          138: PgBlitMasked16x16(SpriteBank601^.SpriteEntries[37].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          139: PgBlitMasked16x16(SpriteBank601^.SpriteEntries[19].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          140: PgBlitMasked16x16(SpriteBank601^.SpriteEntries[18].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          141: PgBlitMasked16x16(SpriteBank601^.SpriteEntries[20].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          142: PgBlitMasked16x16(SpriteBank601^.SpriteEntries[29].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          143: PgBlitMasked16x16(SpriteBank601^.SpriteEntries[30].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          144: PgBlitMasked16x16(SpriteBank601^.SpriteEntries[31].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          145: PgBlitMasked16x16(SpriteBank601^.SpriteEntries[32].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          146: PgBlitMasked16x16(SpriteBank601^.SpriteEntries[35].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          147: PgBlitMasked16x16(SpriteBank651^.SpriteEntries[25].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          148: PgBlitMasked16x16(SpriteBank301^.SpriteEntries[1].SpriteDataBytes[1], TextColumn + CharacterIndex - 1, (TextRow
-          shl 3) + DisplayedBufferRow);
-          149: PgBlitMasked16x16(SpriteBank301^.SpriteEntries[4].SpriteDataBytes[1], TextColumn + CharacterIndex - 1, (TextRow
-          shl 3) + DisplayedBufferRow);
-          150: PgBlitMasked16x16(SpriteBank301^.SpriteEntries[13].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          151: PgBlitMasked16x16(SpriteBank301^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          152: PgBlitMasked16x16(SpriteBank301^.SpriteEntries[16].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          153: PgBlitMasked16x16(SpriteBank801^.SpriteEntries[1].SpriteDataBytes[1], TextColumn + CharacterIndex - 1, (TextRow
-          shl 3) + DisplayedBufferRow);
-          154: PgBlitMasked16x16(SpriteBank801^.SpriteEntries[5].SpriteDataBytes[1], TextColumn + CharacterIndex - 1, (TextRow
-          shl 3) + DisplayedBufferRow);
-          155: PgBlitMasked16x16(SpriteBank801^.SpriteEntries[32].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          156: PgBlitMasked16x16(SpriteBank801^.SpriteEntries[36].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          157: PgBlitMasked16x16(SpriteBank801^.SpriteEntries[37].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          158: PgBlitMasked16x16(PlayerSpriteBank^.SpriteEntries[2].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          159: PgBlitMasked16x16(PlayerSpriteBank^.SpriteEntries[1].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          160: PgBlitMasked16x16(SpriteBank351^.SpriteEntries[1].SpriteDataBytes[1], TextColumn + CharacterIndex - 1, (TextRow
-          shl 3) + DisplayedBufferRow);
-          161: PgBlitMasked16x16(SpriteBank351^.SpriteEntries[9].SpriteDataBytes[1], TextColumn + CharacterIndex - 1, (TextRow
-          shl 3) + DisplayedBufferRow);
-          162: PgBlitMasked16x16(SpriteBank351^.SpriteEntries[18].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          163: PgBlitMasked16x16(SpriteBank351^.SpriteEntries[25].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          164: PgBlitMasked16x16(SpriteBank351^.SpriteEntries[36].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          165: PgBlitMasked16x16(SpriteBank151^.SpriteEntries[2].SpriteDataBytes[1], TextColumn + CharacterIndex - 1, (TextRow
-          shl 3) + DisplayedBufferRow);
-          166: PgBlitMasked16x16(SpriteBank151^.SpriteEntries[30].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          167: PgBlitMasked16x16(SpriteBank151^.SpriteEntries[33].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          168: PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          169: PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          170: PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          171: PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          172: PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          173: PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          174: PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          175: PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          176: PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          177: PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          178: PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          179: PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          180: PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          181: PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          182: PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
-          183: PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
-          (TextRow shl 3) + DisplayedBufferRow);
+          118:
+            PgBlitMasked16x16(SpriteBank851^.SpriteEntries[1].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          119:
+            PgBlitMasked16x16(SpriteBank851^.SpriteEntries[7].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          120:
+            PgBlitMasked16x16(SpriteBank001^.SpriteEntries[15].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          121:
+            PgBlitMasked16x16(SpriteBank001^.SpriteEntries[16].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          122:
+            PgBlitMasked16x16(SpriteBank001^.SpriteEntries[13].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          123:
+            PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          124:
+            PgBlitMasked16x16(SpriteBank101^.SpriteEntries[4].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          125:
+            PgBlitMasked16x16(SpriteBank101^.SpriteEntries[8].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          126:
+            PgBlitMasked16x16(SpriteBank101^.SpriteEntries[34].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          127:
+            PgBlitMasked16x16(SpriteBank101^.SpriteEntries[21].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          128:
+            PgBlitMasked16x16(SpriteBank401^.SpriteEntries[21].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          129:
+            PgBlitMasked16x16(SpriteBank401^.SpriteEntries[23].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          130:
+            PgBlitMasked16x16(SpriteBank401^.SpriteEntries[25].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          131:
+            PgBlitMasked16x16(SpriteBank401^.SpriteEntries[22].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          132:
+            PgBlitMasked16x16(SpriteBank401^.SpriteEntries[24].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          133:
+            PgBlitMasked16x16(SpriteBank401^.SpriteEntries[26].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          134:
+            PgBlitMasked16x16(SpriteBank401^.SpriteEntries[47].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          135:
+            PgBlitMasked16x16(SpriteBank601^.SpriteEntries[4].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          136:
+            PgBlitMasked16x16(SpriteBank601^.SpriteEntries[5].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          137:
+            PgBlitMasked16x16(SpriteBank601^.SpriteEntries[33].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          138:
+            PgBlitMasked16x16(SpriteBank601^.SpriteEntries[37].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          139:
+            PgBlitMasked16x16(SpriteBank601^.SpriteEntries[19].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          140:
+            PgBlitMasked16x16(SpriteBank601^.SpriteEntries[18].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          141:
+            PgBlitMasked16x16(SpriteBank601^.SpriteEntries[20].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          142:
+            PgBlitMasked16x16(SpriteBank601^.SpriteEntries[29].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          143:
+            PgBlitMasked16x16(SpriteBank601^.SpriteEntries[30].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          144:
+            PgBlitMasked16x16(SpriteBank601^.SpriteEntries[31].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          145:
+            PgBlitMasked16x16(SpriteBank601^.SpriteEntries[32].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          146:
+            PgBlitMasked16x16(SpriteBank601^.SpriteEntries[35].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          147:
+            PgBlitMasked16x16(SpriteBank651^.SpriteEntries[25].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          148:
+            PgBlitMasked16x16(SpriteBank301^.SpriteEntries[1].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          149:
+            PgBlitMasked16x16(SpriteBank301^.SpriteEntries[4].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          150:
+            PgBlitMasked16x16(SpriteBank301^.SpriteEntries[13].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          151:
+            PgBlitMasked16x16(SpriteBank301^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          152:
+            PgBlitMasked16x16(SpriteBank301^.SpriteEntries[16].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          153:
+            PgBlitMasked16x16(SpriteBank801^.SpriteEntries[1].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          154:
+            PgBlitMasked16x16(SpriteBank801^.SpriteEntries[5].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          155:
+            PgBlitMasked16x16(SpriteBank801^.SpriteEntries[32].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          156:
+            PgBlitMasked16x16(SpriteBank801^.SpriteEntries[36].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          157:
+            PgBlitMasked16x16(SpriteBank801^.SpriteEntries[37].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          158:
+            PgBlitMasked16x16(PlayerSpriteBank^.SpriteEntries[2].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          159:
+            PgBlitMasked16x16(PlayerSpriteBank^.SpriteEntries[1].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          160:
+            PgBlitMasked16x16(SpriteBank351^.SpriteEntries[1].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          161:
+            PgBlitMasked16x16(SpriteBank351^.SpriteEntries[9].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          162:
+            PgBlitMasked16x16(SpriteBank351^.SpriteEntries[18].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          163:
+            PgBlitMasked16x16(SpriteBank351^.SpriteEntries[25].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          164:
+            PgBlitMasked16x16(SpriteBank351^.SpriteEntries[36].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          165:
+            PgBlitMasked16x16(SpriteBank151^.SpriteEntries[2].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          166:
+            PgBlitMasked16x16(SpriteBank151^.SpriteEntries[30].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          167:
+            PgBlitMasked16x16(SpriteBank151^.SpriteEntries[33].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          168:
+            PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          169:
+            PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          170:
+            PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          171:
+            PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          172:
+            PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          173:
+            PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          174:
+            PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          175:
+            PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          176:
+            PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          177:
+            PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          178:
+            PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          179:
+            PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          180:
+            PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          181:
+            PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          182:
+            PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+          183:
+            PgBlitMasked16x16(SpriteBank001^.SpriteEntries[14].SpriteDataBytes[1], TextColumn + CharacterIndex - 1,
+              (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
         end;
       end
       else
-        PgBlitMasked8x8(PopupExtendedGlyphBank^.GlyphEntries[GlyphIndex - 72].GlyphDataBytes[1], TextColumn + CharacterIndex -
-        1,
-                 (TextRow shl 3) + DisplayedBufferRow);
+        PgBlitMasked8x8(PopupExtendedGlyphBank^.GlyphEntries[GlyphIndex - 72].GlyphDataBytes[1], TextColumn +
+          CharacterIndex - 1, (TextRow shl UiGlyphPixelShift) + DisplayedBufferRow);
   end;
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
@@ -471,7 +723,7 @@ begin
   PopupRowCount := 0;
   KeyAccepted := 0;
   SparkActive := 0;
-  for SharedLoopIndexB := 1 to 20 do
+  for SharedLoopIndexB := 1 to UiPopupShortLineLimit do
   begin
     if SharedLoopIndexB = 1 then
       MaxLineColumns := Ord(PopupTextLines[SharedLoopIndexB][0]) - 1;
@@ -489,150 +741,163 @@ begin
     end;
   end;
   Inc(PopupRowCount, 3);
-  LeftColumn := (((320 - (MaxLineColumns shl 3)) div 2 + CameraX) div 8) - 3;
-  TopRow := (((200 - (PopupRowCount shl 3)) div 2 + CameraY) div 8) - 2;
+  LeftColumn := (((UiViewportWidth - (MaxLineColumns shl UiGlyphPixelShift)) div 2 + CameraX) div UiGlyphPixels) - 3;
+  TopRow := (((UiViewportHeight - (PopupRowCount shl UiGlyphPixelShift)) div 2 + CameraY) div UiGlyphPixels) - 2;
   if CursorColumn <> 0 then
     CursorColumn := CursorColumn + LeftColumn;
   CursorRow := CursorRow + TopRow;
-  GetMem(PopupSavedBackground, 30000);
-  PgCapturePlanarRectangle(PRawByteView(PopupSavedBackground)^[0], LeftColumn,
-    (TopRow shl 3) + DisplayedBufferRow, LeftColumn + MaxLineColumns + 5 + 1,
-    ((TopRow + PopupRowCount + 2 + 1) shl 3) + DisplayedBufferRow);
+  GetMem(PopupSavedBackground, UiPopupBackgroundBytes);
+  PgCapturePlanarRectangle(PRawByteView(PopupSavedBackground)^[0], LeftColumn, (TopRow shl UiGlyphPixelShift) +
+    DisplayedBufferRow, LeftColumn + MaxLineColumns + 5 + 1, ((TopRow + PopupRowCount + 2 + 1) shl UiGlyphPixelShift)
+    + DisplayedBufferRow);
   RightColumn := LeftColumn + MaxLineColumns + 4;
   BottomRow := TopRow + PopupRowCount + 1;
 
   for SharedLoopIndexC := 1 to BottomRow - TopRow do
     for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
-      PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[323], SharedLoopIndexB,
-        ((TopRow + SharedLoopIndexC) shl 3) + DisplayedBufferRow);
-  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[3], LeftColumn, (TopRow shl 3) + DisplayedBufferRow);
+      PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupFillData], SharedLoopIndexB, ((TopRow +
+        SharedLoopIndexC) shl UiGlyphPixelShift) + DisplayedBufferRow);
+  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupTopLeftData], LeftColumn, (TopRow shl
+    UiGlyphPixelShift) + DisplayedBufferRow);
   for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
-    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[43], SharedLoopIndexB, (TopRow shl 3) + DisplayedBufferRow);
-  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[83], RightColumn, (TopRow shl 3) + DisplayedBufferRow);
+    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupTopEdgeData], SharedLoopIndexB, (TopRow shl
+      UiGlyphPixelShift) + DisplayedBufferRow);
+  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupTopRightData], RightColumn, (TopRow shl
+    UiGlyphPixelShift) + DisplayedBufferRow);
   for SharedLoopIndexB := 1 to BottomRow - TopRow do
   begin
-    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[203], LeftColumn,
-      ((TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
-    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[283], RightColumn,
-      ((TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
-    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[363], RightColumn + 1,
-      ((TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
+    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupLeftEdgeData], LeftColumn, ((TopRow +
+      SharedLoopIndexB) shl UiGlyphPixelShift) + DisplayedBufferRow);
+    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupRightEdgeData], RightColumn, ((TopRow +
+      SharedLoopIndexB) shl UiGlyphPixelShift) + DisplayedBufferRow);
+    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupShadowData], RightColumn + 1, ((TopRow +
+      SharedLoopIndexB) shl UiGlyphPixelShift) + DisplayedBufferRow);
   end;
-  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[363], RightColumn + 1,
-    ((BottomRow - TopRow + TopRow + 1) shl 3) + DisplayedBufferRow);
-  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[163], LeftColumn, (BottomRow shl 3) + DisplayedBufferRow);
+  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupShadowData], RightColumn + 1, ((BottomRow - TopRow +
+    TopRow + 1) shl UiGlyphPixelShift) + DisplayedBufferRow);
+  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupBottomLeftData], LeftColumn, (BottomRow shl
+    UiGlyphPixelShift) + DisplayedBufferRow);
   for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
-    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[243], SharedLoopIndexB, (BottomRow shl 3) + DisplayedBufferRow);
-  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[123], RightColumn, (BottomRow shl 3) + DisplayedBufferRow);
+    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupBottomEdgeData], SharedLoopIndexB, (BottomRow shl
+      UiGlyphPixelShift) + DisplayedBufferRow);
+  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupBottomRightData], RightColumn, (BottomRow shl
+    UiGlyphPixelShift) + DisplayedBufferRow);
   for SharedLoopIndexB := LeftColumn + 1 to RightColumn + 1 do
-    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[363], SharedLoopIndexB, ((BottomRow + 1) shl 3) +
-    DisplayedBufferRow);
+    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupShadowData], SharedLoopIndexB, ((BottomRow + 1) shl
+      UiGlyphPixelShift) + DisplayedBufferRow);
 
   for SharedLoopIndexB := 1 to PopupRowCount do
     if PopupTextLines[SharedLoopIndexB] <> 'END OF WINDOW' then
-      DrawGameText(LeftColumn + 2, TopRow + SharedLoopIndexB + 1,
-        PopupTextLines[SharedLoopIndexB]);
+      DrawGameText(LeftColumn + 2, TopRow + SharedLoopIndexB + 1, PopupTextLines[SharedLoopIndexB]);
 
   PlayerUpHeld := 0;
   PlayerDownHeld := 0;
   PlayerLeftHeld := 0;
   PlayerRightHeld := 0;
   repeat
-    MemW[0:$041C] := MemW[0:$041A];
-  until LastKeyboardScanCode > $80;
-  StartSoundEffect($11);
+    MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
+  until LastKeyboardScanCode > UiScanBreak;
+  StartSoundEffect(UiSoundPopupOpen);
   repeat
     repeat
-    MemW[0:$041C] := MemW[0:$041A];
-    SharedLoopIndexB := Random(100);
-    if (SparkActive = 0) and (SharedLoopIndexB >= 99) then
-    begin
-      SparkActive := 1;
-      SparkFrame := 0;
-      case Random(2) of
-        0:
-          begin
-            SparkColumn := LeftColumn + Random(RightColumn - LeftColumn - 2) + 1;
-            SparkPixelY := TopRow shl 3;
-            SparkOnTopBorder := 1;
-          end;
-        1:
-          begin
-            SparkColumn := LeftColumn;
-            SparkPixelY := (TopRow + Random(BottomRow - TopRow - 2) + 1) * 8;
-            SparkOnTopBorder := 0;
-          end;
-      end;
-    end;
-    if (CursorColumn <> 0) and (GameTickCounter > $14) then
-    begin
-      GameTickCounter := 0;
-      PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[323], CursorColumn, (CursorRow shl 3) + DisplayedBufferRow);
-      PgBlitMasked8x8(PopupExtendedGlyphBank^.GlyphEntries[CursorFrame + 45].GlyphDataBytes[1], CursorColumn,
-        (CursorRow shl 3) + DisplayedBufferRow);
-      Inc(CursorFrame);
-      if CursorFrame > 5 then
-        CursorFrame := 1;
-      if SparkActive <> 0 then
+      MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
+      SharedLoopIndexB := Random(100);
+      if (SparkActive = 0) and (SharedLoopIndexB >= 99) then
       begin
-        Inc(SparkFrame);
-        if SparkFrame > 4 then
-        begin
-          SparkActive := 0;
-          if SparkOnTopBorder <> 0 then
-            PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[43], SparkColumn, SparkPixelY + DisplayedBufferRow)
-          else
-            PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[203], SparkColumn, SparkPixelY + DisplayedBufferRow);
-        end
-        else
-        begin
-          if SparkOnTopBorder <> 0 then
-            PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[43], SparkColumn, SparkPixelY + DisplayedBufferRow)
-          else
-            PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[203], SparkColumn, SparkPixelY + DisplayedBufferRow);
-          PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[SparkFrame + 37].GlyphDataBytes[1],
-          SparkColumn,
-            SparkPixelY + DisplayedBufferRow);
+        SparkActive := 1;
+        SparkFrame := 0;
+        case Random(2) of
+          0:
+            begin
+              SparkColumn := LeftColumn + Random(RightColumn - LeftColumn - 2) + 1;
+              SparkPixelY := TopRow shl UiGlyphPixelShift;
+              SparkOnTopBorder := 1;
+            end;
+          1:
+            begin
+              SparkColumn := LeftColumn;
+              SparkPixelY := (TopRow + Random(BottomRow - TopRow - 2) + 1) * UiGlyphPixels;
+              SparkOnTopBorder := 0;
+            end;
         end;
       end;
-    end;
-    until (LastKeyboardScanCode < $80) or (LastKeyboardScanCode = $E0);
-    KeyScanCode := LastKeyboardScanCode;
-      if KeyScanCode = $E0 then
+      if (CursorColumn <> 0) and (GameTickCounter > UiPopupAnimationThreshold) then
       begin
-        repeat
-          MemW[0:$041C] := MemW[0:$041A];
-        until LastKeyboardScanCode in [156,157,170,181,184,197,199,200,201,203,205,207,208,209,210,211];
-        if LastKeyboardScanCode in [170,197] then
-          LastKeyboardScanCode := 500;
-        KeyScanCode := LastKeyboardScanCode - $80;
-      end
-      else
-      begin
-        repeat
-          MemW[0:$041C] := MemW[0:$041A];
-        until LastKeyboardScanCode > $80;
-      end;
-
-      if AcceptAnyKey = 0 then
-      begin
-        for SharedLoopIndexB := 1 to 20 do
-          if (PopupAcceptedScanCodes[SharedLoopIndexB] <> 0) and (PopupAcceptedScanCodes[SharedLoopIndexB] = KeyScanCode) then
+        GameTickCounter := 0;
+        PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupFillData], CursorColumn, (CursorRow shl
+          UiGlyphPixelShift) + DisplayedBufferRow);
+        PgBlitMasked8x8(PopupExtendedGlyphBank^.GlyphEntries[CursorFrame + UiCursorGlyphBias].GlyphDataBytes[1],
+          CursorColumn, (CursorRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+        Inc(CursorFrame);
+        if CursorFrame > UiCursorFrameCount then
+          CursorFrame := 1;
+        if SparkActive <> 0 then
+        begin
+          Inc(SparkFrame);
+          if SparkFrame > UiSparkFrameCount then
           begin
-            ReadPopupScanCode := Byte(KeyScanCode);
-            KeyAccepted := 1;
+            SparkActive := 0;
+            if SparkOnTopBorder <> 0 then
+              PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupTopEdgeData], SparkColumn, SparkPixelY +
+                DisplayedBufferRow)
+            else
+              PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupLeftEdgeData], SparkColumn, SparkPixelY +
+                DisplayedBufferRow);
+          end
+          else
+          begin
+            if SparkOnTopBorder <> 0 then
+              PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupTopEdgeData], SparkColumn, SparkPixelY +
+                DisplayedBufferRow)
+            else
+              PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupLeftEdgeData], SparkColumn, SparkPixelY +
+                DisplayedBufferRow);
+            PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[SparkFrame + UiSparkGlyphBias].GlyphDataBytes[1],
+              SparkColumn, SparkPixelY + DisplayedBufferRow);
           end;
-      end
-      else
-      begin
-        ReadPopupScanCode := Byte(KeyScanCode);
-        KeyAccepted := 1;
+        end;
       end;
+    until (LastKeyboardScanCode < UiScanBreak) or (LastKeyboardScanCode = UiScanExtendedPrefix);
+    { Extended keys are returned after release; retain the original whitelist and sentinels. }
+    KeyScanCode := LastKeyboardScanCode;
+    if KeyScanCode = UiScanExtendedPrefix then
+    begin
+      repeat
+        MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
+      until LastKeyboardScanCode in [UiScanEnterRelease, UiScanCtrlRelease, UiScanLeftShiftRelease,
+        UiScanSlashRelease, UiScanAltRelease, UiScanNumLockRelease, UiScanHomeRelease, UiScanUpRelease,
+        UiScanPageUpRelease, UiScanLeftRelease, UiScanRightRelease, UiScanEndRelease, UiScanDownRelease,
+        UiScanPageDownRelease, UiScanInsertRelease, UiScanDeleteRelease];
+      if LastKeyboardScanCode in [UiScanLeftShiftRelease, UiScanNumLockRelease] then
+        LastKeyboardScanCode := UiIgnoredExtendedKey;
+      KeyScanCode := LastKeyboardScanCode - UiScanBreak;
+    end
+    else
+    begin
+      repeat
+        MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
+      until LastKeyboardScanCode > UiScanBreak;
+    end;
+
+    if AcceptAnyKey = 0 then
+    begin
+      for SharedLoopIndexB := 1 to UiPopupAcceptedKeyLimit do
+        if (PopupAcceptedScanCodes[SharedLoopIndexB] <> 0) and (PopupAcceptedScanCodes[SharedLoopIndexB] =
+          KeyScanCode) then
+        begin
+          ReadPopupScanCode := Byte(KeyScanCode);
+          KeyAccepted := 1;
+        end;
+    end
+    else
+    begin
+      ReadPopupScanCode := Byte(KeyScanCode);
+      KeyAccepted := 1;
+    end;
   until KeyAccepted <> 0;
-  PgRestorePlanarRectangle(PopupSavedBackground^[0], LeftColumn,
-    (TopRow shl 3) + DisplayedBufferRow);
-  FreeMem(PopupSavedBackground, 30000);
-  MemW[0:$041C] := MemW[0:$041A];
+  PgRestorePlanarRectangle(PopupSavedBackground^[0], LeftColumn, (TopRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+  FreeMem(PopupSavedBackground, UiPopupBackgroundBytes);
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   UnusedPopupInputFlag := 0;
   PlayerLeftHeld := 0;
   PlayerRightHeld := 0;
@@ -651,7 +916,7 @@ var
   { Unused locals retain the original stack frame. }
   UnusedPopupWord, SparkColumn, SparkPixelY, SparkFrame: Integer;
   SparkOnTopBorder, SparkActive: Byte;
-  FramePad: array[0..1] of Byte;
+  UnusedPopupTextFramePad: array[0..1] of Byte;
   EditedText: String;
   InputChar: Char;
 begin
@@ -659,9 +924,10 @@ begin
   CursorColumn := 0;
   MaxLineColumns := 0;
   PopupRowCount := 0;
-  FramePad[1] := 0;
+  { This write has no reader; retain the two-byte local and its original stack slot. }
+  UnusedPopupTextFramePad[1] := 0;
   SparkActive := 0;
-  for SharedLoopIndexB := 1 to 20 do
+  for SharedLoopIndexB := 1 to UiPopupShortLineLimit do
   begin
     if SharedLoopIndexB = 1 then
       MaxLineColumns := Length(PopupTextLines[SharedLoopIndexB]) - 1;
@@ -678,64 +944,62 @@ begin
   end;
 
   Inc(PopupRowCount, 3);
-  LeftColumn := ((320 - (MaxLineColumns shl 3)) div 2 + CameraX) div 8 - 3;
-  TopRow := ((200 - (PopupRowCount shl 3)) div 2 + CameraY) div 8 - 2;
+  LeftColumn := ((UiViewportWidth - (MaxLineColumns shl UiGlyphPixelShift)) div 2 + CameraX) div UiGlyphPixels - 3;
+  TopRow := ((UiViewportHeight - (PopupRowCount shl UiGlyphPixelShift)) div 2 + CameraY) div UiGlyphPixels - 2;
   CursorColumn := CursorColumn + LeftColumn;
   CursorRow := CursorRow + TopRow;
-  GetMem(PopupSavedBackground, $7530);
-  PgCapturePlanarRectangle(PRawByteView(PopupSavedBackground)^, LeftColumn, (TopRow shl 3) +
-  DisplayedBufferRow,
-    LeftColumn + MaxLineColumns + 5 + 1,
-    (Succ(TopRow + PopupRowCount + 2) shl 3) + DisplayedBufferRow);
+  GetMem(PopupSavedBackground, UiPopupBackgroundBytes);
+  PgCapturePlanarRectangle(PRawByteView(PopupSavedBackground)^, LeftColumn, (TopRow shl UiGlyphPixelShift) +
+    DisplayedBufferRow, LeftColumn + MaxLineColumns + 5 + 1, (Succ(TopRow + PopupRowCount + 2) shl UiGlyphPixelShift)
+    + DisplayedBufferRow);
   RightColumn := LeftColumn + MaxLineColumns + 4;
   BottomRow := TopRow + PopupRowCount + 1;
 
   for SharedLoopIndexC := 1 to BottomRow - TopRow do
     for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
-      PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[323], SharedLoopIndexB,
-        ((TopRow + SharedLoopIndexC) shl 3) + DisplayedBufferRow);
+      PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupFillData], SharedLoopIndexB, ((TopRow +
+        SharedLoopIndexC) shl UiGlyphPixelShift) + DisplayedBufferRow);
 
-  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[3], LeftColumn, (TopRow shl 3) +
-  DisplayedBufferRow);
+  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupTopLeftData], LeftColumn, (TopRow shl
+    UiGlyphPixelShift) + DisplayedBufferRow);
   for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
-    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[43], SharedLoopIndexB, (TopRow shl 3) +
-    DisplayedBufferRow);
-  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[83], RightColumn, (TopRow shl 3) +
-  DisplayedBufferRow);
+    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupTopEdgeData], SharedLoopIndexB, (TopRow shl
+      UiGlyphPixelShift) + DisplayedBufferRow);
+  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupTopRightData], RightColumn, (TopRow shl
+    UiGlyphPixelShift) + DisplayedBufferRow);
   for SharedLoopIndexB := 1 to BottomRow - TopRow do
   begin
-    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[203], LeftColumn, ((TopRow +
-    SharedLoopIndexB) shl 3) + DisplayedBufferRow);
-    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[283], RightColumn, ((TopRow +
-    SharedLoopIndexB) shl 3) + DisplayedBufferRow);
-    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[363], RightColumn + 1, ((TopRow +
-    SharedLoopIndexB) shl 3) + DisplayedBufferRow);
+    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupLeftEdgeData], LeftColumn, ((TopRow +
+      SharedLoopIndexB) shl UiGlyphPixelShift) + DisplayedBufferRow);
+    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupRightEdgeData], RightColumn, ((TopRow +
+      SharedLoopIndexB) shl UiGlyphPixelShift) + DisplayedBufferRow);
+    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupShadowData], RightColumn + 1, ((TopRow +
+      SharedLoopIndexB) shl UiGlyphPixelShift) + DisplayedBufferRow);
   end;
-  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[363], RightColumn + 1,
-    ((TopRow + (BottomRow - TopRow) + 1) shl 3) + DisplayedBufferRow);
-  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[163], LeftColumn, (BottomRow shl 3) +
-  DisplayedBufferRow);
+  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupShadowData], RightColumn + 1, ((TopRow + (BottomRow -
+    TopRow) + 1) shl UiGlyphPixelShift) + DisplayedBufferRow);
+  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupBottomLeftData], LeftColumn, (BottomRow shl
+    UiGlyphPixelShift) + DisplayedBufferRow);
   for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
-    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[243], SharedLoopIndexB, (BottomRow shl 3) +
-    DisplayedBufferRow);
-  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[123], RightColumn, (BottomRow shl 3) +
-  DisplayedBufferRow);
+    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupBottomEdgeData], SharedLoopIndexB, (BottomRow shl
+      UiGlyphPixelShift) + DisplayedBufferRow);
+  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupBottomRightData], RightColumn, (BottomRow shl
+    UiGlyphPixelShift) + DisplayedBufferRow);
   for SharedLoopIndexB := LeftColumn + 1 to RightColumn + 1 do
-    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[363], SharedLoopIndexB, ((BottomRow + 1) shl 3) +
-    DisplayedBufferRow);
+    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupShadowData], SharedLoopIndexB, ((BottomRow + 1) shl
+      UiGlyphPixelShift) + DisplayedBufferRow);
 
   for SharedLoopIndexB := 1 to PopupRowCount do
     if PopupTextLines[SharedLoopIndexB] <> 'END OF WINDOW' then
-      DrawGameText(LeftColumn + 2, TopRow + SharedLoopIndexB + 1,
-      PopupTextLines[SharedLoopIndexB]);
+      DrawGameText(LeftColumn + 2, TopRow + SharedLoopIndexB + 1, PopupTextLines[SharedLoopIndexB]);
 
   PlayerUpHeld := 0;
   PlayerLeftHeld := 0;
   PlayerRightHeld := 0;
   PlayerDownHeld := 0;
   repeat
-    MemW[0:$041C] := MemW[0:$041A];
-  until Port[$60] > $80;
+    MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
+  until Port[UiKeyboardDataPort] > UiScanBreak;
 
   EditedText[0] := #0;
   InputLength := 0;
@@ -745,7 +1009,7 @@ begin
     if KeyPressed then
     begin
       InputChar := ReadKey;
-      if InputChar in [' ', '0'..'9', 'A'..'Z', 'a'..'z'] then
+      if InputChar in [' ', '0' .. '9', 'A' .. 'Z', 'a' .. 'z'] then
       begin
         if InputChar >= #32 then
         begin
@@ -755,8 +1019,8 @@ begin
             begin
               EditedText := EditedText + InputChar;
               Inc(InputLength);
-              PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[323], CursorColumn, (CursorRow
-              shl 3) + DisplayedBufferRow);
+              PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupFillData], CursorColumn, (CursorRow shl
+                UiGlyphPixelShift) + DisplayedBufferRow);
               DrawGameText(CursorColumn, CursorRow, InputChar);
               Inc(CursorColumn);
             end;
@@ -767,11 +1031,11 @@ begin
       begin
         if InputLength > 0 then
         begin
-            PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[323], CursorColumn, (CursorRow
-            shl 3) + DisplayedBufferRow);
+          PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupFillData], CursorColumn, (CursorRow shl
+            UiGlyphPixelShift) + DisplayedBufferRow);
           Dec(CursorColumn);
-            PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[323], CursorColumn, (CursorRow
-            shl 3) + DisplayedBufferRow);
+          PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupFillData], CursorColumn, (CursorRow shl
+            UiGlyphPixelShift) + DisplayedBufferRow);
           Delete(EditedText, Length(EditedText), 1);
           Dec(InputLength);
         end;
@@ -786,66 +1050,62 @@ begin
       case Random(2) of
         0:
           begin
-            SparkColumn := LeftColumn + Random(RightColumn -
-            LeftColumn - 2) + 1;
-            SparkPixelY := TopRow shl 3;
+            SparkColumn := LeftColumn + Random(RightColumn - LeftColumn - 2) + 1;
+            SparkPixelY := TopRow shl UiGlyphPixelShift;
             SparkOnTopBorder := 1;
           end;
         1:
           begin
             SparkColumn := LeftColumn;
-            SparkPixelY := (TopRow + Random(BottomRow - TopRow - 2) +
-            1) * 8;
+            SparkPixelY := (TopRow + Random(BottomRow - TopRow - 2) + 1) * UiGlyphPixels;
             SparkOnTopBorder := 0;
           end;
       end;
     end;
 
-    if GameTickCounter > 20 then
+    if GameTickCounter > UiPopupAnimationThreshold then
     begin
       GameTickCounter := 0;
-        PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[323], CursorColumn, (CursorRow shl
-        3) + DisplayedBufferRow);
-      PgBlitMasked8x8(PopupExtendedGlyphBank^.GlyphEntries[CursorFrame + 45].GlyphDataBytes[1],
-      CursorColumn,
-        (CursorRow shl 3) + DisplayedBufferRow);
+      PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupFillData], CursorColumn, (CursorRow shl
+        UiGlyphPixelShift) + DisplayedBufferRow);
+      PgBlitMasked8x8(PopupExtendedGlyphBank^.GlyphEntries[CursorFrame + UiCursorGlyphBias].GlyphDataBytes[1],
+        CursorColumn, (CursorRow shl UiGlyphPixelShift) + DisplayedBufferRow);
       Inc(CursorFrame);
-      if CursorFrame > 5 then
+      if CursorFrame > UiCursorFrameCount then
         CursorFrame := 1;
       if SparkActive <> 0 then
       begin
         Inc(SparkFrame);
-        if SparkFrame > 4 then
+        if SparkFrame > UiSparkFrameCount then
         begin
           SparkActive := 0;
           if SparkOnTopBorder <> 0 then
-              PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[43], SparkColumn, SparkPixelY
-              + DisplayedBufferRow)
+            PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupTopEdgeData], SparkColumn, SparkPixelY +
+              DisplayedBufferRow)
           else
-              PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[203], SparkColumn, SparkPixelY
-              + DisplayedBufferRow);
+            PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupLeftEdgeData], SparkColumn, SparkPixelY +
+              DisplayedBufferRow);
         end
         else
         begin
           if SparkOnTopBorder <> 0 then
-            PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[43], SparkColumn, SparkPixelY +
-            DisplayedBufferRow)
+            PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupTopEdgeData], SparkColumn, SparkPixelY +
+              DisplayedBufferRow)
           else
-            PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[203], SparkColumn, SparkPixelY +
-            DisplayedBufferRow);
-          PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[SparkFrame + 37].GlyphDataBytes[1],
-          SparkColumn,
-            SparkPixelY + DisplayedBufferRow);
+            PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[UiPopupLeftEdgeData], SparkColumn, SparkPixelY +
+              DisplayedBufferRow);
+          PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[SparkFrame + UiSparkGlyphBias].GlyphDataBytes[1],
+            SparkColumn, SparkPixelY + DisplayedBufferRow);
         end;
       end;
     end;
   end;
 
   ReadPopupText := EditedText;
-  PgRestorePlanarRectangle(PRawByteView(PopupSavedBackground)^, LeftColumn, (TopRow shl 3) +
-  DisplayedBufferRow);
-  FreeMem(PopupSavedBackground, $7530);
-  MemW[0:$041C] := MemW[0:$041A];
+  PgRestorePlanarRectangle(PRawByteView(PopupSavedBackground)^, LeftColumn, (TopRow shl UiGlyphPixelShift) +
+    DisplayedBufferRow);
+  FreeMem(PopupSavedBackground, UiPopupBackgroundBytes);
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   PlayerUpHeld := 0;
   PlayerLeftHeld := 0;
   PlayerRightHeld := 0;
@@ -874,12 +1134,15 @@ begin
   ScrollLineOffset := 0;
   KeyAccepted := False;
   IsSparkActive := False;
-  for SharedLoopIndexB := 1 to 299 do
+  { END OF WINDOW delimits the text; the cap and 17-line step are original. }
+  for SharedLoopIndexB := 1 to UiPopupTextLineLimit do
   begin
-    if SharedLoopIndexB = 1 then MaxLineColumns := Length(PopupTextLines[SharedLoopIndexB]) - 1;
+    if SharedLoopIndexB = 1 then
+      MaxLineColumns := Length(PopupTextLines[SharedLoopIndexB]) - 1;
     if Length(PopupTextLines[SharedLoopIndexB]) > MaxLineColumns then
       MaxLineColumns := Length(PopupTextLines[SharedLoopIndexB]) - 1;
-    if PopupTextLines[SharedLoopIndexB] = 'END OF WINDOW' then VisiblePopupRows := SharedLoopIndexB - 2;
+    if PopupTextLines[SharedLoopIndexB] = 'END OF WINDOW' then
+      VisiblePopupRows := SharedLoopIndexB - 2;
     for SharedLoopIndexA := 1 to Length(PopupTextLines[SharedLoopIndexB]) do
       if Copy(PopupTextLines[SharedLoopIndexB], SharedLoopIndexA, 1) = '^' then
       begin
@@ -888,219 +1151,221 @@ begin
       end;
   end;
   TotalTextRows := VisiblePopupRows;
-  if VisiblePopupRows > 16 then VisiblePopupRows := 16;
+  if VisiblePopupRows > UiScrollContentRowCap then
+    VisiblePopupRows := UiScrollContentRowCap;
   Inc(VisiblePopupRows, 3);
-  LeftColumn := (((320 - (MaxLineColumns shl 3)) div 2 + CameraX) div 8) - 3;
-  TopRow := (((200 - (VisiblePopupRows shl 3)) div 2 + CameraY) div 8) - 2;
+  LeftColumn := (((UiViewportWidth - (MaxLineColumns shl UiGlyphPixelShift)) div 2 + CameraX) div UiGlyphPixels) - 3;
+  TopRow := (((UiViewportHeight - (VisiblePopupRows shl UiGlyphPixelShift)) div 2 + CameraY) div UiGlyphPixels) - 2;
   CursorColumn := CursorColumn + LeftColumn;
   CursorRow := CursorRow + TopRow;
-  GetMem(PopupSavedBackground, 30000);
-  PgCapturePlanarRectangle(PopupSavedBackground^, LeftColumn, (TopRow shl 3) +
-  DisplayedBufferRow,
-    LeftColumn + MaxLineColumns + 5 + 1, ((TopRow +
-    VisiblePopupRows + 2 + 1) shl 3) + DisplayedBufferRow);
+  GetMem(PopupSavedBackground, UiPopupBackgroundBytes);
+  PgCapturePlanarRectangle(PopupSavedBackground^, LeftColumn, (TopRow shl UiGlyphPixelShift) + DisplayedBufferRow,
+    LeftColumn + MaxLineColumns + 5 + 1, ((TopRow + VisiblePopupRows + 2 + 1) shl UiGlyphPixelShift) +
+    DisplayedBufferRow);
   RightColumn := LeftColumn + MaxLineColumns + 4;
   BottomRow := TopRow + VisiblePopupRows + 1;
   for SharedLoopIndexC := 1 to BottomRow - TopRow do
     for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
-      PgBlitOpaque8x8(PopupFrameAndGlyphBank^.GlyphEntries[9].GlyphDataBytes[1], SharedLoopIndexB,
-        ((TopRow + SharedLoopIndexC) shl 3) + DisplayedBufferRow);
-  PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[1].GlyphDataBytes[1], LeftColumn,
-  (TopRow shl 3) + DisplayedBufferRow);
+      PgBlitOpaque8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupFillGlyph].GlyphDataBytes[1], SharedLoopIndexB,
+        ((TopRow + SharedLoopIndexC) shl UiGlyphPixelShift) + DisplayedBufferRow);
+  PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupTopLeftGlyph].GlyphDataBytes[1], LeftColumn, (TopRow
+    shl UiGlyphPixelShift) + DisplayedBufferRow);
   for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
-    PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[2].GlyphDataBytes[1], SharedLoopIndexB,
-    (TopRow shl 3) + DisplayedBufferRow);
-  PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[3].GlyphDataBytes[1], RightColumn,
-  (TopRow shl 3) + DisplayedBufferRow);
+    PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupTopEdgeGlyph].GlyphDataBytes[1], SharedLoopIndexB,
+      (TopRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+  PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupTopRightGlyph].GlyphDataBytes[1], RightColumn, (TopRow
+    shl UiGlyphPixelShift) + DisplayedBufferRow);
   for SharedLoopIndexB := 1 to BottomRow - TopRow do
   begin
-    PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[6].GlyphDataBytes[1], LeftColumn,
-      ((TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
-    PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[8].GlyphDataBytes[1], RightColumn,
-      ((TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
-    PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], RightColumn + 1,
-      ((TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
+    PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupLeftEdgeGlyph].GlyphDataBytes[1], LeftColumn,
+      ((TopRow + SharedLoopIndexB) shl UiGlyphPixelShift) + DisplayedBufferRow);
+    PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupRightEdgeGlyph].GlyphDataBytes[1], RightColumn,
+      ((TopRow + SharedLoopIndexB) shl UiGlyphPixelShift) + DisplayedBufferRow);
+    PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupShadowGlyph].GlyphDataBytes[1], RightColumn + 1,
+      ((TopRow + SharedLoopIndexB) shl UiGlyphPixelShift) + DisplayedBufferRow);
   end;
-  PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], RightColumn + 1,
-    ((BottomRow - TopRow + TopRow + 1) shl 3) +
-    DisplayedBufferRow);
-  PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[5].GlyphDataBytes[1], LeftColumn,
-  (BottomRow shl 3) + DisplayedBufferRow);
+  PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupShadowGlyph].GlyphDataBytes[1], RightColumn + 1,
+    ((BottomRow - TopRow + TopRow + 1) shl UiGlyphPixelShift) + DisplayedBufferRow);
+  PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupBottomLeftGlyph].GlyphDataBytes[1], LeftColumn,
+    (BottomRow shl UiGlyphPixelShift) + DisplayedBufferRow);
   for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
-    PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[7].GlyphDataBytes[1], SharedLoopIndexB,
-    (BottomRow shl 3) + DisplayedBufferRow);
-  PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[4].GlyphDataBytes[1], RightColumn,
-  (BottomRow shl 3) + DisplayedBufferRow);
+    PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupBottomEdgeGlyph].GlyphDataBytes[1], SharedLoopIndexB,
+      (BottomRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+  PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupBottomRightGlyph].GlyphDataBytes[1], RightColumn,
+    (BottomRow shl UiGlyphPixelShift) + DisplayedBufferRow);
   for SharedLoopIndexB := LeftColumn + 1 to RightColumn + 1 do
-    PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], SharedLoopIndexB,
-      ((BottomRow + 1) shl 3) + DisplayedBufferRow);
+    PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupShadowGlyph].GlyphDataBytes[1], SharedLoopIndexB,
+      ((BottomRow + 1) shl UiGlyphPixelShift) + DisplayedBufferRow);
   for SharedLoopIndexB := 1 to VisiblePopupRows - 2 do
     if PopupTextLines[SharedLoopIndexB] <> 'END OF WINDOW' then
-      DrawGameText(LeftColumn + 2, TopRow + SharedLoopIndexB + 1,
-      PopupTextLines[SharedLoopIndexB]);
+      DrawGameText(LeftColumn + 2, TopRow + SharedLoopIndexB + 1, PopupTextLines[SharedLoopIndexB]);
   PlayerUpHeld := 0;
   PlayerDownHeld := 0;
   PlayerLeftHeld := 0;
   PlayerRightHeld := 0;
   repeat
-    MemW[0:$41C] := MemW[0:$41A];
-  until LastKeyboardScanCode > 128;
+    MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
+  until LastKeyboardScanCode > UiScanBreak;
   repeat
     repeat
-      MemW[0:$41C] := MemW[0:$41A];
+      MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
       SharedLoopIndexB := Random(100);
       if (not IsSparkActive) and (SharedLoopIndexB >= 99) then
       begin
         IsSparkActive := True;
         SparkFrameIndex := 0;
         case Random(2) of
-          0: begin
-            SparkColumn := LeftColumn + Random(RightColumn -
-            LeftColumn - 2) + 1;
-            SparkPixelY := TopRow shl 3;
-            SparkOnTopBorder := True;
-          end;
-          1: begin
-            SparkColumn := LeftColumn;
-            SparkPixelY := (TopRow + Random(BottomRow -
-            TopRow - 2) + 1) * 8;
-            SparkOnTopBorder := False;
-          end;
+          0:
+            begin
+              SparkColumn := LeftColumn + Random(RightColumn - LeftColumn - 2) + 1;
+              SparkPixelY := TopRow shl UiGlyphPixelShift;
+              SparkOnTopBorder := True;
+            end;
+          1:
+            begin
+              SparkColumn := LeftColumn;
+              SparkPixelY := (TopRow + Random(BottomRow - TopRow - 2) + 1) * UiGlyphPixels;
+              SparkOnTopBorder := False;
+            end;
         end;
       end;
-      if (CursorColumn <> 0) and (GameTickCounter > 20) then
+      if (CursorColumn <> 0) and (GameTickCounter > UiPopupAnimationThreshold) then
       begin
         GameTickCounter := 0;
         if IsSparkActive then
         begin
           Inc(SparkFrameIndex);
-          if SparkFrameIndex > 4 then
+          if SparkFrameIndex > UiSparkFrameCount then
           begin
             IsSparkActive := False;
             if SparkOnTopBorder then
-              PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[2].GlyphDataBytes[1], SparkColumn,
-              SparkPixelY + DisplayedBufferRow)
+              PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupTopEdgeGlyph].GlyphDataBytes[1],
+                SparkColumn, SparkPixelY + DisplayedBufferRow)
             else
-              PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[6].GlyphDataBytes[1], SparkColumn,
-              SparkPixelY + DisplayedBufferRow);
+              PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupLeftEdgeGlyph].GlyphDataBytes[1],
+                SparkColumn, SparkPixelY + DisplayedBufferRow);
           end
           else
           begin
             if SparkOnTopBorder then
-              PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[2].GlyphDataBytes[1], SparkColumn,
-              SparkPixelY + DisplayedBufferRow)
+              PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupTopEdgeGlyph].GlyphDataBytes[1],
+                SparkColumn, SparkPixelY + DisplayedBufferRow)
             else
-              PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[6].GlyphDataBytes[1], SparkColumn,
-              SparkPixelY + DisplayedBufferRow);
-            PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[SparkFrameIndex + 37].GlyphDataBytes[1],
-              SparkColumn, SparkPixelY + DisplayedBufferRow);
+              PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupLeftEdgeGlyph].GlyphDataBytes[1],
+                SparkColumn, SparkPixelY + DisplayedBufferRow);
+            PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[SparkFrameIndex +
+              UiSparkGlyphBias].GlyphDataBytes[1], SparkColumn, SparkPixelY + DisplayedBufferRow);
           end;
         end;
       end;
-    until (LastKeyboardScanCode < 128) or (LastKeyboardScanCode = 224);
+    until (LastKeyboardScanCode < UiScanBreak) or (LastKeyboardScanCode = UiScanExtendedPrefix);
+    { Extended keys are returned after release; retain the original whitelist and sentinels. }
     KeyScanCode := LastKeyboardScanCode;
-    if KeyScanCode = 224 then
+    if KeyScanCode = UiScanExtendedPrefix then
     begin
       repeat
-        MemW[0:$41C] := MemW[0:$41A];
-      until Byte(LastKeyboardScanCode) in [156,157,170,181,184,197,199,200,201,
-        203,205,207,208,209,210,211];
-      if Byte(LastKeyboardScanCode) in [170,197] then LastKeyboardScanCode := 500;
-      KeyScanCode := LastKeyboardScanCode - 128;
+        MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
+      until Byte(LastKeyboardScanCode) in [UiScanEnterRelease, UiScanCtrlRelease, UiScanLeftShiftRelease,
+        UiScanSlashRelease, UiScanAltRelease, UiScanNumLockRelease, UiScanHomeRelease, UiScanUpRelease,
+        UiScanPageUpRelease, UiScanLeftRelease, UiScanRightRelease, UiScanEndRelease, UiScanDownRelease,
+        UiScanPageDownRelease, UiScanInsertRelease, UiScanDeleteRelease];
+      if Byte(LastKeyboardScanCode) in [UiScanLeftShiftRelease, UiScanNumLockRelease] then
+        LastKeyboardScanCode := UiIgnoredExtendedKey;
+      KeyScanCode := LastKeyboardScanCode - UiScanBreak;
     end
     else
       repeat
-        MemW[0:$41C] := MemW[0:$41A];
-      until LastKeyboardScanCode > 128;
-    if (KeyScanCode = 80) or (KeyScanCode = 81) then
+        MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
+      until LastKeyboardScanCode > UiScanBreak;
+    if (KeyScanCode = UiScanDown) or (KeyScanCode = UiScanPageDown) then
     begin
-      Inc(ScrollLineOffset, 17);
-      if TotalTextRows - 16 < ScrollLineOffset then ScrollLineOffset := TotalTextRows - 16;
+      Inc(ScrollLineOffset, UiScrollPageStep);
+      if TotalTextRows - UiScrollContentRowCap < ScrollLineOffset then
+        ScrollLineOffset := TotalTextRows - UiScrollContentRowCap;
       for SharedLoopIndexC := 1 to BottomRow - TopRow - 1 do
         for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
-          PgBlitOpaque8x8(PopupFrameAndGlyphBank^.GlyphEntries[9].GlyphDataBytes[1], SharedLoopIndexB,
-            ((TopRow + SharedLoopIndexC) shl 3) + DisplayedBufferRow);
-      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[1].GlyphDataBytes[1], LeftColumn,
-      (TopRow shl 3) + DisplayedBufferRow);
+          PgBlitOpaque8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupFillGlyph].GlyphDataBytes[1], SharedLoopIndexB,
+            ((TopRow + SharedLoopIndexC) shl UiGlyphPixelShift) + DisplayedBufferRow);
+      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupTopLeftGlyph].GlyphDataBytes[1], LeftColumn,
+        (TopRow shl UiGlyphPixelShift) + DisplayedBufferRow);
       for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
-        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[2].GlyphDataBytes[1], SharedLoopIndexB,
-        (TopRow shl 3) + DisplayedBufferRow);
-      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[3].GlyphDataBytes[1], RightColumn,
-      (TopRow shl 3) + DisplayedBufferRow);
+        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupTopEdgeGlyph].GlyphDataBytes[1], SharedLoopIndexB,
+          (TopRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupTopRightGlyph].GlyphDataBytes[1], RightColumn,
+        (TopRow shl UiGlyphPixelShift) + DisplayedBufferRow);
       for SharedLoopIndexB := 1 to BottomRow - TopRow do
       begin
-        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[6].GlyphDataBytes[1], LeftColumn,
-          ((TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
-        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[8].GlyphDataBytes[1], RightColumn,
-          ((TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
-        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], RightColumn + 1,
-          ((TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
+        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupLeftEdgeGlyph].GlyphDataBytes[1], LeftColumn,
+          ((TopRow + SharedLoopIndexB) shl UiGlyphPixelShift) + DisplayedBufferRow);
+        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupRightEdgeGlyph].GlyphDataBytes[1], RightColumn,
+          ((TopRow + SharedLoopIndexB) shl UiGlyphPixelShift) + DisplayedBufferRow);
+        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupShadowGlyph].GlyphDataBytes[1], RightColumn + 1,
+          ((TopRow + SharedLoopIndexB) shl UiGlyphPixelShift) + DisplayedBufferRow);
       end;
-      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], RightColumn + 1,
-        ((BottomRow - TopRow + TopRow + 1) shl 3) +
-        DisplayedBufferRow);
-      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[5].GlyphDataBytes[1], LeftColumn,
-      (BottomRow shl 3) + DisplayedBufferRow);
+      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupShadowGlyph].GlyphDataBytes[1], RightColumn + 1,
+        ((BottomRow - TopRow + TopRow + 1) shl UiGlyphPixelShift) + DisplayedBufferRow);
+      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupBottomLeftGlyph].GlyphDataBytes[1], LeftColumn,
+        (BottomRow shl UiGlyphPixelShift) + DisplayedBufferRow);
       for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
-        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[7].GlyphDataBytes[1], SharedLoopIndexB,
-        (BottomRow shl 3) + DisplayedBufferRow);
-      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[4].GlyphDataBytes[1], RightColumn,
-      (BottomRow shl 3) + DisplayedBufferRow);
+        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupBottomEdgeGlyph].GlyphDataBytes[1],
+          SharedLoopIndexB, (BottomRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupBottomRightGlyph].GlyphDataBytes[1], RightColumn,
+        (BottomRow shl UiGlyphPixelShift) + DisplayedBufferRow);
       for SharedLoopIndexB := LeftColumn + 1 to RightColumn + 1 do
-        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], SharedLoopIndexB,
-          ((BottomRow + 1) shl 3) + DisplayedBufferRow);
+        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupShadowGlyph].GlyphDataBytes[1], SharedLoopIndexB,
+          ((BottomRow + 1) shl UiGlyphPixelShift) + DisplayedBufferRow);
       for SharedLoopIndexB := 1 to VisiblePopupRows - 2 do
         if PopupTextLines[SharedLoopIndexB] <> 'END OF WINDOW' then
-          DrawGameText(LeftColumn + 2, TopRow + SharedLoopIndexB + 1,
-          PopupTextLines[SharedLoopIndexB + ScrollLineOffset]);
+          DrawGameText(LeftColumn + 2, TopRow + SharedLoopIndexB + 1, PopupTextLines[SharedLoopIndexB +
+            ScrollLineOffset]);
     end;
-    if (KeyScanCode = 72) or (KeyScanCode = 73) then
+    if (KeyScanCode = UiScanUp) or (KeyScanCode = UiScanPageUp) then
     begin
-      Dec(ScrollLineOffset, 17);
-      if ScrollLineOffset < 0 then ScrollLineOffset := 0;
+      Dec(ScrollLineOffset, UiScrollPageStep);
+      if ScrollLineOffset < 0 then
+        ScrollLineOffset := 0;
       for SharedLoopIndexC := 1 to BottomRow - TopRow - 1 do
         for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
-          PgBlitOpaque8x8(PopupFrameAndGlyphBank^.GlyphEntries[9].GlyphDataBytes[1], SharedLoopIndexB,
-            ((TopRow + SharedLoopIndexC) shl 3) + DisplayedBufferRow);
-      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[1].GlyphDataBytes[1], LeftColumn,
-      (TopRow shl 3) + DisplayedBufferRow);
+          PgBlitOpaque8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupFillGlyph].GlyphDataBytes[1], SharedLoopIndexB,
+            ((TopRow + SharedLoopIndexC) shl UiGlyphPixelShift) + DisplayedBufferRow);
+      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupTopLeftGlyph].GlyphDataBytes[1], LeftColumn,
+        (TopRow shl UiGlyphPixelShift) + DisplayedBufferRow);
       for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
-        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[2].GlyphDataBytes[1], SharedLoopIndexB,
-        (TopRow shl 3) + DisplayedBufferRow);
-      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[3].GlyphDataBytes[1], RightColumn,
-      (TopRow shl 3) + DisplayedBufferRow);
+        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupTopEdgeGlyph].GlyphDataBytes[1], SharedLoopIndexB,
+          (TopRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupTopRightGlyph].GlyphDataBytes[1], RightColumn,
+        (TopRow shl UiGlyphPixelShift) + DisplayedBufferRow);
       for SharedLoopIndexB := 1 to BottomRow - TopRow do
       begin
-        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[6].GlyphDataBytes[1], LeftColumn,
-          ((TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
-        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[8].GlyphDataBytes[1], RightColumn,
-          ((TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
-        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], RightColumn + 1,
-          ((TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
+        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupLeftEdgeGlyph].GlyphDataBytes[1], LeftColumn,
+          ((TopRow + SharedLoopIndexB) shl UiGlyphPixelShift) + DisplayedBufferRow);
+        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupRightEdgeGlyph].GlyphDataBytes[1], RightColumn,
+          ((TopRow + SharedLoopIndexB) shl UiGlyphPixelShift) + DisplayedBufferRow);
+        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupShadowGlyph].GlyphDataBytes[1], RightColumn + 1,
+          ((TopRow + SharedLoopIndexB) shl UiGlyphPixelShift) + DisplayedBufferRow);
       end;
-      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], RightColumn + 1,
-        ((BottomRow - TopRow + TopRow + 1) shl 3) +
-        DisplayedBufferRow);
-      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[5].GlyphDataBytes[1], LeftColumn,
-      (BottomRow shl 3) + DisplayedBufferRow);
+      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupShadowGlyph].GlyphDataBytes[1], RightColumn + 1,
+        ((BottomRow - TopRow + TopRow + 1) shl UiGlyphPixelShift) + DisplayedBufferRow);
+      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupBottomLeftGlyph].GlyphDataBytes[1], LeftColumn,
+        (BottomRow shl UiGlyphPixelShift) + DisplayedBufferRow);
       for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
-        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[7].GlyphDataBytes[1], SharedLoopIndexB,
-        (BottomRow shl 3) + DisplayedBufferRow);
-      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[4].GlyphDataBytes[1], RightColumn,
-      (BottomRow shl 3) + DisplayedBufferRow);
+        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupBottomEdgeGlyph].GlyphDataBytes[1],
+          SharedLoopIndexB, (BottomRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupBottomRightGlyph].GlyphDataBytes[1], RightColumn,
+        (BottomRow shl UiGlyphPixelShift) + DisplayedBufferRow);
       for SharedLoopIndexB := LeftColumn + 1 to RightColumn + 1 do
-        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], SharedLoopIndexB,
-          ((BottomRow + 1) shl 3) + DisplayedBufferRow);
+        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[UiPopupShadowGlyph].GlyphDataBytes[1], SharedLoopIndexB,
+          ((BottomRow + 1) shl UiGlyphPixelShift) + DisplayedBufferRow);
       for SharedLoopIndexB := 1 to VisiblePopupRows - 2 do
         if PopupTextLines[SharedLoopIndexB] <> 'END OF WINDOW' then
-          DrawGameText(LeftColumn + 2, TopRow + SharedLoopIndexB + 1,
-          PopupTextLines[SharedLoopIndexB + ScrollLineOffset]);
+          DrawGameText(LeftColumn + 2, TopRow + SharedLoopIndexB + 1, PopupTextLines[SharedLoopIndexB +
+            ScrollLineOffset]);
     end;
     if AcceptAnyKey = 0 then
     begin
-      for SharedLoopIndexB := 1 to 20 do
+      for SharedLoopIndexB := 1 to UiPopupAcceptedKeyLimit do
         if (PopupAcceptedScanCodes[SharedLoopIndexB] <> 0) and (PopupAcceptedScanCodes[SharedLoopIndexB] =
-        KeyScanCode) then
+          KeyScanCode) then
         begin
           ReadScrollablePopupScanCode := KeyScanCode;
           KeyAccepted := True;
@@ -1112,10 +1377,9 @@ begin
       KeyAccepted := True;
     end;
   until KeyAccepted;
-  PgRestorePlanarRectangle(PopupSavedBackground^, LeftColumn, (TopRow shl 3) +
-  DisplayedBufferRow);
-  FreeMem(PopupSavedBackground, 30000);
-  MemW[0:$41C] := MemW[0:$41A];
+  PgRestorePlanarRectangle(PopupSavedBackground^, LeftColumn, (TopRow shl UiGlyphPixelShift) + DisplayedBufferRow);
+  FreeMem(PopupSavedBackground, UiPopupBackgroundBytes);
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   UnusedPopupInputFlag := 0;
   PlayerLeftHeld := 0;
   PlayerRightHeld := 0;
@@ -1133,9 +1397,9 @@ var
   UnusedSplashWord1, UnusedSplashWord2, GraphicsCallResult, UnusedSplashWord4: Word;
 begin
   FadeGamePaletteToBlack(0);
-  GraphicsCallResult := PcxSetDisplayType(2);
-  GraphicsCallResult := PcxSetGraphicsOrTextMode(1);
-  GraphicsCallResult := PgSetScreenStride($28);
+  GraphicsCallResult := PcxSetDisplayType(UiPcxEga320x200);
+  GraphicsCallResult := PcxSetGraphicsOrTextMode(UiPcxGraphicsEnabled);
+  GraphicsCallResult := PgSetScreenStride(UiImageScreenStride);
   CameraX := 0;
   CameraY := 0;
   DisplayedBufferRow := 0;
@@ -1149,12 +1413,12 @@ begin
   GraphicsCallResult := PcxDisplayFile('sam1.apo', 1, 0, 0);
 {$ENDIF}
 {$ENDIF}
-  RestoreGamePalette($14);
-  StartSoundEffect($15);
-  MemW[0:$041C] := MemW[0:$041A];
+  RestoreGamePalette(UiPaletteStepDelay);
+  StartSoundEffect(UiSoundApogeeSplash);
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   GameTickCounter := 0;
   repeat
-  until KeyPressed or (GameTickCounter > $02D0);
+  until KeyPressed or (GameTickCounter > UiSplashTimeoutTicks);
   GameTickCounter := 0;
   FadeGamePaletteToBlack(0);
 end;
@@ -1167,9 +1431,9 @@ var
   MenuAction: Char;
 begin
   FadeGamePaletteToBlack(0);
-  GraphicsCallResult := PcxSetDisplayType(2);
-  GraphicsCallResult := PcxSetGraphicsOrTextMode(1);
-  GraphicsCallResult := PgSetScreenStride($28);
+  GraphicsCallResult := PcxSetDisplayType(UiPcxEga320x200);
+  GraphicsCallResult := PcxSetGraphicsOrTextMode(UiPcxGraphicsEnabled);
+  GraphicsCallResult := PgSetScreenStride(UiImageScreenStride);
   CameraX := 0;
   CameraY := 0;
   DisplayedBufferRow := 0;
@@ -1183,7 +1447,7 @@ begin
   GraphicsCallResult := PcxDisplayFile('sam1.crd', 1, 0, 0);
 {$ENDIF}
 {$ENDIF}
-  PgCopyVideoScreenRegion320x200(0, 0, 0, $C8);
+  PgCopyVideoScreenRegion320x200(0, 0, 0, UiViewportHeight);
 {$IFDEF SAM2}
   GraphicsCallResult := PcxDisplayFile('sam2.ttl', 1, 0, 0);
 {$ELSE}
@@ -1193,7 +1457,7 @@ begin
   GraphicsCallResult := PcxDisplayFile('sam1.ttl', 1, 0, 0);
 {$ENDIF}
 {$ENDIF}
-  RestoreGamePalette($14);
+  RestoreGamePalette(UiPaletteStepDelay);
   PanDirection := 1;
   PanDistance := 0;
   LastKeyboardScanCode := 0;
@@ -1207,56 +1471,56 @@ begin
     end
     else
       LastKeyboardScanCode := 0;
-  until (GameTickCounter > $90) or (MenuAction <> ' ');
+  until (GameTickCounter > UiTitleInitialPauseTicks) or (MenuAction <> ' ');
   if (MenuAction <> 'B') and (MenuAction <> 'R') and (MenuAction <> 'Q') then
-  repeat
-  if (MenuAction <> 'B') and (MenuAction <> 'R') and (MenuAction <> 'Q') then
-    MenuAction := ' ';
-  if PanDirection = 1 then
-  begin
-    if AlternateVideoTiming = 0 then
-      PgPanDisplayAtRetraceStart(0, PanDistance)
-    else
-      PgPanDisplayAtRetraceEnd(0, PanDistance);
-    DisplayedBufferRow := PanDistance;
-  end
-  else
-  begin
-    if AlternateVideoTiming = 0 then
-      PgPanDisplayAtRetraceStart(0, $C8 - PanDistance)
-    else
-      PgPanDisplayAtRetraceEnd(0, $C8 - PanDistance);
-    DisplayedBufferRow := $C8 - PanDistance;
-  end;
-  Inc(PanDistance);
-  if PanDistance > $C8 then
-  begin
-    PanDistance := 0;
-    PanDirection := -PanDirection;
-    GameTickCounter := 0;
     repeat
-      if LastKeyboardScanCode > 0 then
+      if (MenuAction <> 'B') and (MenuAction <> 'R') and (MenuAction <> 'Q') then
+        MenuAction := ' ';
+      if PanDirection = 1 then
+      begin
+        if AlternateVideoTiming = 0 then
+          PgPanDisplayAtRetraceStart(0, PanDistance)
+        else
+          PgPanDisplayAtRetraceEnd(0, PanDistance);
+        DisplayedBufferRow := PanDistance;
+      end
+      else
+      begin
+        if AlternateVideoTiming = 0 then
+          PgPanDisplayAtRetraceStart(0, UiViewportHeight - PanDistance)
+        else
+          PgPanDisplayAtRetraceEnd(0, UiViewportHeight - PanDistance);
+        DisplayedBufferRow := UiViewportHeight - PanDistance;
+      end;
+      Inc(PanDistance);
+      if PanDistance > UiViewportHeight then
+      begin
+        PanDistance := 0;
+        PanDirection := -PanDirection;
+        GameTickCounter := 0;
+        repeat
+          if LastKeyboardScanCode > 0 then
+          begin
+            MenuAction := RunMainMenu;
+            LastKeyboardScanCode := 0;
+            GameTickCounter := 0;
+          end;
+        until (GameTickCounter > UiTitlePauseTicks) or (MenuAction <> ' ');
+      end;
+      PlayerUpHeld := 0;
+      PlayerDownHeld := 0;
+      PlayerLeftHeld := 0;
+      PlayerRightHeld := 0;
+      EscapePressed := 0;
+      MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
+      if LastKeyboardScanCode <> 0 then
       begin
         MenuAction := RunMainMenu;
-        LastKeyboardScanCode := 0;
         GameTickCounter := 0;
+        LastKeyboardScanCode := 0;
       end;
-    until (GameTickCounter > $1B0) or (MenuAction <> ' ');
-  end;
-  PlayerUpHeld := 0;
-  PlayerDownHeld := 0;
-  PlayerLeftHeld := 0;
-  PlayerRightHeld := 0;
-  EscapePressed := 0;
-  MemW[0:$041C] := MemW[0:$041A];
-  if LastKeyboardScanCode <> 0 then
-  begin
-    MenuAction := RunMainMenu;
-    GameTickCounter := 0;
-    LastKeyboardScanCode := 0;
-  end;
-  until (MenuAction = 'B') or (MenuAction = 'R') or (MenuAction = 'Q');
-  StartSoundEffect($0C);
+    until (MenuAction = 'B') or (MenuAction = 'R') or (MenuAction = 'Q');
+  StartSoundEffect(UiSoundLeaveTitle);
   FadeGamePaletteToBlack(0);
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
@@ -1268,21 +1532,22 @@ var
   InsertRank: Integer;
   FormattedScore: String[255];
 begin
-  if PlayerScore > GameConfiguration.ConfigRankedScores[10] then
+  if PlayerScore > GameConfiguration.ConfigRankedScores[UiHighScoreCount] then
   begin
     AskHighScoreName;
-    for RankIndex := 10 downto 1 do
+    for RankIndex := UiHighScoreCount downto 1 do
       if GameConfiguration.ConfigRankedScores[RankIndex] < PlayerScore then
         InsertRank := RankIndex;
-    if InsertRank < 10 then
-      for RankIndex := 10 downto InsertRank + 1 do
+    if InsertRank < UiHighScoreCount then
+      for RankIndex := UiHighScoreCount downto InsertRank + 1 do
       begin
         GameConfiguration.ConfigRankedScores[RankIndex] := GameConfiguration.ConfigRankedScores[RankIndex - 1];
         GameConfiguration.ConfigScoreLines[RankIndex] := GameConfiguration.ConfigScoreLines[RankIndex - 1];
       end;
-    for RankIndex := Ord(PopupInputResult[0]) to 22 do
+    { Original inclusive padding loop adds one more space than the usual width calculation. }
+    for RankIndex := Ord(PopupInputResult[0]) to UiHighScoreNamePadLimit do
       PopupInputResult := PopupInputResult + ' ';
-    Str(PlayerScore:7, FormattedScore);
+    Str(PlayerScore: 7, FormattedScore);
     PopupInputResult := PopupInputResult + FormattedScore;
     GameConfiguration.ConfigRankedScores[InsertRank] := PlayerScore;
     GameConfiguration.ConfigScoreLines[InsertRank] := PopupInputResult;
@@ -1305,55 +1570,55 @@ begin
 {$IFDEF SAM3}
   Assign(SpriteBankFileViews.SpriteUntypedFile, 'SAM301.GFX');
 {$ENDIF}
-  Reset(SpriteBankFileViews.SpriteUntypedFile, $1F80);
-  GetMem(SpriteBank851, $1F80);
+  Reset(SpriteBankFileViews.SpriteUntypedFile, UiSpriteBankBytes);
+  GetMem(SpriteBank851, UiSpriteBankBytes);
   Read(SpriteBankFileViews.SpriteTypedFile, SpriteBank851^);
-  DecryptGameAssetBuffer(SpriteBank851^, $1F80);
-  GetMem(SpriteBank001, $1F80);
+  DecryptGameAssetBuffer(SpriteBank851^, UiSpriteBankBytes);
+  GetMem(SpriteBank001, UiSpriteBankBytes);
   Read(SpriteBankFileViews.SpriteTypedFile, SpriteBank001^);
-  DecryptGameAssetBuffer(SpriteBank001^, $1F80);
-  GetMem(SpriteBank101, $1F80);
+  DecryptGameAssetBuffer(SpriteBank001^, UiSpriteBankBytes);
+  GetMem(SpriteBank101, UiSpriteBankBytes);
   Read(SpriteBankFileViews.SpriteTypedFile, SpriteBank101^);
-  DecryptGameAssetBuffer(SpriteBank101^, $1F80);
-  GetMem(SpriteBank401, $1F80);
+  DecryptGameAssetBuffer(SpriteBank101^, UiSpriteBankBytes);
+  GetMem(SpriteBank401, UiSpriteBankBytes);
   Read(SpriteBankFileViews.SpriteTypedFile, SpriteBank401^);
-  DecryptGameAssetBuffer(SpriteBank401^, $1F80);
-  GetMem(SpriteBank451, $1F80);
+  DecryptGameAssetBuffer(SpriteBank401^, UiSpriteBankBytes);
+  GetMem(SpriteBank451, UiSpriteBankBytes);
   Read(SpriteBankFileViews.SpriteTypedFile, SpriteBank451^);
-  DecryptGameAssetBuffer(SpriteBank451^, $1F80);
-  GetMem(SpriteBank601, $1F80);
+  DecryptGameAssetBuffer(SpriteBank451^, UiSpriteBankBytes);
+  GetMem(SpriteBank601, UiSpriteBankBytes);
   Read(SpriteBankFileViews.SpriteTypedFile, SpriteBank601^);
-  DecryptGameAssetBuffer(SpriteBank601^, $1F80);
-  GetMem(SpriteBank651, $1F80);
+  DecryptGameAssetBuffer(SpriteBank601^, UiSpriteBankBytes);
+  GetMem(SpriteBank651, UiSpriteBankBytes);
   Read(SpriteBankFileViews.SpriteTypedFile, SpriteBank651^);
-  DecryptGameAssetBuffer(SpriteBank651^, $1F80);
-  GetMem(SpriteBank701, $1F80);
+  DecryptGameAssetBuffer(SpriteBank651^, UiSpriteBankBytes);
+  GetMem(SpriteBank701, UiSpriteBankBytes);
   Read(SpriteBankFileViews.SpriteTypedFile, SpriteBank701^);
-  DecryptGameAssetBuffer(SpriteBank701^, $1F80);
-  GetMem(SpriteBank751, $1F80);
+  DecryptGameAssetBuffer(SpriteBank701^, UiSpriteBankBytes);
+  GetMem(SpriteBank751, UiSpriteBankBytes);
   Read(SpriteBankFileViews.SpriteTypedFile, SpriteBank751^);
-  DecryptGameAssetBuffer(SpriteBank751^, $1F80);
-  GetMem(SpriteBank301, $1F80);
+  DecryptGameAssetBuffer(SpriteBank751^, UiSpriteBankBytes);
+  GetMem(SpriteBank301, UiSpriteBankBytes);
   Read(SpriteBankFileViews.SpriteTypedFile, SpriteBank301^);
-  DecryptGameAssetBuffer(SpriteBank301^, $1F80);
-  GetMem(SpriteBank151, $1F80);
+  DecryptGameAssetBuffer(SpriteBank301^, UiSpriteBankBytes);
+  GetMem(SpriteBank151, UiSpriteBankBytes);
   Read(SpriteBankFileViews.SpriteTypedFile, SpriteBank151^);
-  DecryptGameAssetBuffer(SpriteBank151^, $1F80);
-  GetMem(SpriteBank201, $1F80);
+  DecryptGameAssetBuffer(SpriteBank151^, UiSpriteBankBytes);
+  GetMem(SpriteBank201, UiSpriteBankBytes);
   Read(SpriteBankFileViews.SpriteTypedFile, SpriteBank201^);
-  DecryptGameAssetBuffer(SpriteBank201^, $1F80);
-  GetMem(SpriteBank801, $1F80);
+  DecryptGameAssetBuffer(SpriteBank201^, UiSpriteBankBytes);
+  GetMem(SpriteBank801, UiSpriteBankBytes);
   Read(SpriteBankFileViews.SpriteTypedFile, SpriteBank801^);
-  DecryptGameAssetBuffer(SpriteBank801^, $1F80);
-  GetMem(PlayerSpriteBank, $1F80);
+  DecryptGameAssetBuffer(SpriteBank801^, UiSpriteBankBytes);
+  GetMem(PlayerSpriteBank, UiSpriteBankBytes);
   Read(SpriteBankFileViews.SpriteTypedFile, PlayerSpriteBank^);
-  DecryptGameAssetBuffer(PlayerSpriteBank^, $1F80);
-  GetMem(SpriteBank351, $1F80);
+  DecryptGameAssetBuffer(PlayerSpriteBank^, UiSpriteBankBytes);
+  GetMem(SpriteBank351, UiSpriteBankBytes);
   Read(SpriteBankFileViews.SpriteTypedFile, SpriteBank351^);
-  DecryptGameAssetBuffer(SpriteBank351^, $1F80);
-  GetMem(SpriteBank251, $1F80);
+  DecryptGameAssetBuffer(SpriteBank351^, UiSpriteBankBytes);
+  GetMem(SpriteBank251, UiSpriteBankBytes);
   Read(SpriteBankFileViews.SpriteTypedFile, SpriteBank251^);
-  DecryptGameAssetBuffer(SpriteBank251^, $1F80);
+  DecryptGameAssetBuffer(SpriteBank251^, UiSpriteBankBytes);
   Close(SpriteBankFileViews.SpriteUntypedFile);
 {$IFDEF SAM1}
   Assign(GlyphBankFileViews.GlyphUntypedFile, 'SAM102.GFX');
@@ -1364,16 +1629,16 @@ begin
 {$IFDEF SAM3}
   Assign(GlyphBankFileViews.GlyphUntypedFile, 'SAM302.GFX');
 {$ENDIF}
-  Reset(GlyphBankFileViews.GlyphUntypedFile, $0800);
-  GetMem(PopupFrameAndGlyphBank, $0800);
+  Reset(GlyphBankFileViews.GlyphUntypedFile, UiGlyphBankBytes);
+  GetMem(PopupFrameAndGlyphBank, UiGlyphBankBytes);
   Read(GlyphBankFileViews.GlyphTypedFile, PopupFrameAndGlyphBank^);
-  DecryptGameAssetBuffer(PopupFrameAndGlyphBank^, $0800);
-  GetMem(PopupExtendedGlyphBank, $0800);
+  DecryptGameAssetBuffer(PopupFrameAndGlyphBank^, UiGlyphBankBytes);
+  GetMem(PopupExtendedGlyphBank, UiGlyphBankBytes);
   Read(GlyphBankFileViews.GlyphTypedFile, PopupExtendedGlyphBank^);
-  DecryptGameAssetBuffer(PopupExtendedGlyphBank^, $0800);
-  GetMem(StatusGlyphBank, $0800);
+  DecryptGameAssetBuffer(PopupExtendedGlyphBank^, UiGlyphBankBytes);
+  GetMem(StatusGlyphBank, UiGlyphBankBytes);
   Read(GlyphBankFileViews.GlyphTypedFile, StatusGlyphBank^);
-  DecryptGameAssetBuffer(StatusGlyphBank^, $0800);
+  DecryptGameAssetBuffer(StatusGlyphBank^, UiGlyphBankBytes);
   Close(GlyphBankFileViews.GlyphUntypedFile);
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
@@ -1383,7 +1648,7 @@ procedure BlackenGamePalette;
 var
   PaletteIndex: Integer;
 begin
-  for PaletteIndex := 0 to 15 do
+  for PaletteIndex := 0 to UiPaletteLastRegister do
     PgSetPaletteRegister(PaletteIndex, 0);
 end;
 
@@ -1401,7 +1666,7 @@ begin
   GameSnapshot.SavedProgressCount := PlayerProgressCount;
   GameSnapshot.SavedPlayerAmmo := PlayerAmmo;
   GameSnapshot.SavedProjectileLimit := PlayerProjectileLimit;
-  for LevelFlagIndex := 1 to 20 do
+  for LevelFlagIndex := 1 to UiCampaignFlagCount do
     GameSnapshot.SavedBlueprintFlags[LevelFlagIndex] := LevelBlueprintFlags[LevelFlagIndex];
   GameSnapshot.SavedSpeedBoost := PlayerSpeedBoost;
   GameSnapshot.SavedSpeedTimeLeft := SpeedBoostTimeLeft;
@@ -1413,7 +1678,7 @@ begin
   GameSnapshot.SavedAuxiliaryValue := SavedAuxiliaryCounter;
   GameSnapshot.SavedEntranceAnimationTick := LevelEntranceAnimationTick;
   GameSnapshot.SavedEnteredLevelNumber := EnteredLevelNumber;
-  for LevelFlagIndex := 1 to 20 do
+  for LevelFlagIndex := 1 to UiCampaignFlagCount do
     GameSnapshot.SavedCompletedLevelFlags[LevelFlagIndex] := LevelCompletedFlags[LevelFlagIndex];
   GameSnapshot.SavedExtraAmmoCheatUsed := ExtraAmmoCheatUsed;
 end;
@@ -1430,7 +1695,7 @@ begin
   PlayerProgressCount := GameSnapshot.SavedProgressCount;
   PlayerAmmo := GameSnapshot.SavedPlayerAmmo;
   PlayerProjectileLimit := GameSnapshot.SavedProjectileLimit;
-  for LevelFlagIndex := 1 to 20 do
+  for LevelFlagIndex := 1 to UiCampaignFlagCount do
     LevelBlueprintFlags[LevelFlagIndex] := GameSnapshot.SavedBlueprintFlags[LevelFlagIndex];
   PlayerSpeedBoost := GameSnapshot.SavedSpeedBoost;
   SpeedBoostTimeLeft := GameSnapshot.SavedSpeedTimeLeft;
@@ -1442,9 +1707,8 @@ begin
   SavedAuxiliaryCounter := GameSnapshot.SavedAuxiliaryValue;
   LevelEntranceAnimationTick := GameSnapshot.SavedEntranceAnimationTick;
   EnteredLevelNumber := GameSnapshot.SavedEnteredLevelNumber;
-  for LevelFlagIndex := 1 to 20 do
-    LevelCompletedFlags[LevelFlagIndex] :=
-    GameSnapshot.SavedCompletedLevelFlags[LevelFlagIndex];
+  for LevelFlagIndex := 1 to UiCampaignFlagCount do
+    LevelCompletedFlags[LevelFlagIndex] := GameSnapshot.SavedCompletedLevelFlags[LevelFlagIndex];
   ExtraAmmoCheatUsed := GameSnapshot.SavedExtraAmmoCheatUsed;
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
@@ -1454,15 +1718,15 @@ procedure WriteSavedGame(SaveSlot: Integer);
 var
   SaveOutputFile: TSaveGameOutputFile;
   LevelFlagIndex: Word;
-  SlotNumberText: string;
+  SlotNumberText: String;
 begin
-  GameSnapshot.SavedPlayerX := LongInt(GameActors[1].ActorWorldX + 8) and $FFF0;
-  GameSnapshot.SavedPlayerY := LongInt(GameActors[1].ActorWorldY + 8) and $FFF0;
+  GameSnapshot.SavedPlayerX := LongInt(GameActors[1].ActorWorldX + UiSavePositionRoundBias) and UiSavePositionMask;
+  GameSnapshot.SavedPlayerY := LongInt(GameActors[1].ActorWorldY + UiSavePositionRoundBias) and UiSavePositionMask;
   GameSnapshot.SavedPlayerScore := PlayerScore;
   GameSnapshot.SavedProgressCount := PlayerProgressCount;
   GameSnapshot.SavedPlayerAmmo := PlayerAmmo;
   GameSnapshot.SavedProjectileLimit := PlayerProjectileLimit;
-  for LevelFlagIndex := 1 to 20 do
+  for LevelFlagIndex := 1 to UiCampaignFlagCount do
     GameSnapshot.SavedBlueprintFlags[LevelFlagIndex] := LevelBlueprintFlags[LevelFlagIndex];
   GameSnapshot.SavedSpeedBoost := PlayerSpeedBoost;
   GameSnapshot.SavedSpeedTimeLeft := SpeedBoostTimeLeft;
@@ -1474,12 +1738,11 @@ begin
   GameSnapshot.SavedAuxiliaryValue := SavedAuxiliaryCounter;
   GameSnapshot.SavedEntranceAnimationTick := LevelEntranceAnimationTick;
   GameSnapshot.SavedEnteredLevelNumber := EnteredLevelNumber;
-  for LevelFlagIndex := 1 to 20 do
-    GameSnapshot.SavedCompletedLevelFlags[LevelFlagIndex] :=
-    LevelCompletedFlags[LevelFlagIndex];
+  for LevelFlagIndex := 1 to UiCampaignFlagCount do
+    GameSnapshot.SavedCompletedLevelFlags[LevelFlagIndex] := LevelCompletedFlags[LevelFlagIndex];
   GameSnapshot.SavedExtraAmmoCheatUsed := ExtraAmmoCheatUsed;
 
-  Str(SaveSlot:1, SlotNumberText);
+  Str(SaveSlot: 1, SlotNumberText);
 {$IFDEF SAM1}
   Assign(SaveOutputFile, 'SAM1-' + SlotNumberText + '.SAV');
 {$ENDIF}
@@ -1495,15 +1758,15 @@ begin
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
-{ Reads SAMn-<slot>.SAV into the live game state; reports File Not Found and returns success. }
+{ Restores SAMn-<slot>.SAV; an open failure shows File Not Found and returns False. }
 function ReadSavedGame(SaveSlot: Integer): Boolean;
 var
   SaveInputFile: TSaveGameInputFile;
   LevelFlagIndex: Integer;
-  SlotNumberText: string;
+  SlotNumberText: String;
   FileOpenSucceeded: Boolean;
 begin
-  Str(SaveSlot:1, SlotNumberText);
+  Str(SaveSlot: 1, SlotNumberText);
 {$I-}
 {$IFDEF SAM1}
   Assign(SaveInputFile, 'SAM1-' + SlotNumberText + '.SAV');
@@ -1514,6 +1777,7 @@ begin
 {$IFDEF SAM3}
   Assign(SaveInputFile, 'SAM3-' + SlotNumberText + '.SAV');
 {$ENDIF}
+  { Preserve the original duplicate Reset and IOResult check, even after a successful open. }
   Reset(SaveInputFile);
   FileOpenSucceeded := IOResult = 0;
   Reset(SaveInputFile);
@@ -1529,7 +1793,7 @@ begin
     PlayerProgressCount := GameSnapshot.SavedProgressCount;
     PlayerAmmo := GameSnapshot.SavedPlayerAmmo;
     PlayerProjectileLimit := GameSnapshot.SavedProjectileLimit;
-    for LevelFlagIndex := 1 to 20 do
+    for LevelFlagIndex := 1 to UiCampaignFlagCount do
       LevelBlueprintFlags[LevelFlagIndex] := GameSnapshot.SavedBlueprintFlags[LevelFlagIndex];
     PlayerSpeedBoost := GameSnapshot.SavedSpeedBoost;
     SpeedBoostTimeLeft := GameSnapshot.SavedSpeedTimeLeft;
@@ -1541,9 +1805,8 @@ begin
     SavedAuxiliaryCounter := GameSnapshot.SavedAuxiliaryValue;
     LevelEntranceAnimationTick := GameSnapshot.SavedEntranceAnimationTick;
     EnteredLevelNumber := GameSnapshot.SavedEnteredLevelNumber;
-    for LevelFlagIndex := 1 to 20 do
-      LevelCompletedFlags[LevelFlagIndex] :=
-      GameSnapshot.SavedCompletedLevelFlags[LevelFlagIndex];
+    for LevelFlagIndex := 1 to UiCampaignFlagCount do
+      LevelCompletedFlags[LevelFlagIndex] := GameSnapshot.SavedCompletedLevelFlags[LevelFlagIndex];
     ExtraAmmoCheatUsed := GameSnapshot.SavedExtraAmmoCheatUsed;
     ReadSavedGame := True;
   end
@@ -2043,7 +2306,7 @@ begin
   PopupTextLines[TextLineIndex] := 'Press PgUp-PgDn        Esc-Exit';
   Inc(TextLineIndex);
   PopupTextLines[TextLineIndex] := 'END OF WINDOW';
-  PopupAcceptedScanCodes[1] := 1;
+  PopupAcceptedScanCodes[1] := UiScanEscape;
   PopupSelectionScanCode := ReadScrollablePopupScanCode(0);
   EscapePressed := 0;
   GameOptionsRequested := 0;
@@ -2275,7 +2538,7 @@ begin
   PopupTextLines[TextLineIndex] := 'Press PgUp-PgDn        Esc-Exit';
   Inc(TextLineIndex);
   PopupTextLines[TextLineIndex] := 'END OF WINDOW';
-  PopupAcceptedScanCodes[1] := 1;
+  PopupAcceptedScanCodes[1] := UiScanEscape;
   PopupSelectionScanCode := ReadScrollablePopupScanCode(0);
   EscapePressed := 0;
   GameOptionsRequested := 0;
@@ -2530,7 +2793,7 @@ begin
   PopupTextLines[TextLineIndex] := 'Press PgUp-PgDn        Esc-Exit';
   Inc(TextLineIndex);
   PopupTextLines[TextLineIndex] := 'END OF WINDOW';
-  PopupAcceptedScanCodes[1] := 1;
+  PopupAcceptedScanCodes[1] := UiScanEscape;
   PopupSelectionScanCode := ReadScrollablePopupScanCode(0);
   EscapePressed := 0;
   GameOptionsRequested := 0;
@@ -2549,7 +2812,7 @@ begin
   PopupTextLines[4][0] := #0;
   PopupTextLines[5] := '    ^';
   PopupTextLines[6] := 'END OF WINDOW';
-  PopupInputResult := ReadPopupText(20);
+  PopupInputResult := ReadPopupText(UiHighScoreInputLimit);
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
@@ -2557,10 +2820,12 @@ end;
 procedure RedefineKeyboardBindings;
 var
   { Unused locals retain the original stack frame. }
-  NewRightScanCode, NewLeftScanCode, NewUpScanCode, NewDownScanCode, NewFireScanCode, NewJumpScanCode, UnusedKeyBindingWord:
+  NewRightScanCode, NewLeftScanCode, NewUpScanCode, NewDownScanCode, NewFireScanCode, NewJumpScanCode,
+    UnusedKeyBindingWord:
   Word;
   KeyIsValid, RedefineNotCancelled: Boolean;
-  { Nested in RedefineKeyboardBindings; shows the six chosen key names, confirms Y/N and assigns the scan-code bindings. }
+  { Nested in RedefineKeyboardBindings; shows the six chosen key names, confirms Y/N and assigns the
+    scan-code bindings. }
   procedure ConfirmKeyboardBindings;
   begin
     ClearPopupText;
@@ -2582,10 +2847,10 @@ var
     PopupTextLines[10] := 'Are these selections ok (Y-N): ^';
     PopupTextLines[11][0] := #0;
     PopupTextLines[12] := 'END OF WINDOW';
-    PopupAcceptedScanCodes[1] := $15;
-    PopupAcceptedScanCodes[2] := $31;
+    PopupAcceptedScanCodes[1] := UiScanY;
+    PopupAcceptedScanCodes[2] := UiScanN;
     PopupSelectionScanCode := ReadPopupScanCode(0);
-    if PopupSelectionScanCode = $31 then
+    if PopupSelectionScanCode = UiScanN then
       RedefineKeyboardBindings
     else
     begin
@@ -2623,7 +2888,7 @@ begin
     PopupTextLines[3] := 'Select key to move left: ^';
     PopupTextLines[4] := 'END OF WINDOW';
     NewLeftScanCode := ReadPopupScanCode(1);
-    if NewLeftScanCode = 1 then
+    if NewLeftScanCode = UiScanEscape then
       RedefineNotCancelled := False;
     LeftKeyDisplayText := ScanCodeDisplayName(NewLeftScanCode);
     if RedefineNotCancelled and (LeftKeyDisplayText = 'NULL') then
@@ -2642,13 +2907,12 @@ begin
       PopupTextLines[2][0] := #0;
       PopupTextLines[3] := 'Select key to move right: ^';
       PopupTextLines[4] := 'END OF WINDOW';
-      PopupAcceptedScanCodes[1] := 1;
+      PopupAcceptedScanCodes[1] := UiScanEscape;
       NewRightScanCode := ReadPopupScanCode(1);
-      if NewRightScanCode = 1 then
+      if NewRightScanCode = UiScanEscape then
         RedefineNotCancelled := False;
       RightKeyDisplayText := ScanCodeDisplayName(NewRightScanCode);
-      if RedefineNotCancelled and
-         ((RightKeyDisplayText = 'NULL') or (RightKeyDisplayText = LeftKeyDisplayText)) then
+      if RedefineNotCancelled and ((RightKeyDisplayText = 'NULL') or (RightKeyDisplayText = LeftKeyDisplayText)) then
       begin
         ShowUnavailableKey;
         KeyIsValid := False;
@@ -2665,14 +2929,13 @@ begin
       PopupTextLines[2][0] := #0;
       PopupTextLines[3] := 'Select key to move up: ^';
       PopupTextLines[4] := 'END OF WINDOW';
-      PopupAcceptedScanCodes[1] := 1;
+      PopupAcceptedScanCodes[1] := UiScanEscape;
       NewUpScanCode := ReadPopupScanCode(1);
-      if NewUpScanCode = 1 then
+      if NewUpScanCode = UiScanEscape then
         RedefineNotCancelled := False;
       UpKeyDisplayText := ScanCodeDisplayName(NewUpScanCode);
-      if RedefineNotCancelled and
-         ((UpKeyDisplayText = 'NULL') or (UpKeyDisplayText = LeftKeyDisplayText) or
-          (UpKeyDisplayText = RightKeyDisplayText)) then
+      if RedefineNotCancelled and ((UpKeyDisplayText = 'NULL') or (UpKeyDisplayText = LeftKeyDisplayText) or
+        (UpKeyDisplayText = RightKeyDisplayText)) then
       begin
         ShowUnavailableKey;
         KeyIsValid := False;
@@ -2689,14 +2952,13 @@ begin
       PopupTextLines[2][0] := #0;
       PopupTextLines[3] := 'Select key to move down: ^';
       PopupTextLines[4] := 'END OF WINDOW';
-      PopupAcceptedScanCodes[1] := 1;
+      PopupAcceptedScanCodes[1] := UiScanEscape;
       NewDownScanCode := ReadPopupScanCode(1);
-      if NewDownScanCode = 1 then
+      if NewDownScanCode = UiScanEscape then
         RedefineNotCancelled := False;
       DownKeyDisplayText := ScanCodeDisplayName(NewDownScanCode);
-      if RedefineNotCancelled and
-         ((DownKeyDisplayText = 'NULL') or (DownKeyDisplayText = LeftKeyDisplayText) or
-          (DownKeyDisplayText = RightKeyDisplayText) or (DownKeyDisplayText = UpKeyDisplayText)) then
+      if RedefineNotCancelled and ((DownKeyDisplayText = 'NULL') or (DownKeyDisplayText = LeftKeyDisplayText) or
+        (DownKeyDisplayText = RightKeyDisplayText) or (DownKeyDisplayText = UpKeyDisplayText)) then
       begin
         ShowUnavailableKey;
         KeyIsValid := False;
@@ -2713,15 +2975,14 @@ begin
       PopupTextLines[2][0] := #0;
       PopupTextLines[3] := 'Select key to jump: ^';
       PopupTextLines[4] := 'END OF WINDOW';
-      PopupAcceptedScanCodes[1] := 1;
+      PopupAcceptedScanCodes[1] := UiScanEscape;
       NewJumpScanCode := ReadPopupScanCode(1);
-      if NewJumpScanCode = 1 then
+      if NewJumpScanCode = UiScanEscape then
         RedefineNotCancelled := False;
       JumpKeyDisplayText := ScanCodeDisplayName(NewJumpScanCode);
-      if RedefineNotCancelled and
-         ((JumpKeyDisplayText = 'NULL') or (JumpKeyDisplayText = LeftKeyDisplayText) or
-          (JumpKeyDisplayText = RightKeyDisplayText) or (JumpKeyDisplayText = UpKeyDisplayText) or
-          (JumpKeyDisplayText = DownKeyDisplayText)) then
+      if RedefineNotCancelled and ((JumpKeyDisplayText = 'NULL') or (JumpKeyDisplayText = LeftKeyDisplayText) or
+        (JumpKeyDisplayText = RightKeyDisplayText) or (JumpKeyDisplayText = UpKeyDisplayText) or (JumpKeyDisplayText
+        = DownKeyDisplayText)) then
       begin
         ShowUnavailableKey;
         KeyIsValid := False;
@@ -2739,13 +3000,14 @@ begin
       PopupTextLines[3] := 'Select key to fire: ^';
       PopupTextLines[4] := 'END OF WINDOW';
       NewFireScanCode := ReadPopupScanCode(1);
-      if NewFireScanCode = 1 then
+      if NewFireScanCode = UiScanEscape then
         RedefineNotCancelled := False;
       FireKeyDisplayText := ScanCodeDisplayName(NewFireScanCode);
-      if RedefineNotCancelled and
-         ((FireKeyDisplayText = 'NULL') or (FireKeyDisplayText = LeftKeyDisplayText) or
-          (FireKeyDisplayText = RightKeyDisplayText) or (JumpKeyDisplayText = UpKeyDisplayText) or
-          (JumpKeyDisplayText = DownKeyDisplayText) or (FireKeyDisplayText = JumpKeyDisplayText)) then
+      { Original bug preserved: the Up/Down tests compare the jump binding,
+      so the new fire key can duplicate Up or Down. }
+      if RedefineNotCancelled and ((FireKeyDisplayText = 'NULL') or (FireKeyDisplayText = LeftKeyDisplayText) or
+        (FireKeyDisplayText = RightKeyDisplayText) or (JumpKeyDisplayText = UpKeyDisplayText) or (JumpKeyDisplayText
+        = DownKeyDisplayText) or (FireKeyDisplayText = JumpKeyDisplayText)) then
       begin
         ShowUnavailableKey;
         KeyIsValid := False;
@@ -2756,7 +3018,7 @@ begin
   if RedefineNotCancelled then
     ConfirmKeyboardBindings;
 
-  MemW[$0000:$041C] := MemW[$0000:$041A];
+  MemW[$0000: UiBiosKeyboardTail] := MemW[$0000: UiBiosKeyboardHead];
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
@@ -2773,7 +3035,7 @@ begin
   PopupTextLines[5][0] := #0;
   PopupTextLines[6] := 'END OF WINDOW';
   PopupInputResult := ReadPopupText(2);
-  MemW[$0000:$041C] := MemW[$0000:$041A];
+  MemW[$0000: UiBiosKeyboardTail] := MemW[$0000: UiBiosKeyboardHead];
   Val(PopupInputResult, WarpLevelNumber, ParseErrorPosition);
   AskWarpLevel := WarpLevelNumber;
   EscapePressed := 0;
@@ -2791,24 +3053,26 @@ begin
   PopupTextLines[4] := 'Select (0-9) : ^';
   PopupTextLines[5][0] := #0;
   PopupTextLines[6] := 'END OF WINDOW';
-  PopupAcceptedScanCodes[1] := 2;
-  PopupAcceptedScanCodes[2] := 3;
-  PopupAcceptedScanCodes[3] := 4;
-  PopupAcceptedScanCodes[4] := 5;
-  PopupAcceptedScanCodes[5] := 6;
-  PopupAcceptedScanCodes[6] := 7;
-  PopupAcceptedScanCodes[7] := 8;
-  PopupAcceptedScanCodes[8] := 9;
-  PopupAcceptedScanCodes[9] := 10;
-  PopupAcceptedScanCodes[10] := 11;
-  PopupAcceptedScanCodes[11] := $1C;
-  PopupAcceptedScanCodes[12] := 1;
-  MemW[0:$041C] := MemW[0:$041A];
+  PopupAcceptedScanCodes[1] := UiScanDigit1;
+  PopupAcceptedScanCodes[2] := UiScanDigit2;
+  PopupAcceptedScanCodes[3] := UiScanDigit3;
+  PopupAcceptedScanCodes[4] := UiScanDigit4;
+  PopupAcceptedScanCodes[5] := UiScanDigit5;
+  PopupAcceptedScanCodes[6] := UiScanDigit6;
+  PopupAcceptedScanCodes[7] := UiScanDigit7;
+  PopupAcceptedScanCodes[8] := UiScanDigit8;
+  PopupAcceptedScanCodes[9] := UiScanDigit9;
+  PopupAcceptedScanCodes[10] := UiScanDigit0;
+  PopupAcceptedScanCodes[11] := UiScanEnter;
+  PopupAcceptedScanCodes[12] := UiScanEscape;
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   PopupSelectionScanCode := ReadPopupScanCode(0);
-  if IOResult = 0 then ;
+  if IOResult = 0 then;
   case PopupSelectionScanCode of
-    2..10: WriteSavedGame(PopupSelectionScanCode - 1);
-    11: WriteSavedGame(0);
+    UiScanDigit1 .. UiScanDigit9:
+      WriteSavedGame(PopupSelectionScanCode - 1);
+    UiScanDigit0:
+      WriteSavedGame(0);
   end;
   EscapePressed := 0;
   GameOptionsRequested := 0;
@@ -2818,9 +3082,9 @@ begin
   else
     PopupTextLines[1] := 'File Error!';
   PopupTextLines[2] := 'END OF WINDOW';
-  PopupAcceptedScanCodes[1] := $1C;
-  PopupAcceptedScanCodes[2] := 1;
-  MemW[0:$041C] := MemW[0:$041A];
+  PopupAcceptedScanCodes[1] := UiScanEnter;
+  PopupAcceptedScanCodes[2] := UiScanEscape;
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   PopupSelectionScanCode := ReadPopupScanCode(1);
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
@@ -2835,25 +3099,25 @@ begin
   PopupTextLines[4] := 'Select (0-9) : ^';
   PopupTextLines[5][0] := #0;
   PopupTextLines[6] := 'END OF WINDOW';
-  PopupAcceptedScanCodes[1] := 2;
-  PopupAcceptedScanCodes[2] := 3;
-  PopupAcceptedScanCodes[3] := 4;
-  PopupAcceptedScanCodes[4] := 5;
-  PopupAcceptedScanCodes[5] := 6;
-  PopupAcceptedScanCodes[6] := 7;
-  PopupAcceptedScanCodes[7] := 8;
-  PopupAcceptedScanCodes[8] := 9;
-  PopupAcceptedScanCodes[9] := 10;
-  PopupAcceptedScanCodes[10] := 11;
-  PopupAcceptedScanCodes[11] := $1C;
-  PopupAcceptedScanCodes[12] := 1;
-  MemW[0:$041C] := MemW[0:$041A];
+  PopupAcceptedScanCodes[1] := UiScanDigit1;
+  PopupAcceptedScanCodes[2] := UiScanDigit2;
+  PopupAcceptedScanCodes[3] := UiScanDigit3;
+  PopupAcceptedScanCodes[4] := UiScanDigit4;
+  PopupAcceptedScanCodes[5] := UiScanDigit5;
+  PopupAcceptedScanCodes[6] := UiScanDigit6;
+  PopupAcceptedScanCodes[7] := UiScanDigit7;
+  PopupAcceptedScanCodes[8] := UiScanDigit8;
+  PopupAcceptedScanCodes[9] := UiScanDigit9;
+  PopupAcceptedScanCodes[10] := UiScanDigit0;
+  PopupAcceptedScanCodes[11] := UiScanEnter;
+  PopupAcceptedScanCodes[12] := UiScanEscape;
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   PopupSelectionScanCode := ReadPopupScanCode(0);
   case PopupSelectionScanCode of
-    2..10:
+    UiScanDigit1 .. UiScanDigit9:
       if Ord(ReadSavedGame(PopupSelectionScanCode - 1)) = 0 then
         PopupSelectionScanCode := $1C;
-    11:
+    UiScanDigit0:
       if Ord(ReadSavedGame(0)) = 0 then
         PopupSelectionScanCode := $1C;
   end;
@@ -2870,84 +3134,102 @@ var
 begin
   TextLineIndex := 0;
   ClearPopupText;
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '     MAIN MENU';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' N)ew Game';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' R)estore Old Game';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' S)tory';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' I)nstructions';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' H)igh Scores';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' O)rdering Info.';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' F)oreign Orders';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' C)all Our BBS';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' V)ideo Support';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' A)bout Apogee';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' Q)uit to DOS';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := 'Make a selection: ^';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := 'END OF WINDOW';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '     MAIN MENU';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' N)ew Game';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' R)estore Old Game';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' S)tory';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' I)nstructions';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' H)igh Scores';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' O)rdering Info.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' F)oreign Orders';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' C)all Our BBS';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' V)ideo Support';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' A)bout Apogee';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' Q)uit to DOS';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Make a selection: ^';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'END OF WINDOW';
 
-  PopupAcceptedScanCodes[1] := $31;
-  PopupAcceptedScanCodes[2] := $17;
-  PopupAcceptedScanCodes[3] := $23;
-  PopupAcceptedScanCodes[4] := $13;
-  PopupAcceptedScanCodes[5] := $1F;
-  PopupAcceptedScanCodes[6] := $18;
-  PopupAcceptedScanCodes[7] := $10;
-  PopupAcceptedScanCodes[8] := 1;
-  PopupAcceptedScanCodes[9] := $39;
-  PopupAcceptedScanCodes[10] := $1C;
-  PopupAcceptedScanCodes[11] := $21;
-  PopupAcceptedScanCodes[12] := $1E;
-  PopupAcceptedScanCodes[13] := $2E;
-  PopupAcceptedScanCodes[14] := $2F;
+  PopupAcceptedScanCodes[1] := UiScanN;
+  PopupAcceptedScanCodes[2] := UiScanI;
+  PopupAcceptedScanCodes[3] := UiScanH;
+  PopupAcceptedScanCodes[4] := UiScanR;
+  PopupAcceptedScanCodes[5] := UiScanS;
+  PopupAcceptedScanCodes[6] := UiScanO;
+  PopupAcceptedScanCodes[7] := UiScanQ;
+  PopupAcceptedScanCodes[8] := UiScanEscape;
+  PopupAcceptedScanCodes[9] := UiScanSpace;
+  PopupAcceptedScanCodes[10] := UiScanEnter;
+  PopupAcceptedScanCodes[11] := UiScanF;
+  PopupAcceptedScanCodes[12] := UiScanA;
+  PopupAcceptedScanCodes[13] := UiScanC;
+  PopupAcceptedScanCodes[14] := UiScanV;
 
   PopupSelectionScanCode := ReadPopupScanCode(0);
   case PopupSelectionScanCode of
-    $31, $39, $1C:
+    UiScanN, UiScanSpace, UiScanEnter:
       begin
         RunMainMenu := 'B';
         ReturnToTitleRequested := 0;
         PlayerProgressCount := 1;
       end;
-    $17:
+    UiScanI:
       begin
         ShowGameInstructions;
         RunMainMenu := 'I';
       end;
-    $21:
+    UiScanF:
       begin
         ShowForeignDealers;
         RunMainMenu := 'F';
       end;
-    $2E:
+    UiScanC:
       begin
         ShowApogeeBbsInformation;
         RunMainMenu := 'A';
       end;
-    $23:
+    UiScanH:
       begin
         RunMainMenu := 'H';
         ShowHighScores;
       end;
-    $1E:
+    UiScanA:
       begin
         RunMainMenu := 'A';
         ShowAboutApogee;
       end;
-    $2F:
+    UiScanV:
       begin
         RunMainMenu := 'V';
         SelectVideoCompatibility;
       end;
-    $13:
+    UiScanR:
       begin
         RunMainMenu := 'R';
         PlayerProgressCount := 1;
         PendingRestoreScanCode := ShowRestoreGameMenu;
-        if PendingRestoreScanCode = $1C then
+        if PendingRestoreScanCode = UiScanEnter then
         begin
           PendingRestoreScanCode := 0;
           RunMainMenu := ' ';
@@ -2955,17 +3237,17 @@ begin
         else
           ReturnToTitleRequested := 0;
       end;
-    $1F:
+    UiScanS:
       begin
         RunMainMenu := 'S';
         ShowMissionBriefing;
       end;
-    $18:
+    UiScanO:
       begin
         RunMainMenu := 'O';
         ShowOrderingInformation;
       end;
-    $10:
+    UiScanQ:
       begin
         ConfirmQuitToDos;
         if QuitGameRequested <> 0 then
@@ -2973,7 +3255,7 @@ begin
         else
           RunMainMenu := ' ';
       end;
-    1:
+    UiScanEscape:
       begin
         EscapePressed := 0;
         RunMainMenu := ' ';
@@ -2982,7 +3264,8 @@ begin
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
-{ Dispatches Operational Command Bank selections for help, sound/video/input settings, save/restore and quit. }
+{ Dispatches Operational Command Bank selections for help, sound/video/input settings, save/restore and quit.
+  }
 function RunGameOptionsMenu: Char;
 var
   RestoreSelectionScanCode: Word;
@@ -3004,57 +3287,57 @@ begin
   PopupTextLines[14] := 'Selection: ^';
   PopupTextLines[15][0] := #0;
   PopupTextLines[16] := 'END OF WINDOW';
-  PopupAcceptedScanCodes[1] := $23;
-  PopupAcceptedScanCodes[2] := $14;
-  PopupAcceptedScanCodes[3] := $2F;
-  PopupAcceptedScanCodes[4] := $24;
-  PopupAcceptedScanCodes[5] := $2E;
-  PopupAcceptedScanCodes[6] := $25;
-  PopupAcceptedScanCodes[7] := $13;
-  PopupAcceptedScanCodes[8] := $1F;
-  PopupAcceptedScanCodes[9] := $10;
-  PopupAcceptedScanCodes[10] := 1;
+  PopupAcceptedScanCodes[1] := UiScanH;
+  PopupAcceptedScanCodes[2] := UiScanT;
+  PopupAcceptedScanCodes[3] := UiScanV;
+  PopupAcceptedScanCodes[4] := UiScanJ;
+  PopupAcceptedScanCodes[5] := UiScanC;
+  PopupAcceptedScanCodes[6] := UiScanK;
+  PopupAcceptedScanCodes[7] := UiScanR;
+  PopupAcceptedScanCodes[8] := UiScanS;
+  PopupAcceptedScanCodes[9] := UiScanQ;
+  PopupAcceptedScanCodes[10] := UiScanEscape;
 
   PopupSelectionScanCode := ReadPopupScanCode(0);
   case PopupSelectionScanCode of
-    $23:
+    UiScanH:
       begin
         RunGameOptionsMenu := 'H';
         ShowGameInstructions;
       end;
-    $14:
+    UiScanT:
       begin
         RunGameOptionsMenu := 'T';
         SelectSoundSetting;
       end;
-    $2F:
+    UiScanV:
       begin
         RunGameOptionsMenu := 'V';
         SelectVideoCompatibility;
       end;
-    $24:
+    UiScanJ:
       begin
         RunGameOptionsMenu := 'J';
         SelectJoystickSetting;
       end;
-    $2E:
+    UiScanC:
       begin
         RunGameOptionsMenu := 'C';
         CalibrateJoystickCenter;
       end;
-    $25:
+    UiScanK:
       begin
         RunGameOptionsMenu := 'K';
         RedefineKeyboardBindings;
       end;
-    $13:
+    UiScanR:
       begin
         RunGameOptionsMenu := 'R';
         RestoreSelectionScanCode := ShowRestoreGameMenu;
-        if RestoreSelectionScanCode <> $1C then
+        if RestoreSelectionScanCode <> UiScanEnter then
           RestoreSnapshotRequested := 1;
       end;
-    $1F:
+    UiScanS:
       begin
         RunGameOptionsMenu := 'S';
         if CurrentLevelNumber = 1 then
@@ -3067,13 +3350,13 @@ begin
           PopupTextLines[3][0] := #0;
           PopupTextLines[4] := 'Press ESCAPE';
           PopupTextLines[5] := 'END OF WINDOW';
-          PopupAcceptedScanCodes[1] := 1;
+          PopupAcceptedScanCodes[1] := UiScanEscape;
           PopupSelectionScanCode := ReadPopupScanCode(0);
           EscapePressed := 0;
           GameOptionsRequested := 0;
         end;
       end;
-    $10:
+    UiScanQ:
       begin
         ShowQuitDestinationMenu;
         if QuitGameRequested <> 0 then
@@ -3094,13 +3377,13 @@ begin
   PopupTextLines[1] := '  Secret Agents Hall of Fame';
   PopupTextLines[2][0] := #0;
   PopupTextLines[3][0] := #0;
-  for HighScoreIndex := 1 to 10 do
+  for HighScoreIndex := 1 to UiHighScoreCount do
     PopupTextLines[HighScoreIndex + 3] := GameConfiguration.ConfigScoreLines[HighScoreIndex];
   PopupTextLines[14][0] := #0;
   PopupTextLines[15] := 'Press any key ^';
   PopupTextLines[16][0] := #0;
   PopupTextLines[17] := 'END OF WINDOW';
-  PopupAcceptedScanCodes[1] := 1;
+  PopupAcceptedScanCodes[1] := UiScanEscape;
   PopupSelectionScanCode := ReadPopupScanCode(1);
   EscapePressed := 0;
   GameOptionsRequested := 0;
@@ -3108,14 +3391,14 @@ end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
 { Displays the supplied message and Press ESCAPE using a popup with an Escape accepted scan code. }
-procedure ShowGameMessage(MessageText: string);
+procedure ShowGameMessage(MessageText: String);
 begin
   ClearPopupText;
   PopupTextLines[1] := TPopupStringViews(MessageText).PopupLineString;
   PopupTextLines[2][0] := #0;
   PopupTextLines[3] := 'Press ESCAPE';
   PopupTextLines[4] := 'END OF WINDOW';
-  PopupAcceptedScanCodes[1] := 1;
+  PopupAcceptedScanCodes[1] := UiScanEscape;
   PopupSelectionScanCode := ReadPopupScanCode(0);
   EscapePressed := 0;
   GameOptionsRequested := 0;
@@ -3128,11 +3411,11 @@ begin
   ClearPopupText;
   PopupTextLines[1] := 'Quit To Dos (Y-N) ^';
   PopupTextLines[2] := 'END OF WINDOW';
-  PopupAcceptedScanCodes[1] := 1;
-  PopupAcceptedScanCodes[2] := $15;
-  PopupAcceptedScanCodes[3] := $31;
+  PopupAcceptedScanCodes[1] := UiScanEscape;
+  PopupAcceptedScanCodes[2] := UiScanY;
+  PopupAcceptedScanCodes[3] := UiScanN;
   PopupSelectionScanCode := ReadPopupScanCode(1);
-  if PopupSelectionScanCode = $15 then
+  if PopupSelectionScanCode = UiScanY then
     QuitGameRequested := 1;
   EscapePressed := 0;
   GameOptionsRequested := 0;
@@ -3140,7 +3423,7 @@ begin
   PlayerDownHeld := 0;
   PlayerLeftHeld := 0;
   PlayerRightHeld := 0;
-  MemW[0:$41C] := MemW[0:$41A];
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   LastKeyboardScanCode := 0;
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
@@ -3155,26 +3438,26 @@ begin
   PopupTextLines[4] := ' T)itle Screen';
   PopupTextLines[5] := ' I)sland Map';
   PopupTextLines[6] := 'END OF WINDOW';
-  PopupAcceptedScanCodes[1] := $20;
-  PopupAcceptedScanCodes[2] := $14;
-  PopupAcceptedScanCodes[3] := $17;
-  PopupAcceptedScanCodes[4] := 1;
+  PopupAcceptedScanCodes[1] := UiScanD;
+  PopupAcceptedScanCodes[2] := UiScanT;
+  PopupAcceptedScanCodes[3] := UiScanI;
+  PopupAcceptedScanCodes[4] := UiScanEscape;
   PopupSelectionScanCode := ReadPopupScanCode(1);
-  if PopupSelectionScanCode = $20 then
+  if PopupSelectionScanCode = UiScanD then
   begin
     InsertPlayerHighScore;
     QuitGameRequested := 1;
     EpisodeBlueprintCollected := 0;
-    StartSoundEffect($12);
+    StartSoundEffect(UiSoundQuitMenu);
   end
-  else if PopupSelectionScanCode = $14 then
+  else if PopupSelectionScanCode = UiScanT then
   begin
     InsertPlayerHighScore;
     ReturnToTitleRequested := 1;
     EpisodeBlueprintCollected := 0;
-    StartSoundEffect($12);
+    StartSoundEffect(UiSoundQuitMenu);
   end
-  else if PopupSelectionScanCode = $17 then
+  else if PopupSelectionScanCode = UiScanI then
   begin
     RestoreSnapshotRequested := 1;
     EpisodeBlueprintCollected := 0;
@@ -3185,7 +3468,7 @@ begin
   PlayerDownHeld := 0;
   PlayerLeftHeld := 0;
   PlayerRightHeld := 0;
-  MemW[$0000:$041C] := MemW[$0000:$041A];
+  MemW[$0000: UiBiosKeyboardTail] := MemW[$0000: UiBiosKeyboardHead];
   LastKeyboardScanCode := 0;
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
@@ -3196,11 +3479,11 @@ begin
   ClearPopupText;
   PopupTextLines[1] := 'Sounds On (Y-N) ^';
   PopupTextLines[2] := 'END OF WINDOW';
-  PopupAcceptedScanCodes[1] := $15;
-  PopupAcceptedScanCodes[2] := $31;
-  PopupAcceptedScanCodes[3] := 1;
+  PopupAcceptedScanCodes[1] := UiScanY;
+  PopupAcceptedScanCodes[2] := UiScanN;
+  PopupAcceptedScanCodes[3] := UiScanEscape;
   PopupSelectionScanCode := ReadPopupScanCode(1);
-  if PopupSelectionScanCode = $15 then
+  if PopupSelectionScanCode = UiScanY then
     SoundEnabled := 1
   else
     SoundEnabled := 0;
@@ -3210,7 +3493,7 @@ begin
   PlayerDownHeld := 0;
   PlayerLeftHeld := 0;
   PlayerRightHeld := 0;
-  MemW[$0000:$041C] := MemW[$0000:$041A];
+  MemW[$0000: UiBiosKeyboardTail] := MemW[$0000: UiBiosKeyboardHead];
   LastKeyboardScanCode := 0;
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
@@ -3237,11 +3520,11 @@ begin
   PopupTextLines[16][0] := #0;
   PopupTextLines[17] := '  Alternate video setting (Y-N) ^ ';
   PopupTextLines[18] := 'END OF WINDOW';
-  PopupAcceptedScanCodes[1] := $15;
-  PopupAcceptedScanCodes[2] := $31;
-  PopupAcceptedScanCodes[3] := 1;
+  PopupAcceptedScanCodes[1] := UiScanY;
+  PopupAcceptedScanCodes[2] := UiScanN;
+  PopupAcceptedScanCodes[3] := UiScanEscape;
   PopupSelectionScanCode := ReadPopupScanCode(0);
-  if PopupSelectionScanCode = $15 then
+  if PopupSelectionScanCode = UiScanY then
     AlternateVideoTiming := 1
   else
     AlternateVideoTiming := 0;
@@ -3251,7 +3534,7 @@ begin
   PlayerDownHeld := 0;
   PlayerLeftHeld := 0;
   PlayerRightHeld := 0;
-  MemW[0:$041C] := MemW[0:$041A];
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   LastKeyboardScanCode := 0;
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
@@ -3262,16 +3545,16 @@ begin
   ClearPopupText;
   PopupTextLines[1] := 'Joystick On (Y-N) ^';
   PopupTextLines[2] := 'END OF WINDOW';
-  PopupAcceptedScanCodes[1] := $15;
-  PopupAcceptedScanCodes[2] := $31;
-  PopupAcceptedScanCodes[3] := 1;
+  PopupAcceptedScanCodes[1] := UiScanY;
+  PopupAcceptedScanCodes[2] := UiScanN;
+  PopupAcceptedScanCodes[3] := UiScanEscape;
   PopupSelectionScanCode := ReadPopupScanCode(1);
-  if PopupSelectionScanCode = $15 then
+  if PopupSelectionScanCode = UiScanY then
   begin
     JoystickActive := IsJoystickPresent;
     JoystickSettingEnabled := 1;
   end
-  else if PopupSelectionScanCode = $31 then
+  else if PopupSelectionScanCode = UiScanN then
   begin
     JoystickActive := False;
     JoystickSettingEnabled := 0;
@@ -3282,7 +3565,7 @@ begin
   PlayerDownHeld := 0;
   PlayerLeftHeld := 0;
   PlayerRightHeld := 0;
-  MemW[0:$041C] := MemW[0:$041A];
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   LastKeyboardScanCode := 0;
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
@@ -3325,10 +3608,10 @@ begin
   Inc(TextLineIndex);
   PopupTextLines[TextLineIndex] := 'END OF WINDOW';
 
-  PopupAcceptedScanCodes[1] := 1;
-  PopupAcceptedScanCodes[2] := $39;
+  PopupAcceptedScanCodes[1] := UiScanEscape;
+  PopupAcceptedScanCodes[2] := UiScanSpace;
   PopupSelectionScanCode := ReadPopupScanCode(0);
-  if PopupSelectionScanCode = $39 then
+  if PopupSelectionScanCode = UiScanSpace then
   begin
     JoystickActive := IsJoystickPresent;
     if JoystickActive then
@@ -3344,72 +3627,127 @@ begin
   PlayerDownHeld := 0;
   PlayerLeftHeld := 0;
   PlayerRightHeld := 0;
-  MemW[0:$041C] := MemW[0:$041A];
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   LastKeyboardScanCode := 0;
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
 { Maps keyboard scan codes to printable key names (CTRL, ALT, arrows etc.) or NULL. }
-function ScanCodeDisplayName(ScanCode: Word): string;
+function ScanCodeDisplayName(ScanCode: Word): String;
 begin
   case ScanCode of
-    2: ScanCodeDisplayName := '1';
-    3: ScanCodeDisplayName := '2';
-    4: ScanCodeDisplayName := '3';
-    5: ScanCodeDisplayName := '4';
-    6: ScanCodeDisplayName := '5';
-    7: ScanCodeDisplayName := '6';
-    8: ScanCodeDisplayName := '7';
-    9: ScanCodeDisplayName := '8';
-    10: ScanCodeDisplayName := '9';
-    11: ScanCodeDisplayName := '0';
-    16: ScanCodeDisplayName := 'Q';
-    17: ScanCodeDisplayName := 'W';
-    18: ScanCodeDisplayName := 'E';
-    19: ScanCodeDisplayName := 'R';
-    20: ScanCodeDisplayName := 'T';
-    21: ScanCodeDisplayName := 'Y';
-    22: ScanCodeDisplayName := 'U';
-    23: ScanCodeDisplayName := 'I';
-    24: ScanCodeDisplayName := 'O';
-    25: ScanCodeDisplayName := 'P';
-    28: ScanCodeDisplayName := 'ENTER';
-    29: ScanCodeDisplayName := 'CTRL';
-    30: ScanCodeDisplayName := 'A';
-    31: ScanCodeDisplayName := 'S';
-    32: ScanCodeDisplayName := 'D';
-    33: ScanCodeDisplayName := 'F';
-    34: ScanCodeDisplayName := 'G';
-    35: ScanCodeDisplayName := 'H';
-    36: ScanCodeDisplayName := 'J';
-    37: ScanCodeDisplayName := 'K';
-    38: ScanCodeDisplayName := 'L';
-    42: ScanCodeDisplayName := 'L-SHIFT';
-    44: ScanCodeDisplayName := 'Z';
-    45: ScanCodeDisplayName := 'X';
-    46: ScanCodeDisplayName := 'C';
-    47: ScanCodeDisplayName := 'V';
-    48: ScanCodeDisplayName := 'B';
-    49: ScanCodeDisplayName := 'N';
-    50: ScanCodeDisplayName := 'M';
-    51: ScanCodeDisplayName := ',';
-    52: ScanCodeDisplayName := '.';
-    53: ScanCodeDisplayName := '/';
-    54: ScanCodeDisplayName := 'R-SHIFT';
-    56: ScanCodeDisplayName := 'ALT';
-    57: ScanCodeDisplayName := 'SPACE';
-    71: ScanCodeDisplayName := 'HOME';
-    72: ScanCodeDisplayName := 'UP ARROW';
-    73: ScanCodeDisplayName := 'PGUP';
-    75: ScanCodeDisplayName := 'LEFT ARROW';
-    77: ScanCodeDisplayName := 'RIGHT ARROW';
-    79: ScanCodeDisplayName := 'END';
-    80: ScanCodeDisplayName := 'DOWN ARROW';
-    81: ScanCodeDisplayName := 'PGDN';
-    82: ScanCodeDisplayName := 'INSERT';
-    83: ScanCodeDisplayName := 'DELETE';
-  else
-    ScanCodeDisplayName := 'NULL';
+    UiScanDigit1:
+      ScanCodeDisplayName := '1';
+    UiScanDigit2:
+      ScanCodeDisplayName := '2';
+    UiScanDigit3:
+      ScanCodeDisplayName := '3';
+    UiScanDigit4:
+      ScanCodeDisplayName := '4';
+    UiScanDigit5:
+      ScanCodeDisplayName := '5';
+    UiScanDigit6:
+      ScanCodeDisplayName := '6';
+    UiScanDigit7:
+      ScanCodeDisplayName := '7';
+    UiScanDigit8:
+      ScanCodeDisplayName := '8';
+    UiScanDigit9:
+      ScanCodeDisplayName := '9';
+    UiScanDigit0:
+      ScanCodeDisplayName := '0';
+    UiScanQ:
+      ScanCodeDisplayName := 'Q';
+    UiScanW:
+      ScanCodeDisplayName := 'W';
+    UiScanE:
+      ScanCodeDisplayName := 'E';
+    UiScanR:
+      ScanCodeDisplayName := 'R';
+    UiScanT:
+      ScanCodeDisplayName := 'T';
+    UiScanY:
+      ScanCodeDisplayName := 'Y';
+    UiScanU:
+      ScanCodeDisplayName := 'U';
+    UiScanI:
+      ScanCodeDisplayName := 'I';
+    UiScanO:
+      ScanCodeDisplayName := 'O';
+    UiScanP:
+      ScanCodeDisplayName := 'P';
+    UiScanEnter:
+      ScanCodeDisplayName := 'ENTER';
+    UiScanCtrl:
+      ScanCodeDisplayName := 'CTRL';
+    UiScanA:
+      ScanCodeDisplayName := 'A';
+    UiScanS:
+      ScanCodeDisplayName := 'S';
+    UiScanD:
+      ScanCodeDisplayName := 'D';
+    UiScanF:
+      ScanCodeDisplayName := 'F';
+    UiScanG:
+      ScanCodeDisplayName := 'G';
+    UiScanH:
+      ScanCodeDisplayName := 'H';
+    UiScanJ:
+      ScanCodeDisplayName := 'J';
+    UiScanK:
+      ScanCodeDisplayName := 'K';
+    UiScanL:
+      ScanCodeDisplayName := 'L';
+    UiScanLeftShift:
+      ScanCodeDisplayName := 'L-SHIFT';
+    UiScanZ:
+      ScanCodeDisplayName := 'Z';
+    UiScanX:
+      ScanCodeDisplayName := 'X';
+    UiScanC:
+      ScanCodeDisplayName := 'C';
+    UiScanV:
+      ScanCodeDisplayName := 'V';
+    UiScanB:
+      ScanCodeDisplayName := 'B';
+    UiScanN:
+      ScanCodeDisplayName := 'N';
+    UiScanM:
+      ScanCodeDisplayName := 'M';
+    UiScanComma:
+      ScanCodeDisplayName := ',';
+    UiScanPeriod:
+      ScanCodeDisplayName := '.';
+    UiScanSlash:
+      ScanCodeDisplayName := '/';
+    UiScanRightShift:
+      ScanCodeDisplayName := 'R-SHIFT';
+    UiScanAlt:
+      ScanCodeDisplayName := 'ALT';
+    UiScanSpace:
+      ScanCodeDisplayName := 'SPACE';
+    UiScanHome:
+      ScanCodeDisplayName := 'HOME';
+    UiScanUp:
+      ScanCodeDisplayName := 'UP ARROW';
+    UiScanPageUp:
+      ScanCodeDisplayName := 'PGUP';
+    UiScanLeft:
+      ScanCodeDisplayName := 'LEFT ARROW';
+    UiScanRight:
+      ScanCodeDisplayName := 'RIGHT ARROW';
+    UiScanEnd:
+      ScanCodeDisplayName := 'END';
+    UiScanDown:
+      ScanCodeDisplayName := 'DOWN ARROW';
+    UiScanPageDown:
+      ScanCodeDisplayName := 'PGDN';
+    UiScanInsert:
+      ScanCodeDisplayName := 'INSERT';
+    UiScanDelete:
+      ScanCodeDisplayName := 'DELETE';
+    else
+      ScanCodeDisplayName := 'NULL';
   end;
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
@@ -3430,46 +3768,77 @@ var
 begin
   ClearPopupText;
   TextLineIndex := 0;
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] :=
-  'ORDERING THE SECRET AGENT SERIES!';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '    Please specify disk size:';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '         5.25"  or  3.5"';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '   To order send $34, check or';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '   money order (USA funds) to:';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '         Apogee Software';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '         P.O. Box 476386';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '     Garland, TX 75047  (USA)';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '     Or CALL NOW toll free:';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '         1-800-GAME123';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '     (Visa and MasterCard)';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '    Continued...Press Any Key';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := 'END OF WINDOW';
-  MemW[0:$41C] := MemW[0:$41A];
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'ORDERING THE SECRET AGENT SERIES!';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '    Please specify disk size:';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '         5.25"  or  3.5"';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '   To order send $34, check or';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '   money order (USA funds) to:';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '         Apogee Software';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '         P.O. Box 476386';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '     Garland, TX 75047  (USA)';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '     Or CALL NOW toll free:';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '         1-800-GAME123';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '     (Visa and MasterCard)';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '    Continued...Press Any Key';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'END OF WINDOW';
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   DismissScanCode := ReadPopupScanCode(1);
   EscapePressed := 1;
   PopupNoOpHook;
   ClearPopupText;
   TextLineIndex := 0;
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' USE YOUR FAX MACHINE TO ORDER!';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := 'You can now use your FAX machine';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' to order your favorite Apogee';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '   games quickly and easily.';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' Simply print out the ORDER.FRM';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '  file, fill it out and FAX it';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '  to us for prompt processing.';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '   FAX Orders: (214) 278-4670';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '          Press Any Key';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := 'END OF WINDOW';
-  MemW[0:$41C] := MemW[0:$41A];
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' USE YOUR FAX MACHINE TO ORDER!';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'You can now use your FAX machine';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' to order your favorite Apogee';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '   games quickly and easily.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' Simply print out the ORDER.FRM';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '  file, fill it out and FAX it';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '  to us for prompt processing.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '   FAX Orders: (214) 278-4670';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '          Press Any Key';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'END OF WINDOW';
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   DismissScanCode := ReadPopupScanCode(1);
   EscapePressed := 1;
   PopupNoOpHook;
@@ -3520,7 +3889,7 @@ begin
   PopupTextLines[TextLineIndex] := '    Continued...Press Any Key';
   Inc(TextLineIndex);
   PopupTextLines[TextLineIndex] := 'END OF WINDOW';
-  MemW[0:$041C] := MemW[0:$041A];
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   DismissScanCode := ReadPopupScanCode(1);
   EscapePressed := 1;
   PopupNoOpHook;
@@ -3535,28 +3904,43 @@ var
 begin
   ClearPopupText;
   TextLineIndex := 0;
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] :=
-  'ORDERING THE SECRET AGENT SERIES!';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' Secret Agent consists of three';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] :=
-  'original and incredible missions:';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '  1) The Hunt for Red Rock Rover';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '  2) Kill Again Island';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '  3) Dr. No Body';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' You may order the entire series';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' for only $30, plus $4 shipping.';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' Each episode is set on a unique';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] :=
-  'island, with all-new dangers, new';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' levels, and all-new challenges.';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '    Continued...Press Any Key';
-  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := 'END OF WINDOW';
-  MemW[0:$41C] := MemW[0:$41A];
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'ORDERING THE SECRET AGENT SERIES!';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' Secret Agent consists of three';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'original and incredible missions:';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '  1) The Hunt for Red Rock Rover';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '  2) Kill Again Island';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '  3) Dr. No Body';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' You may order the entire series';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' for only $30, plus $4 shipping.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' Each episode is set on a unique';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'island, with all-new dangers, new';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' levels, and all-new challenges.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '    Continued...Press Any Key';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'END OF WINDOW';
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   DismissScanCode := ReadPopupScanCode(1);
   EscapePressed := 1;
   PopupNoOpHook;
@@ -3609,8 +3993,8 @@ begin
   PopupTextLines[TextLineIndex] := '        Press Any Key ^';
   Inc(TextLineIndex);
   PopupTextLines[TextLineIndex] := 'END OF WINDOW';
-  LastKeyboardScanCode := 999;
-  MemW[0:$041C] := MemW[0:$041A];
+  LastKeyboardScanCode := UiReleasedKeySentinel;
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   DismissScanCode := ReadPopupScanCode(1);
   PopupNoOpHook;
 
@@ -3650,8 +4034,8 @@ begin
   PopupTextLines[TextLineIndex][0] := #0;
   Inc(TextLineIndex);
   PopupTextLines[TextLineIndex] := 'END OF WINDOW';
-  LastKeyboardScanCode := 999;
-  MemW[0:$041C] := MemW[0:$041A];
+  LastKeyboardScanCode := UiReleasedKeySentinel;
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   DismissScanCode := ReadPopupScanCode(1);
   PopupNoOpHook;
 
@@ -3687,8 +4071,8 @@ begin
   PopupTextLines[TextLineIndex][0] := #0;
   Inc(TextLineIndex);
   PopupTextLines[TextLineIndex] := 'END OF WINDOW';
-  LastKeyboardScanCode := 999;
-  MemW[0:$041C] := MemW[0:$041A];
+  LastKeyboardScanCode := UiReleasedKeySentinel;
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   DismissScanCode := ReadPopupScanCode(1);
   PopupNoOpHook;
 
@@ -3728,8 +4112,8 @@ begin
   PopupTextLines[TextLineIndex] := 'money orders.';
   Inc(TextLineIndex);
   PopupTextLines[TextLineIndex] := 'END OF WINDOW';
-  LastKeyboardScanCode := 999;
-  MemW[0:$041C] := MemW[0:$041A];
+  LastKeyboardScanCode := UiReleasedKeySentinel;
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   DismissScanCode := ReadPopupScanCode(1);
   PopupNoOpHook;
 
@@ -3769,8 +4153,8 @@ begin
   PopupTextLines[TextLineIndex] := 'order, or C.O.D.';
   Inc(TextLineIndex);
   PopupTextLines[TextLineIndex] := 'END OF WINDOW';
-  LastKeyboardScanCode := 999;
-  MemW[0:$041C] := MemW[0:$041A];
+  LastKeyboardScanCode := UiReleasedKeySentinel;
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   DismissScanCode := ReadPopupScanCode(1);
   PopupNoOpHook;
 
@@ -3810,8 +4194,8 @@ begin
   PopupTextLines[TextLineIndex] := 'Make cheques payable to PSA.';
   Inc(TextLineIndex);
   PopupTextLines[TextLineIndex] := 'END OF WINDOW';
-  LastKeyboardScanCode := 999;
-  MemW[0:$041C] := MemW[0:$041A];
+  LastKeyboardScanCode := UiReleasedKeySentinel;
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   DismissScanCode := ReadPopupScanCode(1);
   PopupNoOpHook;
 end;
@@ -3862,8 +4246,8 @@ begin
   Inc(TextLineIndex);
   PopupTextLines[TextLineIndex] := 'END OF WINDOW';
 
-  LastKeyboardScanCode := $03E7;
-  MemW[$0000:$041C] := MemW[$0000:$041A];
+  LastKeyboardScanCode := UiReleasedKeySentinel;
+  MemW[$0000: UiBiosKeyboardTail] := MemW[$0000: UiBiosKeyboardHead];
   DismissScanCode := ReadPopupScanCode(1);
   PopupNoOpHook;
 end;
@@ -3912,8 +4296,8 @@ begin
   PopupTextLines[TextLineIndex] := '        Press any key ^';
   Inc(TextLineIndex);
   PopupTextLines[TextLineIndex] := 'END OF WINDOW';
-  LastKeyboardScanCode := $03E7;
-  MemW[0:$041C] := MemW[0:$041A];
+  LastKeyboardScanCode := UiReleasedKeySentinel;
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   DismissScanCode := ReadPopupScanCode(1);
   PopupNoOpHook;
 end;
@@ -3947,11 +4331,11 @@ begin
   PopupTextLines[TextLineIndex] := 'Press ESCAPE!          ';
   Inc(TextLineIndex);
   PopupTextLines[TextLineIndex] := 'END OF WINDOW';
-  PopupAcceptedScanCodes[1] := 1;
-  PopupAcceptedScanCodes[2] := $1C;
-  PopupAcceptedScanCodes[3] := $39;
-  LastKeyboardScanCode := $03E7;
-  MemW[0:$041C] := MemW[0:$041A];
+  PopupAcceptedScanCodes[1] := UiScanEscape;
+  PopupAcceptedScanCodes[2] := UiScanEnter;
+  PopupAcceptedScanCodes[3] := UiScanSpace;
+  LastKeyboardScanCode := UiReleasedKeySentinel;
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   DismissScanCode := ReadPopupScanCode(0);
   EscapePressed := 0;
   GameOptionsRequested := 0;
@@ -3978,11 +4362,11 @@ begin
   PopupTextLines[TextLineIndex] := 'Press ESCAPE!          ';
   Inc(TextLineIndex);
   PopupTextLines[TextLineIndex] := 'END OF WINDOW';
-  PopupAcceptedScanCodes[1] := 1;
-  PopupAcceptedScanCodes[2] := $1C;
-  PopupAcceptedScanCodes[3] := $39;
-  LastKeyboardScanCode := $03E7;
-  MemW[$0000:$041C] := MemW[$0000:$041A];
+  PopupAcceptedScanCodes[1] := UiScanEscape;
+  PopupAcceptedScanCodes[2] := UiScanEnter;
+  PopupAcceptedScanCodes[3] := UiScanSpace;
+  LastKeyboardScanCode := UiReleasedKeySentinel;
+  MemW[$0000: UiBiosKeyboardTail] := MemW[$0000: UiBiosKeyboardHead];
   DismissScanCode := ReadPopupScanCode(0);
   EscapePressed := 0;
   GameOptionsRequested := 0;
@@ -3998,7 +4382,7 @@ var
   { Unused locals retain the original stack frame. }
   BorderStripeIndex, UnusedExitScreenWord2, UnusedExitScreenWord3, UnusedExitScreenWord4: Word;
 begin
-  TextMode(3);
+  TextMode(UiBiosColorTextMode);
   ClrScr;
   GotoXY(1, 1);
   for BorderStripeIndex := 0 to 19 do
@@ -4050,9 +4434,9 @@ var
   EndingDelayIteration, GraphicsCallResult: Word;
 begin
   PgSetToolboxVideoMode(0);
-  GraphicsCallResult := PcxSetDisplayType(2);
-  GraphicsCallResult := PcxSetGraphicsOrTextMode(1);
-  GraphicsCallResult := PgSetScreenStride($28);
+  GraphicsCallResult := PcxSetDisplayType(UiPcxEga320x200);
+  GraphicsCallResult := PcxSetGraphicsOrTextMode(UiPcxGraphicsEnabled);
+  GraphicsCallResult := PgSetScreenStride(UiImageScreenStride);
   CameraX := 0;
   CameraY := 0;
   DisplayedBufferRow := 0;
@@ -4070,19 +4454,21 @@ begin
   for EndingDelayIteration := 1 to 30 do
   begin
     Delay(50);
-    MemW[0:$041C] := MemW[0:$041A];
+    MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   end;
   ShowMissionSuccessText;
-  MemW[0:$041C] := MemW[0:$041A];
-  repeat until KeyPressed;
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
+  repeat
+  until KeyPressed;
 {$IFDEF SAM3}
   FadeGamePaletteToBlack(0);
   GraphicsCallResult := PcxDisplayFile('SAM3B.END', 1, 0, 0);
   RestoreGamePalette(0);
-  MemW[0:$041C] := MemW[0:$041A];
-  repeat until KeyPressed;
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
+  repeat
+  until KeyPressed;
 {$ENDIF}
-  MemW[0:$041C] := MemW[0:$041A];
+  MemW[0: UiBiosKeyboardTail] := MemW[0: UiBiosKeyboardHead];
   InsertPlayerHighScore;
   ReturnToTitleRequested := 1;
   EpisodeBlueprintCollected := 0;

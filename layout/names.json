@@ -9097,9 +9097,10 @@
      "proposal": "names-b"
     },
     "shift": {
-     "confidence": "medium",
-     "evidence": "u3_0000 computes (Lo(BiosRegs.AX) and $30) shr 4 after INT 11h; the result is not consumed.",
-     "proposal": "names-b"
+     "confidence": "high",
+     "evidence": "SAMUI.PAS DetectGameVideoAdapter computes the INT 11h equipment display bits into this local, but the local has no consuming read. Its Word declaration and assignment remain in the same order to preserve the stack frame and emitted bytes.",
+     "name": "UnusedEquipmentDisplayBits",
+     "proposal": "sol-read-ui"
     }
    },
    "locals": {
@@ -9109,7 +9110,7 @@
     "pad": "UnusedVideoProbePad",
     "prefixByte": "UnusedVideoProbeByte",
     "regs": "BiosRegs",
-    "shift": "EquipmentDisplayBits"
+    "shift": "UnusedEquipmentDisplayBits"
    },
    "name": "DetectGameVideoAdapter",
    "params": {},
@@ -9190,14 +9191,15 @@
     },
     "xoff": {
      "confidence": "high",
-     "evidence": "u3_0261: xoff := d_6838 and 7;",
-     "proposal": "names-b"
+     "evidence": "SAMUI.PAS DrawGameStatusBar assigns CameraX and 7, then passes this value (with glyph positions added in multiples of eight pixels) as PixelX to PgBlitMaskedShifted8x8. The value is a pixel offset within a planar byte, not a byte offset.",
+     "name": "StatusPanPixelOffset",
+     "proposal": "sol-read-ui"
     }
    },
    "locals": {
     "i": "DigitOrHealthIndex",
     "number": "ScoreText",
-    "xoff": "PanSubByteOffset"
+    "xoff": "StatusPanPixelOffset"
    },
    "name": "DrawGameStatusBar",
    "params": {},
@@ -9431,6 +9433,12 @@
      "evidence": "u3_1e2a: CursorY := d_6828 + 1;",
      "proposal": "names-b"
     },
+    "FramePad": {
+     "confidence": "high",
+     "evidence": "SAMUI.PAS ReadPopupText declares a two-byte local array and writes element 1 to zero. There are no consuming reads. The array bounds, type, declaration position and write are unchanged; the name now identifies its preservation role.",
+     "name": "UnusedPopupTextFramePad",
+     "proposal": "sol-read-ui"
+    },
     "InputText": {
      "confidence": "high",
      "evidence": "u3_1e2a: InputText[0] := #0;",
@@ -9495,6 +9503,7 @@
     "Bottom": "BottomRow",
     "CursorX": "CursorColumn",
     "CursorY": "CursorRow",
+    "FramePad": "UnusedPopupTextFramePad",
     "InputText": "EditedText",
     "Key": "InputChar",
     "LastRow": "PopupRowCount",
