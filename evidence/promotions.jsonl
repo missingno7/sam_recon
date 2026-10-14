@@ -92,3 +92,7 @@
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_9340", "note": "wave 7", "source_sha256": "a865e85f8c5a31472526f4f05d98e43dacfe6efb4530e4feb248eb99e0e5bc30", "time": "2026-10-14T16:04:16"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "p_08a2", "note": "after census override of p_0000's end", "source_sha256": "158c4e256577880f12e33ac7d788ecbd4af48cee6a84b7263eff1a5b7cc8d8f4", "time": "2026-10-14T16:05:56"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_0261", "note": "wave 7", "source_sha256": "d3fb8d63a9aff751b93040d493cdcea3b06e9976ef3a6b299d58cf8c3ccfe9c7", "time": "2026-10-14T16:06:03"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u3_c10d", "note": "Sol", "source_sha256": "f35ba9268f980428a6cfd6b6263c0496b08cb7dc08f8946197a6bb0e85b64933", "time": "2026-10-14T16:06:33"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u1_66b3", "note": "wave 7 / sol", "source_sha256": "3d89f43c198fd1f0359c62bb3170c0b796800728c66a29c1b28db261d4e75cf6", "time": "2026-10-14T16:06:44"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u2_0000", "note": "wave 7 / sol", "source_sha256": "94e3b922be14b59e1df6a2af7dd5d33fcc4b8616a0fd8a4720db779c651fe9ab", "time": "2026-10-14T16:06:45"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u2_1185", "note": "wave 7 / sol", "source_sha256": "c59dd33a858c069b7bfe5fb9ddccce229389bd7b180df917e5f00a949ec14cb2", "time": "2026-10-14T16:06:45"}
