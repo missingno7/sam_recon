@@ -183,6 +183,13 @@ class Binding(unittest.TestCase):
         ctx.routines["u3_6ea9"] = ("u3", 0x6ea9)
         self.assertEqual(self.proof(obj, ctx).status, "DIFF")
 
+    def test_tp_cross_unit_external_uses_symbol_owner_with_conventional_code_frame(self):
+        obj = module(5, [ledata(0, b"\x9a\x00\x00\x00\x00"),
+            fixup(at=1, loc=3, method=2, frame_method=0, frame_index=1)], ["u3_6ea9"])
+        ctx = context(b"\x9a\xa9\x6e\x00\x18", relocs=[3],
+                      routines={"u3_6ea9": ("u3", 0x6ea9)})
+        self.assertEqual(self.proof(obj, ctx).status, "EQUAL")
+
     def test_segment_addend_cannot_impersonate_another_unit(self):
         obj = module(2, [ledata(0, b"\x01\x00"), fixup(loc=2)])
         result = self.proof(obj, context(b"\x6f\x28", relocs=[0]))

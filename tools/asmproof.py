@@ -226,6 +226,13 @@ def bind_fixup(f: dict, obj: ObjectModule, code: str, ctx: Context) -> tuple[byt
         frame_unit, frame_off = target_unit, 0
     else:
         frame_unit, frame_off = _address(f["frame_kind"], f["frame"], ctx, obj, code, frame=True)
+    # TP5 resolves a code EXTRN through its Pascal symbol's owning unit. TASM
+    # conventionally associates EXTRN foo:FAR with the current CODE SEGDEF;
+    # TP does not use that frame to misaddress a call to another unit. A pinned
+    # cross-unit/DS/near-call probe is retained in sol-asmproof/bindings/.
+    if f["target_kind"] == "external" and target_unit != "DATA" and \
+            f["frame_kind"] == "segment" and f["frame"] == code:
+        frame_unit, frame_off = target_unit, 0
     if frame_unit not in ctx.paras or target_unit not in ctx.paras:
         raise MatchError("Fixup unit has no census segment")
     # TP5's contributions combine into unit segments; a DS frame cannot silently

@@ -49,3 +49,4 @@
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_3f8c", "note": "wave 4", "source_sha256": "97cc5faa6342c564766823d9f0b6540dbb5d9e1161e0d5d8e5f7fa217e113d2a", "time": "2026-10-14T15:41:36"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "u1_03f0", "note": "wave 4", "source_sha256": "a1b9a366f14115243420c8060ad9e0c82d96aec0a962c8df7425cde9956460b3", "time": "2026-10-14T15:44:32"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_3712", "note": "wave 4", "source_sha256": "d48aaca8a4189436cd45df6529b12635bcf0331d808e2e602b8e769e51f584c0", "time": "2026-10-14T15:44:33"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u1_65d9", "note": "luna (resumed); single map global d_0296 via layout/data-extra.json", "source_sha256": "43d73047146801b2096b0cf8fd498a193063649f15d18a8c2dc5da4be61be844", "time": "2026-10-14T15:47:08"}

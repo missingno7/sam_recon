@@ -267,13 +267,24 @@ def extra_offset(name: str, ep: str) -> int | None:
     only, off = m.group(1), int(m.group(2), 16)
     if only:
         return off if only.lower() == ep else None
+    extra = LAYOUT / "data-extra.json"       # supervisor-curated per-episode offsets
+    if extra.exists():
+        e = load_json(extra)["globals"].get(name.lower())
+        if e is not None:
+            return int(e[ep], 16) if e.get(ep) else None
     g = load_json(LAYOUT / "data.json")["globals"]
-    below = [(int(v["sam1"], 16), int(v[ep], 16)) for v in g.values()
-             if v.get("sam1") and v.get(ep) and int(v["sam1"], 16) <= off]
-    if not below:
+    a1 = anchors("sam1")
+    # DS regions of SAM1: game typed constants, System constants, game variables, library vars
+    bounds = [0, a1["game_const_end"], a1["game_var_start"], a1["crt_var_start"], 0x10000]
+    region = next(i for i in range(4) if bounds[i] <= off < bounds[i + 1])
+    lo, hi = bounds[region], bounds[region + 1]
+    pairs = sorted((int(v["sam1"], 16), int(v[ep], 16)) for v in g.values()
+                   if v.get("sam1") and v.get(ep) and lo <= int(v["sam1"], 16) < hi)
+    below = [p for p in pairs if p[0] <= off]
+    near = max(below) if below else (pairs[0] if pairs else None)
+    if near is None:
         return off
-    s1, e = max(below)
-    return off + (e - s1)
+    return off + (near[1] - near[0])
 
 
 def episode_globals(ep: str) -> dict:
