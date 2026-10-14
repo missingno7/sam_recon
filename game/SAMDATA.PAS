@@ -5,14 +5,18 @@ unit SAMDATA;
 interface
 uses Dos, PROGRPHX;
 const
-  { Screen, map and EGA playfield-buffer geometry. }
+  { Screen, map, planar-byte/glyph and EGA playfield-buffer geometry. }
   GameScreenWidthPixels = 320;
   GameScreenHeightPixels = 200;
   GamePlayfieldHeightPixels = 184;
+  GameVideoStrideBytes = 80;
+  GamePlanarBytePixelMask = 7;
   GameTileSizePixels = 16;
   GameTilePixelShift = 4;
   GameTileOffsetMask = $000F;
   GameTileAlignMask = $FFF0;
+  GameGlyphSizePixels = 8;
+  GameGlyphPixelShift = 3;
   GameMapColumnCount = 40;
   GameMapRowCount = 25;
   GameMapLastColumn = 39;
@@ -20,6 +24,8 @@ const
   GamePlayfieldTopBufferRow = 16;
   GamePlayfieldBottomBufferRow = 416;
   GamePlayfieldBufferRowSum = 432;
+  GameCameraCenterX = 160;
+  GameCameraCenterY = 100;
   GameCameraMaxX = 320;
   GameCameraMaxY = 184;
 
@@ -33,37 +39,160 @@ const
   GameLastMissionLevel = 17;
   GameIslandLevelNumber = 1;
 
+  { Popup storage, configuration score slots and high-score name-entry policy. }
+  GamePopupTextLineCount = 299;
+  GamePopupAcceptedKeyCount = 20;
+  GameHighScoreCount = 10;
+  GameHighScoreNameMaxLength = 20;
+
   { Encoded map rows include two trailing bytes outside the encrypted payload. }
   GameLevelRowBytes = 42;
   GameLevelRowPayloadBytes = 40;
   GameLevelSlotRecords = 48;
 
-  { Sprite and PC-speaker resource record dimensions. }
-  GameVideoStrideBytes = 80;
+  { Sprite, glyph and popup record/allocation sizes. }
   GameSpriteEntriesPerBank = 50;
   GameSpriteHeaderBytes = 3;
   GameSpritePayloadBytes = 157;
   GameGlyphPayloadBytes = 37;
+  GameSpriteBankBytes = $1F80;
+  GameGlyphBankBytes = $0800;
+  GamePopupBackgroundBytes = 30000;
+
+  { PC-speaker record dimensions, bank ranges and control columns. }
   GameSoundEffectsPerBank = 12;
   GameSoundBankValueCount = 305;
+  GameSoundBankBytes = 7320;
   GameSoundPriorityColumn = 301;
+  GameSoundGatePeriodColumn = 303;
+  GameSoundEndMarker = -1;
+  GameSoundBankTwoFirstEffect = 13;
+  GameSoundBankTwoLastEffect = 24;
+  GameSoundBankThreeFirstEffect = 25;
+  GameSoundBankThreeLastEffect = 36;
 
-  { PC keyboard make codes used by the default controls. }
+  { Keyboard hardware and BIOS services; keyboard-buffer pointers use segment zero. }
+  GameKeyboardDataPort = $60;
+  GameVideoBiosInterrupt = $10;
+  GameBiosColorTextMode = 3;
+  GameBiosKeyboardHeadLinear = $041A;
+  GameBiosKeyboardTailLinear = $041C;
+
+  { Shared Set-1 keyboard make codes, break mask and extended prefix. }
   GameScanCodeEscape = $01;
+  GameScanCodeDigit1 = $02;
+  GameScanCodeDigit2 = $03;
+  GameScanCodeDigit3 = $04;
+  GameScanCodeDigit4 = $05;
+  GameScanCodeDigit5 = $06;
+  GameScanCodeDigit6 = $07;
+  GameScanCodeDigit7 = $08;
+  GameScanCodeDigit8 = $09;
+  GameScanCodeDigit9 = $0A;
+  GameScanCodeDigit0 = $0B;
+  GameScanCodeQ = $10;
+  GameScanCodeW = $11;
+  GameScanCodeE = $12;
+  GameScanCodeR = $13;
+  GameScanCodeT = $14;
+  GameScanCodeY = $15;
+  GameScanCodeU = $16;
+  GameScanCodeI = $17;
+  GameScanCodeO = $18;
+  GameScanCodeP = $19;
+  GameScanCodeEnter = $1C;
   GameScanCodeControl = $1D;
+  GameScanCodeA = $1E;
+  GameScanCodeS = $1F;
+  GameScanCodeD = $20;
+  GameScanCodeF = $21;
+  GameScanCodeG = $22;
+  GameScanCodeH = $23;
+  GameScanCodeJ = $24;
+  GameScanCodeK = $25;
+  GameScanCodeL = $26;
+  GameScanCodeLeftShift = $2A;
+  GameScanCodeZ = $2C;
+  GameScanCodeX = $2D;
+  GameScanCodeC = $2E;
+  GameScanCodeV = $2F;
+  GameScanCodeB = $30;
+  GameScanCodeN = $31;
+  GameScanCodeM = $32;
+  GameScanCodeComma = $33;
+  GameScanCodePeriod = $34;
+  GameScanCodeSlash = $35;
+  GameScanCodeRightShift = $36;
   GameScanCodeAlt = $38;
+  GameScanCodeSpace = $39;
+  GameScanCodeF1 = $3B;
+  GameScanCodeF2 = $3C;
+  GameScanCodeF3 = $3D;
+  GameScanCodeF4 = $3E;
+  GameScanCodeF5 = $3F;
+  GameScanCodeF6 = $40;
+  GameScanCodeF7 = $41;
+  GameScanCodeF8 = $42;
+  GameScanCodeF9 = $43;
+  GameScanCodeF10 = $44;
+  GameScanCodeNumLock = $45;
+  GameScanCodeHome = $47;
   GameScanCodeUp = $48;
+  GameScanCodePageUp = $49;
   GameScanCodeLeft = $4B;
   GameScanCodeRight = $4D;
+  GameScanCodeEnd = $4F;
   GameScanCodeDown = $50;
+  GameScanCodePageDown = $51;
+  GameScanCodeInsert = $52;
+  GameScanCodeDelete = $53;
+  GameScanCodeBreakMask = $80;
+  GameScanCodeExtendedPrefix = $E0;
 
-  { Sound-bank effect numbers identified by their gameplay callers. }
+  { Set-1 release codes used by cheat chords and extended popup input. }
+  GameScanCodeURelease = GameScanCodeU + GameScanCodeBreakMask;
+  GameScanCodeIRelease = GameScanCodeI + GameScanCodeBreakMask;
+  GameScanCodeORelease = GameScanCodeO + GameScanCodeBreakMask;
+  GameScanCodePRelease = GameScanCodeP + GameScanCodeBreakMask;
+  GameScanCodeEnterRelease = GameScanCodeEnter + GameScanCodeBreakMask;
+  GameScanCodeControlRelease = GameScanCodeControl + GameScanCodeBreakMask;
+  GameScanCodeDRelease = GameScanCodeD + GameScanCodeBreakMask;
+  GameScanCodeGRelease = GameScanCodeG + GameScanCodeBreakMask;
+  GameScanCodeJRelease = GameScanCodeJ + GameScanCodeBreakMask;
+  GameScanCodeKRelease = GameScanCodeK + GameScanCodeBreakMask;
+  GameScanCodeLeftShiftRelease = GameScanCodeLeftShift + GameScanCodeBreakMask;
+  GameScanCodeZRelease = GameScanCodeZ + GameScanCodeBreakMask;
+  GameScanCodeXRelease = GameScanCodeX + GameScanCodeBreakMask;
+  GameScanCodeVRelease = GameScanCodeV + GameScanCodeBreakMask;
+  GameScanCodeBRelease = GameScanCodeB + GameScanCodeBreakMask;
+  GameScanCodeNRelease = GameScanCodeN + GameScanCodeBreakMask;
+  GameScanCodeSlashRelease = GameScanCodeSlash + GameScanCodeBreakMask;
+  GameScanCodeAltRelease = GameScanCodeAlt + GameScanCodeBreakMask;
+  GameScanCodeNumLockRelease = GameScanCodeNumLock + GameScanCodeBreakMask;
+  GameScanCodeHomeRelease = GameScanCodeHome + GameScanCodeBreakMask;
+  GameScanCodeUpRelease = GameScanCodeUp + GameScanCodeBreakMask;
+  GameScanCodePageUpRelease = GameScanCodePageUp + GameScanCodeBreakMask;
+  GameScanCodeLeftRelease = GameScanCodeLeft + GameScanCodeBreakMask;
+  GameScanCodeRightRelease = GameScanCodeRight + GameScanCodeBreakMask;
+  GameScanCodeEndRelease = GameScanCodeEnd + GameScanCodeBreakMask;
+  GameScanCodeDownRelease = GameScanCodeDown + GameScanCodeBreakMask;
+  GameScanCodePageDownRelease = GameScanCodePageDown + GameScanCodeBreakMask;
+  GameScanCodeInsertRelease = GameScanCodeInsert + GameScanCodeBreakMask;
+  GameScanCodeDeleteRelease = GameScanCodeDelete + GameScanCodeBreakMask;
+
+  { Sound-bank effect IDs shared by gameplay, menus and scene transitions. }
   GameSfxJump = 1;
+  GameSfxPlayerShot = 2;
   GameSfxScorePickup = 4;
   GameSfxItemPickup = 5;
   GameSfxDoorOpen = 6;
+  GameSfxLevelExit = 8;
   GameSfxOrderedBonus = 12;
   GameSfxLevelStart = 13;
+  GameSfxPopupOpen = 17;
+  GameSfxQuitMenu = 18;
+  GameSfxEmptyWeapon = 20;
+  GameSfxApogeeSplash = 21;
   GameSfxPlayerDeath = 22;
   GameSfxTeleport = 23;
   GameSfxComputerActivate = 24;
@@ -76,9 +205,22 @@ const
   GameActorKindPlayer = 99;
   GameActorKindScorePopup = 5001;
 
-  { BIOS keyboard-buffer pointers, addressed through segment zero. }
-  GameBiosKeyboardHeadLinear = $041A;
-  GameBiosKeyboardTailLinear = $041C;
+  { Player sprite poses shared by input, jump/landing and level placement. }
+  GamePlayerSpriteWalkRight = 1;
+  GamePlayerSpriteWalkLeft = 5;
+  GamePlayerSpriteStandRight = 9;
+  GamePlayerSpriteStandLeft = 10;
+  GamePlayerSpriteFireRight = 11;
+  GamePlayerSpriteFireLeft = 12;
+  GamePlayerSpriteJumpRight = 13;
+  GamePlayerSpriteJumpLeft = 14;
+  GamePlayerSpriteDeathOne = 15;
+  GamePlayerSpriteDeathTwo = 16;
+
+  { Player-shot spawn fields; inactive level-loader placeholders retain their original IDs. }
+  GamePlayerShotSprite = 39;
+  GamePlayerShotKind = 7;
+  GamePlayerShotStep = 8;
 
   { Inventory and death-animation limits used by resets and contact handling. }
   GamePlayerFullHealth = 3;
@@ -133,8 +275,8 @@ type
   end;
 
   TGameConfiguration = packed record
-    ConfigScoreLines: array[1..10] of String[40];
-    ConfigRankedScores: array[1..10] of LongInt;
+    ConfigScoreLines: array[1..GameHighScoreCount] of String[40];
+    ConfigRankedScores: array[1..GameHighScoreCount] of LongInt;
     ConfigSoundEnabled: Byte;
     ConfigUpScanCode, ConfigDownScanCode, ConfigLeftScanCode, ConfigRightScanCode, ConfigJumpScanCode,
       ConfigFireScanCode,
@@ -144,13 +286,13 @@ type
   TGameSnapshot = packed record
     SavedPlayerX, SavedPlayerY: Integer;
     SavedPlayerScore: LongInt;
-    SavedProgressCount, SavedPlayerAmmo, SavedProjectileLimit: Integer;
+    SavedPickup269Count, SavedPlayerAmmo, SavedProjectileLimit: Integer;
     SavedBlueprintFlags: array[1..GameLevelFlagSlotCount] of Byte;
     SavedSpeedBoost, SavedSpeedTimeLeft: Integer;
     SavedControlsReversed: Byte;
     SavedConfusionTimeLeft: Integer;
     SavedConfusionEndedPending, SavedSlowMovement: Byte;
-    SavedSlowTimeLeft, SavedAuxiliaryValue, SavedEntranceAnimationTick, SavedEnteredLevelNumber: Integer;
+    SavedSlowTimeLeft, SavedAuxiliaryValue, SavedEntranceProgress, SavedEnteredLevelNumber: Integer;
     SavedCompletedLevelFlags: array[1..GameLevelFlagSlotCount] of Byte;
     SavedExtraAmmoCheatUsed: Byte;
   end;
@@ -160,7 +302,7 @@ type
 
   PSpeakerSoundBank = ^TSpeakerSoundBank;
 
-  TPopupImageBuffer = array[0..29999] of Byte;
+  TPopupImageBuffer = array[0..GamePopupBackgroundBytes - 1] of Byte;
 
   PPopupImageBuffer = ^TPopupImageBuffer;
 
@@ -329,7 +471,7 @@ type
     RestoreMenuWrappedLine: String[40];
   end;
 
-  TMainMenuText = array[1..299] of String[40];
+  TMainMenuText = array[1..GamePopupTextLineCount] of String[40];
 
   TGameOptionsLine = String[40];
 
@@ -358,7 +500,7 @@ type
     JoystickPromptSecondLine: String[40];
   end;
 
-  TBbsTextLines = array[1..299] of String[40];
+  TBbsTextLines = array[1..GamePopupTextLineCount] of String[40];
 
   TAboutApogeeLine = String[40];
 
@@ -379,9 +521,11 @@ var
   { Unused storage retains DATA layout. }
   UnusedJumpTablePadLater: Byte;
 {$ENDIF}
-  AlternateVerticalMotionTable: array[1..38] of Byte;
+  { Write-only state retains DATA layout and original stores. }
+  UnusedAlternateMotionTable: array[1..38] of Byte;
   PlayerVerticalMotionStep: Byte;
-  AlternateVerticalMotionStep: Byte;
+  { Write-only state retains DATA layout and original stores. }
+  UnusedAlternateMotionStep: Byte;
   GameActors: array[1..GameActorSlotCount] of TGameActor;
   { Unused storage retains DATA layout. }
   UnusedStartupWord1: Integer;
@@ -389,7 +533,7 @@ var
   UnusedStartupWord2: Integer;
   { Unused storage retains DATA layout. }
   UnusedStartupWord3: Integer;
-  PopupTextLines: array[1..299] of String[40];
+  PopupTextLines: array[1..GamePopupTextLineCount] of String[40];
 {$IFDEF SAM1}
   { Unused storage retains DATA layout. }
   UnusedPopupTextPadSam1: Byte;
@@ -398,7 +542,7 @@ var
   UnusedPopupTextPadLater: Byte;
 {$ENDIF}
   PopupSavedBackground: PPopupImageBuffer;
-  PopupAcceptedScanCodes: array[1..20] of Byte;
+  PopupAcceptedScanCodes: array[1..GamePopupAcceptedKeyCount] of Byte;
 {$IFDEF SAM1}
   { Unused storage retains DATA layout. }
   UnusedPopupKeyStorageSam1: array[0..5] of Byte;
@@ -416,12 +560,14 @@ var
   UnusedOptionsPadLater: Byte;
 {$ENDIF}
   { World, camera and frame state. }
-  PlayerLandingCount: Integer;
+  { Write-only state retains DATA layout and original stores. }
+  UnusedPlayerLandingCount: Integer;
   LevelBackdropTile: Word;
   CurrentLevelNumber: Integer;
   MoveRampTicks: Word;
   PlayerHorizontalStep: Integer;
-  VideoStrideResult: Integer;
+  { Write-only state retains DATA layout and original stores. }
+  UnusedScreenStrideResult: Integer;
   LastKeyboardScanCode: Integer;
   SharedLoopIndexA: Integer;
   SharedLoopIndexB: Integer;
@@ -432,7 +578,8 @@ var
   UnusedGameStateWord: Integer;
   StatusBarCameraX: Integer;
   IslandEntranceIndex: Integer;
-  SpecialMovementMode: Byte;
+  { Write-only state retains DATA layout and original stores. }
+  UnusedSpecialMovementMode: Byte;
 {$IFDEF SAM1}
   { Unused storage retains DATA layout. }
   UnusedMovementPadSam1: Byte;
@@ -453,12 +600,14 @@ var
   PlayerAmmo: Integer;
   PlayerShots: array[1..GamePlayerShotSlotCount] of TGameActor;
   PlayerScore: LongInt;
-  PlayerProgressCount: Integer;
+  { Tally for pickup $269; starts at 1 and has no gameplay consumer. }
+  Pickup269Count: Integer;
   Pickup31Count: Integer;
   PlayerProjectileLimit: Integer;
   PlayerSpeedBoost: Integer;
   SpeedBoostTimeLeft: Integer;
-  SpecialMovementDuration: Integer;
+  { Write-only state retains DATA layout and original stores. }
+  UnusedSpecialMovementDuration: Integer;
   ConfusionTimeLeft: Integer;
   ConfusionEndedMessagePending: Byte;
   PlayerControlsReversed: Byte;
@@ -471,7 +620,8 @@ var
   { Unused storage retains DATA layout. }
   UnusedSlowMovementPadLater: Byte;
 {$ENDIF}
-  SavedAuxiliaryCounter: Integer;
+  { Opaque saved value: reset and round-tripped, never counted or tested. }
+  SnapshotAuxiliaryValue: Integer;
   PlayerInputLocked: Byte;
 {$IFDEF SAM1}
   { Unused storage retains DATA layout. }
@@ -480,7 +630,8 @@ var
   { Unused storage retains DATA layout. }
   UnusedInputLockPadLater: Byte;
 {$ENDIF}
-  LevelEntranceAnimationTick: Integer;
+  { Entrance contact forces 51, then resets to 0; no timer increments this value. }
+  LevelEntranceProgress: Integer;
   EnteredLevelNumber: Integer;
   LevelCompletedFlags: array[1..GameLevelFlagSlotCount] of Byte;
   LevelRadarDestroyed: Byte;
@@ -560,8 +711,10 @@ var
 {$ENDIF}
   GameSnapshot: TGameSnapshot;
   PendingRestoreScanCode: Integer;
-  EntrancePlayerX: Integer;
-  EntrancePlayerY: Integer;
+  { Write-only state retains DATA layout and original stores. }
+  UnusedEntrancePlayerX: Integer;
+  { Write-only state retains DATA layout and original stores. }
+  UnusedEntrancePlayerY: Integer;
   EpisodeBlueprintCollected: Byte;
 {$IFDEF SAM1}
   { Unused storage retains DATA layout. }
@@ -599,7 +752,8 @@ var
   PopupExtendedGlyphBank: PGlyphFileBlock;
   GlyphBankFileViews: TGlyphFileViews;
   { Input and scene-transition state. }
-  GameMenuResult: Byte;
+  { Write-only state retains DATA layout and original stores. }
+  UnusedOptionsMenuResult: Byte;
   JoystickFirePosePending: Byte;
   PlayerFalling: Byte;
   PlayerJumping: Byte;
@@ -719,7 +873,7 @@ begin
   RightKeyScanCode := GameScanCodeRight;
   FireKeyScanCode := GameScanCodeAlt;
   JumpKeyScanCode := GameScanCodeControl;
-  for InitIndex := 1 to 10 do
+  for InitIndex := 1 to GameHighScoreCount do
   begin
     case InitIndex of
       1:
@@ -766,9 +920,9 @@ begin
   GameDrawBufferIndex := 0;
   DisplayedBufferRow := 0;
   PlayerHorizontalStep := 0;
-  SpecialMovementMode := 1;
+  UnusedSpecialMovementMode := 1;
   PlayerScore := 0;
-  PlayerProgressCount := 1;
+  Pickup269Count := 1;
   PlayerAmmo := 5;
   PlayerProjectileLimit := 1;
   Pickup31Count := 0;
@@ -777,13 +931,13 @@ begin
     LevelBlueprintFlags[InitIndex] := 0;
   PlayerSpeedBoost := 0;
   SpeedBoostTimeLeft := 0;
-  SpecialMovementDuration := 0;
+  UnusedSpecialMovementDuration := 0;
   PlayerControlsReversed := 0;
   ConfusionTimeLeft := 0;
   ConfusionEndedMessagePending := 0;
   PlayerSlowMovement := 0;
   SlowMovementTimeLeft := 0;
-  SavedAuxiliaryCounter := 0;
+  SnapshotAuxiliaryValue := 0;
   CeilingLauncherDisabled := 0;
   PlayerHasFloppyDisk := 0;
   ComputerMessageShown := 0;
@@ -795,7 +949,7 @@ begin
   PlayerHasDynamite := 0;
   BlastDoorContactHandled := 0;
   PlayerInputLocked := 0;
-  LevelEntranceAnimationTick := 0;
+  LevelEntranceProgress := 0;
   EnteredLevelNumber := 1;
   BonusStep621Collected := 0;
   BonusStep622Collected := 0;
@@ -835,7 +989,7 @@ begin
   GameSnapshot.SavedPlayerX := 0;
   GameSnapshot.SavedPlayerY := 0;
   GameSnapshot.SavedPlayerScore := PlayerScore;
-  GameSnapshot.SavedProgressCount := PlayerProgressCount;
+  GameSnapshot.SavedPickup269Count := Pickup269Count;
   GameSnapshot.SavedPlayerAmmo := PlayerAmmo;
   for InitIndex := 1 to GameLevelFlagSlotCount do
     GameSnapshot.SavedBlueprintFlags[InitIndex] := LevelBlueprintFlags[InitIndex];
@@ -846,8 +1000,8 @@ begin
   GameSnapshot.SavedConfusionEndedPending := ConfusionEndedMessagePending;
   GameSnapshot.SavedSlowMovement := PlayerSlowMovement;
   GameSnapshot.SavedSlowTimeLeft := SlowMovementTimeLeft;
-  GameSnapshot.SavedAuxiliaryValue := SavedAuxiliaryCounter;
-  GameSnapshot.SavedEntranceAnimationTick := LevelEntranceAnimationTick;
+  GameSnapshot.SavedAuxiliaryValue := SnapshotAuxiliaryValue;
+  GameSnapshot.SavedEntranceProgress := LevelEntranceProgress;
   GameSnapshot.SavedEnteredLevelNumber := EnteredLevelNumber;
   for InitIndex := 1 to GameLevelFlagSlotCount do
     GameSnapshot.SavedCompletedLevelFlags[InitIndex] := LevelCompletedFlags[InitIndex];
@@ -874,45 +1028,45 @@ begin
   PlayerVerticalMotionTable[19] := 8;
   PlayerVerticalMotionStep := $12;
   { This alternate profile has no consumer; its storage and writes are retained. }
-  AlternateVerticalMotionTable[1] := 0;
-  AlternateVerticalMotionTable[2] := 8;
-  AlternateVerticalMotionTable[3] := 8;
-  AlternateVerticalMotionTable[4] := 6;
-  AlternateVerticalMotionTable[5] := 6;
-  AlternateVerticalMotionTable[6] := 4;
-  AlternateVerticalMotionTable[7] := 4;
-  AlternateVerticalMotionTable[8] := 4;
-  AlternateVerticalMotionTable[9] := 4;
-  AlternateVerticalMotionTable[10] := 4;
-  AlternateVerticalMotionTable[11] := 4;
-  AlternateVerticalMotionTable[12] := 2;
-  AlternateVerticalMotionTable[13] := 2;
-  AlternateVerticalMotionTable[14] := 2;
-  AlternateVerticalMotionTable[15] := 2;
-  AlternateVerticalMotionTable[16] := 2;
-  AlternateVerticalMotionTable[17] := 1;
-  AlternateVerticalMotionTable[18] := 1;
-  AlternateVerticalMotionTable[19] := 1;
-  AlternateVerticalMotionTable[20] := 1;
-  AlternateVerticalMotionTable[21] := 0;
-  AlternateVerticalMotionTable[22] := 0;
-  AlternateVerticalMotionTable[23] := 0;
-  AlternateVerticalMotionTable[24] := 2;
-  AlternateVerticalMotionTable[25] := 2;
-  AlternateVerticalMotionTable[26] := 2;
-  AlternateVerticalMotionTable[27] := 2;
-  AlternateVerticalMotionTable[28] := 4;
-  AlternateVerticalMotionTable[29] := 4;
-  AlternateVerticalMotionTable[30] := 4;
-  AlternateVerticalMotionTable[31] := 4;
-  AlternateVerticalMotionTable[32] := 4;
-  AlternateVerticalMotionTable[33] := 4;
-  AlternateVerticalMotionTable[34] := 4;
-  AlternateVerticalMotionTable[35] := 6;
-  AlternateVerticalMotionTable[36] := 6;
-  AlternateVerticalMotionTable[37] := 8;
-  AlternateVerticalMotionTable[38] := 8;
-  AlternateVerticalMotionStep := $25;
+  UnusedAlternateMotionTable[1] := 0;
+  UnusedAlternateMotionTable[2] := 8;
+  UnusedAlternateMotionTable[3] := 8;
+  UnusedAlternateMotionTable[4] := 6;
+  UnusedAlternateMotionTable[5] := 6;
+  UnusedAlternateMotionTable[6] := 4;
+  UnusedAlternateMotionTable[7] := 4;
+  UnusedAlternateMotionTable[8] := 4;
+  UnusedAlternateMotionTable[9] := 4;
+  UnusedAlternateMotionTable[10] := 4;
+  UnusedAlternateMotionTable[11] := 4;
+  UnusedAlternateMotionTable[12] := 2;
+  UnusedAlternateMotionTable[13] := 2;
+  UnusedAlternateMotionTable[14] := 2;
+  UnusedAlternateMotionTable[15] := 2;
+  UnusedAlternateMotionTable[16] := 2;
+  UnusedAlternateMotionTable[17] := 1;
+  UnusedAlternateMotionTable[18] := 1;
+  UnusedAlternateMotionTable[19] := 1;
+  UnusedAlternateMotionTable[20] := 1;
+  UnusedAlternateMotionTable[21] := 0;
+  UnusedAlternateMotionTable[22] := 0;
+  UnusedAlternateMotionTable[23] := 0;
+  UnusedAlternateMotionTable[24] := 2;
+  UnusedAlternateMotionTable[25] := 2;
+  UnusedAlternateMotionTable[26] := 2;
+  UnusedAlternateMotionTable[27] := 2;
+  UnusedAlternateMotionTable[28] := 4;
+  UnusedAlternateMotionTable[29] := 4;
+  UnusedAlternateMotionTable[30] := 4;
+  UnusedAlternateMotionTable[31] := 4;
+  UnusedAlternateMotionTable[32] := 4;
+  UnusedAlternateMotionTable[33] := 4;
+  UnusedAlternateMotionTable[34] := 4;
+  UnusedAlternateMotionTable[35] := 6;
+  UnusedAlternateMotionTable[36] := 6;
+  UnusedAlternateMotionTable[37] := 8;
+  UnusedAlternateMotionTable[38] := 8;
+  UnusedAlternateMotionStep := $25;
   { The death arc is read backward from frame 35 down to frame 1. }
   DeathVerticalMotionTable[1] := -8;
   DeathVerticalMotionTable[2] := -8;
@@ -988,9 +1142,9 @@ begin
   GameDrawBufferIndex := 0;
   DisplayedBufferRow := 0;
   PlayerHorizontalStep := 0;
-  SpecialMovementMode := 1;
+  UnusedSpecialMovementMode := 1;
   PlayerScore := 0;
-  PlayerProgressCount := 1;
+  Pickup269Count := 1;
   PlayerAmmo := 5;
   PlayerProjectileLimit := 1;
   Pickup31Count := 0;
@@ -999,13 +1153,13 @@ begin
     LevelBlueprintFlags[ResetIndex] := 0;
   PlayerSpeedBoost := 0;
   SpeedBoostTimeLeft := 0;
-  SpecialMovementDuration := 0;
+  UnusedSpecialMovementDuration := 0;
   PlayerControlsReversed := 0;
   ConfusionTimeLeft := 0;
   ConfusionEndedMessagePending := 0;
   PlayerSlowMovement := 0;
   SlowMovementTimeLeft := 0;
-  SavedAuxiliaryCounter := 0;
+  SnapshotAuxiliaryValue := 0;
   CeilingLauncherDisabled := 0;
   PlayerHasFloppyDisk := 0;
   ComputerMessageShown := 0;
@@ -1017,7 +1171,7 @@ begin
   PlayerHasDynamite := 0;
   BlastDoorContactHandled := 0;
   PlayerInputLocked := 0;
-  LevelEntranceAnimationTick := 0;
+  LevelEntranceProgress := 0;
   EnteredLevelNumber := 1;
   BonusStep621Collected := 0;
   BonusStep622Collected := 0;
@@ -1057,7 +1211,7 @@ begin
   GameSnapshot.SavedPlayerX := 0;
   GameSnapshot.SavedPlayerY := 0;
   GameSnapshot.SavedPlayerScore := PlayerScore;
-  GameSnapshot.SavedProgressCount := PlayerProgressCount;
+  GameSnapshot.SavedPickup269Count := Pickup269Count;
   GameSnapshot.SavedPlayerAmmo := PlayerAmmo;
   for ResetIndex := 1 to GameLevelFlagSlotCount do
     GameSnapshot.SavedBlueprintFlags[ResetIndex] := LevelBlueprintFlags[ResetIndex];
@@ -1068,8 +1222,8 @@ begin
   GameSnapshot.SavedConfusionEndedPending := ConfusionEndedMessagePending;
   GameSnapshot.SavedSlowMovement := PlayerSlowMovement;
   GameSnapshot.SavedSlowTimeLeft := SlowMovementTimeLeft;
-  GameSnapshot.SavedAuxiliaryValue := SavedAuxiliaryCounter;
-  GameSnapshot.SavedEntranceAnimationTick := LevelEntranceAnimationTick;
+  GameSnapshot.SavedAuxiliaryValue := SnapshotAuxiliaryValue;
+  GameSnapshot.SavedEntranceProgress := LevelEntranceProgress;
   GameSnapshot.SavedEnteredLevelNumber := EnteredLevelNumber;
   for ResetIndex := 1 to GameLevelFlagSlotCount do
     GameSnapshot.SavedCompletedLevelFlags[ResetIndex] := LevelCompletedFlags[ResetIndex];
@@ -1120,7 +1274,7 @@ begin
   BonusPickupOrderValid := 1;
   PlayerSpeedBoost := 0;
   SpeedBoostTimeLeft := 0;
-  SpecialMovementDuration := 0;
+  UnusedSpecialMovementDuration := 0;
   PlayerControlsReversed := 0;
   ConfusionTimeLeft := 0;
   ConfusionEndedMessagePending := 0;

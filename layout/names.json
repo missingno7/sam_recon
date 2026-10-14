@@ -176,10 +176,10 @@
    "proposal": "names-b"
   },
   "d_0294": {
-   "confidence": "medium",
-   "evidence": "p_0be5 increments element 0 and resets it at 20 before expiring power-up timers; element 1 has no observed use.",
-   "name": "TimerSubticks",
-   "proposal": "names-a"
+   "confidence": "high",
+   "evidence": "TimerInterrupt increments element 0 and resets it at 20 before updating only the speed, slow and confusion countdowns. Element 1 has no consumer; the two-byte array and its order are retained.",
+   "name": "PowerupTimerSubticks",
+   "proposal": "sol-read-shared"
   },
   "d_0296": {
    "confidence": "high",
@@ -362,10 +362,10 @@
    "proposal": "names-b"
   },
   "d_34c4": {
-   "confidence": "low",
-   "evidence": "u8_0136 fills a second 38-step displacement profile; no runtime consumer is present in reconstructed routines.",
-   "name": "AlternateVerticalMotionTable",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "InitializeGameDefaults writes the 38-entry alternate displacement profile, but no code in any standalone Pascal or assembly input reads it. The table, element order and initializer writes are retained.",
+   "name": "UnusedAlternateMotionTable",
+   "proposal": "sol-read-shared"
   },
   "d_34ea": {
    "confidence": "high",
@@ -374,10 +374,10 @@
    "proposal": "names-b"
   },
   "d_34eb": {
-   "confidence": "low",
-   "evidence": "u8_0136 initializes this byte to 37 next to the second displacement profile; no consumer is present.",
-   "name": "AlternateVerticalMotionStep",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "InitializeGameDefaults assigns $25 beside the alternate displacement table; no standalone routine consumes the value. Its Byte declaration and initializer write are retained.",
+   "name": "UnusedAlternateMotionStep",
+   "proposal": "sol-read-shared"
   },
   "d_34ec": {
    "confidence": "high",
@@ -437,10 +437,10 @@
    "proposal": "names-b"
   },
   "d_6818": {
-   "confidence": "medium",
-   "evidence": "u1_66b3 increments this word whenever it snaps the falling player onto solid or one-way support; no further use is observed.",
-   "name": "PlayerLandingCount",
-   "proposal": "names-b",
+   "confidence": "high",
+   "evidence": "ApplyPlayerGravity increments this word on three landing paths, but no standalone Pascal or assembly input tests, displays or otherwise consumes the accumulated count. All increments and its DATA position are retained.",
+   "name": "UnusedPlayerLandingCount",
+   "proposal": "sol-read-shared",
    "scope": "shared_game_state"
   },
   "d_681a": {
@@ -470,10 +470,10 @@
    "proposal": "names-b"
   },
   "d_6822": {
-   "confidence": "medium",
-   "evidence": "p_1148 stores the AX result of u9_01d3(80); the reconstructed assembler setter defines no stable return value.",
-   "name": "VideoStrideResult",
-   "proposal": "names-b",
+   "confidence": "high",
+   "evidence": "The main loop stores PgSetScreenStride(GameVideoStrideBytes) here once per scene setup. There is no consuming read, and the assembly setter supplies no documented stable result. The assignment is retained without implying a success/status value.",
+   "name": "UnusedScreenStrideResult",
+   "proposal": "sol-read-shared",
    "scope": "shared_game_state"
   },
   "d_6824": {
@@ -533,10 +533,10 @@
    "scope": "shared_game_state"
   },
   "d_6836": {
-   "confidence": "low",
-   "evidence": "Default 1; pickup code $142 assigns 2 along with d_69A8=432, but no consuming reference establishes the effect.",
-   "name": "SpecialMovementMode",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "Resets assign 1; pickup $142 assigns 2. There is no consuming read in any standalone source. The neutral mode description and all writes remain; no particular power-up behavior is inferred.",
+   "name": "UnusedSpecialMovementMode",
+   "proposal": "sol-read-shared"
   },
   "d_6838": {
    "confidence": "high",
@@ -608,10 +608,10 @@
    "proposal": "names-b"
   },
   "d_699e": {
-   "confidence": "medium",
-   "evidence": "Starts at 1, pickup $269 increments it, and the value is saved/restored as TSaveData.Count; no stronger interpretation is established.",
-   "name": "PlayerProgressCount",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "ProcessPlayerTileContact increments this value only for object code $269 (decimal 617). New-game/main-menu paths set it to 1, and snapshot/file paths only round-trip it. No HUD or game rule reads it, so the name identifies the observed pickup tally without inferring lives or mission progress.",
+   "name": "Pickup269Count",
+   "proposal": "sol-read-shared"
   },
   "d_69a0": {
    "confidence": "low",
@@ -638,10 +638,10 @@
    "proposal": "names-b"
   },
   "d_69a8": {
-   "confidence": "low",
-   "evidence": "Pickup $142 assigns 432 with SpecialMovementMode=2; no timer consumer is reconstructed.",
-   "name": "SpecialMovementDuration",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "State resets clear this word and pickup $142 assigns 432 alongside mode 2, but the timer and main loop never read or decrement it. All original writes and layout are retained; the unused prefix distinguishes it from active timed effects.",
+   "name": "UnusedSpecialMovementDuration",
+   "proposal": "sol-read-shared"
   },
   "d_69aa": {
    "confidence": "high",
@@ -674,10 +674,10 @@
    "proposal": "names-b"
   },
   "d_69b2": {
-   "confidence": "low",
-   "evidence": "Initialized and round-tripped through TSaveData.ValueA; no independent consumer identifies its purpose.",
-   "name": "SavedAuxiliaryCounter",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "Defaults/new-game resets clear this Integer; checkpoint/save-file paths copy it to and from TGameSnapshot.SavedAuxiliaryValue. No arithmetic or gameplay use exists, so value describes the evidence better than counter without inventing a purpose.",
+   "name": "SnapshotAuxiliaryValue",
+   "proposal": "sol-read-shared"
   },
   "d_69b4": {
    "confidence": "high",
@@ -686,10 +686,10 @@
    "proposal": "names-b"
   },
   "d_69b6": {
-   "confidence": "medium",
-   "evidence": "Compared with 15/30/50 while advancing entrance tile frames; reset when loading the selected level.",
-   "name": "LevelEntranceAnimationTick",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "The entrance contact path assigns 51, compares against 15/30/50 to select its preserved staged transition branches, then resets to 0 before loading the mission. No interrupt or main-loop path increments it. Progress avoids implying an actively ticking timer; snapshot copies remain.",
+   "name": "LevelEntranceProgress",
+   "proposal": "sol-read-shared"
   },
   "d_69b8": {
    "confidence": "high",
@@ -986,17 +986,17 @@
    "proposal": "names-b"
   },
   "d_6d62": {
-   "confidence": "medium",
-   "evidence": "u1_6d0e saves the player X when entering a mission; no later consuming reference is present.",
-   "name": "EntrancePlayerX",
-   "proposal": "names-b",
+   "confidence": "high",
+   "evidence": "The island entrance path stores the player's current X, but no standalone source consumes this copy. Mission checkpoint coordinates come directly from the actor via CaptureGameSnapshot. Its assignment and DATA slot are retained.",
+   "name": "UnusedEntrancePlayerX",
+   "proposal": "sol-read-shared",
    "scope": "shared_game_state"
   },
   "d_6d64": {
-   "confidence": "medium",
-   "evidence": "u1_6d0e saves the player Y when entering a mission; no later consuming reference is present.",
-   "name": "EntrancePlayerY",
-   "proposal": "names-b",
+   "confidence": "high",
+   "evidence": "The island entrance path stores the player's current Y, but no standalone source consumes this copy. Mission checkpoint coordinates come directly from the actor via CaptureGameSnapshot. Its assignment and DATA slot are retained.",
+   "name": "UnusedEntrancePlayerY",
+   "proposal": "sol-read-shared",
    "scope": "shared_game_state"
   },
   "d_6d66": {
@@ -1172,10 +1172,10 @@
    "proposal": "names-b"
   },
   "d_6ebe": {
-   "confidence": "medium",
-   "evidence": "p_1148 stores Ord(u3_97bb); no further consumer is observed.",
-   "name": "GameMenuResult",
-   "proposal": "names-b",
+   "confidence": "high",
+   "evidence": "The main loop stores Ord(RunGameOptionsMenu) only when GameOptionsRequested is set, then clears that request without reading the stored byte. This is specifically the in-game options menu result, and both call and unused store are retained.",
+   "name": "UnusedOptionsMenuResult",
+   "proposal": "sol-read-shared",
    "scope": "shared_game_state"
   },
   "d_6ebf": {
@@ -17725,9 +17725,10 @@
      "proposal": "names-b"
     },
     "Count": {
-     "confidence": "medium",
-     "evidence": "u3_3cb8/u3_3d6b copy this field to/from d_699E; see that global for behavior.",
-     "proposal": "names-b"
+     "confidence": "high",
+     "evidence": "Packed snapshot field round-trips d_699e, whose only increment is collectible $269. Its type and record position are unchanged; the initial tally of one is preserved.",
+     "name": "SavedPickup269Count",
+     "proposal": "sol-read-shared"
     },
     "FlagA": {
      "confidence": "high",
@@ -17795,9 +17796,10 @@
      "proposal": "names-b"
     },
     "ValueB": {
-     "confidence": "medium",
-     "evidence": "u3_3cb8/u3_3d6b copy this field to/from d_69B6; see that global for behavior.",
-     "proposal": "names-b"
+     "confidence": "high",
+     "evidence": "Packed snapshot field round-trips d_69b6, which is forced to 51 on entrance contact and reset to 0 before mission loading rather than incremented by a timer. Its type and record position are unchanged.",
+     "name": "SavedEntranceProgress",
+     "proposal": "sol-read-shared"
     },
     "ValueC": {
      "confidence": "high",
@@ -17817,7 +17819,7 @@
    },
    "fields": {
     "Ammo": "SavedPlayerAmmo",
-    "Count": "SavedProgressCount",
+    "Count": "SavedPickup269Count",
     "FlagA": "SavedConfusionEndedPending",
     "FlagB": "SavedSlowMovement",
     "FlagC": "SavedExtraAmmoCheatUsed",
@@ -17831,7 +17833,7 @@
     "TimerC": "SavedConfusionTimeLeft",
     "TimerD": "SavedSlowTimeLeft",
     "ValueA": "SavedAuxiliaryValue",
-    "ValueB": "SavedEntranceAnimationTick",
+    "ValueB": "SavedEntranceProgress",
     "ValueC": "SavedEnteredLevelNumber",
     "X": "SavedPlayerX",
     "Y": "SavedPlayerY"

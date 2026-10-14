@@ -2938,7 +2938,7 @@ begin
       PgBlitMaskedShifted16x16(PlayerSpriteBank^.SpriteEntries[1].SpriteDataBytes[1], (TileColumn *
         GameTileSizePixels), ((TileRow * GameTileSizePixels) + GamePlayfieldBottomBufferRow));
       GameActors[GamePlayerActorSlot].FlashFrames := 0;
-      GameActors[GamePlayerActorSlot].ActorSpriteBase := 9;
+      GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandRight;
       GameActors[GamePlayerActorSlot].ActorWorldX := (TileColumn * GameTileSizePixels);
       GameActors[GamePlayerActorSlot].ActorWorldY := (TileRow * GameTileSizePixels);
       GameActors[GamePlayerActorSlot].ActorPreviousX := (TileColumn * GameTileSizePixels);
@@ -3029,7 +3029,7 @@ begin
     PlayerShots[LoadIndex].ActorDirectionX := 1;
     PlayerShots[LoadIndex].DirectionY := 0;
     PlayerShots[LoadIndex].ActorAnimationCounter := 1;
-    PlayerShots[LoadIndex].ActorMovementStep := 8;
+    PlayerShots[LoadIndex].ActorMovementStep := GamePlayerShotStep;
     PlayerShots[LoadIndex].ActorCounterA := 0;
     PlayerShots[LoadIndex].ActorKindCode := 1;
     PlayerShots[LoadIndex].ActorSlotInactive := 1;

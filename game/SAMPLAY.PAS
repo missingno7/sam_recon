@@ -1178,10 +1178,10 @@ begin
                 PlayerJumping := 0;
                 PlayerFalling := 0;
                 PlayerOnMovingSupport := 1;
-                if GameActors[GamePlayerActorSlot].ActorSpriteBase = 13 then
-                  GameActors[GamePlayerActorSlot].ActorSpriteBase := 9
-                else if GameActors[GamePlayerActorSlot].ActorSpriteBase = 14 then
-                  GameActors[GamePlayerActorSlot].ActorSpriteBase := 10;
+                if GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteJumpRight then
+                  GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandRight
+                else if GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteJumpLeft then
+                  GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandLeft;
               end;
             end;
           end;
@@ -1207,10 +1207,10 @@ begin
               PlayerJumping := 0;
               PlayerFalling := 0;
               PlayerOnMovingSupport := 1;
-              if GameActors[GamePlayerActorSlot].ActorSpriteBase = 13 then
-                GameActors[GamePlayerActorSlot].ActorSpriteBase := 9
-              else if GameActors[GamePlayerActorSlot].ActorSpriteBase = 14 then
-                GameActors[GamePlayerActorSlot].ActorSpriteBase := 10;
+              if GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteJumpRight then
+                GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandRight
+              else if GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteJumpLeft then
+                GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandLeft;
               if GameActors[ActorSlot].ActorDirectionX = 1 then
                 GameActors[GamePlayerActorSlot].ActorWorldX := GameActors[ActorSlot].ActorMovementStep +
                   GameActors[GamePlayerActorSlot].ActorWorldX
@@ -2657,7 +2657,7 @@ begin
     (LevelCells[((GameActors[GamePlayerActorSlot].ActorWorldX + 12) shr GameTilePixelShift) + 1,
     ((GameActors[GamePlayerActorSlot].ActorWorldY shr GameTilePixelShift) + 2)].CellSolidFlag <> 0) then
   begin
-    Inc(PlayerLandingCount);
+    Inc(UnusedPlayerLandingCount);
     GameActors[GamePlayerActorSlot].ActorWorldY := GameActors[GamePlayerActorSlot].ActorWorldY and
       GameTileAlignMask;
     PlayerFalling := 0;
@@ -2672,7 +2672,7 @@ begin
     begin
       if GameActors[GamePlayerActorSlot].ActorWorldY < 5 then
       begin
-        Inc(PlayerLandingCount);
+        Inc(UnusedPlayerLandingCount);
         GameActors[GamePlayerActorSlot].ActorWorldY := GameActors[GamePlayerActorSlot].ActorWorldY and
           GameTileAlignMask;
         PlayerFalling := 0;
@@ -2683,7 +2683,7 @@ begin
         ((GameActors[GamePlayerActorSlot].ActorWorldY + 7) shr GameTilePixelShift) + 1].SupportsLanding = 0)
         then
       begin
-        Inc(PlayerLandingCount);
+        Inc(UnusedPlayerLandingCount);
         GameActors[GamePlayerActorSlot].ActorWorldY := GameActors[GamePlayerActorSlot].ActorWorldY and
           GameTileAlignMask;
         PlayerFalling := 0;
@@ -2699,26 +2699,27 @@ begin
   end;
   if PlayerFalling <> 0 then
   begin
-    if (GameActors[GamePlayerActorSlot].ActorSpriteBase = 1) or (GameActors[GamePlayerActorSlot].ActorSpriteBase
-      = 9) or (GameActors[GamePlayerActorSlot].ActorSpriteBase = 11) or
-      (GameActors[GamePlayerActorSlot].ActorSpriteBase = 13) then
-      GameActors[GamePlayerActorSlot].ActorSpriteBase := 13
+    if (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteWalkRight) or
+      (GameActors[GamePlayerActorSlot].ActorSpriteBase
+      = GamePlayerSpriteStandRight) or (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteFireRight) or
+      (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteJumpRight) then
+      GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteJumpRight
     else
-      GameActors[GamePlayerActorSlot].ActorSpriteBase := 14;
+      GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteJumpLeft;
   end
-  else if GameActors[GamePlayerActorSlot].ActorSpriteBase = 13 then
+  else if GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteJumpRight then
   begin
     if PlayerRightHeld <> 0 then
-      GameActors[GamePlayerActorSlot].ActorSpriteBase := 1
+      GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkRight
     else
-      GameActors[GamePlayerActorSlot].ActorSpriteBase := 9;
+      GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandRight;
   end
-  else if GameActors[GamePlayerActorSlot].ActorSpriteBase = 14 then
+  else if GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteJumpLeft then
   begin
     if PlayerLeftHeld <> 0 then
-      GameActors[GamePlayerActorSlot].ActorSpriteBase := 5
+      GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkLeft
     else
-      GameActors[GamePlayerActorSlot].ActorSpriteBase := 10;
+      GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandLeft;
   end;
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
@@ -2812,13 +2813,13 @@ begin
           (((GameActors[GamePlayerActorSlot].ActorWorldY - 3) shr GameTilePixelShift) + 1)].CellSolidFlag = 0
           then
         begin
-          if (GameActors[GamePlayerActorSlot].ActorSpriteBase = 1) or
-            (GameActors[GamePlayerActorSlot].ActorSpriteBase = 9) or
-            (GameActors[GamePlayerActorSlot].ActorSpriteBase = 11) or
-            (GameActors[GamePlayerActorSlot].ActorSpriteBase = 13) then
-            GameActors[GamePlayerActorSlot].ActorSpriteBase := 13
+          if (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteWalkRight) or
+            (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteStandRight) or
+            (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteFireRight) or
+            (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteJumpRight) then
+            GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteJumpRight
           else
-            GameActors[GamePlayerActorSlot].ActorSpriteBase := 14;
+            GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteJumpLeft;
           StartSoundEffect(GameSfxJump);
           PlayerJumping := 1;
           PlayerOnMovingSupport := 0;
@@ -3114,9 +3115,11 @@ begin
           StartSoundEffect(GameSfxLevelEntrance);
         if PlayerGodMode = 0 then
           PlayerInputLocked := 1;
-        LevelEntranceAnimationTick := 51;
-        EntrancePlayerX := GameActors[GamePlayerActorSlot].ActorWorldX;
-        EntrancePlayerY := GameActors[GamePlayerActorSlot].ActorWorldY;
+        { Original immediate entrance transition is preserved: force the value past
+          every staged-animation threshold rather than count elapsed ticks. }
+        LevelEntranceProgress := 51;
+        UnusedEntrancePlayerX := GameActors[GamePlayerActorSlot].ActorWorldX;
+        UnusedEntrancePlayerY := GameActors[GamePlayerActorSlot].ActorWorldY;
         case Integer(LevelCells[(ContactX shr GameTilePixelShift)+1, (ContactY shr
           GameTilePixelShift)+1].CellObjectCode) of
           $113..$122:
@@ -3127,19 +3130,19 @@ begin
                 GameTilePixelShift)+1].CellObjectCode := $10C;
             end;
           $10C:
-            if LevelEntranceAnimationTick > 15 then
+            if LevelEntranceProgress > 15 then
               Inc(Integer(LevelCells[(ContactX shr GameTilePixelShift)+1, (ContactY shr
                 GameTilePixelShift)+1].CellObjectCode));
           $10D:
-            if LevelEntranceAnimationTick > 30 then
+            if LevelEntranceProgress > 30 then
               Inc(Integer(LevelCells[(ContactX shr GameTilePixelShift)+1, (ContactY shr
                 GameTilePixelShift)+1].CellObjectCode));
         end;
-        if LevelEntranceAnimationTick > 50 then
+        if LevelEntranceProgress > 50 then
         begin
           EnteredLevelNumber := Integer(LevelCells[(ContactX shr GameTilePixelShift)+1, (ContactY shr
             GameTilePixelShift)+1].CellBaseTile);
-          LevelEntranceAnimationTick := 0;
+          LevelEntranceProgress := 0;
           FadeGamePaletteToBlack(20);
           CurrentLevelNumber := EnteredLevelNumber;
           CaptureGameSnapshot;
@@ -3248,7 +3251,7 @@ begin
             GameActors[GamePlayerActorSlot].ActorWorldX := (ContactX and GameTileAlignMask) + 16;
             GameActors[GamePlayerActorSlot].ActorWorldY := ContactY and GameTileAlignMask;
             GameActors[GamePlayerActorSlot].ActorDirectionX := -1;
-            GameActors[GamePlayerActorSlot].ActorSpriteBase := 5;
+            GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkLeft;
             PlayerJumping := 0;
             PlayerFalling := 0;
             PlayerLeftHeld := 1;
@@ -3261,7 +3264,7 @@ begin
             GameActors[GamePlayerActorSlot].ActorWorldX := (ContactX and GameTileAlignMask) - 16;
             GameActors[GamePlayerActorSlot].ActorWorldY := ContactY and GameTileAlignMask;
             GameActors[GamePlayerActorSlot].ActorDirectionX := 1;
-            GameActors[GamePlayerActorSlot].ActorSpriteBase := 1;
+            GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkRight;
             PlayerJumping := 0;
             PlayerFalling := 0;
             PlayerLeftHeld := 0;
@@ -3291,7 +3294,7 @@ begin
             GameActors[GamePlayerActorSlot].ActorPreviousY := GameActors[GamePlayerActorSlot].ActorWorldY;
             GameActors[GamePlayerActorSlot].ActorWorldX := (ContactX and GameTileAlignMask) + 16;
             GameActors[GamePlayerActorSlot].ActorWorldY := ContactY and GameTileAlignMask;
-            GameActors[GamePlayerActorSlot].ActorSpriteBase := 10;
+            GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandLeft;
             PlayerJumping := 0;
             PlayerFalling := 0;
             PlayerLeftHeld := 0;
@@ -3303,7 +3306,7 @@ begin
             GameActors[GamePlayerActorSlot].ActorPreviousY := GameActors[GamePlayerActorSlot].ActorWorldY;
             GameActors[GamePlayerActorSlot].ActorWorldX := (ContactX and GameTileAlignMask) - 16;
             GameActors[GamePlayerActorSlot].ActorWorldY := ContactY and GameTileAlignMask;
-            GameActors[GamePlayerActorSlot].ActorSpriteBase := 9;
+            GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandRight;
             PlayerJumping := 0;
             PlayerFalling := 0;
             PlayerLeftHeld := 0;
@@ -3433,10 +3436,10 @@ begin
           PlayerTeleporting := 1;
           TeleportAnimationTick := 19;
           PlayerInputLocked := 1;
-          if (PlayerRightHeld = 1) or (GameActors[GamePlayerActorSlot].ActorSpriteBase = 1) then
-            GameActors[GamePlayerActorSlot].ActorSpriteBase := 9
+          if (PlayerRightHeld = 1) or (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteWalkRight) then
+            GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandRight
           else
-            GameActors[GamePlayerActorSlot].ActorSpriteBase := 10;
+            GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandLeft;
           PlayerUpHeld := 0;
           PlayerDownHeld := 0;
           PlayerLeftHeld := 0;
@@ -3472,8 +3475,8 @@ begin
         LevelCells[(ContactX shr GameTilePixelShift)+1, (ContactY shr GameTilePixelShift)+1].CellObjectCode :=
           0;
         StartSoundEffect(GameSfxItemPickup);
-        SpecialMovementMode := 2;
-        SpecialMovementDuration := 432;
+        UnusedSpecialMovementMode := 2;
+        UnusedSpecialMovementDuration := 432;
       end;
     $31:
       begin
@@ -3517,11 +3520,12 @@ begin
       end;
     $269:
       begin
+        { This tally has no gameplay reader; its original increment is retained. }
         StatusBarCameraX := -1;
         LevelCells[(ContactX shr GameTilePixelShift)+1, (ContactY shr GameTilePixelShift)+1].CellObjectCode :=
           0;
         StartSoundEffect(GameSfxItemPickup);
-        Inc(PlayerProgressCount);
+        Inc(Pickup269Count);
       end;
   end;
 end;

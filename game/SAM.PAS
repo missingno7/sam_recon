@@ -5,60 +5,9 @@ program SAMMAIN;
 {$A+}{$D+}{$L+}{$F-}
 uses Dos, PROGRPHX, Crt, SAMDATA, SAMSOUND, GAMEJOY, PCXGENUS, TEXT80, SAMUI, SAMLEVEL, SAMPLAY;
 const
-  { Set-1 keyboard make codes; adding $80 produces the corresponding break code. }
-  SamScanBreak = $80;
-  SamScanEscape = $01;
-  SamScanQ = $10;
-  SamScanU = $16;
-  SamScanV = $2F;
-  SamScanK = $25;
-  SamScanZ = $2C;
-  SamScanG = $22;
-  SamScanI = $17;
-  SamScanP = $19;
-  SamScanJ = $24;
-  SamScanX = $2D;
-  SamScanB = $30;
-  SamScanO = $18;
-  SamScanN = $31;
-  SamScanD = $20;
-  SamScanUp = $48;
-  SamScanDown = $50;
-  SamScanLeft = $4B;
-  SamScanRight = $4D;
-  SamScanCtrl = $1D;
-  SamScanAlt = $38;
-  SamScanF1 = $3B;
-  SamScanF2 = $3C;
-  SamScanF3 = $3D;
-  SamScanF4 = $3E;
-  SamScanF5 = $3F;
-  SamScanF6 = $40;
-  SamScanF7 = $41;
-  SamScanF8 = $42;
-  SamScanF9 = $43;
-  SamScanF10 = $44;
-
-  { Release codes used by the original cheat-chord state machine. }
-  SamScanURelease = SamScanU + SamScanBreak;
-  SamScanVRelease = SamScanV + SamScanBreak;
-  SamScanKRelease = SamScanK + SamScanBreak;
-  SamScanZRelease = SamScanZ + SamScanBreak;
-  SamScanGRelease = SamScanG + SamScanBreak;
-  SamScanIRelease = SamScanI + SamScanBreak;
-  SamScanPRelease = SamScanP + SamScanBreak;
-  SamScanJRelease = SamScanJ + SamScanBreak;
-  SamScanXRelease = SamScanX + SamScanBreak;
-  SamScanBRelease = SamScanB + SamScanBreak;
-  SamScanORelease = SamScanO + SamScanBreak;
-  SamScanNRelease = SamScanN + SamScanBreak;
-  SamScanDRelease = SamScanD + SamScanBreak;
-
-  { Interrupt vectors, keyboard data port and BIOS video-query selectors. }
-  SamKeyboardDataPort = $60;
+  { Installed interrupt vectors and startup-only BIOS video-query selectors. }
   SamKeyboardVector = $09;
   SamTimerVector = $1C;
-  SamVideoBiosInterrupt = $10;
   SamBiosReadVideoMode = $0F;
   SamBiosVideoModeMask = $7F;
   SamBiosDisplayCombination = $1A00;
@@ -67,64 +16,23 @@ const
   SamBiosEgaInformationSelector = $10;
   SamBiosEgaAdapter = 3;
   SamBiosVgaAdapter = 4;
-  SamBiosColorTextMode = 3;
-  SamBiosKeyboardHead = $041A;
-  SamBiosKeyboardTail = $041C;
 
-  { Player sprite poses and the single player slot in GameActors. }
-  SamPlayerSlot = 1;
-  SamPlayerWalkRight = 1;
-  SamPlayerWalkLeft = 5;
-  SamPlayerStandRight = 9;
-  SamPlayerStandLeft = 10;
-  SamPlayerFireRight = 11;
-  SamPlayerFireLeft = 12;
-  SamPlayerJumpRight = 13;
-  SamPlayerJumpLeft = 14;
-  SamPlayerDeathFrameOne = 15;
-  SamPlayerDeathFrameTwo = 16;
-  SamPlayerShotSprite = 39;
-  SamPlayerShotKind = 7;
-  SamPlayerShotStep = 8;
-
-  { Input thresholds, island-map number and the main-loop tick threshold. }
+  { Input thresholds, timer periods and startup resource limits. }
   SamJoystickDeadZone = 50;
-  SamIslandLevel = 1;
   SamFrameTickThreshold = 7;
   SamPowerupTickPeriod = 20;
   SamExtraAmmoAmount = 25;
   SamMinimumFreeHeap = 200000;
 
-  { Sound resource layout and effects used by player input and transitions. }
-  SamSoundBankBytes = 7320;
-  SamSoundsPerBank = 12;
-  SamSecondBankLastSound = 24;
-  SamThirdBankLastSound = 36;
-  SamSoundGatePeriodIndex = 303;
-  SamSoundEndMarker = -1;
-  SamSoundPlayerShot = 2;
-  SamSoundEmptyWeapon = 20;
-  SamSoundPlayerDeath = 22;
-  SamSoundLevelExit = 8;
-
-  { Planar screen stride, tile geometry and split-screen positions. }
-  SamGameScreenStride = 80;
-  SamFirstDrawBufferRow = 16;
-  SamCameraCenterX = 160;
-  SamCameraCenterY = 100;
-  SamMaximumCameraX = 320;
-  SamMaximumCameraY = 184;
-  SamPlayerViewportBottomOffset = 184;
-  SamTilePixels = 16;
-  SamTilePixelMask = 15;
-  SamPlanarBytePixelMask = 7;
+  { Split-screen positions and actor redraw margins. }
   SamVgaStatusSplit = 384;
   SamEgaStatusSplit = 190;
-  SamActorSlotLimit = 25;
   SamActorEraseMargin = 40;
   SamActorDrawMargin = 32;
+
 var
-  TimerSubticks: array[0..1] of Byte;
+  { Only element 0 divides power-up ticks; unused element 1 retains DATA layout. }
+  PowerupTimerSubticks: array[0..1] of Byte;
 {$IFDEF SAM1}
 {$ELSE}
   VideoBiosRegisters: TVideoBiosRegs;
@@ -157,17 +65,17 @@ var
   ShotSlot: Integer;
   ShotSpawned: Byte;
 begin
-  LastKeyboardScanCode := Port[SamKeyboardDataPort];
+  LastKeyboardScanCode := Port[GameKeyboardDataPort];
   if PlayerControlsReversed = 1 then
   begin
     if LastKeyboardScanCode = Integer(LeftKeyScanCode) then
       LastKeyboardScanCode := Integer(RightKeyScanCode)
-    else if Integer(LeftKeyScanCode) + SamScanBreak = LastKeyboardScanCode then
-      LastKeyboardScanCode := Integer(RightKeyScanCode) + SamScanBreak
+    else if Integer(LeftKeyScanCode) + GameScanCodeBreakMask = LastKeyboardScanCode then
+      LastKeyboardScanCode := Integer(RightKeyScanCode) + GameScanCodeBreakMask
     else if LastKeyboardScanCode = Integer(RightKeyScanCode) then
       LastKeyboardScanCode := Integer(LeftKeyScanCode)
-    else if Integer(RightKeyScanCode) + SamScanBreak = LastKeyboardScanCode then
-      LastKeyboardScanCode := Integer(LeftKeyScanCode) + SamScanBreak;
+    else if Integer(RightKeyScanCode) + GameScanCodeBreakMask = LastKeyboardScanCode then
+      LastKeyboardScanCode := Integer(LeftKeyScanCode) + GameScanCodeBreakMask;
   end;
 
   if PlayerInputLocked = 0 then
@@ -177,58 +85,58 @@ begin
       PlayerLeftHeld := 1;
       PlayerRightHeld := 0;
       PlayerOnMovingSupport := 0;
-      GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerWalkLeft;
+      GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkLeft;
       if PlayerJumping <> 0 then
-        GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerJumpLeft;
+        GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteJumpLeft;
     end
-    else if Integer(LeftKeyScanCode) + SamScanBreak = LastKeyboardScanCode then
+    else if Integer(LeftKeyScanCode) + GameScanCodeBreakMask = LastKeyboardScanCode then
     begin
       PlayerLeftHeld := 0;
       if PlayerJumping = 0 then
       begin
         if PlayerRightHeld = 0 then
-          GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerStandLeft
+          GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandLeft
         else
-          GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerWalkRight;
+          GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkRight;
       end
       else if PlayerRightHeld = 1 then
-        GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerJumpRight
+        GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteJumpRight
       else
-        GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerJumpLeft;
+        GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteJumpLeft;
     end
     else if LastKeyboardScanCode = Integer(RightKeyScanCode) then
     begin
       PlayerRightHeld := 1;
       PlayerLeftHeld := 0;
       PlayerOnMovingSupport := 0;
-      GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerWalkRight;
+      GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkRight;
       if PlayerJumping <> 0 then
-        GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerJumpRight;
+        GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteJumpRight;
     end
-    else if Integer(RightKeyScanCode) + SamScanBreak = LastKeyboardScanCode then
+    else if Integer(RightKeyScanCode) + GameScanCodeBreakMask = LastKeyboardScanCode then
     begin
       PlayerRightHeld := 0;
       if PlayerJumping = 0 then
       begin
         if PlayerLeftHeld = 0 then
-          GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerStandRight
+          GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandRight
         else
-          GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerWalkLeft;
+          GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkLeft;
       end
       else if PlayerLeftHeld = 1 then
-        GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerJumpLeft
+        GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteJumpLeft
       else
-        GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerJumpRight;
+        GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteJumpRight;
     end
     else if LastKeyboardScanCode = Integer(FireKeyScanCode) then
     begin
       if PlayerAmmo = 0 then
-        StartSoundEffect(SamSoundEmptyWeapon)
+        StartSoundEffect(GameSfxEmptyWeapon)
       else if PlayerAmmo > 0 then
       begin
         if PlayerDying = 0 then
         begin
-          if CurrentLevelNumber > SamIslandLevel then
+          if CurrentLevelNumber > GameIslandLevelNumber then
           begin
             ShotSpawned := 0;
             ShotSlot := 0;
@@ -236,146 +144,146 @@ begin
               Inc(ShotSlot);
               if PlayerShots[ShotSlot].ActorSlotInactive = 1 then
               begin
-                PlayerShots[ShotSlot].ActorWorldX := GameActors[SamPlayerSlot].ActorWorldX;
-                PlayerShots[ShotSlot].ActorWorldY := GameActors[SamPlayerSlot].ActorWorldY;
-                PlayerShots[ShotSlot].ActorPreviousX := GameActors[SamPlayerSlot].ActorPreviousX;
-                PlayerShots[ShotSlot].ActorPreviousY := GameActors[SamPlayerSlot].ActorPreviousY;
-                PlayerShots[ShotSlot].ActorSpriteBase := SamPlayerShotSprite;
-                if (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerWalkRight) or
-                  (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerJumpRight) or
-                  (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerStandRight) or
-                  (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerFireRight) then
+                PlayerShots[ShotSlot].ActorWorldX := GameActors[GamePlayerActorSlot].ActorWorldX;
+                PlayerShots[ShotSlot].ActorWorldY := GameActors[GamePlayerActorSlot].ActorWorldY;
+                PlayerShots[ShotSlot].ActorPreviousX := GameActors[GamePlayerActorSlot].ActorPreviousX;
+                PlayerShots[ShotSlot].ActorPreviousY := GameActors[GamePlayerActorSlot].ActorPreviousY;
+                PlayerShots[ShotSlot].ActorSpriteBase := GamePlayerShotSprite;
+                if (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteWalkRight) or
+                  (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteJumpRight) or
+                  (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteStandRight) or
+                  (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteFireRight) then
                 begin
                   PlayerShots[ShotSlot].ActorDirectionX := 1;
-                  GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerFireRight;
+                  GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteFireRight;
                 end
                 else
                 begin
                   PlayerShots[ShotSlot].ActorDirectionX := -1;
-                  GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerFireLeft;
+                  GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteFireLeft;
                 end;
                 PlayerShots[ShotSlot].DirectionY := 0;
                 PlayerShots[ShotSlot].ActorAnimationCounter := 1;
-                PlayerShots[ShotSlot].ActorMovementStep := SamPlayerShotStep;
+                PlayerShots[ShotSlot].ActorMovementStep := GamePlayerShotStep;
                 PlayerShots[ShotSlot].ActorCounterA := 0;
                 PlayerShots[ShotSlot].ActorCounterB := 0;
-                PlayerShots[ShotSlot].ActorKindCode := SamPlayerShotKind;
+                PlayerShots[ShotSlot].ActorKindCode := GamePlayerShotKind;
                 PlayerShots[ShotSlot].ActorSlotInactive := 0;
                 PlayerShots[ShotSlot].ActorRemovalPending := 0;
                 ShotSpawned := 1;
                 Dec(PlayerAmmo);
                 StatusBarCameraX := -1;
-                StartSoundEffect(SamSoundPlayerShot);
-                if (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerWalkRight) or
-                  (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerStandRight) or
-                  (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerJumpRight) or
-                  (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerFireRight) then
-                  GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerFireRight
+                StartSoundEffect(GameSfxPlayerShot);
+                if (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteWalkRight) or
+                  (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteStandRight) or
+                  (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteJumpRight) or
+                  (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteFireRight) then
+                  GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteFireRight
                 else
-                  GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerFireLeft;
+                  GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteFireLeft;
               end;
             until (ShotSlot = PlayerProjectileLimit) or (ShotSpawned <> 0);
           end;
         end;
       end;
     end
-    else if Integer(FireKeyScanCode) + SamScanBreak = LastKeyboardScanCode then
+    else if Integer(FireKeyScanCode) + GameScanCodeBreakMask = LastKeyboardScanCode then
     begin
-      if GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerFireRight then
-        GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerStandRight
-      else if GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerFireLeft then
-        GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerStandLeft;
+      if GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteFireRight then
+        GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandRight
+      else if GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteFireLeft then
+        GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandLeft;
     end
     else if LastKeyboardScanCode = Integer(JumpKeyScanCode) then
     begin
       PlayerJumpHeld := 1;
     end
-    else if Integer(JumpKeyScanCode) + SamScanBreak = LastKeyboardScanCode then
+    else if Integer(JumpKeyScanCode) + GameScanCodeBreakMask = LastKeyboardScanCode then
     begin
       PlayerJumpHeld := 0;
     end
     else if LastKeyboardScanCode = Integer(UpKeyScanCode) then
     begin
-      if CurrentLevelNumber = SamIslandLevel then
+      if CurrentLevelNumber = GameIslandLevelNumber then
       begin
         PlayerUpHeld := 1;
         PlayerDownHeld := 0;
-        if (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerWalkRight) or
-          (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerStandRight) or
-          (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerFireRight) then
-          GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerWalkRight
+        if (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteWalkRight) or
+          (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteStandRight) or
+          (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteFireRight) then
+          GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkRight
         else
-          GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerWalkLeft;
+          GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkLeft;
       end;
     end
-    else if Integer(UpKeyScanCode) + SamScanBreak = LastKeyboardScanCode then
+    else if Integer(UpKeyScanCode) + GameScanCodeBreakMask = LastKeyboardScanCode then
     begin
-      if CurrentLevelNumber = SamIslandLevel then
+      if CurrentLevelNumber = GameIslandLevelNumber then
       begin
         PlayerUpHeld := 0;
-        if (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerWalkRight) or
-          (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerStandRight) or
-          (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerFireRight) then
-          GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerStandRight
+        if (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteWalkRight) or
+          (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteStandRight) or
+          (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteFireRight) then
+          GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandRight
         else
-          GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerStandLeft;
+          GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandLeft;
       end;
     end
     else if LastKeyboardScanCode = Integer(DownKeyScanCode) then
     begin
-      if CurrentLevelNumber = SamIslandLevel then
+      if CurrentLevelNumber = GameIslandLevelNumber then
       begin
         PlayerDownHeld := 1;
         PlayerUpHeld := 0;
-        if (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerWalkRight) or
-          (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerStandRight) or
-          (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerFireRight) then
-          GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerWalkRight
+        if (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteWalkRight) or
+          (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteStandRight) or
+          (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteFireRight) then
+          GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkRight
         else
-          GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerWalkLeft;
+          GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkLeft;
       end;
     end
-    else if Integer(DownKeyScanCode) + SamScanBreak = LastKeyboardScanCode then
+    else if Integer(DownKeyScanCode) + GameScanCodeBreakMask = LastKeyboardScanCode then
     begin
-      if CurrentLevelNumber = SamIslandLevel then
+      if CurrentLevelNumber = GameIslandLevelNumber then
       begin
         PlayerDownHeld := 0;
-        if (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerWalkRight) or
-          (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerStandRight) or
-          (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerFireRight) then
-          GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerStandRight
+        if (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteWalkRight) or
+          (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteStandRight) or
+          (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteFireRight) then
+          GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandRight
         else
-          GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerStandLeft;
+          GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandLeft;
       end;
     end
-    else if LastKeyboardScanCode = SamScanEscape then
+    else if LastKeyboardScanCode = GameScanCodeEscape then
     begin
       EscapePressed := 1;
       GameOptionsRequested := 1;
     end
-    else if LastKeyboardScanCode = SamScanQ then
+    else if LastKeyboardScanCode = GameScanCodeQ then
       GameOptionsRequested := 1
-    else if LastKeyboardScanCode = SamScanF1 then
+    else if LastKeyboardScanCode = GameScanCodeF1 then
       GameOptionsRequested := 1
-    else if LastKeyboardScanCode = SamScanF2 then
+    else if LastKeyboardScanCode = GameScanCodeF2 then
       GameOptionsRequested := 1
-    else if LastKeyboardScanCode = SamScanF3 then
+    else if LastKeyboardScanCode = GameScanCodeF3 then
       GameOptionsRequested := 1
-    else if LastKeyboardScanCode = SamScanF4 then
+    else if LastKeyboardScanCode = GameScanCodeF4 then
       GameOptionsRequested := 1
-    else if LastKeyboardScanCode = SamScanF5 then
+    else if LastKeyboardScanCode = GameScanCodeF5 then
       GameOptionsRequested := 1
-    else if LastKeyboardScanCode = SamScanF6 then
+    else if LastKeyboardScanCode = GameScanCodeF6 then
       GameOptionsRequested := 1
-    else if LastKeyboardScanCode = SamScanF7 then
+    else if LastKeyboardScanCode = GameScanCodeF7 then
       GameOptionsRequested := 1
-    else if LastKeyboardScanCode = SamScanF8 then
+    else if LastKeyboardScanCode = GameScanCodeF8 then
       GameOptionsRequested := 1
-    else if LastKeyboardScanCode = SamScanF9 then
+    else if LastKeyboardScanCode = GameScanCodeF9 then
       GameOptionsRequested := 1
-    else if LastKeyboardScanCode = SamScanF10 then
+    else if LastKeyboardScanCode = GameScanCodeF10 then
       GameOptionsRequested := 1
-    else if LastKeyboardScanCode = SamScanU then
+    else if LastKeyboardScanCode = GameScanCodeU then
     begin
       AmmoChordUHeld := 1;
       if (AmmoChordVHeld <> 0) and (AmmoChordKHeld <> 0) and (ExtraAmmoCheatUsed = 0) then
@@ -385,9 +293,9 @@ begin
         StatusBarCameraX := -1;
       end;
     end
-    else if LastKeyboardScanCode = SamScanURelease then
+    else if LastKeyboardScanCode = GameScanCodeURelease then
       AmmoChordUHeld := 0
-    else if LastKeyboardScanCode = SamScanV then
+    else if LastKeyboardScanCode = GameScanCodeV then
     begin
       AmmoChordVHeld := 1;
       if (AmmoChordUHeld <> 0) and (AmmoChordKHeld <> 0) and (ExtraAmmoCheatUsed = 0) then
@@ -397,9 +305,9 @@ begin
         StatusBarCameraX := -1;
       end;
     end
-    else if LastKeyboardScanCode = SamScanVRelease then
+    else if LastKeyboardScanCode = GameScanCodeVRelease then
       AmmoChordVHeld := 0
-    else if LastKeyboardScanCode = SamScanK then
+    else if LastKeyboardScanCode = GameScanCodeK then
     begin
       AmmoChordKHeld := 1;
       if (AmmoChordUHeld <> 0) and (AmmoChordVHeld <> 0) and (ExtraAmmoCheatUsed = 0) then
@@ -409,9 +317,9 @@ begin
         StatusBarCameraX := -1;
       end;
     end
-    else if LastKeyboardScanCode = SamScanKRelease then
+    else if LastKeyboardScanCode = GameScanCodeKRelease then
       AmmoChordKHeld := 0
-    else if LastKeyboardScanCode = SamScanZ then
+    else if LastKeyboardScanCode = GameScanCodeZ then
     begin
       InventoryChordZHeld := 1;
       if (InventoryChordGHeld <> 0) and (InventoryChordIHeld <> 0) then
@@ -421,9 +329,9 @@ begin
         StatusBarCameraX := -1;
       end;
     end
-    else if LastKeyboardScanCode = SamScanZRelease then
+    else if LastKeyboardScanCode = GameScanCodeZRelease then
       InventoryChordZHeld := 0
-    else if LastKeyboardScanCode = SamScanG then
+    else if LastKeyboardScanCode = GameScanCodeG then
     begin
       InventoryChordGHeld := 1;
       if (InventoryChordZHeld <> 0) and (InventoryChordIHeld <> 0) then
@@ -433,9 +341,9 @@ begin
         StatusBarCameraX := -1;
       end;
     end
-    else if LastKeyboardScanCode = SamScanGRelease then
+    else if LastKeyboardScanCode = GameScanCodeGRelease then
       InventoryChordGHeld := 0
-    else if LastKeyboardScanCode = SamScanI then
+    else if LastKeyboardScanCode = GameScanCodeI then
     begin
       InventoryChordIHeld := 1;
       if (InventoryChordGHeld <> 0) and (InventoryChordZHeld <> 0) then
@@ -445,9 +353,9 @@ begin
         StatusBarCameraX := -1;
       end;
     end
-    else if LastKeyboardScanCode = SamScanIRelease then
+    else if LastKeyboardScanCode = GameScanCodeIRelease then
       InventoryChordIHeld := 0
-    else if LastKeyboardScanCode = SamScanP then
+    else if LastKeyboardScanCode = GameScanCodeP then
     begin
       GodChordPHeld := 1;
       if (GodChordJHeld <> 0) and (GodChordXHeld <> 0) then
@@ -462,12 +370,12 @@ begin
       if (WarpChordOHeld <> 0) and (WarpChordNHeld <> 0) and (WarpChordDHeld <> 0) then
         WarpLevelRequested := 1;
     end
-    else if LastKeyboardScanCode = SamScanPRelease then
+    else if LastKeyboardScanCode = GameScanCodePRelease then
     begin
       GodChordPHeld := 0;
       LevelCheatPBHeld := 0;
     end
-    else if LastKeyboardScanCode = SamScanJ then
+    else if LastKeyboardScanCode = GameScanCodeJ then
     begin
       GodChordJHeld := 1;
       if (GodChordPHeld <> 0) and (GodChordXHeld <> 0) then
@@ -479,9 +387,9 @@ begin
         GodModeMessagePending := 1;
       end;
     end
-    else if LastKeyboardScanCode = SamScanJRelease then
+    else if LastKeyboardScanCode = GameScanCodeJRelease then
       GodChordJHeld := 0
-    else if LastKeyboardScanCode = SamScanX then
+    else if LastKeyboardScanCode = GameScanCodeX then
     begin
       GodChordXHeld := 1;
       if (GodChordPHeld <> 0) and (GodChordJHeld <> 0) then
@@ -493,35 +401,35 @@ begin
         GodModeMessagePending := 1;
       end;
     end
-    else if LastKeyboardScanCode = SamScanB then
+    else if LastKeyboardScanCode = GameScanCodeB then
       LevelCheatPBHeld := 1
-    else if LastKeyboardScanCode = SamScanBRelease then
+    else if LastKeyboardScanCode = GameScanCodeBRelease then
       LevelCheatPBHeld := 0
-    else if LastKeyboardScanCode = SamScanXRelease then
+    else if LastKeyboardScanCode = GameScanCodeXRelease then
       GodChordXHeld := 0
-    else if LastKeyboardScanCode = SamScanO then
+    else if LastKeyboardScanCode = GameScanCodeO then
     begin
       WarpChordOHeld := 1;
       if (LevelCheatPBHeld <> 0) and (WarpChordNHeld <> 0) and (WarpChordDHeld <> 0) then
         WarpLevelRequested := 1;
     end
-    else if LastKeyboardScanCode = SamScanORelease then
+    else if LastKeyboardScanCode = GameScanCodeORelease then
       WarpChordOHeld := 0
-    else if LastKeyboardScanCode = SamScanN then
+    else if LastKeyboardScanCode = GameScanCodeN then
     begin
       WarpChordNHeld := 1;
       if (WarpChordOHeld <> 0) and (LevelCheatPBHeld <> 0) and (WarpChordDHeld <> 0) then
         WarpLevelRequested := 1;
     end
-    else if LastKeyboardScanCode = SamScanNRelease then
+    else if LastKeyboardScanCode = GameScanCodeNRelease then
       WarpChordNHeld := 0
-    else if LastKeyboardScanCode = SamScanD then
+    else if LastKeyboardScanCode = GameScanCodeD then
     begin
       WarpChordDHeld := 1;
       if (WarpChordOHeld <> 0) and (WarpChordNHeld <> 0) and (LevelCheatPBHeld <> 0) then
         WarpLevelRequested := 1;
     end
-    else if LastKeyboardScanCode = SamScanDRelease then
+    else if LastKeyboardScanCode = GameScanCodeDRelease then
       WarpChordDHeld := 0;
 
   end;
@@ -548,10 +456,10 @@ begin
   if JoystickFirePosePending <> 0 then
   begin
     JoystickFirePosePending := 0;
-    if GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerFireRight then
-      GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerStandRight
-    else if GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerFireLeft then
-      GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerStandLeft;
+    if GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteFireRight then
+      GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandRight
+    else if GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteFireLeft then
+      GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandLeft;
   end;
   if JoystickCenterX - SamJoystickDeadZone > JoystickAxisX then
   begin
@@ -560,9 +468,9 @@ begin
     PlayerOnMovingSupport := 0;
     JoystickHorizontalMoved := 1;
     if (PlayerJumping = 0) and (PlayerFalling = 0) then
-      GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerWalkLeft
+      GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkLeft
     else
-      GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerJumpLeft;
+      GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteJumpLeft;
   end
   else if JoystickCenterX + SamJoystickDeadZone < JoystickAxisX then
   begin
@@ -571,56 +479,56 @@ begin
     PlayerOnMovingSupport := 0;
     JoystickHorizontalMoved := 1;
     if (PlayerJumping = 0) and (PlayerFalling = 0) then
-      GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerWalkRight
+      GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkRight
     else
-      GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerJumpRight;
+      GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteJumpRight;
   end
   else if JoystickHorizontalMoved <> 0 then
   begin
-    if (PlayerRightHeld = 1) or (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerWalkRight) then
-      GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerStandRight
+    if (PlayerRightHeld = 1) or (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteWalkRight) then
+      GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandRight
     else
-      GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerStandLeft;
+      GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandLeft;
     PlayerRightHeld := 0;
     PlayerLeftHeld := 0;
     JoystickHorizontalMoved := 0;
   end;
 
-  if CurrentLevelNumber = SamIslandLevel then
+  if CurrentLevelNumber = GameIslandLevelNumber then
   begin
     if JoystickCenterY - SamJoystickDeadZone > JoystickAxisY then
     begin
       PlayerUpHeld := 1;
       JoystickVerticalMoved := 1;
-      if (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerWalkRight) or
-        (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerStandRight) or
-        (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerFireRight) then
-        GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerWalkRight
+      if (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteWalkRight) or
+        (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteStandRight) or
+        (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteFireRight) then
+        GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkRight
       else
-        GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerWalkLeft;
+        GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkLeft;
     end
     else if JoystickCenterY + SamJoystickDeadZone < JoystickAxisY then
     begin
       PlayerDownHeld := 1;
       JoystickVerticalMoved := 1;
-      if (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerWalkRight) or
-        (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerStandRight) or
-        (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerFireRight) then
-        GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerWalkRight
+      if (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteWalkRight) or
+        (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteStandRight) or
+        (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteFireRight) then
+        GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkRight
       else
-        GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerWalkLeft;
+        GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkLeft;
     end
     else if JoystickVerticalMoved <> 0 then
     begin
       JoystickVerticalMoved := 0;
       PlayerUpHeld := 0;
       PlayerDownHeld := 0;
-      if (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerWalkRight) or
-        (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerStandRight) or
-        (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerFireRight) then
-        GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerStandRight
+      if (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteWalkRight) or
+        (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteStandRight) or
+        (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteFireRight) then
+        GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandRight
       else
-        GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerStandLeft;
+        GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteStandLeft;
     end;
   end;
 
@@ -628,7 +536,7 @@ begin
     Exit;
   if PlayerAmmo <= 0 then
     Exit;
-  if CurrentLevelNumber <= SamIslandLevel then
+  if CurrentLevelNumber <= GameIslandLevelNumber then
     Exit;
   if PlayerDying <> 0 then
     Exit;
@@ -639,45 +547,45 @@ begin
     Inc(ShotSlot);
     if PlayerShots[ShotSlot].ActorSlotInactive = 1 then
     begin
-      PlayerShots[ShotSlot].ActorWorldX := GameActors[SamPlayerSlot].ActorWorldX;
-      PlayerShots[ShotSlot].ActorWorldY := GameActors[SamPlayerSlot].ActorWorldY;
-      PlayerShots[ShotSlot].ActorPreviousX := GameActors[SamPlayerSlot].ActorPreviousX;
-      PlayerShots[ShotSlot].ActorPreviousY := GameActors[SamPlayerSlot].ActorPreviousY;
-      PlayerShots[ShotSlot].ActorSpriteBase := SamPlayerShotSprite;
-      if (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerWalkRight) or
-        (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerJumpRight) or
-        (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerStandRight) or
-        (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerFireRight) then
+      PlayerShots[ShotSlot].ActorWorldX := GameActors[GamePlayerActorSlot].ActorWorldX;
+      PlayerShots[ShotSlot].ActorWorldY := GameActors[GamePlayerActorSlot].ActorWorldY;
+      PlayerShots[ShotSlot].ActorPreviousX := GameActors[GamePlayerActorSlot].ActorPreviousX;
+      PlayerShots[ShotSlot].ActorPreviousY := GameActors[GamePlayerActorSlot].ActorPreviousY;
+      PlayerShots[ShotSlot].ActorSpriteBase := GamePlayerShotSprite;
+      if (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteWalkRight) or
+        (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteJumpRight) or
+        (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteStandRight) or
+        (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteFireRight) then
       begin
         PlayerShots[ShotSlot].ActorDirectionX := 1;
         JoystickFirePosePending := 1;
-        GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerFireRight;
+        GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteFireRight;
       end
       else
       begin
         PlayerShots[ShotSlot].ActorDirectionX := -1;
         JoystickFirePosePending := 1;
-        GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerFireLeft;
+        GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteFireLeft;
       end;
       PlayerShots[ShotSlot].DirectionY := 0;
       PlayerShots[ShotSlot].ActorAnimationCounter := 1;
-      PlayerShots[ShotSlot].ActorMovementStep := SamPlayerShotStep;
+      PlayerShots[ShotSlot].ActorMovementStep := GamePlayerShotStep;
       PlayerShots[ShotSlot].ActorCounterA := 0;
       PlayerShots[ShotSlot].ActorCounterB := 0;
-      PlayerShots[ShotSlot].ActorKindCode := SamPlayerShotKind;
+      PlayerShots[ShotSlot].ActorKindCode := GamePlayerShotKind;
       PlayerShots[ShotSlot].ActorSlotInactive := 0;
       PlayerShots[ShotSlot].ActorRemovalPending := 0;
       ShotSpawned := 1;
       Dec(PlayerAmmo);
       StatusBarCameraX := -1;
-      StartSoundEffect(SamSoundPlayerShot);
-      if (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerWalkRight) or
-        (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerStandRight) or
-        (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerJumpRight) or
-        (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerFireRight) then
-        GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerFireRight
+      StartSoundEffect(GameSfxPlayerShot);
+      if (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteWalkRight) or
+        (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteStandRight) or
+        (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteJumpRight) or
+        (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteFireRight) then
+        GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteFireRight
       else
-        GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerFireLeft;
+        GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteFireLeft;
     end;
   until (ShotSlot = PlayerProjectileLimit) or (ShotSpawned <> 0);
 end;
@@ -689,10 +597,10 @@ begin
   { CLI protects the shared timer/sound state; STI below restores interrupts. }
   inline($FA);
   Inc(GameTickCounter);
-  Inc(TimerSubticks[0]);
-  if TimerSubticks[0] = SamPowerupTickPeriod then
+  Inc(PowerupTimerSubticks[0]);
+  if PowerupTimerSubticks[0] = SamPowerupTickPeriod then
   begin
-    TimerSubticks[0] := 0;
+    PowerupTimerSubticks[0] := 0;
     if SpeedBoostTimeLeft > 0 then
     begin
       Dec(SpeedBoostTimeLeft);
@@ -726,41 +634,41 @@ begin
   if (SoundPlaying <> 0) and (SoundEnabled <> 0) then
   begin
     case CurrentSoundEffect of
-      1 .. SamSoundsPerBank:
+      1 .. GameSoundEffectsPerBank:
         begin
           Sound(SoundBankOne^[CurrentSoundEffect, SoundSampleIndex]);
           Inc(SoundSampleIndex);
-          if SoundSampleIndex mod SoundBankOne^[CurrentSoundEffect, SamSoundGatePeriodIndex] = 0 then
+          if SoundSampleIndex mod SoundBankOne^[CurrentSoundEffect, GameSoundGatePeriodColumn] = 0 then
             NoSound;
-          if SoundBankOne^[CurrentSoundEffect, SoundSampleIndex] = SamSoundEndMarker then
+          if SoundBankOne^[CurrentSoundEffect, SoundSampleIndex] = GameSoundEndMarker then
           begin
             SoundPlaying := 0;
             SoundSampleIndex := 1;
             NoSound;
           end;
         end;
-      SamSoundsPerBank + 1 .. SamSecondBankLastSound:
+      GameSoundBankTwoFirstEffect .. GameSoundBankTwoLastEffect:
         begin
-          Sound(SoundBankTwo^[CurrentSoundEffect - SamSoundsPerBank, SoundSampleIndex]);
+          Sound(SoundBankTwo^[CurrentSoundEffect - GameSoundEffectsPerBank, SoundSampleIndex]);
           Inc(SoundSampleIndex);
-          if SoundSampleIndex mod SoundBankTwo^[CurrentSoundEffect - SamSoundsPerBank, SamSoundGatePeriodIndex] = 0
+          if SoundSampleIndex mod SoundBankTwo^[CurrentSoundEffect - GameSoundEffectsPerBank, GameSoundGatePeriodColumn] = 0
             then
             NoSound;
-          if SoundBankTwo^[CurrentSoundEffect - SamSoundsPerBank, SoundSampleIndex] = SamSoundEndMarker then
+          if SoundBankTwo^[CurrentSoundEffect - GameSoundEffectsPerBank, SoundSampleIndex] = GameSoundEndMarker then
           begin
             SoundPlaying := 0;
             SoundSampleIndex := 1;
             NoSound;
           end;
         end;
-      SamSecondBankLastSound + 1 .. SamThirdBankLastSound:
+      GameSoundBankThreeFirstEffect .. GameSoundBankThreeLastEffect:
         begin
-          Sound(SoundBankThree^[CurrentSoundEffect - SamSecondBankLastSound, SoundSampleIndex]);
+          Sound(SoundBankThree^[CurrentSoundEffect - GameSoundBankTwoLastEffect, SoundSampleIndex]);
           Inc(SoundSampleIndex);
-          if SoundSampleIndex mod SoundBankThree^[CurrentSoundEffect - SamSecondBankLastSound,
-            SamSoundGatePeriodIndex] = 0 then
+          if SoundSampleIndex mod SoundBankThree^[CurrentSoundEffect - GameSoundBankTwoLastEffect,
+            GameSoundGatePeriodColumn] = 0 then
             NoSound;
-          if SoundBankThree^[CurrentSoundEffect - SamSecondBankLastSound, SoundSampleIndex] = SamSoundEndMarker then
+          if SoundBankThree^[CurrentSoundEffect - GameSoundBankTwoLastEffect, SoundSampleIndex] = GameSoundEndMarker then
           begin
             SoundPlaying := 0;
             SoundSampleIndex := 1;
@@ -880,12 +788,12 @@ begin
   else
   begin
     SoundEnabled := 1;
-    UpKeyScanCode := SamScanUp;
-    DownKeyScanCode := SamScanDown;
-    LeftKeyScanCode := SamScanLeft;
-    RightKeyScanCode := SamScanRight;
-    JumpKeyScanCode := SamScanCtrl;
-    FireKeyScanCode := SamScanAlt;
+    UpKeyScanCode := GameScanCodeUp;
+    DownKeyScanCode := GameScanCodeDown;
+    LeftKeyScanCode := GameScanCodeLeft;
+    RightKeyScanCode := GameScanCodeRight;
+    JumpKeyScanCode := GameScanCodeControl;
+    FireKeyScanCode := GameScanCodeAlt;
     AlternateVideoTiming := 0;
     JoystickSettingEnabled := 0;
     JoystickActive := False;
@@ -903,10 +811,10 @@ procedure DetectBiosVideoAdapter;
 begin
   DetectedVideoAdapter := 1;
   VideoBiosRegisters.AH := SamBiosReadVideoMode;
-  Intr(SamVideoBiosInterrupt, Registers(VideoBiosRegisters));
+  Intr(GameVideoBiosInterrupt, Registers(VideoBiosRegisters));
   DetectedBiosVideoMode := VideoBiosRegisters.AL and SamBiosVideoModeMask;
   VideoBiosRegisters.AX := SamBiosDisplayCombination;
-  Intr(SamVideoBiosInterrupt, Registers(VideoBiosRegisters));
+  Intr(GameVideoBiosInterrupt, Registers(VideoBiosRegisters));
   if VideoBiosRegisters.AL = SamBiosDisplayCombinationReply then
   begin
     if VideoBiosRegisters.BL <> $FF then
@@ -916,7 +824,7 @@ begin
   begin
     VideoBiosRegisters.AH := SamBiosEgaInformation;
     VideoBiosRegisters.BL := SamBiosEgaInformationSelector;
-    Intr(SamVideoBiosInterrupt, Registers(VideoBiosRegisters));
+    Intr(GameVideoBiosInterrupt, Registers(VideoBiosRegisters));
     if VideoBiosRegisters.BL <> SamBiosEgaInformationSelector then
       DetectedVideoAdapter := SamBiosEgaAdapter;
   end;
@@ -940,7 +848,7 @@ begin
     InstallGameHandlers;
     SetFastGameTimer;
     SoundPlaying := 0;
-    GetMem(SoundBankOne, SamSoundBankBytes);
+    GetMem(SoundBankOne, GameSoundBankBytes);
 {$IFDEF SAM1}
     Assign(SoundResourceFile, 'SAM101E.SND');
 {$ENDIF}
@@ -952,9 +860,9 @@ begin
 {$ENDIF}
     Reset(SoundResourceFile);
     Read(SoundResourceFile, SoundBankOne^);
-    DecryptGameAssetBuffer(SoundBankOne^, SamSoundBankBytes);
+    DecryptGameAssetBuffer(SoundBankOne^, GameSoundBankBytes);
     Close(SoundResourceFile);
-    GetMem(SoundBankTwo, SamSoundBankBytes);
+    GetMem(SoundBankTwo, GameSoundBankBytes);
 {$IFDEF SAM1}
     Assign(SoundResourceFile, 'SAM102E.SND');
 {$ENDIF}
@@ -966,9 +874,9 @@ begin
 {$ENDIF}
     Reset(SoundResourceFile);
     Read(SoundResourceFile, SoundBankTwo^);
-    DecryptGameAssetBuffer(SoundBankTwo^, SamSoundBankBytes);
+    DecryptGameAssetBuffer(SoundBankTwo^, GameSoundBankBytes);
     Close(SoundResourceFile);
-    GetMem(SoundBankThree, SamSoundBankBytes);
+    GetMem(SoundBankThree, GameSoundBankBytes);
 {$IFDEF SAM1}
     Assign(SoundResourceFile, 'SAM103E.SND');
 {$ENDIF}
@@ -980,7 +888,7 @@ begin
 {$ENDIF}
     Reset(SoundResourceFile);
     Read(SoundResourceFile, SoundBankThree^);
-    DecryptGameAssetBuffer(SoundBankThree^, SamSoundBankBytes);
+    DecryptGameAssetBuffer(SoundBankThree^, GameSoundBankBytes);
     Close(SoundResourceFile);
     SoundEnabled := 1;
     InitializeGameDefaults;
@@ -1010,13 +918,13 @@ begin
         ResetNewGameState;
       if (QuitGameRequested = 0) and (ReturnToTitleRequested = 0) then
       begin
-        VideoStrideResult := PgSetScreenStride(SamGameScreenStride);
+        UnusedScreenStrideResult := PgSetScreenStride(GameVideoStrideBytes);
         PgSetBorderColor(4);
         BlackenGamePalette;
         if AlternateVideoTiming = 0 then
-          PgPanDisplayAtRetraceStart(0, SamFirstDrawBufferRow)
+          PgPanDisplayAtRetraceStart(0, GamePlayfieldTopBufferRow)
         else
-          PgPanDisplayAtRetraceEnd(0, SamFirstDrawBufferRow);
+          PgPanDisplayAtRetraceEnd(0, GamePlayfieldTopBufferRow);
         ResetLevelTransientState;
         if PendingRestoreScanCode <> 0 then
         begin
@@ -1046,60 +954,61 @@ begin
             GameTickCounter := 0;
             if JoystickActive then
               PollJoystickControls;
-            if (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerStandRight) and (PlayerRightHeld <> 0) then
-              GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerWalkRight
-            else if (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerStandLeft) and (PlayerLeftHeld <> 0) then
-              GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerWalkLeft
-            else if ((GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerStandLeft) or
-              (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerStandRight)) and ((PlayerDownHeld <> 0) or
+            if (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteStandRight) and (PlayerRightHeld <> 0) then
+              GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkRight
+            else if (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteStandLeft) and (PlayerLeftHeld <>
+              0) then
+              GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkLeft
+            else if ((GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteStandLeft) or
+              (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteStandRight)) and ((PlayerDownHeld <> 0) or
               (PlayerUpHeld <> 0)) then
-              GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerWalkRight;
+              GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkRight;
             { Erase old sprite footprints in the back buffer before updating positions. }
             ToggleGameDrawBuffer;
-            RedrawLevelCell(GameActors[SamPlayerSlot].ActorPreviousX - SamTilePixels,
-              GameActors[SamPlayerSlot].ActorPreviousY - SamTilePixels);
-            RedrawLevelCell(GameActors[SamPlayerSlot].ActorPreviousX - SamTilePixels,
-              GameActors[SamPlayerSlot].ActorPreviousY);
-            RedrawLevelCell(GameActors[SamPlayerSlot].ActorPreviousX - SamTilePixels,
-              GameActors[SamPlayerSlot].ActorPreviousY + SamTilePixels);
-            RedrawLevelCell(GameActors[SamPlayerSlot].ActorPreviousX, GameActors[SamPlayerSlot].ActorPreviousY -
-              SamTilePixels);
-            RedrawLevelCell(GameActors[SamPlayerSlot].ActorPreviousX, GameActors[SamPlayerSlot].ActorPreviousY);
-            RedrawLevelCell(GameActors[SamPlayerSlot].ActorPreviousX, GameActors[SamPlayerSlot].ActorPreviousY +
-              SamTilePixels);
-            RedrawLevelCell(GameActors[SamPlayerSlot].ActorPreviousX + SamTilePixels,
-              GameActors[SamPlayerSlot].ActorPreviousY - SamTilePixels);
-            RedrawLevelCell(GameActors[SamPlayerSlot].ActorPreviousX + SamTilePixels,
-              GameActors[SamPlayerSlot].ActorPreviousY);
-            RedrawLevelCell(GameActors[SamPlayerSlot].ActorPreviousX + SamTilePixels,
-              GameActors[SamPlayerSlot].ActorPreviousY + SamTilePixels);
+            RedrawLevelCell(GameActors[GamePlayerActorSlot].ActorPreviousX - GameTileSizePixels,
+              GameActors[GamePlayerActorSlot].ActorPreviousY - GameTileSizePixels);
+            RedrawLevelCell(GameActors[GamePlayerActorSlot].ActorPreviousX - GameTileSizePixels,
+              GameActors[GamePlayerActorSlot].ActorPreviousY);
+            RedrawLevelCell(GameActors[GamePlayerActorSlot].ActorPreviousX - GameTileSizePixels,
+              GameActors[GamePlayerActorSlot].ActorPreviousY + GameTileSizePixels);
+            RedrawLevelCell(GameActors[GamePlayerActorSlot].ActorPreviousX, GameActors[GamePlayerActorSlot].ActorPreviousY -
+              GameTileSizePixels);
+            RedrawLevelCell(GameActors[GamePlayerActorSlot].ActorPreviousX, GameActors[GamePlayerActorSlot].ActorPreviousY);
+            RedrawLevelCell(GameActors[GamePlayerActorSlot].ActorPreviousX, GameActors[GamePlayerActorSlot].ActorPreviousY +
+              GameTileSizePixels);
+            RedrawLevelCell(GameActors[GamePlayerActorSlot].ActorPreviousX + GameTileSizePixels,
+              GameActors[GamePlayerActorSlot].ActorPreviousY - GameTileSizePixels);
+            RedrawLevelCell(GameActors[GamePlayerActorSlot].ActorPreviousX + GameTileSizePixels,
+              GameActors[GamePlayerActorSlot].ActorPreviousY);
+            RedrawLevelCell(GameActors[GamePlayerActorSlot].ActorPreviousX + GameTileSizePixels,
+              GameActors[GamePlayerActorSlot].ActorPreviousY + GameTileSizePixels);
             { Original bug preserved: visibility tests also read stale SharedLoopIndexB.
               The actor loop itself uses SharedLoopIndexA. }
-            for SharedLoopIndexA := 2 to SamActorSlotLimit do
+            for SharedLoopIndexA := 2 to GameActorSlotCount do
               if GameActors[SharedLoopIndexA].ActorSlotInactive = 0 then
                 if GameActors[SharedLoopIndexA].ActorRemovalPending <> 0 then
                 begin
                   GameActors[SharedLoopIndexA].ActorSlotInactive := 1;
                   RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX,
                     GameActors[SharedLoopIndexA].ActorPreviousY);
-                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX - SamTilePixels,
+                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX - GameTileSizePixels,
                     GameActors[SharedLoopIndexA].ActorPreviousY);
-                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX + SamTilePixels,
+                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX + GameTileSizePixels,
                     GameActors[SharedLoopIndexA].ActorPreviousY);
                   RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX + 32,
                     GameActors[SharedLoopIndexA].ActorPreviousY);
-                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX - SamTilePixels,
-                    GameActors[SharedLoopIndexA].ActorPreviousY - SamTilePixels);
-                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX - SamTilePixels,
-                    GameActors[SharedLoopIndexA].ActorPreviousY + SamTilePixels);
-                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX + SamTilePixels,
-                    GameActors[SharedLoopIndexA].ActorPreviousY - SamTilePixels);
-                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX + SamTilePixels,
-                    GameActors[SharedLoopIndexA].ActorPreviousY + SamTilePixels);
+                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX - GameTileSizePixels,
+                    GameActors[SharedLoopIndexA].ActorPreviousY - GameTileSizePixels);
+                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX - GameTileSizePixels,
+                    GameActors[SharedLoopIndexA].ActorPreviousY + GameTileSizePixels);
+                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX + GameTileSizePixels,
+                    GameActors[SharedLoopIndexA].ActorPreviousY - GameTileSizePixels);
+                  RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX + GameTileSizePixels,
+                    GameActors[SharedLoopIndexA].ActorPreviousY + GameTileSizePixels);
                   RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX,
-                    GameActors[SharedLoopIndexA].ActorPreviousY - SamTilePixels);
+                    GameActors[SharedLoopIndexA].ActorPreviousY - GameTileSizePixels);
                   RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX,
-                    GameActors[SharedLoopIndexA].ActorPreviousY + SamTilePixels);
+                    GameActors[SharedLoopIndexA].ActorPreviousY + GameTileSizePixels);
                 end
                 else if ActorNearViewport(SamActorEraseMargin, SharedLoopIndexA) or
                   (GameActors[SharedLoopIndexA].ActorKindCode = 28) or (GameActors[SharedLoopIndexA].ActorKindCode =
@@ -1108,8 +1017,8 @@ begin
                 begin
                   RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX,
                     GameActors[SharedLoopIndexA].ActorPreviousY);
-                  if GameActors[SharedLoopIndexA].ActorPreviousX and SamTilePixelMask > 0 then
-                    RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX + SamTilePixels,
+                  if GameActors[SharedLoopIndexA].ActorPreviousX and GameTileOffsetMask > 0 then
+                    RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX + GameTileSizePixels,
                       GameActors[SharedLoopIndexA].ActorPreviousY);
                   case GameActors[SharedLoopIndexA].ActorSpriteBase of
                     851:
@@ -1118,38 +1027,38 @@ begin
                           GameActors[SharedLoopIndexA].ActorPreviousY);
                         RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX + 32,
                           GameActors[SharedLoopIndexA].ActorPreviousY);
-                        RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX + SamTilePixels,
+                        RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX + GameTileSizePixels,
                           GameActors[SharedLoopIndexA].ActorPreviousY);
                       end;
                     801 .. 899, 5001:
                       begin
                         RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX,
-                          GameActors[SharedLoopIndexA].ActorPreviousY - SamTilePixels);
-                        if GameActors[SharedLoopIndexA].ActorPreviousX and SamTilePixelMask > 0 then
+                          GameActors[SharedLoopIndexA].ActorPreviousY - GameTileSizePixels);
+                        if GameActors[SharedLoopIndexA].ActorPreviousX and GameTileOffsetMask > 0 then
                           RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX + 15,
-                            GameActors[SharedLoopIndexA].ActorPreviousY - SamTilePixels);
+                            GameActors[SharedLoopIndexA].ActorPreviousY - GameTileSizePixels);
                       end;
                     114:
                       begin
                         RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX,
-                          GameActors[SharedLoopIndexA].ActorPreviousY - SamTilePixels);
+                          GameActors[SharedLoopIndexA].ActorPreviousY - GameTileSizePixels);
                         RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX,
-                          GameActors[SharedLoopIndexA].ActorPreviousY + SamTilePixels);
-                        if GameActors[SharedLoopIndexA].ActorPreviousX and SamTilePixelMask > 0 then
+                          GameActors[SharedLoopIndexA].ActorPreviousY + GameTileSizePixels);
+                        if GameActors[SharedLoopIndexA].ActorPreviousX and GameTileOffsetMask > 0 then
                         begin
                           RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX + 15,
-                            GameActors[SharedLoopIndexA].ActorPreviousY + SamTilePixels);
+                            GameActors[SharedLoopIndexA].ActorPreviousY + GameTileSizePixels);
                           RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX + 15,
-                            GameActors[SharedLoopIndexA].ActorPreviousY - SamTilePixels);
+                            GameActors[SharedLoopIndexA].ActorPreviousY - GameTileSizePixels);
                         end;
                       end;
                     101:
                       begin
                         RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX,
-                          GameActors[SharedLoopIndexA].ActorPreviousY - SamTilePixels);
-                        if GameActors[SharedLoopIndexA].ActorPreviousX and SamTilePixelMask > 0 then
+                          GameActors[SharedLoopIndexA].ActorPreviousY - GameTileSizePixels);
+                        if GameActors[SharedLoopIndexA].ActorPreviousX and GameTileOffsetMask > 0 then
                           RedrawLevelCell(GameActors[SharedLoopIndexA].ActorPreviousX + 15,
-                            GameActors[SharedLoopIndexA].ActorPreviousY - SamTilePixels);
+                            GameActors[SharedLoopIndexA].ActorPreviousY - GameTileSizePixels);
                       end;
                   end;
                 end;
@@ -1158,66 +1067,66 @@ begin
             begin
               RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorPreviousX,
                 PlayerShots[SharedLoopIndexA].ActorPreviousY);
-              RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorPreviousX + SamTilePixels,
+              RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorPreviousX + GameTileSizePixels,
                 PlayerShots[SharedLoopIndexA].ActorPreviousY);
               RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorPreviousX,
-                PlayerShots[SharedLoopIndexA].ActorPreviousY + SamTilePixels);
-              RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorPreviousX + SamTilePixels,
-                PlayerShots[SharedLoopIndexA].ActorPreviousY + SamTilePixels);
+                PlayerShots[SharedLoopIndexA].ActorPreviousY + GameTileSizePixels);
+              RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorPreviousX + GameTileSizePixels,
+                PlayerShots[SharedLoopIndexA].ActorPreviousY + GameTileSizePixels);
             end;
 
             if (PlayerDying = 0) and (PlayerLeavingLevel = 0) then
             begin
               MovePlayerAndCamera;
-              if CurrentLevelNumber > SamIslandLevel then
+              if CurrentLevelNumber > GameIslandLevelNumber then
                 UpdatePlayerJump;
-              MemW[0: SamBiosKeyboardTail] := MemW[0: SamBiosKeyboardHead];
+              MemW[0: GameBiosKeyboardTailLinear] := MemW[0: GameBiosKeyboardHeadLinear];
               CheckPlayerTileContacts;
               PlayerOnMovingSupport := 0;
             end
             else if PlayerDying <> 0 then
             begin
-              GameActors[SamPlayerSlot].ActorPreviousX := GameActors[SamPlayerSlot].ActorWorldX;
-              GameActors[SamPlayerSlot].ActorPreviousY := GameActors[SamPlayerSlot].ActorWorldY;
-              if GameActors[SamPlayerSlot].ActorSpriteBase <> SamPlayerDeathFrameOne then
-                GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerDeathFrameOne
+              GameActors[GamePlayerActorSlot].ActorPreviousX := GameActors[GamePlayerActorSlot].ActorWorldX;
+              GameActors[GamePlayerActorSlot].ActorPreviousY := GameActors[GamePlayerActorSlot].ActorWorldY;
+              if GameActors[GamePlayerActorSlot].ActorSpriteBase <> GamePlayerSpriteDeathOne then
+                GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteDeathOne
               else
-                GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerDeathFrameTwo;
+                GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteDeathTwo;
               if DeathAnimationTick = 35 then
-                StartSoundEffect(SamSoundPlayerDeath);
+                StartSoundEffect(GameSfxPlayerDeath);
               Dec(DeathAnimationTick);
               if DeathAnimationTick = 0 then
                 RequestIslandReturn;
               if DeathAnimationTick > 0 then
               begin
-                Dec(GameActors[SamPlayerSlot].ActorWorldY, DeathVerticalMotionTable[DeathAnimationTick]);
-                if GameActors[SamPlayerSlot].ActorWorldY < 16 then
-                  GameActors[SamPlayerSlot].ActorWorldY := 16
-                else if CameraY + SamPlayerViewportBottomOffset < GameActors[SamPlayerSlot].ActorWorldY then
-                  GameActors[SamPlayerSlot].ActorWorldY := CameraY + SamPlayerViewportBottomOffset;
+                Dec(GameActors[GamePlayerActorSlot].ActorWorldY, DeathVerticalMotionTable[DeathAnimationTick]);
+                if GameActors[GamePlayerActorSlot].ActorWorldY < 16 then
+                  GameActors[GamePlayerActorSlot].ActorWorldY := 16
+                else if CameraY + GamePlayfieldHeightPixels < GameActors[GamePlayerActorSlot].ActorWorldY then
+                  GameActors[GamePlayerActorSlot].ActorWorldY := CameraY + GamePlayfieldHeightPixels;
               end;
             end
             else if PlayerLeavingLevel <> 0 then
             begin
-              GameActors[SamPlayerSlot].ActorPreviousX := GameActors[SamPlayerSlot].ActorWorldX;
-              GameActors[SamPlayerSlot].ActorPreviousY := GameActors[SamPlayerSlot].ActorWorldY;
+              GameActors[GamePlayerActorSlot].ActorPreviousX := GameActors[GamePlayerActorSlot].ActorWorldX;
+              GameActors[GamePlayerActorSlot].ActorPreviousY := GameActors[GamePlayerActorSlot].ActorWorldY;
               if LevelExitAnimationTick = 8 then
-                StartSoundEffect(SamSoundLevelExit);
+                StartSoundEffect(GameSfxLevelExit);
               Dec(LevelExitAnimationTick);
               if LevelExitAnimationTick = 0 then
               begin
                 FadeGamePaletteToBlack(20);
-                CurrentLevelNumber := SamIslandLevel;
+                CurrentLevelNumber := GameIslandLevelNumber;
                 ResetLevelTransientState;
                 LoadLevelMap(CurrentLevelNumber);
                 if AllMissionsComplete <> 0 then
                   ShowFortressUnlockedMessage;
               end
               else if LevelExitAnimationTick > 0 then
-                if GameActors[SamPlayerSlot].ActorDirectionX = -1 then
-                  Dec(GameActors[SamPlayerSlot].ActorWorldX, 2)
+                if GameActors[GamePlayerActorSlot].ActorDirectionX = -1 then
+                  Dec(GameActors[GamePlayerActorSlot].ActorWorldX, 2)
                 else
-                  Inc(GameActors[SamPlayerSlot].ActorWorldX, 2);
+                  Inc(GameActors[GamePlayerActorSlot].ActorWorldX, 2);
             end;
             { Draw updated actors, then redraw foreground tiles to restore occlusion. }
             UpdateActorsAndShots;
@@ -1229,20 +1138,20 @@ begin
                 begin
                   RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX,
                     PlayerShots[SharedLoopIndexA].ActorWorldY);
-                  RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX + SamTilePixels,
+                  RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX + GameTileSizePixels,
                     PlayerShots[SharedLoopIndexA].ActorWorldY);
                   DrawCellForeground(PlayerShots[SharedLoopIndexA].ActorWorldX,
                     PlayerShots[SharedLoopIndexA].ActorWorldY);
-                  DrawCellForeground(PlayerShots[SharedLoopIndexA].ActorWorldX + SamTilePixels,
+                  DrawCellForeground(PlayerShots[SharedLoopIndexA].ActorWorldX + GameTileSizePixels,
                     PlayerShots[SharedLoopIndexA].ActorWorldY);
                   RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX,
-                    PlayerShots[SharedLoopIndexA].ActorWorldY + SamTilePixels);
-                  RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX + SamTilePixels,
-                    PlayerShots[SharedLoopIndexA].ActorWorldY + SamTilePixels);
+                    PlayerShots[SharedLoopIndexA].ActorWorldY + GameTileSizePixels);
+                  RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX + GameTileSizePixels,
+                    PlayerShots[SharedLoopIndexA].ActorWorldY + GameTileSizePixels);
                   DrawCellForeground(PlayerShots[SharedLoopIndexA].ActorWorldX,
-                    PlayerShots[SharedLoopIndexA].ActorWorldY + SamTilePixels);
-                  DrawCellForeground(PlayerShots[SharedLoopIndexA].ActorWorldX + SamTilePixels,
-                    PlayerShots[SharedLoopIndexA].ActorWorldY + SamTilePixels);
+                    PlayerShots[SharedLoopIndexA].ActorWorldY + GameTileSizePixels);
+                  DrawCellForeground(PlayerShots[SharedLoopIndexA].ActorWorldX + GameTileSizePixels,
+                    PlayerShots[SharedLoopIndexA].ActorWorldY + GameTileSizePixels);
                   PlayerShots[SharedLoopIndexA].ActorSlotInactive := 1;
                 end
                 else
@@ -1259,40 +1168,40 @@ begin
                       PlayerShots[SharedLoopIndexA].ActorRemovalPending := 1;
                       RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX,
                         PlayerShots[SharedLoopIndexA].ActorWorldY);
-                      RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX - SamTilePixels,
+                      RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX - GameTileSizePixels,
                         PlayerShots[SharedLoopIndexA].ActorWorldY);
-                      RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX + SamTilePixels,
+                      RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX + GameTileSizePixels,
                         PlayerShots[SharedLoopIndexA].ActorWorldY);
                       RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX,
-                        PlayerShots[SharedLoopIndexA].ActorWorldY + SamTilePixels);
-                      RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX - SamTilePixels,
-                        PlayerShots[SharedLoopIndexA].ActorWorldY + SamTilePixels);
-                      RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX + SamTilePixels,
-                        PlayerShots[SharedLoopIndexA].ActorWorldY + SamTilePixels);
+                        PlayerShots[SharedLoopIndexA].ActorWorldY + GameTileSizePixels);
+                      RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX - GameTileSizePixels,
+                        PlayerShots[SharedLoopIndexA].ActorWorldY + GameTileSizePixels);
+                      RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX + GameTileSizePixels,
+                        PlayerShots[SharedLoopIndexA].ActorWorldY + GameTileSizePixels);
                     end;
                   end
                   else if not ShotNearViewport(SamActorEraseMargin, SharedLoopIndexA) then
                   begin
                     RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX,
                       PlayerShots[SharedLoopIndexA].ActorWorldY);
-                    RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX + SamTilePixels,
+                    RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX + GameTileSizePixels,
                       PlayerShots[SharedLoopIndexA].ActorWorldY);
                     RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX,
-                      PlayerShots[SharedLoopIndexA].ActorWorldY + SamTilePixels);
-                    RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX + SamTilePixels,
-                      PlayerShots[SharedLoopIndexA].ActorWorldY + SamTilePixels);
+                      PlayerShots[SharedLoopIndexA].ActorWorldY + GameTileSizePixels);
+                    RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX + GameTileSizePixels,
+                      PlayerShots[SharedLoopIndexA].ActorWorldY + GameTileSizePixels);
                     PlayerShots[SharedLoopIndexA].ActorRemovalPending := 1;
                   end
                   else
                   begin
                     RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX,
                       PlayerShots[SharedLoopIndexA].ActorWorldY);
-                    RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX + SamTilePixels,
+                    RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX + GameTileSizePixels,
                       PlayerShots[SharedLoopIndexA].ActorWorldY);
                     RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX,
-                      PlayerShots[SharedLoopIndexA].ActorWorldY + SamTilePixels);
-                    RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX + SamTilePixels,
-                      PlayerShots[SharedLoopIndexA].ActorWorldY + SamTilePixels);
+                      PlayerShots[SharedLoopIndexA].ActorWorldY + GameTileSizePixels);
+                    RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorWorldX + GameTileSizePixels,
+                      PlayerShots[SharedLoopIndexA].ActorWorldY + GameTileSizePixels);
                     PgBlitMasked16x16(SpriteBank001^.SpriteEntries[PlayerShots[SharedLoopIndexA].ActorSpriteBase - 1
                       + PlayerShots[SharedLoopIndexA].ActorAnimationCounter].SpriteDataBytes[1],
                       PlayerShots[SharedLoopIndexA].ActorWorldX shr 3, PlayerShots[SharedLoopIndexA].ActorWorldY +
@@ -1300,12 +1209,12 @@ begin
                   end;
                   DrawCellForeground(PlayerShots[SharedLoopIndexA].ActorWorldX,
                     PlayerShots[SharedLoopIndexA].ActorWorldY);
-                  DrawCellForeground(PlayerShots[SharedLoopIndexA].ActorWorldX + SamTilePixels,
+                  DrawCellForeground(PlayerShots[SharedLoopIndexA].ActorWorldX + GameTileSizePixels,
                     PlayerShots[SharedLoopIndexA].ActorWorldY);
                   DrawCellForeground(PlayerShots[SharedLoopIndexA].ActorWorldX,
-                    PlayerShots[SharedLoopIndexA].ActorWorldY + SamTilePixels);
-                  DrawCellForeground(PlayerShots[SharedLoopIndexA].ActorWorldX + SamTilePixels,
-                    PlayerShots[SharedLoopIndexA].ActorWorldY + SamTilePixels);
+                    PlayerShots[SharedLoopIndexA].ActorWorldY + GameTileSizePixels);
+                  DrawCellForeground(PlayerShots[SharedLoopIndexA].ActorWorldX + GameTileSizePixels,
+                    PlayerShots[SharedLoopIndexA].ActorWorldY + GameTileSizePixels);
                 end;
               end;
 
@@ -1323,33 +1232,33 @@ begin
             if TeleportRelocatePending <> 0 then
             begin
               TeleportRelocatePending := 0;
-              GameActors[SamPlayerSlot].ActorWorldX := TeleportDestinationX;
-              GameActors[SamPlayerSlot].ActorWorldY := TeleportDestinationY;
-              CameraX := GameActors[SamPlayerSlot].ActorWorldX - SamCameraCenterX;
+              GameActors[GamePlayerActorSlot].ActorWorldX := TeleportDestinationX;
+              GameActors[GamePlayerActorSlot].ActorWorldY := TeleportDestinationY;
+              CameraX := GameActors[GamePlayerActorSlot].ActorWorldX - GameCameraCenterX;
               if CameraX < 0 then
                 CameraX := 0;
-              if CameraX > SamMaximumCameraX then
-                CameraX := SamMaximumCameraX;
-              CameraY := GameActors[SamPlayerSlot].ActorWorldY - SamCameraCenterY;
+              if CameraX > GameCameraMaxX then
+                CameraX := GameCameraMaxX;
+              CameraY := GameActors[GamePlayerActorSlot].ActorWorldY - GameCameraCenterY;
               if CameraY < 0 then
                 CameraY := 0;
-              if CameraY > SamMaximumCameraY then
-                CameraY := SamMaximumCameraY;
+              if CameraY > GameCameraMaxY then
+                CameraY := GameCameraMaxY;
               if AlternateVideoTiming = 0 then
-                PgPanDisplayAtRetraceStart(CameraX, CameraY + SamFirstDrawBufferRow)
+                PgPanDisplayAtRetraceStart(CameraX, CameraY + GamePlayfieldTopBufferRow)
               else
-                PgPanDisplayAtRetraceEnd(CameraX, CameraY + SamFirstDrawBufferRow);
+                PgPanDisplayAtRetraceEnd(CameraX, CameraY + GamePlayfieldTopBufferRow);
             end;
             SharedLoopIndexA := 1;
-            if (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerWalkRight) or
-              (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerWalkLeft) then
+            if (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteWalkRight) or
+              (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteWalkLeft) then
             begin
-              Inc(GameActors[SamPlayerSlot].ActorAnimationCounter, GameActors[SamPlayerSlot].ActorMovementStep);
-              if GameActors[SamPlayerSlot].ActorAnimationCounter > 19 then
-                GameActors[SamPlayerSlot].ActorAnimationCounter := 1;
+              Inc(GameActors[GamePlayerActorSlot].ActorAnimationCounter, GameActors[GamePlayerActorSlot].ActorMovementStep);
+              if GameActors[GamePlayerActorSlot].ActorAnimationCounter > 19 then
+                GameActors[GamePlayerActorSlot].ActorAnimationCounter := 1;
             end
             else
-              GameActors[SamPlayerSlot].ActorAnimationCounter := 1;
+              GameActors[GamePlayerActorSlot].ActorAnimationCounter := 1;
             if PlayerDamageGraceActive <> 0 then
             begin
               Dec(PlayerDamageGraceTick);
@@ -1357,47 +1266,50 @@ begin
                 0:
                   PlayerDamageGraceActive := 0;
                 10:
-                  GameActors[SamPlayerSlot].FlashFrames := 5;
+                  GameActors[GamePlayerActorSlot].FlashFrames := 5;
                 20:
-                  GameActors[SamPlayerSlot].FlashFrames := 5;
+                  GameActors[GamePlayerActorSlot].FlashFrames := 5;
                 30:
-                  GameActors[SamPlayerSlot].FlashFrames := 5;
+                  GameActors[GamePlayerActorSlot].FlashFrames := 5;
               end;
             end;
 
-            if GameActors[SamPlayerSlot].FlashFrames > 0 then
+            if GameActors[GamePlayerActorSlot].FlashFrames > 0 then
             begin
-              PgOrShifted16x16(PlayerSpriteBank^.SpriteEntries[GameActors[SamPlayerSlot].ActorAnimationCounter div 5
-                + GameActors[SamPlayerSlot].ActorSpriteBase].SpriteDataBytes[1],
-                GameActors[SamPlayerSlot].ActorWorldX, GameActors[SamPlayerSlot].ActorWorldY + GameDrawBufferRow);
-              Dec(GameActors[SamPlayerSlot].FlashFrames);
+              PgOrShifted16x16(PlayerSpriteBank^.SpriteEntries[GameActors[GamePlayerActorSlot].ActorAnimationCounter div 5
+                + GameActors[GamePlayerActorSlot].ActorSpriteBase].SpriteDataBytes[1],
+                GameActors[GamePlayerActorSlot].ActorWorldX, GameActors[GamePlayerActorSlot].ActorWorldY + GameDrawBufferRow);
+              Dec(GameActors[GamePlayerActorSlot].FlashFrames);
             end
-            else if GameActors[SamPlayerSlot].ActorWorldX and SamPlanarBytePixelMask = 0 then
-              PgBlitMasked16x16(PlayerSpriteBank^.SpriteEntries[GameActors[SamPlayerSlot].ActorAnimationCounter div 5
-                + GameActors[SamPlayerSlot].ActorSpriteBase].SpriteDataBytes[1],
-                GameActors[SamPlayerSlot].ActorWorldX shr 3, GameActors[SamPlayerSlot].ActorWorldY +
+            else if GameActors[GamePlayerActorSlot].ActorWorldX and GamePlanarBytePixelMask = 0 then
+              PgBlitMasked16x16(PlayerSpriteBank^.SpriteEntries[GameActors[GamePlayerActorSlot].ActorAnimationCounter div 5
+                + GameActors[GamePlayerActorSlot].ActorSpriteBase].SpriteDataBytes[1],
+                GameActors[GamePlayerActorSlot].ActorWorldX shr 3, GameActors[GamePlayerActorSlot].ActorWorldY +
                 GameDrawBufferRow)
             else
               PgBlitMaskedShifted16x16(PlayerSpriteBank^.SpriteEntries[GameActors[
-                SamPlayerSlot].ActorAnimationCounter div 5 +
-                GameActors[SamPlayerSlot].ActorSpriteBase].SpriteDataBytes[1], GameActors[SamPlayerSlot].ActorWorldX,
-                GameActors[SamPlayerSlot].ActorWorldY + GameDrawBufferRow);
+                GamePlayerActorSlot].ActorAnimationCounter div 5 +
+                GameActors[GamePlayerActorSlot].ActorSpriteBase].SpriteDataBytes[1],
+                  GameActors[GamePlayerActorSlot].ActorWorldX,
+                GameActors[GamePlayerActorSlot].ActorWorldY + GameDrawBufferRow);
             if PlayerTeleporting <> 0 then
               if TeleportAnimationTick < 0 then
                 PgBlitMaskedShifted16x16(SpriteBank151^.SpriteEntries[TeleportAnimationTick div 5 +
-                  40].SpriteDataBytes[1], GameActors[SamPlayerSlot].ActorWorldX,
-                  GameActors[SamPlayerSlot].ActorWorldY + GameDrawBufferRow)
+                  40].SpriteDataBytes[1], GameActors[GamePlayerActorSlot].ActorWorldX,
+                  GameActors[GamePlayerActorSlot].ActorWorldY + GameDrawBufferRow)
               else
                 PgBlitMaskedShifted16x16(SpriteBank151^.SpriteEntries[40 - TeleportAnimationTick div
-                  5].SpriteDataBytes[1], GameActors[SamPlayerSlot].ActorWorldX, GameActors[SamPlayerSlot].ActorWorldY
+                  5].SpriteDataBytes[1], GameActors[GamePlayerActorSlot].ActorWorldX,
+                    GameActors[GamePlayerActorSlot].ActorWorldY
                   + GameDrawBufferRow);
-            if (PlayerLeftHeld <> 0) and (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerFireLeft) then
-              GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerWalkLeft
-            else if (PlayerRightHeld <> 0) and (GameActors[SamPlayerSlot].ActorSpriteBase = SamPlayerFireRight) then
-              GameActors[SamPlayerSlot].ActorSpriteBase := SamPlayerWalkRight;
+            if (PlayerLeftHeld <> 0) and (GameActors[GamePlayerActorSlot].ActorSpriteBase = GamePlayerSpriteFireLeft) then
+              GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkLeft
+            else if (PlayerRightHeld <> 0) and (GameActors[GamePlayerActorSlot].ActorSpriteBase =
+              GamePlayerSpriteFireRight) then
+              GameActors[GamePlayerActorSlot].ActorSpriteBase := GamePlayerSpriteWalkRight;
             { Original bug preserved: visibility tests also read stale SharedLoopIndexB.
               The actor loop itself uses SharedLoopIndexA. }
-            for SharedLoopIndexA := 2 to SamActorSlotLimit do
+            for SharedLoopIndexA := 2 to GameActorSlotCount do
               if GameActors[SharedLoopIndexA].ActorSlotInactive = 0 then
                 if GameActors[SharedLoopIndexA].ActorRemovalPending = 0 then
                   if ActorNearViewport(SamActorDrawMargin, SharedLoopIndexA) or
@@ -1419,7 +1331,7 @@ begin
                                 SharedLoopIndexA].ActorSpriteBase - 100 +
                                 GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
                                 GameActors[SharedLoopIndexA].ActorWorldX, GameActors[SharedLoopIndexA].ActorWorldY +
-                                GameDrawBufferRow - SamTilePixels);
+                                GameDrawBufferRow - GameTileSizePixels);
                               if GameActors[SharedLoopIndexA].ActorDirectionX < 0 then
                                 PgOrShifted16x16(SpriteBank101^.SpriteEntries[5].SpriteDataBytes[1],
                                   GameActors[SharedLoopIndexA].ActorWorldX, GameActors[SharedLoopIndexA].ActorWorldY
@@ -1434,11 +1346,11 @@ begin
                               if GameActors[SharedLoopIndexA].ActorDirectionX < 0 then
                                 PgOrShifted16x16(SpriteBank101^.SpriteEntries[1].SpriteDataBytes[1],
                                   GameActors[SharedLoopIndexA].ActorWorldX, GameActors[SharedLoopIndexA].ActorWorldY
-                                  + GameDrawBufferRow - SamTilePixels)
+                                  + GameDrawBufferRow - GameTileSizePixels)
                               else
                                 PgOrShifted16x16(SpriteBank101^.SpriteEntries[41].SpriteDataBytes[1],
                                   GameActors[SharedLoopIndexA].ActorWorldX, GameActors[SharedLoopIndexA].ActorWorldY
-                                  + GameDrawBufferRow - SamTilePixels);
+                                  + GameDrawBufferRow - GameTileSizePixels);
                               PgOrShifted16x16(SpriteBank101^.SpriteEntries[GameActors[
                                 SharedLoopIndexA].ActorSpriteBase - 96 +
                                 GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
@@ -1532,7 +1444,7 @@ begin
                               SharedLoopIndexA].ActorSpriteBase - 800 +
                               GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
                               GameActors[SharedLoopIndexA].ActorWorldX, GameActors[SharedLoopIndexA].ActorWorldY +
-                              GameDrawBufferRow - SamTilePixels);
+                              GameDrawBufferRow - GameTileSizePixels);
                             PgOrShifted16x16(SpriteBank801^.SpriteEntries[GameActors[
                               SharedLoopIndexA].ActorSpriteBase - 796 +
                               GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
@@ -1547,7 +1459,7 @@ begin
                                 SharedLoopIndexA].ActorSpriteBase - 800 +
                                 GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
                                 GameActors[SharedLoopIndexA].ActorWorldX, GameActors[SharedLoopIndexA].ActorWorldY +
-                                GameDrawBufferRow - SamTilePixels);
+                                GameDrawBufferRow - GameTileSizePixels);
                               if GameActors[SharedLoopIndexA].ActorDirectionX < 0 then
                                 PgOrShifted16x16(SpriteBank801^.SpriteEntries[21].SpriteDataBytes[1],
                                   GameActors[SharedLoopIndexA].ActorWorldX, GameActors[SharedLoopIndexA].ActorWorldY
@@ -1562,11 +1474,11 @@ begin
                               if GameActors[SharedLoopIndexA].ActorDirectionX < 0 then
                                 PgOrShifted16x16(SpriteBank801^.SpriteEntries[17].SpriteDataBytes[1],
                                   GameActors[SharedLoopIndexA].ActorWorldX, GameActors[SharedLoopIndexA].ActorWorldY
-                                  + GameDrawBufferRow - SamTilePixels)
+                                  + GameDrawBufferRow - GameTileSizePixels)
                               else
                                 PgOrShifted16x16(SpriteBank801^.SpriteEntries[29].SpriteDataBytes[1],
                                   GameActors[SharedLoopIndexA].ActorWorldX, GameActors[SharedLoopIndexA].ActorWorldY
-                                  + GameDrawBufferRow - SamTilePixels);
+                                  + GameDrawBufferRow - GameTileSizePixels);
                               PgOrShifted16x16(SpriteBank801^.SpriteEntries[GameActors[
                                 SharedLoopIndexA].ActorSpriteBase - 796 +
                                 GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
@@ -1594,13 +1506,13 @@ begin
                             PgOrShifted16x16(SpriteBank851^.SpriteEntries[GameActors[
                               SharedLoopIndexA].ActorSpriteBase - 846 +
                               GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
-                              GameActors[SharedLoopIndexA].ActorWorldX + SamTilePixels,
+                              GameActors[SharedLoopIndexA].ActorWorldX + GameTileSizePixels,
                               GameActors[SharedLoopIndexA].ActorWorldY + GameDrawBufferRow);
                           end;
                       end;
                       Dec(GameActors[SharedLoopIndexA].FlashFrames);
                     end
-                    else if GameActors[SharedLoopIndexA].ActorWorldX and SamPlanarBytePixelMask = 0 then
+                    else if GameActors[SharedLoopIndexA].ActorWorldX and GamePlanarBytePixelMask = 0 then
                     begin
                       case GameActors[SharedLoopIndexA].ActorSpriteBase of
                         1 .. 50:
@@ -1616,7 +1528,7 @@ begin
                                 SharedLoopIndexA].ActorSpriteBase - 100 +
                                 GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
                                 GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-                                GameActors[SharedLoopIndexA].ActorWorldY + GameDrawBufferRow - SamTilePixels);
+                                GameActors[SharedLoopIndexA].ActorWorldY + GameDrawBufferRow - GameTileSizePixels);
                               if GameActors[SharedLoopIndexA].ActorDirectionX < 0 then
                                 PgBlitMasked16x16(SpriteBank101^.SpriteEntries[5].SpriteDataBytes[1],
                                   GameActors[SharedLoopIndexA].ActorWorldX shr 3,
@@ -1631,11 +1543,11 @@ begin
                               if GameActors[SharedLoopIndexA].ActorDirectionX < 0 then
                                 PgBlitMasked16x16(SpriteBank101^.SpriteEntries[1].SpriteDataBytes[1],
                                   GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-                                  GameActors[SharedLoopIndexA].ActorWorldY + GameDrawBufferRow - SamTilePixels)
+                                  GameActors[SharedLoopIndexA].ActorWorldY + GameDrawBufferRow - GameTileSizePixels)
                               else
                                 PgBlitMasked16x16(SpriteBank101^.SpriteEntries[41].SpriteDataBytes[1],
                                   GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-                                  GameActors[SharedLoopIndexA].ActorWorldY + GameDrawBufferRow - SamTilePixels);
+                                  GameActors[SharedLoopIndexA].ActorWorldY + GameDrawBufferRow - GameTileSizePixels);
                               PgBlitMasked16x16(SpriteBank101^.SpriteEntries[GameActors[
                                 SharedLoopIndexA].ActorSpriteBase - 96 +
                                 GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
@@ -1739,7 +1651,7 @@ begin
                               SharedLoopIndexA].ActorSpriteBase - 800 +
                               GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
                               GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-                              GameActors[SharedLoopIndexA].ActorWorldY + GameDrawBufferRow - SamTilePixels);
+                              GameActors[SharedLoopIndexA].ActorWorldY + GameDrawBufferRow - GameTileSizePixels);
                             PgBlitMasked16x16(SpriteBank801^.SpriteEntries[GameActors[
                               SharedLoopIndexA].ActorSpriteBase - 796 +
                               GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
@@ -1754,7 +1666,7 @@ begin
                                 SharedLoopIndexA].ActorSpriteBase - 800 +
                                 GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
                                 GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-                                GameActors[SharedLoopIndexA].ActorWorldY + GameDrawBufferRow - SamTilePixels);
+                                GameActors[SharedLoopIndexA].ActorWorldY + GameDrawBufferRow - GameTileSizePixels);
                               if GameActors[SharedLoopIndexA].ActorDirectionX < 0 then
                                 PgBlitMasked16x16(SpriteBank801^.SpriteEntries[21].SpriteDataBytes[1],
                                   GameActors[SharedLoopIndexA].ActorWorldX shr 3,
@@ -1769,11 +1681,11 @@ begin
                               if GameActors[SharedLoopIndexA].ActorDirectionX < 0 then
                                 PgBlitMasked16x16(SpriteBank801^.SpriteEntries[17].SpriteDataBytes[1],
                                   GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-                                  GameActors[SharedLoopIndexA].ActorWorldY + GameDrawBufferRow - SamTilePixels)
+                                  GameActors[SharedLoopIndexA].ActorWorldY + GameDrawBufferRow - GameTileSizePixels)
                               else
                                 PgBlitMasked16x16(SpriteBank801^.SpriteEntries[29].SpriteDataBytes[1],
                                   GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-                                  GameActors[SharedLoopIndexA].ActorWorldY + GameDrawBufferRow - SamTilePixels);
+                                  GameActors[SharedLoopIndexA].ActorWorldY + GameDrawBufferRow - GameTileSizePixels);
                               PgBlitMasked16x16(SpriteBank801^.SpriteEntries[GameActors[
                                 SharedLoopIndexA].ActorSpriteBase - 796 +
                                 GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
@@ -1822,7 +1734,7 @@ begin
                                 SharedLoopIndexA].ActorSpriteBase - 100 +
                                 GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
                                 GameActors[SharedLoopIndexA].ActorWorldX, GameActors[SharedLoopIndexA].ActorWorldY +
-                                GameDrawBufferRow - SamTilePixels);
+                                GameDrawBufferRow - GameTileSizePixels);
                               if GameActors[SharedLoopIndexA].ActorDirectionX < 0 then
                                 PgBlitMaskedShifted16x16(SpriteBank101^.SpriteEntries[5].SpriteDataBytes[1],
                                   GameActors[SharedLoopIndexA].ActorWorldX, GameActors[SharedLoopIndexA].ActorWorldY
@@ -1837,11 +1749,11 @@ begin
                               if GameActors[SharedLoopIndexA].ActorDirectionX < 0 then
                                 PgBlitMaskedShifted16x16(SpriteBank101^.SpriteEntries[1].SpriteDataBytes[1],
                                   GameActors[SharedLoopIndexA].ActorWorldX, GameActors[SharedLoopIndexA].ActorWorldY
-                                  + GameDrawBufferRow - SamTilePixels)
+                                  + GameDrawBufferRow - GameTileSizePixels)
                               else
                                 PgBlitMaskedShifted16x16(SpriteBank101^.SpriteEntries[41].SpriteDataBytes[1],
                                   GameActors[SharedLoopIndexA].ActorWorldX, GameActors[SharedLoopIndexA].ActorWorldY
-                                  + GameDrawBufferRow - SamTilePixels);
+                                  + GameDrawBufferRow - GameTileSizePixels);
                               PgBlitMaskedShifted16x16(SpriteBank101^.SpriteEntries[GameActors[
                                 SharedLoopIndexA].ActorSpriteBase - 96 +
                                 GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
@@ -1951,7 +1863,7 @@ begin
                               SharedLoopIndexA].ActorSpriteBase - 800 +
                               GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
                               GameActors[SharedLoopIndexA].ActorWorldX, GameActors[SharedLoopIndexA].ActorWorldY +
-                              GameDrawBufferRow - SamTilePixels);
+                              GameDrawBufferRow - GameTileSizePixels);
                             PgBlitMaskedShifted16x16(SpriteBank801^.SpriteEntries[GameActors[
                               SharedLoopIndexA].ActorSpriteBase - 796 +
                               GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
@@ -1966,7 +1878,7 @@ begin
                                 SharedLoopIndexA].ActorSpriteBase - 800 +
                                 GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
                                 GameActors[SharedLoopIndexA].ActorWorldX, GameActors[SharedLoopIndexA].ActorWorldY +
-                                GameDrawBufferRow - SamTilePixels);
+                                GameDrawBufferRow - GameTileSizePixels);
                               if GameActors[SharedLoopIndexA].ActorDirectionX < 0 then
                                 PgBlitMaskedShifted16x16(SpriteBank801^.SpriteEntries[21].SpriteDataBytes[1],
                                   GameActors[SharedLoopIndexA].ActorWorldX, GameActors[SharedLoopIndexA].ActorWorldY
@@ -1981,11 +1893,11 @@ begin
                               if GameActors[SharedLoopIndexA].ActorDirectionX < 0 then
                                 PgBlitMaskedShifted16x16(SpriteBank801^.SpriteEntries[17].SpriteDataBytes[1],
                                   GameActors[SharedLoopIndexA].ActorWorldX, GameActors[SharedLoopIndexA].ActorWorldY
-                                  + GameDrawBufferRow - SamTilePixels)
+                                  + GameDrawBufferRow - GameTileSizePixels)
                               else
                                 PgBlitMaskedShifted16x16(SpriteBank801^.SpriteEntries[29].SpriteDataBytes[1],
                                   GameActors[SharedLoopIndexA].ActorWorldX, GameActors[SharedLoopIndexA].ActorWorldY
-                                  + GameDrawBufferRow - SamTilePixels);
+                                  + GameDrawBufferRow - GameTileSizePixels);
                               PgBlitMaskedShifted16x16(SpriteBank801^.SpriteEntries[GameActors[
                                 SharedLoopIndexA].ActorSpriteBase - 796 +
                                 GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
@@ -2015,51 +1927,54 @@ begin
                             PgBlitMaskedShifted16x16(SpriteBank851^.SpriteEntries[GameActors[
                               SharedLoopIndexA].ActorSpriteBase - 846 +
                               GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
-                              GameActors[SharedLoopIndexA].ActorWorldX + SamTilePixels,
+                              GameActors[SharedLoopIndexA].ActorWorldX + GameTileSizePixels,
                               GameActors[SharedLoopIndexA].ActorWorldY + GameDrawBufferRow);
                           end;
                       end;
                     end;
 
-            DrawCellForeground(GameActors[SamPlayerSlot].ActorPreviousX - SamTilePixels,
-              GameActors[SamPlayerSlot].ActorPreviousY - SamTilePixels);
-            DrawCellForeground(GameActors[SamPlayerSlot].ActorPreviousX - SamTilePixels,
-              GameActors[SamPlayerSlot].ActorPreviousY);
-            DrawCellForeground(GameActors[SamPlayerSlot].ActorPreviousX - SamTilePixels,
-              GameActors[SamPlayerSlot].ActorPreviousY + SamTilePixels);
-            DrawCellForeground(GameActors[SamPlayerSlot].ActorPreviousX, GameActors[SamPlayerSlot].ActorPreviousY -
-              SamTilePixels);
-            DrawCellForeground(GameActors[SamPlayerSlot].ActorPreviousX, GameActors[SamPlayerSlot].ActorPreviousY);
-            DrawCellForeground(GameActors[SamPlayerSlot].ActorPreviousX, GameActors[SamPlayerSlot].ActorPreviousY +
-              SamTilePixels);
-            DrawCellForeground(GameActors[SamPlayerSlot].ActorPreviousX + SamTilePixels,
-              GameActors[SamPlayerSlot].ActorPreviousY - SamTilePixels);
-            DrawCellForeground(GameActors[SamPlayerSlot].ActorPreviousX + SamTilePixels,
-              GameActors[SamPlayerSlot].ActorPreviousY);
-            DrawCellForeground(GameActors[SamPlayerSlot].ActorPreviousX + SamTilePixels,
-              GameActors[SamPlayerSlot].ActorPreviousY + SamTilePixels);
-            for SharedLoopIndexA := 2 to SamActorSlotLimit do
+            DrawCellForeground(GameActors[GamePlayerActorSlot].ActorPreviousX - GameTileSizePixels,
+              GameActors[GamePlayerActorSlot].ActorPreviousY - GameTileSizePixels);
+            DrawCellForeground(GameActors[GamePlayerActorSlot].ActorPreviousX - GameTileSizePixels,
+              GameActors[GamePlayerActorSlot].ActorPreviousY);
+            DrawCellForeground(GameActors[GamePlayerActorSlot].ActorPreviousX - GameTileSizePixels,
+              GameActors[GamePlayerActorSlot].ActorPreviousY + GameTileSizePixels);
+            DrawCellForeground(GameActors[GamePlayerActorSlot].ActorPreviousX,
+              GameActors[GamePlayerActorSlot].ActorPreviousY -
+              GameTileSizePixels);
+            DrawCellForeground(GameActors[GamePlayerActorSlot].ActorPreviousX,
+              GameActors[GamePlayerActorSlot].ActorPreviousY);
+            DrawCellForeground(GameActors[GamePlayerActorSlot].ActorPreviousX,
+              GameActors[GamePlayerActorSlot].ActorPreviousY +
+              GameTileSizePixels);
+            DrawCellForeground(GameActors[GamePlayerActorSlot].ActorPreviousX + GameTileSizePixels,
+              GameActors[GamePlayerActorSlot].ActorPreviousY - GameTileSizePixels);
+            DrawCellForeground(GameActors[GamePlayerActorSlot].ActorPreviousX + GameTileSizePixels,
+              GameActors[GamePlayerActorSlot].ActorPreviousY);
+            DrawCellForeground(GameActors[GamePlayerActorSlot].ActorPreviousX + GameTileSizePixels,
+              GameActors[GamePlayerActorSlot].ActorPreviousY + GameTileSizePixels);
+            for SharedLoopIndexA := 2 to GameActorSlotCount do
               if GameActors[SharedLoopIndexA].ActorSlotInactive = 0 then
                 if GameActors[SharedLoopIndexA].ActorRemovalPending <> 0 then
                 begin
                   DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX,
                     GameActors[SharedLoopIndexA].ActorPreviousY);
-                  DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX - SamTilePixels,
+                  DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX - GameTileSizePixels,
                     GameActors[SharedLoopIndexA].ActorPreviousY);
-                  DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX + SamTilePixels,
+                  DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX + GameTileSizePixels,
                     GameActors[SharedLoopIndexA].ActorPreviousY);
-                  DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX - SamTilePixels,
-                    GameActors[SharedLoopIndexA].ActorPreviousY - SamTilePixels);
-                  DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX - SamTilePixels,
-                    GameActors[SharedLoopIndexA].ActorPreviousY + SamTilePixels);
-                  DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX + SamTilePixels,
-                    GameActors[SharedLoopIndexA].ActorPreviousY - SamTilePixels);
-                  DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX + SamTilePixels,
-                    GameActors[SharedLoopIndexA].ActorPreviousY + SamTilePixels);
+                  DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX - GameTileSizePixels,
+                    GameActors[SharedLoopIndexA].ActorPreviousY - GameTileSizePixels);
+                  DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX - GameTileSizePixels,
+                    GameActors[SharedLoopIndexA].ActorPreviousY + GameTileSizePixels);
+                  DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX + GameTileSizePixels,
+                    GameActors[SharedLoopIndexA].ActorPreviousY - GameTileSizePixels);
+                  DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX + GameTileSizePixels,
+                    GameActors[SharedLoopIndexA].ActorPreviousY + GameTileSizePixels);
                   DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX,
-                    GameActors[SharedLoopIndexA].ActorPreviousY - SamTilePixels);
+                    GameActors[SharedLoopIndexA].ActorPreviousY - GameTileSizePixels);
                   DrawCellForeground(GameActors[SharedLoopIndexA].ActorPreviousX,
-                    GameActors[SharedLoopIndexA].ActorPreviousY + SamTilePixels);
+                    GameActors[SharedLoopIndexA].ActorPreviousY + GameTileSizePixels);
                 end
                 else if ActorNearViewport(SamActorDrawMargin, SharedLoopIndexA) or
                   (GameActors[SharedLoopIndexA].ActorKindCode = 28) or (GameActors[SharedLoopIndexA].ActorKindCode =
@@ -2068,15 +1983,15 @@ begin
                 begin
                   DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX,
                     GameActors[SharedLoopIndexA].ActorWorldY);
-                  if GameActors[SharedLoopIndexA].ActorWorldX and SamTilePixelMask > 0 then
+                  if GameActors[SharedLoopIndexA].ActorWorldX and GameTileOffsetMask > 0 then
                     DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX + 15,
                       GameActors[SharedLoopIndexA].ActorWorldY);
                   if GameActors[SharedLoopIndexA].ActorKindCode = 27 then
                   begin
                     DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX,
-                      GameActors[SharedLoopIndexA].ActorWorldY - SamTilePixels);
-                    DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX + SamTilePixels,
-                      GameActors[SharedLoopIndexA].ActorWorldY - SamTilePixels);
+                      GameActors[SharedLoopIndexA].ActorWorldY - GameTileSizePixels);
+                    DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX + GameTileSizePixels,
+                      GameActors[SharedLoopIndexA].ActorWorldY - GameTileSizePixels);
                   end
                   else
                     case GameActors[SharedLoopIndexA].ActorSpriteBase of
@@ -2086,40 +2001,40 @@ begin
                             GameActors[SharedLoopIndexA].ActorWorldY);
                           DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX + 32,
                             GameActors[SharedLoopIndexA].ActorWorldY);
-                          DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX + SamTilePixels,
+                          DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX + GameTileSizePixels,
                             GameActors[SharedLoopIndexA].ActorWorldY);
                         end;
                       801 .. 899, 5001:
                         begin
                           DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX,
-                            GameActors[SharedLoopIndexA].ActorWorldY - SamTilePixels);
-                          if GameActors[SharedLoopIndexA].ActorWorldX and SamTilePixelMask > 0 then
+                            GameActors[SharedLoopIndexA].ActorWorldY - GameTileSizePixels);
+                          if GameActors[SharedLoopIndexA].ActorWorldX and GameTileOffsetMask > 0 then
                             DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX + 15,
-                              GameActors[SharedLoopIndexA].ActorWorldY - SamTilePixels);
+                              GameActors[SharedLoopIndexA].ActorWorldY - GameTileSizePixels);
                         end;
                       114:
                         begin
                           if GameActors[SharedLoopIndexA].ActorWorldY > 15 then
                             DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX,
-                              GameActors[SharedLoopIndexA].ActorWorldY - SamTilePixels);
+                              GameActors[SharedLoopIndexA].ActorWorldY - GameTileSizePixels);
                           DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX,
-                            GameActors[SharedLoopIndexA].ActorWorldY + SamTilePixels);
-                          if GameActors[SharedLoopIndexA].ActorWorldX and SamTilePixelMask > 0 then
+                            GameActors[SharedLoopIndexA].ActorWorldY + GameTileSizePixels);
+                          if GameActors[SharedLoopIndexA].ActorWorldX and GameTileOffsetMask > 0 then
                           begin
                             DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX + 15,
-                              GameActors[SharedLoopIndexA].ActorWorldY + SamTilePixels);
+                              GameActors[SharedLoopIndexA].ActorWorldY + GameTileSizePixels);
                             if GameActors[SharedLoopIndexA].ActorWorldY > 15 then
                               DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX + 15,
-                                GameActors[SharedLoopIndexA].ActorWorldY - SamTilePixels);
+                                GameActors[SharedLoopIndexA].ActorWorldY - GameTileSizePixels);
                           end;
                         end;
                       101:
                         begin
                           DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX,
-                            GameActors[SharedLoopIndexA].ActorWorldY - SamTilePixels);
-                          if GameActors[SharedLoopIndexA].ActorWorldX and SamTilePixelMask > 0 then
+                            GameActors[SharedLoopIndexA].ActorWorldY - GameTileSizePixels);
+                          if GameActors[SharedLoopIndexA].ActorWorldX and GameTileOffsetMask > 0 then
                             DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX + 15,
-                              GameActors[SharedLoopIndexA].ActorWorldY - SamTilePixels);
+                              GameActors[SharedLoopIndexA].ActorWorldY - GameTileSizePixels);
                         end;
                     end;
                 end
@@ -2130,7 +2045,7 @@ begin
                   GameActors[SharedLoopIndexA].ActorRemovalPending := 1;
                   DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX,
                     GameActors[SharedLoopIndexA].ActorWorldY);
-                  if GameActors[SharedLoopIndexA].ActorWorldX and SamTilePixelMask > 0 then
+                  if GameActors[SharedLoopIndexA].ActorWorldX and GameTileOffsetMask > 0 then
                   begin
                     DrawCellForeground(GameActors[SharedLoopIndexA].ActorWorldX + 15,
                       GameActors[SharedLoopIndexA].ActorWorldY);
@@ -2140,9 +2055,10 @@ begin
                 end;
             if PlayerDying <> 0 then
               PgBlitMaskedShifted16x16(PlayerSpriteBank^.SpriteEntries[GameActors[
-                SamPlayerSlot].ActorAnimationCounter div 5 +
-                GameActors[SamPlayerSlot].ActorSpriteBase].SpriteDataBytes[1], GameActors[SamPlayerSlot].ActorWorldX,
-                GameActors[SamPlayerSlot].ActorWorldY + GameDrawBufferRow);
+                GamePlayerActorSlot].ActorAnimationCounter div 5 +
+                GameActors[GamePlayerActorSlot].ActorSpriteBase].SpriteDataBytes[1],
+                  GameActors[GamePlayerActorSlot].ActorWorldX,
+                GameActors[GamePlayerActorSlot].ActorWorldY + GameDrawBufferRow);
 
             ShowGameDrawBuffer;
             if ConfusionEndedMessagePending <> 0 then
@@ -2152,7 +2068,7 @@ begin
             end;
             if GameOptionsRequested <> 0 then
             begin
-              GameMenuResult := Ord(RunGameOptionsMenu);
+              UnusedOptionsMenuResult := Ord(RunGameOptionsMenu);
               GameOptionsRequested := 0;
             end;
             if RestoreSnapshotRequested <> 0 then
@@ -2162,7 +2078,7 @@ begin
                 PlayerAmmo := 15;
               LevelCompletedFlags[EnteredLevelNumber] := 0;
               if PlayerDying = 0 then
-                CurrentLevelNumber := SamIslandLevel;
+                CurrentLevelNumber := GameIslandLevelNumber;
               ResetLevelTransientState;
               RestoreGameSnapshot;
               LoadLevelMap(CurrentLevelNumber);
@@ -2198,7 +2114,7 @@ begin
         ShowEpisodeEnding;
     end;
     FadeGamePaletteToBlack(20);
-    PgSetBiosVideoMode(SamBiosColorTextMode);
+    PgSetBiosVideoMode(GameBiosColorTextMode);
     if SoundEnabled <> 0 then
       while SoundPlaying <> 0 do;
     NoSound;
@@ -2211,7 +2127,7 @@ begin
   end
   else
   begin
-    PgSetBiosVideoMode(SamBiosColorTextMode);
+    PgSetBiosVideoMode(GameBiosColorTextMode);
 {$IFDEF SAM1}
     Writeln('This game requires and EGA or VGA Adapter!');
 {$ELSE}
