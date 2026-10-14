@@ -63,6 +63,9 @@ def route_all() -> list:
     inits = {(atlas["units"][[s["para"] for s in cen["segments"]].index(s)], o) for s, o in cen["inits"]}
     leases = load_json(LEASES) if LEASES.exists() else {}
     _, callers = ctxmod.call_graph(atlas, "sam1")
+    import oracle
+    img, _ = oracle.load_image("sam1")
+    seg_start = {atlas["units"][k]: s["start"] for k, s in enumerate(cen["segments"])}
     rows = []
     for lid, r in atlas["routines"].items():
         e1 = r["episodes"].get("sam1") or next(iter(r["episodes"].values()))
@@ -76,6 +79,8 @@ def route_all() -> list:
             route = "INIT"
         elif lid == "p_1148":
             route = "MAIN"
+        elif "sam1" in r["episodes"] and img[seg_start[e1["unit"]] + e1["entry"]:][:3] != b"\x55\x89\xe5":
+            route = "CHECK"     # no TP frame: assembly or frameless Pascal; curate in routine-kinds.json
         else:
             route = "PASCAL"
         rows.append({"function": lid, "unit": r["unit"], "size": r["size"], "route": route,

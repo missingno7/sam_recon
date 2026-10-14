@@ -8,3 +8,5 @@
 {"equal": ["sam1", "sam2", "sam3"], "function": "u4_0309", "note": "supervisor examples", "source_sha256": "ab8fec52b4884ed4597f270ed231443f4c1272d3b4f955b6250c2315f662624e", "time": "2026-10-14T15:11:38"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "p_0ec2", "note": "supervisor examples", "source_sha256": "27fa3680504277f5365b75d8c028b28c3235905827fac8dbf67f49e75fb4fce6", "time": "2026-10-14T15:11:39"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_3c93", "note": "supervisor examples", "source_sha256": "1c73683a8a72cef21f522b47595f02ca080acbc48fb99594c2257cfe3104aef0", "time": "2026-10-14T15:11:39"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u1_012d", "note": "luna pilot wave", "source_sha256": "3695a2c67b935f2df28ae2ae09df47880ae323eb4d81336fdbb889cddbc977a0", "time": "2026-10-14T15:12:07"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u7_0000", "note": "luna pilot wave; original reads an unassigned local (bug kept)", "source_sha256": "295d3173f2abf85c1eb3066b29ebd87fed9ee380cb8a725b92e18742bb1b6a45", "time": "2026-10-14T15:12:32"}
