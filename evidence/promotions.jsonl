@@ -110,3 +110,4 @@
 {"equal": ["sam1", "sam2", "sam3"], "function": "obj_u8", "note": "re-promote: record covered ids", "source_sha256": "09047f94d80c4278bf2d5232ae0bf57cea022d08fefc454f3ffb4a6e3cb2122d", "time": "2026-10-14T16:14:53"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "u2_a1ae", "note": "wave 8", "source_sha256": "14bf5e6ea3281447bdda806031c5bd17097bb1611bfd5f236f3742bb3fe132d4", "time": "2026-10-14T16:15:00"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "obj_u4", "note": "luna: text-mode writer object", "source_sha256": "e717c2291ced9a533fa3c01f3ab8c3fc899f562acdceab985542d20b5ed4151f", "time": "2026-10-14T16:16:18"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u2_2e88", "note": "Sol", "source_sha256": "2592298b13d61eb3deae51a4a0bc5a520a862eaefe12d1e7c3f6c1d8948f17ef", "time": "2026-10-14T16:16:58"}
