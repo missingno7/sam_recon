@@ -1,0 +1,53 @@
+{
+ "episodes": {
+  "sam1": {
+   "extent": {
+    "end": 12139,
+    "entry": 2103,
+    "start": 2103,
+    "unit": "u1"
+   },
+   "raw": "4bdb434a9861684d",
+   "size": 10036,
+   "status": "EQUAL"
+  },
+  "sam2": {
+   "extent": {
+    "end": 12139,
+    "entry": 2103,
+    "start": 2103,
+    "unit": "u1"
+   },
+   "raw": "6ae2d75992502be6",
+   "size": 10036,
+   "status": "EQUAL"
+  },
+  "sam3": {
+   "extent": {
+    "end": 12139,
+    "entry": 2103,
+    "start": 2103,
+    "unit": "u1"
+   },
+   "raw": "f4d0ad582d484696",
+   "size": 10036,
+   "status": "EQUAL"
+  }
+ },
+ "equal": [
+  "sam1",
+  "sam2",
+  "sam3"
+ ],
+ "function": "u1_0837",
+ "options": [
+  "/$S-",
+  "/$I-",
+  "/$R-",
+  "/$B-"
+ ],
+ "profile": "sam",
+ "source": "src/routines/u1_0837.pas",
+ "source_sha256": "8635efc40f81900ef7905dde766d7e38fa89b5bb9466d66aa2e10b24aa9eccd5",
+ "unit": "u1"
+}

@@ -37,6 +37,7 @@ LIBRARY = ("crt", "dos", "sys")
 RESULT_STATUSES = ("EQUAL_CANDIDATE", "PARTIAL_EQUAL", "NEAR", "BLOCKED")
 
 REVIEW_PATTERNS = [
+    (r"(?i)\binline\s*\(", "inline(): only for code Pascal cannot express (CLI/STI, interrupt chaining)"),
     (r"(?i)\bgoto\b", "goto: check whether structured statements produce the same code"),
     (r"(?i)\b(junk|pad|dummy|unused|filler)\w*\b", "possible steering variable"),
     (r"(?i)\bMem[WL]?\s*\[\s*\$?[0-9A-F]+\s*:", "absolute Mem[] access: fine for BIOS/VRAM, not for program data"),

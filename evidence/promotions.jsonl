@@ -88,3 +88,7 @@
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_97bb", "note": "wave 6", "source_sha256": "dfc9f8bfae0e41121c4233b4c00da80853134336f7ba878329163fdf19ac467d", "time": "2026-10-14T16:02:15"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_a6f6", "note": "wave 6", "source_sha256": "c4f17ac7125d8d57129cfd6caca97fc4989d1ee890d75133edc9e3a002fc980c", "time": "2026-10-14T16:02:16"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "p_1148", "note": "Sol: main program body (MAIN mode)", "source_sha256": "c23ab9900c0c36c432c1c5b789b27616d6a8252889d2cda111f9d6f3819315f4", "time": "2026-10-14T16:03:17"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u1_0837", "note": "Sol giant", "source_sha256": "8635efc40f81900ef7905dde766d7e38fa89b5bb9466d66aa2e10b24aa9eccd5", "time": "2026-10-14T16:04:06"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u3_9340", "note": "wave 7", "source_sha256": "a865e85f8c5a31472526f4f05d98e43dacfe6efb4530e4feb248eb99e0e5bc30", "time": "2026-10-14T16:04:16"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "p_08a2", "note": "after census override of p_0000's end", "source_sha256": "158c4e256577880f12e33ac7d788ecbd4af48cee6a84b7263eff1a5b7cc8d8f4", "time": "2026-10-14T16:05:56"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u3_0261", "note": "wave 7", "source_sha256": "d3fb8d63a9aff751b93040d493cdcea3b06e9976ef3a6b299d58cf8c3ccfe9c7", "time": "2026-10-14T16:06:03"}

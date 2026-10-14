@@ -176,7 +176,9 @@ def census(ep: str) -> dict:
         pending += [t for t in w.far_out.get(o, ()) if t[0] in walkers]
 
     segdocs = []
-    for s in code_segs:
+    ov_path = LAYOUT / "census-overrides.json"
+    overrides = load_json(ov_path)["code_end"] if ov_path.exists() else {}
+    for k, s in enumerate(code_segs):
         w = walkers[s["para"]]
         size = s["end"] - s["start"]
         ents = sorted(entries[s["para"]])
@@ -187,9 +189,12 @@ def census(ep: str) -> dict:
             ends[e] = max(ends.get(e, 0), off + ln)
         routines = []
         prev_end = 0
+        unit_overrides = overrides.get(ep, {}).get(f"{k}", {})
         for i, e in enumerate(ents):
             nxt = ents[i + 1] if i + 1 < len(ents) else size
             code_end = min(max(ends.get(e, e), e), nxt)
+            if f"{e:04x}" in unit_overrides:      # curated: code recursive descent cannot reach
+                code_end = int(unit_overrides[f"{e:04x}"]["code_end"], 16)
             routines.append({
                 "entry": e, "start": prev_end, "code_end": code_end, "prefix": e - prev_end,
                 "far_calls": sorted("%04X:%04X" % t for t in w.far_out.get(e, ())),
