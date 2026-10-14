@@ -116,6 +116,7 @@ def main() -> int:
     ap.add_argument("--fresh", action="store_true")
     ap.add_argument("--write-progress", action="store_true")
     ap.add_argument("--only", nargs="*")
+    ap.add_argument("--program", action="store_true", help="also run the whole-program proof (tools/finalcheck.py)")
     a = ap.parse_args()
     failures = regen_check() if not a.only else []
     results = {}
@@ -147,6 +148,10 @@ def main() -> int:
         for c in rec.get("covers", []):
             results[c] = {"ok": ok}
         print(f"{f}: {'OK' if ok else 'REGRESSED'} ({','.join(rec['equal'])})")
+    if a.program:
+        r = subprocess.run([sys.executable, str(ROOT / "tools" / "finalcheck.py")], cwd=ROOT)
+        if r.returncode != 0:
+            failures.append("whole-program proof (tools/finalcheck.py) failed")
     decl = declarations()
     for p in decl:
         print("DECLARATION " + p)

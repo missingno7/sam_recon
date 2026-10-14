@@ -21,9 +21,17 @@ byte-identical in SAM1, SAM2 and SAM3: 181.7 KB of the 187.9 KB code image
 `python tools/progbuild.py` generates SAM.PAS + U1..U9 from the accepted sources, assembles the six
 objects and links each episode with the pinned TPC 5.0: every code segment (including Crt, Dos and
 System), the DATA segment and the relocation set are byte-identical in SAM1/2/3. The only remaining
-differences are the uninitialised `DB ?` bytes of two linked objects (102 bytes per episode), which
-hold residual compiler-buffer contents of the original build (zeros in SAM3; fragments of the
-original source text / symbol table in SAM1/SAM2).
+differences are the uninitialised `DB ?` bytes of two linked objects, which hold residual
+compiler-buffer contents of the original build (traced in [docs/object-holes.md](docs/object-holes.md)):
+89 bytes in SAM1, 80 in SAM2, 31 in SAM3. They are documented as unrecoverable residue, compared and
+listed in `evidence/final-proof.json`, never patched or filled. `python tools/finalcheck.py`
+(or `python tools/validate.py --program`) re-derives this proof:
+
+| Episode | Load image | Equal bytes | Residue (object holes) |
+|---|---:|---:|---:|
+| SAM1 | 188,736 | 188,647 | 89 |
+| SAM2 | 189,744 | 189,664 | 80 |
+| SAM3 | 189,792 | 189,761 | 31 |
 
 * **Oracles locked:** all three LZEXE 0.91 executables are hashed, unpacked by `tools/lz91.py`,
   cross-checked by executing each file's own LZEXE stub in unicorn at two load segments
