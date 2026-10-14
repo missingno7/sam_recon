@@ -1,0 +1,4 @@
+GNU Unifont 14.0.01 source mirror, fetched using connected GitHub tool.
+https://github.com/deepin-community/unifont/blob/6134ebc549827ebc1c831b5ee219282ef0052d3c/font/plane00/unifont-base.hex
+Upstream: https://unifoundry.com/unifont/
+The checked-in cp437.hex contains only the Unicode codepoints used by CP437.

@@ -1,0 +1,51 @@
+program Order;
+{$S-}{$R-}{$I-}{$B-}
+type Rec = record x,y: Integer end;
+     PRec = ^Rec;
+var a: array[1..8,1..8] of Integer; r: array[1..4] of Rec;
+    p,q: PRec; v,i,j,log,state: Integer; ss: set of 0..31;
+function F(tag,value: Integer): Integer;
+begin log:=log*10+tag; F:=value end;
+function StateStep(tag: Integer): Integer;
+begin log:=log*10+tag; Inc(state); StateStep:=state end;
+function Change: Integer;
+begin log:=log*10+2; state:=9; p:=q; Change:=3 end;
+function B(tag: Integer; value: Boolean): Boolean;
+begin log:=log*10+tag; B:=value end;
+function S(tag: Integer): String;
+begin log:=log*10+tag; S:='x' end;
+procedure Args(x,y,z: Integer);
+begin Writeln(log,' ',x,' ',y,' ',z) end;
+procedure VArgs(var x: Integer; value: Integer);
+begin x:=value; Writeln(log) end;
+begin
+  log:=0; v:=F(1,20)+F(2,3)*F(3,2); Writeln(log,' ',v);
+  log:=0; v:=F(1,20) div F(2,3); Writeln(log,' ',v);
+  log:=0; Args(F(1,1),F(2,2),F(3,3));
+  log:=0; state:=0; Args(StateStep(1),StateStep(2),state);
+  log:=0; state:=1; v:=state+Change; Writeln(log,' ',v);
+  log:=0; state:=1; v:=Change+state; Writeln(log,' ',v);
+  log:=0; a[F(1,2),F(2,3)]:=F(3,17); Writeln(log,' ',a[2,3]);
+  log:=0; a[F(1,2),F(2,3)]:=a[F(3,2),F(4,3)]; Writeln(log);
+  log:=0; VArgs(a[F(1,2),F(2,3)],F(3,42));
+  p:=@r[1]; q:=@r[2]; r[1].x:=1; r[2].x:=2;
+  log:=0; p^.x:=Change; Writeln(log,' ',r[1].x,' ',r[2].x);
+  p:=@r[1]; r[1].x:=1; r[2].x:=2;
+  log:=0; v:=p^.x+Change; Writeln(log,' ',v);
+  p:=@r[1]; r[1].x:=1; r[2].x:=2;
+  log:=0; v:=Change+p^.x; Writeln(log,' ',v);
+  log:=0; with r[F(1,1)] do begin x:=F(2,7); y:=x+F(3,1) end;
+  Writeln(log,' ',r[1].x,' ',r[1].y);
+  log:=0; with r[F(1,1)],r[F(2,2)] do x:=F(3,8);
+  Writeln(log,' ',r[1].x,' ',r[2].x);
+  log:=0; ss:=[F(1,2),F(2,5)..F(3,7),F(4,10)]; Writeln(log,' ',6 in ss);
+  log:=0; if F(1,6) in [F(2,5)..F(3,7)] then Writeln(log);
+  log:=0; if B(1,False) and B(2,True) then Writeln('bad'); Writeln(log);
+  log:=0; if B(1,True) or B(2,False) then Writeln(log);
+  log:=0; if B(1,True) and (B(2,False) or B(3,True)) then Writeln(log);
+  log:=0; if S(1)+S(2)=S(3) then Writeln('bad'); Writeln(log);
+  log:=0; for i:=F(1,2) to F(2,3) do j:=i; Writeln(log,' ',j);
+  log:=0; Writeln(F(1,7):F(2,2)); Writeln(log);
+  {$B+}
+  log:=0; if B(1,False) and B(2,True) then Writeln('bad'); Writeln(log);
+end.

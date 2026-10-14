@@ -33,6 +33,7 @@ compared and reported, never filled or patched; consequently the LZEXE-packed fi
 | [game/](game/) | the source: SAM.PAS (program), SAMPLAY, SAMLEVEL, SAMUI, SAMSOUND, SAMDATA, TEXT80, GAMEJOY, PCXGENUS, PROGRPHX units, six .ASM objects, BUILD.BAT; episode differences as `{$IFDEF SAMn}` |
 | tools/ | `oracle.py` (lock, decode, cross-check), `lz91.py`, `lz91_emulate.py`, `repack.py`, `verify.py` (build + compare), `validate.py`, `assets.py` (asset decoder) |
 | config/ | oracle lock, pinned toolchain hashes, compiler profile, residue ranges |
+| [port/](port/) | the SDL3 port: emulated PC + SDL3 front end, TP 5.0 runtime, the assembly objects in C; the game code is generated from game/ by `tools/pas2c.py` ([port/README.md](port/README.md)) |
 | docs/ | [oracle](docs/oracle.md), [compiler](docs/compiler.md), [assembly libraries](docs/assembly.md), [object holes](docs/object-holes.md), [file formats](docs/formats.md), [actors](docs/actors.md), [runtime model](docs/runtime.md), [roadmap](docs/roadmap.md), [names and evidence](docs/names.json) |
 
 ## Requirements
@@ -47,6 +48,7 @@ python tools/setup_env.py
 python tools/validate.py            # oracle, build of game/ for all three episodes, tests
 python tools/validate.py --crosscheck --pack
 python tools/validate.py --dos    # run game/BUILD.BAT itself in DOSBox-X
+python tools/validate.py --port   # also build the SDL3 port and boot SAM1-3 to their title screens
 ```
 
 `game/` is independent of this repository: under DOS, `BUILD 1`, `BUILD 2` or `BUILD 3` with TPC,
@@ -59,5 +61,5 @@ The reconstruction followed the method of the sibling project duke1_recon: locke
 and cross-episode atlas -> every routine proven byte-identical in a harness that reproduced the
 original data segment (GPT-6 Luna / GPT-6.1 Sol workers, supervised) -> declaration consolidation ->
 whole-program link -> standalone tree -> readability passes. The per-routine sources, recipes and the
-matching tools are preserved in the git tag `matching-archive`. Next phase: an SDL3/Android port
-generated from `game/` ([docs/roadmap.md](docs/roadmap.md)).
+matching tools are preserved in the git tag `matching-archive`. Current phase: an SDL3/Android port
+generated from `game/` ([docs/port.md](docs/port.md), [port/README.md](port/README.md)).
