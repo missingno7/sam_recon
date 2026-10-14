@@ -415,7 +415,9 @@ def _nlines(lines: list) -> int:
     return sum(x.count("\n") + 1 for x in lines)
 
 
-CANONICAL = Path(__file__).resolve().parents[1] / "src" / "decls" / "canonical.pas"
+# $SAM_CANONICAL stages a proposed canonical file (validate it before it replaces the real one).
+CANONICAL = Path(__import__("os").environ.get(
+    "SAM_CANONICAL", Path(__file__).resolve().parents[1] / "src" / "decls" / "canonical.pas"))
 _CANON_CACHE: dict = {}
 
 
