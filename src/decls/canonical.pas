@@ -109,6 +109,8 @@ var
   d_0296: array[1..40, 1..25] of TCell;
   d_21d6: word;
   d_21d8: byte;
+  d_21de: byte;                  { BIOS video mode saved by the u4 text object }
+  d_21df: byte;                  { adapter class detected by the u4 text object }
   d_21da: longint;
   d_341C: Boolean;
   d_341E: PMusicTable;
