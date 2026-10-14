@@ -1,3 +1,5 @@
+rem DOS build for one Secret Agent episode (BUILD 1, 2 or 3).
+rem Assembles six objects, rebuilds the Pascal units and packs an episode copy.
 @echo off
 rem Turbo Pascal 5.0, TASM 1.0, LZEXE 0.91; tools on PATH.
 if "%1"=="1" goto build

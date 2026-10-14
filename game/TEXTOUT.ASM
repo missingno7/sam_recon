@@ -1,4 +1,5 @@
-; Unit u4 text output and video-adapter object, SAM1 04A3-05C7.
+; Text-memory output and BIOS video queries for TEXT80.
+; Colored string writes optionally synchronize with CGA retrace.
 DATA segment word public
 extrn TextVideoSegment:word, TextRetraceSyncEnabled:byte, TextSavedBiosMode:byte, TextVideoAdapterClass:byte
 DATA ends
@@ -7,8 +8,9 @@ CODE segment byte public
 assume cs:CODE, ds:DATA
 public WriteColoredText, DetectTextVideoAdapter, GetTextVideoMode
 
+; Text VRAM addressing and string output.
 ; Convert text coordinates in CH and BL to an ES:DI text-cell address.
-; Assembly helper computes (row-1)*160+(column-1)*2 and loads ES from d_21D6.
+; Assembly helper computes (row-1)*160+(column-1)*2 and loads ES from TextVideoSegment.
 TextCellAddress proc near
     xor ax,ax
     mov cl,al
@@ -128,8 +130,9 @@ chars_done:
     retf 8
 WriteTextCharacters endp
 
-; Save the current BIOS video mode in d_21DE and return it in AL.
-; INT 10h AH=0F saves the current mode in d_21DE and returns AL.
+; BIOS video queries.
+; Save the current BIOS video mode in TextSavedBiosMode and return it in AL.
+; INT 10h AH=0F saves the current mode in TextSavedBiosMode and returns AL.
 QueryAndSaveTextVideoMode proc near
     mov ah,0fh
     int 10h
@@ -138,7 +141,7 @@ QueryAndSaveTextVideoMode proc near
 QueryAndSaveTextVideoMode endp
 
 ; Detect Hercules, EGA and CGA capabilities; return adapter class in AL.
-; BIOS capability calls classify the display adapter and return the class byte saved in d_21DF.
+; BIOS capability calls classify the display adapter and return the class byte saved in TextVideoAdapterClass.
 DetectTextVideoAdapter proc far
     call QueryAndSaveTextVideoMode
     mov byte ptr TextVideoAdapterClass,4
@@ -190,7 +193,4 @@ GetTextVideoMode proc far
 GetTextVideoMode endp
 CODE ends
 end
-
-
-
 

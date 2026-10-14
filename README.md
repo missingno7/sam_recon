@@ -55,8 +55,9 @@ python tools/oracle.py --crosscheck
 python tools/repack.py --oracle
 ```
 
-**Phase 4 (standalone tree):** [game/](game/) holds the program as one source per translation unit
-(SAM.PAS, U1..U9.PAS with `{$IFDEF SAMn}` for episode differences, six .ASM objects, BUILD.BAT).
+**Phases 4-5 (standalone, readable tree):** [game/](game/) holds the program as one source per unit with
+semantic names and comments (SAM.PAS, SAMPLAY, SAMLEVEL, SAMUI, TEXT80, PCXGENUS, GAMEJOY, SAMSOUND,
+SAMDATA, PROGRPHX.PAS with `{$IFDEF SAMn}` for episode differences, six .ASM objects, BUILD.BAT).
 `python tools/standalone.py game` (or `tools/validate.py --standalone`) builds it with the pinned
 TASM 1.0 / TPC 5.0 / LZEXE 0.91 and gives the same result as above for SAM1/2/3.
 

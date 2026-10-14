@@ -1,3 +1,5 @@
+{ Text display unit: draws colored DOS text boxes and strings, queries
+  the video adapter and selects the text-memory segment. }
 unit TEXT80;
 {$A+}{$D+}{$L+}{$F-}
 interface
@@ -6,40 +8,47 @@ var
   TextVideoSegment: word;
   TextRetraceSyncEnabled: byte;
 {$IFDEF SAM1}
-  reserved_21d9: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedTextSyncPadSam1: Byte;
 {$ELSE}
-  reserved_21ff: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedTextSyncPadLater: Byte;
 {$ENDIF}
-  TextAuxiliaryValue: longint;
+  { Unused storage retains DATA layout. }
+  UnusedTextAuxiliaryValue: longint;
   TextSavedBiosMode: byte;
   TextVideoAdapterClass: byte;
 function MakeTextAttribute(ForegroundColor, BackgroundColor: Byte): Byte;
 function RepeatTextCharacter(RepeatCount: Byte; RepeatedChar: Char): string;
-procedure FillTextRectangle(FillTextRectangle_LeftColumn, FillTextRectangle_TopRow, FillTextRectangle_RightColumn,
-  FillTextRectangle_BottomRow, FillTextRectang_ForegroundColor, FillTextRectang_BackgroundColor: Integer);
-procedure DrawTextBoxBorder(DrawTextBoxBorder_LeftColumn, DrawTextBoxBorder_TopRow, DrawTextBoxBorder_RightColumn,
-  DrawTextBoxBorder_BottomRow, DrawTextBoxBord_ForegroundColor, DrawTextBoxBord_BackgroundColor, BorderStyle: Integer);
-procedure DrawFilledTextBox(DrawFilledTextBox_LeftColumn, DrawFilledTextBox_TopRow, DrawFilledTextBox_RightColumn,
-  DrawFilledTextBox_BottomRow, DrawFilledTextB_ForegroundColor, DrawFilledTextB_BackgroundColor,
-  DrawFilledTextBox_BorderStyle: Integer);
-procedure WriteCenteredText(WriteCenteredText_TextRow, WriteCenteredTe_ForegroundColor, WriteCenteredTe_BackgroundColor: Word;
-  WriteCenteredText_DisplayText: string);
-procedure WriteVerticalText(WriteVerticalText_TextColumn: Word; FirstTextRow: Integer; WriteVerticalTe_ForegroundColor,
-  WriteVerticalTe_BackgroundColor: Word; WriteVerticalText_DisplayText: String);
+procedure FillTextRectangle(LeftColumn, TopRow, RightColumn,
+  BottomRow, ForegroundColor, BackgroundColor: Integer);
+procedure DrawTextBoxBorder(LeftColumn, TopRow, RightColumn,
+  BottomRow, ForegroundColor, BackgroundColor, BorderStyle: Integer);
+procedure DrawFilledTextBox(LeftColumn, TopRow, RightColumn,
+  BottomRow, ForegroundColor, BackgroundColor,
+  BorderStyle: Integer);
+procedure WriteCenteredText(TextRow, ForegroundColor, BackgroundColor: Word;
+  DisplayText: string);
+procedure WriteVerticalText(TextColumn: Word; FirstTextRow: Integer; ForegroundColor,
+  BackgroundColor: Word; DisplayText: String);
 procedure ConfigureTextVideoMemory;
-procedure WriteColoredText(WriteColoredText_TextColumn, WriteColoredText_TextRow, WriteColoredText_TextAttr: Byte;
-  WriteColoredText_DisplayText: string);
+procedure WriteColoredText(TextColumn, TextRow, ColorAttribute: Byte;
+  DisplayText: string);
 function DetectTextVideoAdapter: Byte;
 function GetTextVideoMode: Byte;
 implementation
 uses Dos, PROGRPHX, Crt, SAMSOUND, GAMEJOY, PCXGENUS;
+
+{ Assembly text output and BIOS queries. }
 {$L TEXTOUT.OBJ}
 { Writes Pascal-string characters and attribute bytes to text VRAM, with optional CGA synchronization. }
 procedure WriteColoredText; external;
-{ BIOS capability calls classify the display adapter and return the class byte saved in d_21DF. }
+{ BIOS capability calls classify the display adapter and return the class byte saved in TextVideoAdapterClass. }
 function DetectTextVideoAdapter; external;
 { Calls the BIOS-mode helper and returns its AL result. }
 function GetTextVideoMode; external;
+
+{ Text attributes and string helpers. }
 {$F+}
 { Packs background in the high nibble and foreground in the low nibble. }
 function MakeTextAttribute(ForegroundColor, BackgroundColor: Byte): Byte;
@@ -59,27 +68,29 @@ begin
   RepeatedText[0] := Chr(RepeatCount);
   RepeatTextCharacter := RepeatedText;
 end;
+
+{ Text rectangles and borders. }
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
 { Writes space strings over each row of a text rectangle with the requested foreground/background. }
-procedure FillTextRectangle(FillTextRectangle_LeftColumn, FillTextRectangle_TopRow, FillTextRectangle_RightColumn,
-  FillTextRectangle_BottomRow, FillTextRectang_ForegroundColor, FillTextRectang_BackgroundColor: Integer);
+procedure FillTextRectangle(LeftColumn, TopRow, RightColumn,
+  BottomRow, ForegroundColor, BackgroundColor: Integer);
 var
   FillRow: Integer;
   FillAttr: Byte;
 begin
-  if FillTextRectangle_RightColumn > 80 then
-    FillTextRectangle_RightColumn := 80;
-  FillAttr := MakeTextAttribute(FillTextRectang_ForegroundColor, FillTextRectang_BackgroundColor);
-  for FillRow := FillTextRectangle_TopRow to FillTextRectangle_BottomRow do
-    WriteColoredText(FillTextRectangle_LeftColumn, FillRow, FillAttr, RepeatTextCharacter(FillTextRectangle_RightColumn -
-    FillTextRectangle_LeftColumn + 1, ' '));
+  if RightColumn > 80 then
+    RightColumn := 80;
+  FillAttr := MakeTextAttribute(ForegroundColor, BackgroundColor);
+  for FillRow := TopRow to BottomRow do
+    WriteColoredText(LeftColumn, FillRow, FillAttr, RepeatTextCharacter(RightColumn -
+    LeftColumn + 1, ' '));
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
 { Selects single/double/custom box characters and draws four sides and corners. }
-procedure DrawTextBoxBorder(DrawTextBoxBorder_LeftColumn, DrawTextBoxBorder_TopRow, DrawTextBoxBorder_RightColumn,
-  DrawTextBoxBorder_BottomRow, DrawTextBoxBord_ForegroundColor, DrawTextBoxBord_BackgroundColor, BorderStyle: Integer);
+procedure DrawTextBoxBorder(LeftColumn, TopRow, RightColumn,
+  BottomRow, ForegroundColor, BackgroundColor, BorderStyle: Integer);
 var
   BorderRow: Integer;
   TopLeftChar, TopRightChar, BottomLeftChar, BottomRightChar, HorizontalChar, VerticalChar: Char;
@@ -142,63 +153,67 @@ begin
     end;
   end;
 
-  BorderAttr := MakeTextAttribute(DrawTextBoxBord_ForegroundColor, DrawTextBoxBord_BackgroundColor);
-  WriteColoredText(DrawTextBoxBorder_LeftColumn, DrawTextBoxBorder_TopRow, BorderAttr, TopLeftChar);
-  WriteColoredText(DrawTextBoxBorder_LeftColumn + 1, DrawTextBoxBorder_TopRow, BorderAttr,
-  RepeatTextCharacter(DrawTextBoxBorder_RightColumn - DrawTextBoxBorder_LeftColumn - 1, HorizontalChar));
-  WriteColoredText(DrawTextBoxBorder_RightColumn, DrawTextBoxBorder_TopRow, BorderAttr, TopRightChar);
-  for BorderRow := DrawTextBoxBorder_TopRow + 1 to DrawTextBoxBorder_BottomRow - 1 do
+  BorderAttr := MakeTextAttribute(ForegroundColor, BackgroundColor);
+  WriteColoredText(LeftColumn, TopRow, BorderAttr, TopLeftChar);
+  WriteColoredText(LeftColumn + 1, TopRow, BorderAttr,
+  RepeatTextCharacter(RightColumn - LeftColumn - 1, HorizontalChar));
+  WriteColoredText(RightColumn, TopRow, BorderAttr, TopRightChar);
+  for BorderRow := TopRow + 1 to BottomRow - 1 do
   begin
-    WriteColoredText(DrawTextBoxBorder_LeftColumn, BorderRow, BorderAttr, VerticalChar);
-    WriteColoredText(DrawTextBoxBorder_RightColumn, BorderRow, BorderAttr, VerticalChar);
+    WriteColoredText(LeftColumn, BorderRow, BorderAttr, VerticalChar);
+    WriteColoredText(RightColumn, BorderRow, BorderAttr, VerticalChar);
   end;
-  WriteColoredText(DrawTextBoxBorder_LeftColumn, DrawTextBoxBorder_BottomRow, BorderAttr, BottomLeftChar);
-  WriteColoredText(DrawTextBoxBorder_LeftColumn + 1, DrawTextBoxBorder_BottomRow, BorderAttr,
-  RepeatTextCharacter(DrawTextBoxBorder_RightColumn - DrawTextBoxBorder_LeftColumn - 1, HorizontalChar));
-  WriteColoredText(DrawTextBoxBorder_RightColumn, DrawTextBoxBorder_BottomRow, BorderAttr, BottomRightChar);
+  WriteColoredText(LeftColumn, BottomRow, BorderAttr, BottomLeftChar);
+  WriteColoredText(LeftColumn + 1, BottomRow, BorderAttr,
+  RepeatTextCharacter(RightColumn - LeftColumn - 1, HorizontalChar));
+  WriteColoredText(RightColumn, BottomRow, BorderAttr, BottomRightChar);
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
 { Draws a text-box border and fills its interior with spaces. }
-procedure DrawFilledTextBox(DrawFilledTextBox_LeftColumn, DrawFilledTextBox_TopRow, DrawFilledTextBox_RightColumn,
-  DrawFilledTextBox_BottomRow, DrawFilledTextB_ForegroundColor, DrawFilledTextB_BackgroundColor,
-  DrawFilledTextBox_BorderStyle: Integer);
+procedure DrawFilledTextBox(LeftColumn, TopRow, RightColumn,
+  BottomRow, ForegroundColor, BackgroundColor,
+  BorderStyle: Integer);
 begin
-  DrawTextBoxBorder(DrawFilledTextBox_LeftColumn, DrawFilledTextBox_TopRow, DrawFilledTextBox_RightColumn,
-  DrawFilledTextBox_BottomRow, DrawFilledTextB_ForegroundColor, DrawFilledTextB_BackgroundColor,
-  DrawFilledTextBox_BorderStyle);
-  FillTextRectangle(DrawFilledTextBox_LeftColumn + 1, DrawFilledTextBox_TopRow + 1, DrawFilledTextBox_RightColumn - 1,
-  DrawFilledTextBox_BottomRow - 1, DrawFilledTextB_ForegroundColor, DrawFilledTextB_BackgroundColor);
+  DrawTextBoxBorder(LeftColumn, TopRow, RightColumn,
+  BottomRow, ForegroundColor, BackgroundColor,
+  BorderStyle);
+  FillTextRectangle(LeftColumn + 1, TopRow + 1, RightColumn - 1,
+  BottomRow - 1, ForegroundColor, BackgroundColor);
 end;
+
+{ Centered and vertical text. }
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
 { Computes column 40-Length(Text) div 2 and writes the colored string on the selected row. }
-procedure WriteCenteredText(WriteCenteredText_TextRow, WriteCenteredTe_ForegroundColor, WriteCenteredTe_BackgroundColor: Word;
-  WriteCenteredText_DisplayText: string);
+procedure WriteCenteredText(TextRow, ForegroundColor, BackgroundColor: Word;
+  DisplayText: string);
 begin
-  WriteColoredText(40 - Ord(WriteCenteredText_DisplayText[0]) div 2, Byte(WriteCenteredText_TextRow),
-  MakeTextAttribute(Byte(WriteCenteredTe_ForegroundColor), Byte(WriteCenteredTe_BackgroundColor)),
-  WriteCenteredText_DisplayText);
+  WriteColoredText(40 - Ord(DisplayText[0]) div 2, Byte(TextRow),
+  MakeTextAttribute(Byte(ForegroundColor), Byte(BackgroundColor)),
+  DisplayText);
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
 { Writes successive source characters down a fixed column and truncates at screen row 25. }
-procedure WriteVerticalText(WriteVerticalText_TextColumn: Word; FirstTextRow: Integer; WriteVerticalTe_ForegroundColor,
-  WriteVerticalTe_BackgroundColor: Word; WriteVerticalText_DisplayText: String);
+procedure WriteVerticalText(TextColumn: Word; FirstTextRow: Integer; ForegroundColor,
+  BackgroundColor: Word; DisplayText: String);
 var
-  WriteVerticalTex_CharacterIndex: Integer;
+  CharacterIndex: Integer;
   CharacterText: String;
 begin
-  if Ord(WriteVerticalText_DisplayText[0]) > Integer(26 - FirstTextRow) then
-    Delete(WriteVerticalText_DisplayText, 27 - FirstTextRow, 80);
-  for WriteVerticalTex_CharacterIndex := 1 to Ord(WriteVerticalText_DisplayText[0]) do
+  if Ord(DisplayText[0]) > Integer(26 - FirstTextRow) then
+    Delete(DisplayText, 27 - FirstTextRow, 80);
+  for CharacterIndex := 1 to Ord(DisplayText[0]) do
   begin
-    CharacterText := WriteVerticalText_DisplayText[WriteVerticalTex_CharacterIndex];
-    WriteColoredText(Byte(WriteVerticalText_TextColumn), FirstTextRow - 1 + WriteVerticalTex_CharacterIndex,
-    MakeTextAttribute(Byte(WriteVerticalTe_ForegroundColor), Byte(WriteVerticalTe_BackgroundColor)),
-    WriteVerticalText_DisplayText[WriteVerticalTex_CharacterIndex]);
+    CharacterText := DisplayText[CharacterIndex];
+    WriteColoredText(Byte(TextColumn), FirstTextRow - 1 + CharacterIndex,
+    MakeTextAttribute(Byte(ForegroundColor), Byte(BackgroundColor)),
+    DisplayText[CharacterIndex]);
   end;
 end;
+
+{ Display-memory initialization. }
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
 { Selects B000 for mode 7 or B800 otherwise and enables CGA retrace synchronization for adapter class 1. }
@@ -213,5 +228,5 @@ end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 begin
   ConfigureTextVideoMemory;
-  TextAuxiliaryValue := 200;
+  UnusedTextAuxiliaryValue := 200;
 end.

@@ -1,8 +1,8 @@
-; Program CMOS/date/PIT object, SAM1 p:514A-5200 (182 bytes).
-; Seven bytes of CS scratch are undefined in the object, not claimed equal.
+; Program clock helpers: reads CMOS time/date into DOS and programs the PIT
+; for game timing or the default timer period. Seven CS scratch bytes are undefined.
 CODE segment byte public
 assume cs:CODE
-; p_5151 is private: CMOS index in AL, result in AX.
+; ReadCmosDecimal is private: CMOS index in AL, result in AX.
 public SyncDosClockFromCmos,SetFastGameTimer,RestoreDefaultTimer
 
 CmosHourWork   db ?
@@ -12,7 +12,8 @@ CmosMonthWork  db ?
 CmosDayWork    db ?
 CmosYearWork   dw ?
 
-; p.asm selects CMOS register through port $70, reads $71, masks BCD nibbles and uses AAD to convert them.
+; CMOS reads and DOS clock synchronization.
+; Selects the CMOS register through port $70, reads $71, masks BCD nibbles and uses AAD to convert them.
 ReadCmosDecimal proc far
     out 70h,al
     jmp short cmos_wait1
@@ -34,7 +35,7 @@ cmos_wait4:
     ret
 ReadCmosDecimal endp
 
-; p.asm reads CMOS time/date and invokes DOS INT 21h AH=$2D and $2B to set DOS time/date.
+; Reads CMOS time/date and invokes DOS INT 21h AH=$2D and $2B to set DOS time/date.
 SyncDosClockFromCmos proc far
     sub ax,ax
     call ReadCmosDecimal
@@ -71,6 +72,7 @@ SyncDosClockFromCmos proc far
     ret
 SyncDosClockFromCmos endp
 
+; PIT timer programming.
 ; Programs PIT channel 0 via ports $43/$40 with mode $36 and divisor $2147; called before the game loop.
 SetFastGameTimer proc far
     mov bx,2147h

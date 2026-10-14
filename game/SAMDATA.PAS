@@ -1,8 +1,11 @@
+{ Shared data unit: defines game state and library data layouts, installs
+  defaults, resets game/level state and exposes the asset decoder. }
 unit SAMDATA;
 {$A+}{$D+}{$L+}{$F-}
 interface
 uses Dos, PROGRPHX;
 type
+  { Game-state, map and save-file records. }
   TLevelFileRow = array[1..42] of Char;
 type
   TGameActor = record
@@ -39,6 +42,7 @@ type
     SavedExtraAmmoCheatUsed: Byte;
   end;
 type
+  { Sound and graphics resource buffers. }
   TSpeakerSoundBank = array[1..12, 1..305] of Integer;
 type
   PSpeakerSoundBank = ^TSpeakerSoundBank;
@@ -63,6 +67,7 @@ type
 type
   PRawByteView = ^TRawByteView;
 type
+  { Genus PCX descriptor and printer records. }
   TPcxIdentity = packed record
     PcxIdentityProduct: array[0..31] of Char;
     PcxIdentityCopyright: array[0..51] of Char;
@@ -81,7 +86,8 @@ type
     PcxDisplayScaleX, PcxDisplayScaleY: Byte;  
     PcxDisplayVideoSegment, PcxDisplayPageBytes, PcxDisplayDeviceClass: Word;  
     PcxDisplayDecodeTarget: Pointer;        
-    PcxDisplayReservedWords: array[0..7] of Word;       
+    { Unused words retain the PCX descriptor layout. }
+    UnusedPcxDisplayWords: array[0..7] of Word;       
   end;
 type
   PPcxDisplayInfo = ^TPcxDisplayInfo;
@@ -112,9 +118,10 @@ type
     PcxPrintDecimalDivisors: array[0..9] of LongInt;  
   end;
 type
+  { File handles and retained local declaration views. }
   TGameConfigFile = file of TGameConfiguration;
 type
-  t_p_0f75_tconfi_TGameConfigFile = file of TGameConfiguration;
+  TGameConfigInputFile = file of TGameConfiguration;
 type
 {$IFDEF SAM1}
 {$ELSE}
@@ -127,12 +134,12 @@ type
 {$ENDIF}
   TMapCellView = record
     BaseTile, MiddleTile, FrontTile: Word;
-    BlocksMovement, TMapCellView_SupportsLanding: Byte;
+    BlocksMovement, SupportsLanding: Byte;
   end;
 type
-  t_u2_2530_tmapcell_TMapCellView = record
-    t_u2_2530_tmapcell_TMa_BaseTile, t_u2_2530_tmapcell_T_MiddleTile, t_u2_2530_tmapcell_TM_FrontTile: Word;
-    t_u2_2530_tmapce_BlocksMovement, t_u2_2530_tmapc_SupportsLanding: Byte;
+  TForegroundCellView = record
+    BaseTile, MiddleTile, FrontTile: Word;
+    BlocksMovement, SupportsLanding: Byte;
   end;
 type
   TEncodedLevelFile = file of TLevelFileRow;
@@ -147,16 +154,16 @@ type
   PVideoFlagPointer = ^Pointer;
 {$ENDIF}
 type
-  t_u3_1601_tname = String[40];
+  TPopupLineText = String[40];
   TPopupLineWrapper = packed record
-    PopupWrappedLine: t_u3_1601_tname;
+    PopupWrappedLine: TPopupLineText;
   end;
-  t_u3_1601_tbytearray38 = array[37..32767] of Byte;
-  t_u3_1601_pbytearray38 = ^t_u3_1601_tbytearray38;
+  TPopupBufferTail = array[37..32767] of Byte;
+  PPopupBufferTail = ^TPopupBufferTail;
 type
-  t_u3_26cf_thelpline = string[40];
+  TScrollablePopupLine = string[40];
 type
-  t_u3_3712_pbyte = ^Byte;
+  PHighScoreByteView = ^Byte;
 type
   TSpriteBankFile = file of TSpriteFileBlock;
   TGlyphBankFile = file of TGlyphFileBlock;
@@ -175,16 +182,16 @@ type
 type
   TSaveGameInputFile = file of TGameSnapshot;
 type
-  t_u3_4e64_thelpline = string[40];
+  TInstructionLine = string[40];
 type
-  t_u3_6ea9_thelpline = string[40];
-  t_u3_6ea9_tlevelrow = array[1..42] of Char;
+  TMissionBriefingLine = string[40];
+  TMissionBriefingRow = array[1..42] of Char;
 type
-  t_u3_7c17_tlevelrow = array[1..42] of Char;
+  TMissionSuccessRow = array[1..42] of Char;
 type
-  t_u3_848e_tstr40 = string[40];
+  THighScoreNameText = string[40];
 type
-  t_u3_8ea3_tstr40 = string[40];
+  TWarpLevelText = string[40];
 type
   TSaveMenuLineView = packed record
     SaveMenuWrappedLine: string[40];
@@ -194,9 +201,9 @@ type
     RestoreMenuWrappedLine: string[40];
   end;
 type
-  t_u3_9340_tmenutext = array[1..299] of String[40];
+  TMainMenuText = array[1..299] of String[40];
 type
-  t_u3_97bb_tstring40 = string[40];
+  TGameOptionsLine = string[40];
 type
   TMessageLineView = packed record
     MessageWrappedLine: string[40];
@@ -212,7 +219,7 @@ type
     QuitPromptSecondLine: string[40];
   end;
 type
-  t_u3_9ca9_tmenutext = array[1..6] of String[40];
+  TQuitDestinationText = array[1..6] of String[40];
 type
   TSoundPromptLineView = packed record
     SoundPromptWrappedLine: String[40];
@@ -223,51 +230,64 @@ type
     JoystickPromptSecondLine: string[40];
   end;
 type
-  t_u3_cf40_tmenulines = array[1..299] of String[40];
+  TBbsTextLines = array[1..299] of String[40];
 type
-  t_u3_d323_tmenuline = String[40];
+  TAboutApogeeLine = String[40];
 type
   TFortressMessageLineView = packed record
     FortressMessageWrappedLine: String[40];
   end;
 type
-  t_u3_d820_tmenutext = array[1..6] of String[40];
+  TPerfectHealthText = array[1..6] of String[40];
 const
-  t_u3_dbc2_border = #176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176;
+  DosExitBorder = #176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176;
 var
+  { Motion tables, actors and popup state. }
   PlayerVerticalMotionTable: array[1..19] of Byte;
 {$IFDEF SAM1}
-  reserved_34c3: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedJumpTablePadSam1: Byte;
 {$ELSE}
-  reserved_34e9: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedJumpTablePadLater: Byte;
 {$ENDIF}
   AlternateVerticalMotionTable: array[1..38] of Byte;
   PlayerVerticalMotionStep: byte;
   AlternateVerticalMotionStep: Byte;
   GameActors: array[1..25] of TGameActor;
-  StartupWorkOne: integer;
-  StartupWorkTwo: integer;
-  StartupWorkThree: integer;
+  { Unused storage retains DATA layout. }
+  UnusedStartupWord1: integer;
+  { Unused storage retains DATA layout. }
+  UnusedStartupWord2: integer;
+  { Unused storage retains DATA layout. }
+  UnusedStartupWord3: integer;
   PopupTextLines: array[1..299] of string[40];
 {$IFDEF SAM1}
-  reserved_67f5: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedPopupTextPadSam1: Byte;
 {$ELSE}
-  reserved_681b: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedPopupTextPadLater: Byte;
 {$ENDIF}
   PopupSavedBackground: PPopupImageBuffer;
   PopupAcceptedScanCodes: array[1..20] of Byte;
 {$IFDEF SAM1}
-  reserved_680e: array[0..5] of Byte;
+  { Unused storage retains DATA layout. }
+  UnusedPopupKeyStorageSam1: array[0..5] of Byte;
 {$ELSE}
-  reserved_6834: array[0..5] of Byte;
+  { Unused storage retains DATA layout. }
+  UnusedPopupKeyStorageLater: array[0..5] of Byte;
 {$ENDIF}
   PopupSelectionScanCode: Word;
   GameOptionsRequested: byte;
 {$IFDEF SAM1}
-  reserved_6817: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedOptionsPadSam1: Byte;
 {$ELSE}
-  reserved_683d: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedOptionsPadLater: Byte;
 {$ENDIF}
+  { World, camera and frame state. }
   PlayerLandingCount: integer;
   LevelBackdropTile: word;
   CurrentLevelNumber: Integer;
@@ -280,14 +300,17 @@ var
   SharedLoopIndexC: Integer;
   GameTickCounter: Integer;
   LoadedActorCount: Integer;
-  GameReservedWord: Integer;
+  { Unused storage retains DATA layout. }
+  UnusedGameStateWord: Integer;
   StatusBarCameraX: Integer;
   IslandEntranceIndex: Integer;
   SpecialMovementMode: byte;
 {$IFDEF SAM1}
-  reserved_6837: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedMovementPadSam1: Byte;
 {$ELSE}
-  reserved_685d: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedMovementPadLater: Byte;
 {$ENDIF}
   CameraX: Integer;
   CameraY: Integer;
@@ -295,8 +318,10 @@ var
   GameDrawBufferIndex: Integer;
   GameDrawBufferRow: Integer;
   AllMissionsComplete: byte;
-  LevelStatusReservedByte: byte;
+  { Unused storage retains DATA layout. }
+  UnusedLevelStatusByte: byte;
   LevelBlueprintFlags: array[1..20] of Byte;
+  { Player inventory, effects and mission progress. }
   PlayerAmmo: Integer;
   PlayerShots: array[1..10] of TGameActor;
   PlayerScore: LongInt;
@@ -312,16 +337,20 @@ var
   SlowMovementTimeLeft: Integer;
   PlayerSlowMovement: byte;
 {$IFDEF SAM1}
-  reserved_69b1: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedSlowMovementPadSam1: Byte;
 {$ELSE}
-  reserved_69d7: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedSlowMovementPadLater: Byte;
 {$ENDIF}
   SavedAuxiliaryCounter: Integer;
   PlayerInputLocked: byte;
 {$IFDEF SAM1}
-  reserved_69b5: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedInputLockPadSam1: Byte;
 {$ELSE}
-  reserved_69db: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedInputLockPadLater: Byte;
 {$ENDIF}
   LevelEntranceAnimationTick: Integer;
   EnteredLevelNumber: Integer;
@@ -346,14 +375,17 @@ var
   InventoryChordIHeld: byte;
   PlayerTeleporting: byte;
 {$IFDEF SAM1}
-  reserved_69e1: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedTeleportPadSam1: Byte;
 {$ELSE}
-  reserved_6a07: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedTeleportPadLater: Byte;
 {$ENDIF}
   TeleportAnimationTick: Integer;
   TeleportDestinationX: Integer;
   TeleportDestinationY: Integer;
-  InventoryReservedFlag: byte;
+  { Unused storage retains DATA layout. }
+  UnusedInventoryFlag: byte;
   HasKeyOne: byte;
   HasKeyTwo: byte;
   HasKeyThree: byte;
@@ -369,9 +401,11 @@ var
   PlayerDying: byte;
   DeathAnimationTick: byte;
 {$IFDEF SAM1}
-  reserved_69f7: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedDeathStatePadSam1: Byte;
 {$ELSE}
-  reserved_6a1d: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedDeathStatePadLater: Byte;
 {$ENDIF}
   DeathVerticalMotionTable: array[1..35] of Integer;
   PlayerLeavingLevel: byte;
@@ -380,16 +414,21 @@ var
   PlayerDamageGraceActive: byte;
   PlayerDamageGraceTick: byte;
 {$IFDEF SAM1}
-  reserved_6a43: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedDamageStatePadSam1: Byte;
 {$ELSE}
-  reserved_6a69: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedDamageStatePadLater: Byte;
 {$ENDIF}
+  { Configuration, saved campaign and joystick calibration. }
   PopupInputResult: string;
   GameConfiguration: TGameConfiguration;
 {$IFDEF SAM1}
-  reserved_6d17: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedConfigPadSam1: Byte;
 {$ELSE}
-  reserved_6d3d: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedConfigPadLater: Byte;
 {$ENDIF}
   GameSnapshot: TGameSnapshot;
   PendingRestoreScanCode: Integer;
@@ -397,9 +436,11 @@ var
   EntrancePlayerY: integer;
   EpisodeBlueprintCollected: byte;
 {$IFDEF SAM1}
-  reserved_6d67: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedBlueprintPadSam1: Byte;
 {$ELSE}
-  reserved_6d8d: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedBlueprintPadLater: Byte;
 {$ENDIF}
   JoystickCenterX: Integer;
   JoystickCenterY: Integer;
@@ -407,6 +448,7 @@ var
   JoystickAxisY: integer;
   JoystickHorizontalMoved: byte;
   JoystickVerticalMoved: byte;
+  { Sprite and glyph bank handles. }
   SpriteBank001: PSpriteFileBlock;
   SpriteBank101: PSpriteFileBlock;
   PlayerSpriteBank: PSpriteFileBlock;
@@ -428,6 +470,7 @@ var
   PopupFrameAndGlyphBank: PGlyphFileBlock;
   PopupExtendedGlyphBank: PGlyphFileBlock;
   GlyphBankFileViews: TGlyphFileViews;
+  { Input and scene-transition state. }
   GameMenuResult: byte;
   JoystickFirePosePending: byte;
   PlayerFalling: byte;
@@ -439,46 +482,61 @@ var
   QuitGameRequested: byte;
   ReturnToTitleRequested: byte;
   RestoreSnapshotRequested: byte;
-  GameTransitionReservedFlag: byte;
+  { Unused storage retains DATA layout. }
+  UnusedTransitionFlag: byte;
   PlayerLeftHeld: byte;
   PlayerRightHeld: byte;
-  PopupInputReservedFlag: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedPopupInputFlag: Byte;
   PlayerJumpHeld: byte;
+  { Key descriptions, bindings and saved handlers. }
   UpKeyDisplayText: string[80];
 {$IFDEF SAM1}
-  reserved_6f1f: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedUpKeyTextPadSam1: Byte;
 {$ELSE}
-  reserved_6f45: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedUpKeyTextPadLater: Byte;
 {$ENDIF}
   DownKeyDisplayText: string[80];
 {$IFDEF SAM1}
-  reserved_6f71: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedDownKeyTextPadSam1: Byte;
 {$ELSE}
-  reserved_6f97: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedDownKeyTextPadLater: Byte;
 {$ENDIF}
   FireKeyDisplayText: string[80];
 {$IFDEF SAM1}
-  reserved_6fc3: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedFireKeyTextPadSam1: Byte;
 {$ELSE}
-  reserved_6fe9: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedFireKeyTextPadLater: Byte;
 {$ENDIF}
   RightKeyDisplayText: string[80];
 {$IFDEF SAM1}
-  reserved_7015: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedRightKeyTextPadSam1: Byte;
 {$ELSE}
-  reserved_703b: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedRightKeyTextPadLater: Byte;
 {$ENDIF}
   JumpKeyDisplayText: string[80];
 {$IFDEF SAM1}
-  reserved_7067: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedJumpKeyTextPadSam1: Byte;
 {$ELSE}
-  reserved_708d: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedJumpKeyTextPadLater: Byte;
 {$ENDIF}
   LeftKeyDisplayText: string[80];
 {$IFDEF SAM1}
-  reserved_70b9: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedLeftKeyTextPadSam1: Byte;
 {$ELSE}
-  reserved_70df: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedLeftKeyTextPadLater: Byte;
 {$ENDIF}
   UpKeyScanCode: word;
   DownKeyScanCode: word;
@@ -492,9 +550,11 @@ var
   SavedTimerVector: pointer;
   SavedKeyboardVector: pointer;
 {$IFDEF SAM1}
-  reserved_70d6: array[0..3] of Byte;
+  { Unused storage retains DATA layout. }
+  UnusedVectorStorageSam1: array[0..3] of Byte;
 {$ELSE}
-  reserved_70fc: array[0..3] of Byte;
+  { Unused storage retains DATA layout. }
+  UnusedVectorStorageLater: array[0..3] of Byte;
 {$ENDIF}
 procedure InitializeGameDefaults;
 procedure ResetNewGameState;
@@ -502,9 +562,13 @@ procedure ResetLevelTransientState;
 procedure DecryptGameAssetBuffer(var AssetBuffer; AssetByteCount: Word);
 implementation
 uses Crt;
+
+{ Asset decoding. }
 {$L DECODE.OBJ}
 { Reverses each byte's bit order and XORs a cyclic 28-byte Copyright 1991 Peder Jungck key in place. }
 procedure DecryptGameAssetBuffer; external;
+
+{ Game and level reset routines. }
 {$F+}
 { Installs default keys/high scores, clears session state and fills the jump/death motion tables. }
 procedure InitializeGameDefaults;
@@ -553,13 +617,13 @@ begin
   QuitGameRequested := 0;
   ReturnToTitleRequested := 0;
   RestoreSnapshotRequested := 0;
-  GameTransitionReservedFlag := 0;
+  UnusedTransitionFlag := 0;
   PlayerOnMovingSupport := 0;
   PlayerJumping := 0;
   PlayerJumpHeld := 0;
   PlayerFalling := 0;
   CurrentLevelNumber := 1;
-  GameReservedWord := 0;
+  UnusedGameStateWord := 0;
   GameDrawBufferRow := $10;
   GameDrawBufferIndex := 0;
   DisplayedBufferRow := 0;
@@ -584,7 +648,7 @@ begin
   CeilingLauncherDisabled := 0;
   PlayerHasFloppyDisk := 0;
   ComputerMessageShown := 0;
-  InventoryReservedFlag := 0;
+  UnusedInventoryFlag := 0;
   HasKeyOne := 0;
   HasKeyTwo := 0;
   HasKeyThree := 0;
@@ -769,13 +833,13 @@ begin
   QuitGameRequested := 0;
   ReturnToTitleRequested := 0;
   RestoreSnapshotRequested := 0;
-  GameTransitionReservedFlag := 0;
+  UnusedTransitionFlag := 0;
   PlayerOnMovingSupport := 0;
   PlayerJumping := 0;
   PlayerJumpHeld := 0;
   PlayerFalling := 0;
   CurrentLevelNumber := 1;
-  GameReservedWord := 0;
+  UnusedGameStateWord := 0;
   GameDrawBufferRow := $10;
   GameDrawBufferIndex := 0;
   DisplayedBufferRow := 0;
@@ -800,7 +864,7 @@ begin
   CeilingLauncherDisabled := 0;
   PlayerHasFloppyDisk := 0;
   ComputerMessageShown := 0;
-  InventoryReservedFlag := 0;
+  UnusedInventoryFlag := 0;
   HasKeyOne := 0;
   HasKeyTwo := 0;
   HasKeyThree := 0;
@@ -871,7 +935,8 @@ end;
 { Clears the status band, movement/inventory/transition flags and temporary effects while retaining score. }
 procedure ResetLevelTransientState;
 var
-  FrameWord: Word;
+  { Unused locals retain the original stack frame. }
+  UnusedResetWord: Word;
 begin
   EpisodeBlueprintCollected := 0;
   PgSetDrawColor(0);
@@ -887,17 +952,17 @@ begin
   QuitGameRequested := 0;
   ReturnToTitleRequested := 0;
   RestoreSnapshotRequested := 0;
-  GameTransitionReservedFlag := 0;
+  UnusedTransitionFlag := 0;
   PlayerOnMovingSupport := 0;
   PlayerJumping := 0;
   PlayerJumpHeld := 0;
   PlayerFalling := 0;
-  GameReservedWord := 0;
+  UnusedGameStateWord := 0;
   PlayerHorizontalStep := 0;
   CeilingLauncherDisabled := 0;
   PlayerHasFloppyDisk := 0;
   ComputerMessageShown := 0;
-  InventoryReservedFlag := 0;
+  UnusedInventoryFlag := 0;
   HasKeyOne := 0;
   HasKeyTwo := 0;
   HasKeyThree := 0;

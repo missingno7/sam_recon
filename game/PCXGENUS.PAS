@@ -1,3 +1,5 @@
+{ Pascal interface to Genus PCX Programmer's Toolkit 3.56.
+  Provides PCX display, video-descriptor and printer routines from GENUS.OBJ. }
 unit PCXGENUS;
 {$A+}{$D+}{$L+}{$F-}
 interface
@@ -31,21 +33,27 @@ var
   PcxDisplayPageState: Integer;
   PcxModeCheckPolicy: Word;
 {$IFDEF SAM1}
-  reserved_21e8: array[0..151] of Byte;
+  { Unused storage retains DATA layout. }
+  UnusedPcxModeStorageSam1: array[0..151] of Byte;
 {$ELSE}
-  reserved_220e: array[0..151] of Byte;
+  { Unused storage retains DATA layout. }
+  UnusedPcxModeStorageLater: array[0..151] of Byte;
 {$ENDIF}
   PcxDefaultReadBuffer: array[0..2047] of Byte;
 {$IFDEF SAM1}
-  reserved_2a80: array[0..9] of Byte;
+  { Unused storage retains DATA layout. }
+  UnusedPcxReadStorageSam1: array[0..9] of Byte;
 {$ELSE}
-  reserved_2aa6: array[0..9] of Byte;
+  { Unused storage retains DATA layout. }
+  UnusedPcxReadStorageLater: array[0..9] of Byte;
 {$ENDIF}
   PcxReadState: TPcxReadState;
 {$IFDEF SAM1}
-  reserved_2a9b: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedPcxReadPadSam1: Byte;
 {$ELSE}
-  reserved_2ac1: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedPcxReadPadLater: Byte;
 {$ENDIF}
   PcxPrinterScanline: array[0..1023] of Byte;
   PcxPrintedSourceRow: Word;
@@ -56,24 +64,28 @@ var
   PcxHerculesTextCrtc: array[0..11] of Byte;
   PcxPrinterState: TPcxPrinterState;
 {$IFDEF SAM1}
-  reserved_341b: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedPcxPrinterPadSam1: Byte;
 {$ELSE}
-  reserved_3441: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedPcxPrinterPadLater: Byte;
 {$ENDIF}
   JoystickActive: Boolean;
 {$IFDEF SAM1}
-  reserved_341d: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedJoystickStatePadSam1: Byte;
 {$ELSE}
-  reserved_3443: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedJoystickStatePadLater: Byte;
 {$ENDIF}
 function PcxSetDisplayType(DisplayIndex: Word): Integer;
 function PcxSetGraphicsOrTextMode(GraphicsEnabled: Word): Integer;
 function PcxGetDisplayType: Integer;
-function PcxGetDisplayDescriptor(PcxGetDisplayDescr_DisplayIndex: Word): PPcxDisplayInfo;
+function PcxGetDisplayDescriptor(DisplayIndex: Word): PPcxDisplayInfo;
 procedure PcxInitializeVideoDescriptors;
 function PcxDisplayBuffer(PcxImageBuffer: Pointer; AvailableBufferBytes, ImageX, ImageY, VideoPage: Word): Integer;
 procedure PcxInitializeDisplayDispatch;
-function PcxDisplayFile(ImageFileName: String; PcxDisplayFile_ImageX, PcxDisplayFile_ImageY, PcxDisplayFile_VideoPage: Word):
+function PcxDisplayFile(ImageFileName: String; ImageX, ImageY, VideoPage: Word):
   Integer;
 function PcxBeginPrinterImage(SourceRowBytes, PrinterX, PrinterY: Word): Integer;
 procedure PcxEndPrinterImage;
@@ -81,30 +93,34 @@ function PcxFormatUnsignedDecimal(UnsignedValue: LongInt; DigitBuffer: Pointer):
 procedure PcxInitializePrinterState;
 implementation
 uses Dos, PROGRPHX, Crt, SAMSOUND, GAMEJOY;
+
+{ Display configuration and PCX image loading. }
 {$L GENUS.OBJ}
-{ src/asm/u5.asm u5_000f: pcx set display type. }
+{ Selects the toolkit display type. }
 function PcxSetDisplayType; external;
-{ src/asm/u5.asm u5_0047: pcx set graphics or text mode. }
+{ Switches the selected display between graphics and text modes. }
 function PcxSetGraphicsOrTextMode; external;
-{ src/asm/u5.asm u5_00eb: pcx get display type. }
+{ Returns the selected display type. }
 function PcxGetDisplayType; external;
-{ src/asm/u5.asm u5_01ac: pcx get display descriptor. }
+{ Returns the descriptor for a display index. }
 function PcxGetDisplayDescriptor; external;
-{ src/asm/u5.asm u5_026b: pcx initialize video descriptors. }
+{ Initializes the toolkit video descriptors. }
 procedure PcxInitializeVideoDescriptors; external;
-{ src/asm/u5.asm u5_0d2d: pcx display buffer. }
+{ Decodes a PCX buffer at the requested position and video page. }
 function PcxDisplayBuffer; external;
-{ src/asm/u5.asm u5_0dc7: pcx initialize display dispatch. }
+{ Selects decoding routines for the current display. }
 procedure PcxInitializeDisplayDispatch; external;
 { Converts a Pascal filename, opens/reads/closes it with DOS INT 21h. }
 function PcxDisplayFile; external;
-{ src/asm/u5.asm u5_1ac6: pcx begin printer image. }
+
+{ Printer raster output and decimal formatting. }
+{ Starts a printer raster image. }
 function PcxBeginPrinterImage; external;
-{ src/asm/u5.asm u5_1bf7: pcx end printer image. }
+{ Ends printer raster output. }
 procedure PcxEndPrinterImage; external;
-{ src/asm/u5.asm u5_2020: pcx format unsigned decimal. }
+{ Formats an unsigned value into decimal digits. }
 function PcxFormatUnsignedDecimal; external;
-{ src/asm/u5.asm u5_20a2: pcx initialize printer state. }
+{ Installs the default printer commands and scaling. }
 procedure PcxInitializePrinterState; external;
 begin
   PcxInitializeVideoDescriptors;

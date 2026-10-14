@@ -1,10 +1,10 @@
-; Game-port joystick object, SAM1 u6:007F-00FB (124 bytes).
-; The unused four-axis reader calls a NEAR helper that returns RETF.
-; This is the observed original convention, including its inconsistency.
+; Joystick axis timing for GAMEJOY, using the game port at 201h.
+; Also retains the unused four-axis sampling entry and its helper.
 CODE segment byte public
 assume cs:CODE
 public ReadJoystickAxis
 
+; Four-axis sampling helpers.
 ; Unused assembly entry measures game-port masks 1,2,4,8 into four passed word destinations.
 ReadFourJoystickAxes proc far
     push bp
@@ -52,6 +52,7 @@ four_done:
     pop bp
     retf 16
 
+; Game axis-read entry.
 ; Times game-port bit 1 shl Axis with interrupts disabled, returning -1 on timeout.
 ReadJoystickAxis proc far
     push bp

@@ -23,17 +23,17 @@ sam/                          (final layout, names indicative)
    unit init blocks and the 16.6 KB program body) proven EQUAL in SAM1/2/3 in the harness
    (`tools/search.py`, `tools/validate.py`); the six linked objects proven at OMF level
    (`tools/asmproof.py`). Borland runtime reproduced by the compiler research probe.
-2. **Whole program** (in progress): one declaration per global and one header per routine
+2. **Whole program** (done, 2026-10-14): one declaration per global and one header per routine
    (`tools/consolidate.py`, `tools/rewrite_views.py`, workers sol-consolidate / sol-externals);
    the Genus typed constants and the asm-only globals declared; `tools/progbuild.py` builds
    SAM.PAS + U1..U9 per episode and compares the load image, MZ header and relocations, then
    LZEXE 0.91 against the original files. Open question: the `DB ?` holes of the linked objects
    (102 bytes per episode) hold residual compiler-buffer bytes in SAM1/2 (docs/assembly.md,
    build/workers/sol-asmproof/REPORT.md); reproducing them may need the original unit compile order.
-3. **The build becomes the proof**: validate.py runs progbuild; any change that moves one byte fails.
-4. **Readability pass** verified by phase 3: semantic names (routines, globals, types, fields; the
+3. **The build becomes the proof** (done: `tools/finalcheck.py`, `tools/standalone.py`, `validate.py --program/--standalone`; user decision: object-hole bytes are documented residue): validate.py runs progbuild; any change that moves one byte fails.
+4. **Readability pass** (done: semantic names `layout/names.json` via `tools/rename.py`, unit/section/routine comments, address comments and gotos removed) verified by phase 3: semantic names (routines, globals, types, fields; the
    DS-order constraint is per unit), comments, removal of address comments, structured control flow.
-5. **Standalone tree** with BUILD.BAT and a host check script.
+5. **Standalone tree** (done: `game/` with BUILD.BAT, `tools/standalone.py`).
 
 Constraints throughout: no original bytes injected as code, no post-link patching, no masking;
 original binaries and assets are never committed.

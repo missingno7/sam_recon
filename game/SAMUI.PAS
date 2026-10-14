@@ -1,3 +1,5 @@
+{ User interface unit: draws the HUD and popups, loads graphics resources,
+  and handles menus, settings, saved games and information screens. }
 unit SAMUI;
 {$A+}{$D+}{$L+}{$F-}
 interface
@@ -8,13 +10,13 @@ function DetectGameVideoAdapter: Char;
 procedure ToggleGameDrawBuffer;
 procedure ShowGameDrawBuffer;
 procedure RestoreGamePalette(PaletteDelayMs: Word);
-procedure FadeGamePaletteToBlack(FadeGamePaletteT_PaletteDelayMs: Word);
+procedure FadeGamePaletteToBlack(PaletteDelayMs: Word);
 procedure DrawGameStatusBar;
 procedure ClearPopupText;
 procedure DrawGameText(TextColumn, TextRow: Integer; DisplayText: string);
 function ReadPopupScanCode(AcceptAnyKey: Byte): Byte;
 function ReadPopupText(MaxInputLength: Integer): String;
-function ReadScrollablePopupScanCode(ReadScrollablePopu_AcceptAnyKey: Byte): Byte;
+function ReadScrollablePopupScanCode(AcceptAnyKey: Byte): Byte;
 procedure ShowApogeeSplash;
 procedure ShowTitleAndCredits;
 procedure InsertPlayerHighScore;
@@ -23,7 +25,7 @@ procedure BlackenGamePalette;
 procedure CaptureGameSnapshot;
 procedure RestoreGameSnapshot;
 procedure WriteSavedGame(SaveSlot: Integer);
-function ReadSavedGame(ReadSavedGame_SaveSlot: Integer): Boolean;
+function ReadSavedGame(SaveSlot: Integer): Boolean;
 procedure ShowGameInstructions;
 procedure ShowMissionBriefing;
 procedure ShowMissionSuccessText;
@@ -56,15 +58,19 @@ procedure ShowDosExitScreen;
 procedure ShowEpisodeEnding;
 implementation
 uses Dos, PROGRPHX, Crt, SAMSOUND, GAMEJOY, PCXGENUS, TEXT80;
+
+{ Video adapter discovery for episode 1. }
 {$IFDEF SAM1}
 {$F+}
 { INT 10h AX=1B00 distinguishes VGA; the fallback examines BIOS EGA flags and returns V/E/U. }
 function DetectGameVideoAdapter: Char;
 var
-  prefixByte: Byte;
+  { Unused locals retain the original stack frame. }
+  UnusedVideoProbeByte: Byte;
   BiosRegs: Registers;
   EquipmentDisplayBits: Word;
-  pad: array[1..6] of Byte;
+  { Unused locals retain the original stack frame. }
+  UnusedVideoProbePad: array[1..6] of Byte;
   EgaDisplayFlags: Byte;
   AdapterCode: Char;
   VideoStateBuffer: array[1..64] of Byte;
@@ -90,10 +96,12 @@ begin
   end;
   DetectGameVideoAdapter := AdapterCode;
 end;
+
+{ Display buffers, palette and status bar. }
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$ENDIF}
 {$F+}
-{ Alternates buffer index d_683E and draw-row origin d_6840 between 16 and 416. }
+{ Alternates buffer index GameDrawBufferIndex and draw-row origin GameDrawBufferRow between 16 and 416. }
 procedure ToggleGameDrawBuffer;
 begin
   if GameDrawBufferIndex = 0 then
@@ -159,13 +167,13 @@ end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
 { Sets each of the sixteen palette registers to zero after a configurable delay. }
-procedure FadeGamePaletteToBlack(FadeGamePaletteT_PaletteDelayMs: Word);
+procedure FadeGamePaletteToBlack(PaletteDelayMs: Word);
 var
   PaletteIndex: Integer;
 begin
   for PaletteIndex := 0 to 15 do
   begin
-    Delay(FadeGamePaletteT_PaletteDelayMs);
+    Delay(PaletteDelayMs);
     PgSetPaletteRegister(PaletteIndex, 0);
   end;
 end;
@@ -246,6 +254,8 @@ begin
       (Word(DigitOrHealthIndex) shl 3), 1);
   end;
 end;
+
+{ Text rendering and interactive popups. }
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
 { Clears all 299 popup text strings and all 20 accepted scan-code entries. }
@@ -432,7 +442,7 @@ begin
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
-{ Centers and draws a popup, waits for a scan code (optionally from d_67FA). }
+{ Centers and draws a popup, waits for a scan code (optionally from PopupAcceptedScanCodes). }
 function ReadPopupScanCode(AcceptAnyKey: Byte): Byte;
 var
   CursorColumn: Integer;
@@ -444,13 +454,14 @@ var
   TopRow: Integer;
   RightColumn: Integer;
   BottomRow: Integer;
-  unusedWord: Integer;
+  { Unused locals retain the original stack frame. }
+  UnusedPopupWord: Integer;
   KeyScanCode: Integer;
   SparkColumn: Integer;
   SparkPixelY: Integer;
-  ReadPopupScanCode_SparkFrame: Integer;
+  SparkFrame: Integer;
   SparkOnTopBorder: Byte;
-  ReadPopupScanCode_SparkActive: Byte;
+  SparkActive: Byte;
   KeyAccepted: Byte;
 begin
   CursorFrame := 1;
@@ -459,7 +470,7 @@ begin
   MaxLineColumns := 0;
   PopupRowCount := 0;
   KeyAccepted := 0;
-  ReadPopupScanCode_SparkActive := 0;
+  SparkActive := 0;
   for SharedLoopIndexB := 1 to 20 do
   begin
     if SharedLoopIndexB = 1 then
@@ -534,10 +545,10 @@ begin
     repeat
     MemW[0:$041C] := MemW[0:$041A];
     SharedLoopIndexB := Random(100);
-    if (ReadPopupScanCode_SparkActive = 0) and (SharedLoopIndexB >= 99) then
+    if (SparkActive = 0) and (SharedLoopIndexB >= 99) then
     begin
-      ReadPopupScanCode_SparkActive := 1;
-      ReadPopupScanCode_SparkFrame := 0;
+      SparkActive := 1;
+      SparkFrame := 0;
       case Random(2) of
         0:
           begin
@@ -562,12 +573,12 @@ begin
       Inc(CursorFrame);
       if CursorFrame > 5 then
         CursorFrame := 1;
-      if ReadPopupScanCode_SparkActive <> 0 then
+      if SparkActive <> 0 then
       begin
-        Inc(ReadPopupScanCode_SparkFrame);
-        if ReadPopupScanCode_SparkFrame > 4 then
+        Inc(SparkFrame);
+        if SparkFrame > 4 then
         begin
-          ReadPopupScanCode_SparkActive := 0;
+          SparkActive := 0;
           if SparkOnTopBorder <> 0 then
             PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[43], SparkColumn, SparkPixelY + DisplayedBufferRow)
           else
@@ -579,7 +590,7 @@ begin
             PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[43], SparkColumn, SparkPixelY + DisplayedBufferRow)
           else
             PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[203], SparkColumn, SparkPixelY + DisplayedBufferRow);
-          PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[ReadPopupScanCode_SparkFrame + 37].GlyphDataBytes[1],
+          PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[SparkFrame + 37].GlyphDataBytes[1],
           SparkColumn,
             SparkPixelY + DisplayedBufferRow);
         end;
@@ -622,7 +633,7 @@ begin
     (TopRow shl 3) + DisplayedBufferRow);
   FreeMem(PopupSavedBackground, 30000);
   MemW[0:$041C] := MemW[0:$041A];
-  PopupInputReservedFlag := 0;
+  UnusedPopupInputFlag := 0;
   PlayerLeftHeld := 0;
   PlayerRightHeld := 0;
   PlayerUpHeld := 0;
@@ -633,88 +644,89 @@ end;
 { Displays a popup and edits a bounded string using printable keys, Backspace and Enter. }
 function ReadPopupText(MaxInputLength: Integer): String;
 var
-  ReadPopupText_CursorColumn, ReadPopupText_CursorRow: Integer;
-  ReadPopupText_CursorFrame: Integer;
-  ReadPopupText_MaxLineColumns, ReadPopupText_PopupRowCount: Integer;
-  ReadPopupText_LeftColumn, ReadPopupText_TopRow, ReadPopupText_RightColumn, ReadPopupText_BottomRow, InputLength: Integer;
-  UnusedWord, ReadPopupText_SparkColumn, ReadPopupText_SparkPixelY, ReadPopupText_SparkFrame: Integer;
-  ReadPopupText_SparkOnTopBorder, ReadPopupText_SparkActive: Byte;
+  CursorColumn, CursorRow: Integer;
+  CursorFrame: Integer;
+  MaxLineColumns, PopupRowCount: Integer;
+  LeftColumn, TopRow, RightColumn, BottomRow, InputLength: Integer;
+  { Unused locals retain the original stack frame. }
+  UnusedPopupWord, SparkColumn, SparkPixelY, SparkFrame: Integer;
+  SparkOnTopBorder, SparkActive: Byte;
   FramePad: array[0..1] of Byte;
   EditedText: String;
   InputChar: Char;
 begin
-  ReadPopupText_CursorFrame := 1;
-  ReadPopupText_CursorColumn := 0;
-  ReadPopupText_MaxLineColumns := 0;
-  ReadPopupText_PopupRowCount := 0;
+  CursorFrame := 1;
+  CursorColumn := 0;
+  MaxLineColumns := 0;
+  PopupRowCount := 0;
   FramePad[1] := 0;
-  ReadPopupText_SparkActive := 0;
+  SparkActive := 0;
   for SharedLoopIndexB := 1 to 20 do
   begin
     if SharedLoopIndexB = 1 then
-      ReadPopupText_MaxLineColumns := Length(PopupTextLines[SharedLoopIndexB]) - 1;
-    if Length(PopupTextLines[SharedLoopIndexB]) > ReadPopupText_MaxLineColumns then
-      ReadPopupText_MaxLineColumns := Length(PopupTextLines[SharedLoopIndexB]) - 1;
+      MaxLineColumns := Length(PopupTextLines[SharedLoopIndexB]) - 1;
+    if Length(PopupTextLines[SharedLoopIndexB]) > MaxLineColumns then
+      MaxLineColumns := Length(PopupTextLines[SharedLoopIndexB]) - 1;
     if PopupTextLines[SharedLoopIndexB] = 'END OF WINDOW' then
-      ReadPopupText_PopupRowCount := SharedLoopIndexB - 2;
+      PopupRowCount := SharedLoopIndexB - 2;
     for SharedLoopIndexA := 1 to Length(PopupTextLines[SharedLoopIndexB]) do
       if Copy(PopupTextLines[SharedLoopIndexB], SharedLoopIndexA, 1) = '^' then
       begin
-        ReadPopupText_CursorColumn := Pos('^', PopupTextLines[SharedLoopIndexB]) + 1;
-        ReadPopupText_CursorRow := SharedLoopIndexB + 1;
+        CursorColumn := Pos('^', PopupTextLines[SharedLoopIndexB]) + 1;
+        CursorRow := SharedLoopIndexB + 1;
       end;
   end;
 
-  Inc(ReadPopupText_PopupRowCount, 3);
-  ReadPopupText_LeftColumn := ((320 - (ReadPopupText_MaxLineColumns shl 3)) div 2 + CameraX) div 8 - 3;
-  ReadPopupText_TopRow := ((200 - (ReadPopupText_PopupRowCount shl 3)) div 2 + CameraY) div 8 - 2;
-  ReadPopupText_CursorColumn := ReadPopupText_CursorColumn + ReadPopupText_LeftColumn;
-  ReadPopupText_CursorRow := ReadPopupText_CursorRow + ReadPopupText_TopRow;
+  Inc(PopupRowCount, 3);
+  LeftColumn := ((320 - (MaxLineColumns shl 3)) div 2 + CameraX) div 8 - 3;
+  TopRow := ((200 - (PopupRowCount shl 3)) div 2 + CameraY) div 8 - 2;
+  CursorColumn := CursorColumn + LeftColumn;
+  CursorRow := CursorRow + TopRow;
   GetMem(PopupSavedBackground, $7530);
-  PgCapturePlanarRectangle(PRawByteView(PopupSavedBackground)^, ReadPopupText_LeftColumn, (ReadPopupText_TopRow shl 3) +
+  PgCapturePlanarRectangle(PRawByteView(PopupSavedBackground)^, LeftColumn, (TopRow shl 3) +
   DisplayedBufferRow,
-    ReadPopupText_LeftColumn + ReadPopupText_MaxLineColumns + 5 + 1,
-    (Succ(ReadPopupText_TopRow + ReadPopupText_PopupRowCount + 2) shl 3) + DisplayedBufferRow);
-  ReadPopupText_RightColumn := ReadPopupText_LeftColumn + ReadPopupText_MaxLineColumns + 4;
-  ReadPopupText_BottomRow := ReadPopupText_TopRow + ReadPopupText_PopupRowCount + 1;
+    LeftColumn + MaxLineColumns + 5 + 1,
+    (Succ(TopRow + PopupRowCount + 2) shl 3) + DisplayedBufferRow);
+  RightColumn := LeftColumn + MaxLineColumns + 4;
+  BottomRow := TopRow + PopupRowCount + 1;
 
-  for SharedLoopIndexC := 1 to ReadPopupText_BottomRow - ReadPopupText_TopRow do
-    for SharedLoopIndexB := ReadPopupText_LeftColumn + 1 to ReadPopupText_RightColumn - 1 do
+  for SharedLoopIndexC := 1 to BottomRow - TopRow do
+    for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
       PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[323], SharedLoopIndexB,
-        ((ReadPopupText_TopRow + SharedLoopIndexC) shl 3) + DisplayedBufferRow);
+        ((TopRow + SharedLoopIndexC) shl 3) + DisplayedBufferRow);
 
-  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[3], ReadPopupText_LeftColumn, (ReadPopupText_TopRow shl 3) +
+  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[3], LeftColumn, (TopRow shl 3) +
   DisplayedBufferRow);
-  for SharedLoopIndexB := ReadPopupText_LeftColumn + 1 to ReadPopupText_RightColumn - 1 do
-    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[43], SharedLoopIndexB, (ReadPopupText_TopRow shl 3) +
+  for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
+    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[43], SharedLoopIndexB, (TopRow shl 3) +
     DisplayedBufferRow);
-  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[83], ReadPopupText_RightColumn, (ReadPopupText_TopRow shl 3) +
+  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[83], RightColumn, (TopRow shl 3) +
   DisplayedBufferRow);
-  for SharedLoopIndexB := 1 to ReadPopupText_BottomRow - ReadPopupText_TopRow do
+  for SharedLoopIndexB := 1 to BottomRow - TopRow do
   begin
-    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[203], ReadPopupText_LeftColumn, ((ReadPopupText_TopRow +
+    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[203], LeftColumn, ((TopRow +
     SharedLoopIndexB) shl 3) + DisplayedBufferRow);
-    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[283], ReadPopupText_RightColumn, ((ReadPopupText_TopRow +
+    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[283], RightColumn, ((TopRow +
     SharedLoopIndexB) shl 3) + DisplayedBufferRow);
-    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[363], ReadPopupText_RightColumn + 1, ((ReadPopupText_TopRow +
+    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[363], RightColumn + 1, ((TopRow +
     SharedLoopIndexB) shl 3) + DisplayedBufferRow);
   end;
-  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[363], ReadPopupText_RightColumn + 1,
-    ((ReadPopupText_TopRow + (ReadPopupText_BottomRow - ReadPopupText_TopRow) + 1) shl 3) + DisplayedBufferRow);
-  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[163], ReadPopupText_LeftColumn, (ReadPopupText_BottomRow shl 3) +
+  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[363], RightColumn + 1,
+    ((TopRow + (BottomRow - TopRow) + 1) shl 3) + DisplayedBufferRow);
+  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[163], LeftColumn, (BottomRow shl 3) +
   DisplayedBufferRow);
-  for SharedLoopIndexB := ReadPopupText_LeftColumn + 1 to ReadPopupText_RightColumn - 1 do
-    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[243], SharedLoopIndexB, (ReadPopupText_BottomRow shl 3) +
+  for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
+    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[243], SharedLoopIndexB, (BottomRow shl 3) +
     DisplayedBufferRow);
-  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[123], ReadPopupText_RightColumn, (ReadPopupText_BottomRow shl 3) +
+  PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[123], RightColumn, (BottomRow shl 3) +
   DisplayedBufferRow);
-  for SharedLoopIndexB := ReadPopupText_LeftColumn + 1 to ReadPopupText_RightColumn + 1 do
-    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[363], SharedLoopIndexB, ((ReadPopupText_BottomRow + 1) shl 3) +
+  for SharedLoopIndexB := LeftColumn + 1 to RightColumn + 1 do
+    PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[363], SharedLoopIndexB, ((BottomRow + 1) shl 3) +
     DisplayedBufferRow);
 
-  for SharedLoopIndexB := 1 to ReadPopupText_PopupRowCount do
+  for SharedLoopIndexB := 1 to PopupRowCount do
     if PopupTextLines[SharedLoopIndexB] <> 'END OF WINDOW' then
-      DrawGameText(ReadPopupText_LeftColumn + 2, ReadPopupText_TopRow + SharedLoopIndexB + 1,
+      DrawGameText(LeftColumn + 2, TopRow + SharedLoopIndexB + 1,
       PopupTextLines[SharedLoopIndexB]);
 
   PlayerUpHeld := 0;
@@ -743,10 +755,10 @@ begin
             begin
               EditedText := EditedText + InputChar;
               Inc(InputLength);
-              PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[323], ReadPopupText_CursorColumn, (ReadPopupText_CursorRow
+              PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[323], CursorColumn, (CursorRow
               shl 3) + DisplayedBufferRow);
-              DrawGameText(ReadPopupText_CursorColumn, ReadPopupText_CursorRow, InputChar);
-              Inc(ReadPopupText_CursorColumn);
+              DrawGameText(CursorColumn, CursorRow, InputChar);
+              Inc(CursorColumn);
             end;
           end;
         end;
@@ -755,10 +767,10 @@ begin
       begin
         if InputLength > 0 then
         begin
-            PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[323], ReadPopupText_CursorColumn, (ReadPopupText_CursorRow
+            PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[323], CursorColumn, (CursorRow
             shl 3) + DisplayedBufferRow);
-          Dec(ReadPopupText_CursorColumn);
-            PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[323], ReadPopupText_CursorColumn, (ReadPopupText_CursorRow
+          Dec(CursorColumn);
+            PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[323], CursorColumn, (CursorRow
             shl 3) + DisplayedBufferRow);
           Delete(EditedText, Length(EditedText), 1);
           Dec(InputLength);
@@ -767,24 +779,24 @@ begin
     end;
 
     SharedLoopIndexB := Random(100);
-    if (ReadPopupText_SparkActive = 0) and (SharedLoopIndexB >= 99) then
+    if (SparkActive = 0) and (SharedLoopIndexB >= 99) then
     begin
-      ReadPopupText_SparkActive := 1;
-      ReadPopupText_SparkFrame := 0;
+      SparkActive := 1;
+      SparkFrame := 0;
       case Random(2) of
         0:
           begin
-            ReadPopupText_SparkColumn := ReadPopupText_LeftColumn + Random(ReadPopupText_RightColumn -
-            ReadPopupText_LeftColumn - 2) + 1;
-            ReadPopupText_SparkPixelY := ReadPopupText_TopRow shl 3;
-            ReadPopupText_SparkOnTopBorder := 1;
+            SparkColumn := LeftColumn + Random(RightColumn -
+            LeftColumn - 2) + 1;
+            SparkPixelY := TopRow shl 3;
+            SparkOnTopBorder := 1;
           end;
         1:
           begin
-            ReadPopupText_SparkColumn := ReadPopupText_LeftColumn;
-            ReadPopupText_SparkPixelY := (ReadPopupText_TopRow + Random(ReadPopupText_BottomRow - ReadPopupText_TopRow - 2) +
+            SparkColumn := LeftColumn;
+            SparkPixelY := (TopRow + Random(BottomRow - TopRow - 2) +
             1) * 8;
-            ReadPopupText_SparkOnTopBorder := 0;
+            SparkOnTopBorder := 0;
           end;
       end;
     end;
@@ -792,45 +804,45 @@ begin
     if GameTickCounter > 20 then
     begin
       GameTickCounter := 0;
-        PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[323], ReadPopupText_CursorColumn, (ReadPopupText_CursorRow shl
+        PgBlitOpaque8x8(PRawByteView(PopupFrameAndGlyphBank)^[323], CursorColumn, (CursorRow shl
         3) + DisplayedBufferRow);
-      PgBlitMasked8x8(PopupExtendedGlyphBank^.GlyphEntries[ReadPopupText_CursorFrame + 45].GlyphDataBytes[1],
-      ReadPopupText_CursorColumn,
-        (ReadPopupText_CursorRow shl 3) + DisplayedBufferRow);
-      Inc(ReadPopupText_CursorFrame);
-      if ReadPopupText_CursorFrame > 5 then
-        ReadPopupText_CursorFrame := 1;
-      if ReadPopupText_SparkActive <> 0 then
+      PgBlitMasked8x8(PopupExtendedGlyphBank^.GlyphEntries[CursorFrame + 45].GlyphDataBytes[1],
+      CursorColumn,
+        (CursorRow shl 3) + DisplayedBufferRow);
+      Inc(CursorFrame);
+      if CursorFrame > 5 then
+        CursorFrame := 1;
+      if SparkActive <> 0 then
       begin
-        Inc(ReadPopupText_SparkFrame);
-        if ReadPopupText_SparkFrame > 4 then
+        Inc(SparkFrame);
+        if SparkFrame > 4 then
         begin
-          ReadPopupText_SparkActive := 0;
-          if ReadPopupText_SparkOnTopBorder <> 0 then
-              PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[43], ReadPopupText_SparkColumn, ReadPopupText_SparkPixelY
+          SparkActive := 0;
+          if SparkOnTopBorder <> 0 then
+              PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[43], SparkColumn, SparkPixelY
               + DisplayedBufferRow)
           else
-              PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[203], ReadPopupText_SparkColumn, ReadPopupText_SparkPixelY
+              PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[203], SparkColumn, SparkPixelY
               + DisplayedBufferRow);
         end
         else
         begin
-          if ReadPopupText_SparkOnTopBorder <> 0 then
-            PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[43], ReadPopupText_SparkColumn, ReadPopupText_SparkPixelY +
+          if SparkOnTopBorder <> 0 then
+            PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[43], SparkColumn, SparkPixelY +
             DisplayedBufferRow)
           else
-            PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[203], ReadPopupText_SparkColumn, ReadPopupText_SparkPixelY +
+            PgBlitMasked8x8(PRawByteView(PopupFrameAndGlyphBank)^[203], SparkColumn, SparkPixelY +
             DisplayedBufferRow);
-          PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[ReadPopupText_SparkFrame + 37].GlyphDataBytes[1],
-          ReadPopupText_SparkColumn,
-            ReadPopupText_SparkPixelY + DisplayedBufferRow);
+          PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[SparkFrame + 37].GlyphDataBytes[1],
+          SparkColumn,
+            SparkPixelY + DisplayedBufferRow);
         end;
       end;
     end;
   end;
 
   ReadPopupText := EditedText;
-  PgRestorePlanarRectangle(PRawByteView(PopupSavedBackground)^, ReadPopupText_LeftColumn, (ReadPopupText_TopRow shl 3) +
+  PgRestorePlanarRectangle(PRawByteView(PopupSavedBackground)^, LeftColumn, (TopRow shl 3) +
   DisplayedBufferRow);
   FreeMem(PopupSavedBackground, $7530);
   MemW[0:$041C] := MemW[0:$041A];
@@ -842,87 +854,89 @@ end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
 { Pages through up to 299 text lines on Up/PgUp and Down/PgDn; returns the selected scan code. }
-function ReadScrollablePopupScanCode(ReadScrollablePopu_AcceptAnyKey: Byte): Byte;
+function ReadScrollablePopupScanCode(AcceptAnyKey: Byte): Byte;
 var
-  ReadScrollablePopu_CursorColumn, ReadScrollablePopupSc_CursorRow, FirstLine: Integer;
-  ReadScrollablePo_MaxLineColumns, VisiblePopupRows, TotalTextRows: Integer;
-  ReadScrollablePopupS_LeftColumn, ReadScrollablePopupScanC_TopRow, ReadScrollablePopup_RightColumn,
-  ReadScrollablePopupSc_BottomRow: Integer;
-  ScrollLineOffset, PreviousKey, ReadScrollablePopup_KeyScanCode: Integer;
-  ReadScrollablePopup_SparkColumn, ReadScrollablePopup_SparkPixelY, SparkFrameIndex: Integer;
-  ReadScrollable_SparkOnTopBorder, IsSparkActive, ReadScrollablePopup_KeyAccepted: Boolean;
+  { Unused locals retain the original stack frame. }
+  CursorColumn, CursorRow, UnusedFirstLine: Integer;
+  MaxLineColumns, VisiblePopupRows, TotalTextRows: Integer;
+  LeftColumn, TopRow, RightColumn,
+  BottomRow: Integer;
+  { Unused locals retain the original stack frame. }
+  ScrollLineOffset, UnusedPreviousKey, KeyScanCode: Integer;
+  SparkColumn, SparkPixelY, SparkFrameIndex: Integer;
+  SparkOnTopBorder, IsSparkActive, KeyAccepted: Boolean;
 begin
-  FirstLine := 1;
-  ReadScrollablePopu_CursorColumn := 0;
-  ReadScrollablePo_MaxLineColumns := 0;
+  UnusedFirstLine := 1;
+  CursorColumn := 0;
+  MaxLineColumns := 0;
   VisiblePopupRows := 0;
   TotalTextRows := 0;
   ScrollLineOffset := 0;
-  ReadScrollablePopup_KeyAccepted := False;
+  KeyAccepted := False;
   IsSparkActive := False;
   for SharedLoopIndexB := 1 to 299 do
   begin
-    if SharedLoopIndexB = 1 then ReadScrollablePo_MaxLineColumns := Length(PopupTextLines[SharedLoopIndexB]) - 1;
-    if Length(PopupTextLines[SharedLoopIndexB]) > ReadScrollablePo_MaxLineColumns then
-      ReadScrollablePo_MaxLineColumns := Length(PopupTextLines[SharedLoopIndexB]) - 1;
+    if SharedLoopIndexB = 1 then MaxLineColumns := Length(PopupTextLines[SharedLoopIndexB]) - 1;
+    if Length(PopupTextLines[SharedLoopIndexB]) > MaxLineColumns then
+      MaxLineColumns := Length(PopupTextLines[SharedLoopIndexB]) - 1;
     if PopupTextLines[SharedLoopIndexB] = 'END OF WINDOW' then VisiblePopupRows := SharedLoopIndexB - 2;
     for SharedLoopIndexA := 1 to Length(PopupTextLines[SharedLoopIndexB]) do
       if Copy(PopupTextLines[SharedLoopIndexB], SharedLoopIndexA, 1) = '^' then
       begin
-        ReadScrollablePopu_CursorColumn := Pos('^', PopupTextLines[SharedLoopIndexB]) + 1;
-        ReadScrollablePopupSc_CursorRow := SharedLoopIndexB + 1;
+        CursorColumn := Pos('^', PopupTextLines[SharedLoopIndexB]) + 1;
+        CursorRow := SharedLoopIndexB + 1;
       end;
   end;
   TotalTextRows := VisiblePopupRows;
   if VisiblePopupRows > 16 then VisiblePopupRows := 16;
   Inc(VisiblePopupRows, 3);
-  ReadScrollablePopupS_LeftColumn := (((320 - (ReadScrollablePo_MaxLineColumns shl 3)) div 2 + CameraX) div 8) - 3;
-  ReadScrollablePopupScanC_TopRow := (((200 - (VisiblePopupRows shl 3)) div 2 + CameraY) div 8) - 2;
-  ReadScrollablePopu_CursorColumn := ReadScrollablePopu_CursorColumn + ReadScrollablePopupS_LeftColumn;
-  ReadScrollablePopupSc_CursorRow := ReadScrollablePopupSc_CursorRow + ReadScrollablePopupScanC_TopRow;
+  LeftColumn := (((320 - (MaxLineColumns shl 3)) div 2 + CameraX) div 8) - 3;
+  TopRow := (((200 - (VisiblePopupRows shl 3)) div 2 + CameraY) div 8) - 2;
+  CursorColumn := CursorColumn + LeftColumn;
+  CursorRow := CursorRow + TopRow;
   GetMem(PopupSavedBackground, 30000);
-  PgCapturePlanarRectangle(PopupSavedBackground^, ReadScrollablePopupS_LeftColumn, (ReadScrollablePopupScanC_TopRow shl 3) +
+  PgCapturePlanarRectangle(PopupSavedBackground^, LeftColumn, (TopRow shl 3) +
   DisplayedBufferRow,
-    ReadScrollablePopupS_LeftColumn + ReadScrollablePo_MaxLineColumns + 5 + 1, ((ReadScrollablePopupScanC_TopRow +
+    LeftColumn + MaxLineColumns + 5 + 1, ((TopRow +
     VisiblePopupRows + 2 + 1) shl 3) + DisplayedBufferRow);
-  ReadScrollablePopup_RightColumn := ReadScrollablePopupS_LeftColumn + ReadScrollablePo_MaxLineColumns + 4;
-  ReadScrollablePopupSc_BottomRow := ReadScrollablePopupScanC_TopRow + VisiblePopupRows + 1;
-  for SharedLoopIndexC := 1 to ReadScrollablePopupSc_BottomRow - ReadScrollablePopupScanC_TopRow do
-    for SharedLoopIndexB := ReadScrollablePopupS_LeftColumn + 1 to ReadScrollablePopup_RightColumn - 1 do
+  RightColumn := LeftColumn + MaxLineColumns + 4;
+  BottomRow := TopRow + VisiblePopupRows + 1;
+  for SharedLoopIndexC := 1 to BottomRow - TopRow do
+    for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
       PgBlitOpaque8x8(PopupFrameAndGlyphBank^.GlyphEntries[9].GlyphDataBytes[1], SharedLoopIndexB,
-        ((ReadScrollablePopupScanC_TopRow + SharedLoopIndexC) shl 3) + DisplayedBufferRow);
-  PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[1].GlyphDataBytes[1], ReadScrollablePopupS_LeftColumn,
-  (ReadScrollablePopupScanC_TopRow shl 3) + DisplayedBufferRow);
-  for SharedLoopIndexB := ReadScrollablePopupS_LeftColumn + 1 to ReadScrollablePopup_RightColumn - 1 do
+        ((TopRow + SharedLoopIndexC) shl 3) + DisplayedBufferRow);
+  PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[1].GlyphDataBytes[1], LeftColumn,
+  (TopRow shl 3) + DisplayedBufferRow);
+  for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
     PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[2].GlyphDataBytes[1], SharedLoopIndexB,
-    (ReadScrollablePopupScanC_TopRow shl 3) + DisplayedBufferRow);
-  PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[3].GlyphDataBytes[1], ReadScrollablePopup_RightColumn,
-  (ReadScrollablePopupScanC_TopRow shl 3) + DisplayedBufferRow);
-  for SharedLoopIndexB := 1 to ReadScrollablePopupSc_BottomRow - ReadScrollablePopupScanC_TopRow do
+    (TopRow shl 3) + DisplayedBufferRow);
+  PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[3].GlyphDataBytes[1], RightColumn,
+  (TopRow shl 3) + DisplayedBufferRow);
+  for SharedLoopIndexB := 1 to BottomRow - TopRow do
   begin
-    PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[6].GlyphDataBytes[1], ReadScrollablePopupS_LeftColumn,
-      ((ReadScrollablePopupScanC_TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
-    PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[8].GlyphDataBytes[1], ReadScrollablePopup_RightColumn,
-      ((ReadScrollablePopupScanC_TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
-    PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], ReadScrollablePopup_RightColumn + 1,
-      ((ReadScrollablePopupScanC_TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
+    PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[6].GlyphDataBytes[1], LeftColumn,
+      ((TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
+    PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[8].GlyphDataBytes[1], RightColumn,
+      ((TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
+    PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], RightColumn + 1,
+      ((TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
   end;
-  PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], ReadScrollablePopup_RightColumn + 1,
-    ((ReadScrollablePopupSc_BottomRow - ReadScrollablePopupScanC_TopRow + ReadScrollablePopupScanC_TopRow + 1) shl 3) +
+  PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], RightColumn + 1,
+    ((BottomRow - TopRow + TopRow + 1) shl 3) +
     DisplayedBufferRow);
-  PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[5].GlyphDataBytes[1], ReadScrollablePopupS_LeftColumn,
-  (ReadScrollablePopupSc_BottomRow shl 3) + DisplayedBufferRow);
-  for SharedLoopIndexB := ReadScrollablePopupS_LeftColumn + 1 to ReadScrollablePopup_RightColumn - 1 do
+  PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[5].GlyphDataBytes[1], LeftColumn,
+  (BottomRow shl 3) + DisplayedBufferRow);
+  for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
     PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[7].GlyphDataBytes[1], SharedLoopIndexB,
-    (ReadScrollablePopupSc_BottomRow shl 3) + DisplayedBufferRow);
-  PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[4].GlyphDataBytes[1], ReadScrollablePopup_RightColumn,
-  (ReadScrollablePopupSc_BottomRow shl 3) + DisplayedBufferRow);
-  for SharedLoopIndexB := ReadScrollablePopupS_LeftColumn + 1 to ReadScrollablePopup_RightColumn + 1 do
+    (BottomRow shl 3) + DisplayedBufferRow);
+  PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[4].GlyphDataBytes[1], RightColumn,
+  (BottomRow shl 3) + DisplayedBufferRow);
+  for SharedLoopIndexB := LeftColumn + 1 to RightColumn + 1 do
     PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], SharedLoopIndexB,
-      ((ReadScrollablePopupSc_BottomRow + 1) shl 3) + DisplayedBufferRow);
+      ((BottomRow + 1) shl 3) + DisplayedBufferRow);
   for SharedLoopIndexB := 1 to VisiblePopupRows - 2 do
     if PopupTextLines[SharedLoopIndexB] <> 'END OF WINDOW' then
-      DrawGameText(ReadScrollablePopupS_LeftColumn + 2, ReadScrollablePopupScanC_TopRow + SharedLoopIndexB + 1,
+      DrawGameText(LeftColumn + 2, TopRow + SharedLoopIndexB + 1,
       PopupTextLines[SharedLoopIndexB]);
   PlayerUpHeld := 0;
   PlayerDownHeld := 0;
@@ -941,20 +955,20 @@ begin
         SparkFrameIndex := 0;
         case Random(2) of
           0: begin
-            ReadScrollablePopup_SparkColumn := ReadScrollablePopupS_LeftColumn + Random(ReadScrollablePopup_RightColumn -
-            ReadScrollablePopupS_LeftColumn - 2) + 1;
-            ReadScrollablePopup_SparkPixelY := ReadScrollablePopupScanC_TopRow shl 3;
-            ReadScrollable_SparkOnTopBorder := True;
+            SparkColumn := LeftColumn + Random(RightColumn -
+            LeftColumn - 2) + 1;
+            SparkPixelY := TopRow shl 3;
+            SparkOnTopBorder := True;
           end;
           1: begin
-            ReadScrollablePopup_SparkColumn := ReadScrollablePopupS_LeftColumn;
-            ReadScrollablePopup_SparkPixelY := (ReadScrollablePopupScanC_TopRow + Random(ReadScrollablePopupSc_BottomRow -
-            ReadScrollablePopupScanC_TopRow - 2) + 1) * 8;
-            ReadScrollable_SparkOnTopBorder := False;
+            SparkColumn := LeftColumn;
+            SparkPixelY := (TopRow + Random(BottomRow -
+            TopRow - 2) + 1) * 8;
+            SparkOnTopBorder := False;
           end;
         end;
       end;
-      if (ReadScrollablePopu_CursorColumn <> 0) and (GameTickCounter > 20) then
+      if (CursorColumn <> 0) and (GameTickCounter > 20) then
       begin
         GameTickCounter := 0;
         if IsSparkActive then
@@ -963,157 +977,160 @@ begin
           if SparkFrameIndex > 4 then
           begin
             IsSparkActive := False;
-            if ReadScrollable_SparkOnTopBorder then
-              PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[2].GlyphDataBytes[1], ReadScrollablePopup_SparkColumn,
-              ReadScrollablePopup_SparkPixelY + DisplayedBufferRow)
+            if SparkOnTopBorder then
+              PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[2].GlyphDataBytes[1], SparkColumn,
+              SparkPixelY + DisplayedBufferRow)
             else
-              PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[6].GlyphDataBytes[1], ReadScrollablePopup_SparkColumn,
-              ReadScrollablePopup_SparkPixelY + DisplayedBufferRow);
+              PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[6].GlyphDataBytes[1], SparkColumn,
+              SparkPixelY + DisplayedBufferRow);
           end
           else
           begin
-            if ReadScrollable_SparkOnTopBorder then
-              PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[2].GlyphDataBytes[1], ReadScrollablePopup_SparkColumn,
-              ReadScrollablePopup_SparkPixelY + DisplayedBufferRow)
+            if SparkOnTopBorder then
+              PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[2].GlyphDataBytes[1], SparkColumn,
+              SparkPixelY + DisplayedBufferRow)
             else
-              PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[6].GlyphDataBytes[1], ReadScrollablePopup_SparkColumn,
-              ReadScrollablePopup_SparkPixelY + DisplayedBufferRow);
+              PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[6].GlyphDataBytes[1], SparkColumn,
+              SparkPixelY + DisplayedBufferRow);
             PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[SparkFrameIndex + 37].GlyphDataBytes[1],
-              ReadScrollablePopup_SparkColumn, ReadScrollablePopup_SparkPixelY + DisplayedBufferRow);
+              SparkColumn, SparkPixelY + DisplayedBufferRow);
           end;
         end;
       end;
     until (LastKeyboardScanCode < 128) or (LastKeyboardScanCode = 224);
-    ReadScrollablePopup_KeyScanCode := LastKeyboardScanCode;
-    if ReadScrollablePopup_KeyScanCode = 224 then
+    KeyScanCode := LastKeyboardScanCode;
+    if KeyScanCode = 224 then
     begin
       repeat
         MemW[0:$41C] := MemW[0:$41A];
       until Byte(LastKeyboardScanCode) in [156,157,170,181,184,197,199,200,201,
         203,205,207,208,209,210,211];
       if Byte(LastKeyboardScanCode) in [170,197] then LastKeyboardScanCode := 500;
-      ReadScrollablePopup_KeyScanCode := LastKeyboardScanCode - 128;
+      KeyScanCode := LastKeyboardScanCode - 128;
     end
     else
       repeat
         MemW[0:$41C] := MemW[0:$41A];
       until LastKeyboardScanCode > 128;
-    if (ReadScrollablePopup_KeyScanCode = 80) or (ReadScrollablePopup_KeyScanCode = 81) then
+    if (KeyScanCode = 80) or (KeyScanCode = 81) then
     begin
       Inc(ScrollLineOffset, 17);
       if TotalTextRows - 16 < ScrollLineOffset then ScrollLineOffset := TotalTextRows - 16;
-      for SharedLoopIndexC := 1 to ReadScrollablePopupSc_BottomRow - ReadScrollablePopupScanC_TopRow - 1 do
-        for SharedLoopIndexB := ReadScrollablePopupS_LeftColumn + 1 to ReadScrollablePopup_RightColumn - 1 do
+      for SharedLoopIndexC := 1 to BottomRow - TopRow - 1 do
+        for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
           PgBlitOpaque8x8(PopupFrameAndGlyphBank^.GlyphEntries[9].GlyphDataBytes[1], SharedLoopIndexB,
-            ((ReadScrollablePopupScanC_TopRow + SharedLoopIndexC) shl 3) + DisplayedBufferRow);
-      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[1].GlyphDataBytes[1], ReadScrollablePopupS_LeftColumn,
-      (ReadScrollablePopupScanC_TopRow shl 3) + DisplayedBufferRow);
-      for SharedLoopIndexB := ReadScrollablePopupS_LeftColumn + 1 to ReadScrollablePopup_RightColumn - 1 do
+            ((TopRow + SharedLoopIndexC) shl 3) + DisplayedBufferRow);
+      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[1].GlyphDataBytes[1], LeftColumn,
+      (TopRow shl 3) + DisplayedBufferRow);
+      for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
         PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[2].GlyphDataBytes[1], SharedLoopIndexB,
-        (ReadScrollablePopupScanC_TopRow shl 3) + DisplayedBufferRow);
-      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[3].GlyphDataBytes[1], ReadScrollablePopup_RightColumn,
-      (ReadScrollablePopupScanC_TopRow shl 3) + DisplayedBufferRow);
-      for SharedLoopIndexB := 1 to ReadScrollablePopupSc_BottomRow - ReadScrollablePopupScanC_TopRow do
+        (TopRow shl 3) + DisplayedBufferRow);
+      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[3].GlyphDataBytes[1], RightColumn,
+      (TopRow shl 3) + DisplayedBufferRow);
+      for SharedLoopIndexB := 1 to BottomRow - TopRow do
       begin
-        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[6].GlyphDataBytes[1], ReadScrollablePopupS_LeftColumn,
-          ((ReadScrollablePopupScanC_TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
-        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[8].GlyphDataBytes[1], ReadScrollablePopup_RightColumn,
-          ((ReadScrollablePopupScanC_TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
-        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], ReadScrollablePopup_RightColumn + 1,
-          ((ReadScrollablePopupScanC_TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
+        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[6].GlyphDataBytes[1], LeftColumn,
+          ((TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
+        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[8].GlyphDataBytes[1], RightColumn,
+          ((TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
+        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], RightColumn + 1,
+          ((TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
       end;
-      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], ReadScrollablePopup_RightColumn + 1,
-        ((ReadScrollablePopupSc_BottomRow - ReadScrollablePopupScanC_TopRow + ReadScrollablePopupScanC_TopRow + 1) shl 3) +
+      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], RightColumn + 1,
+        ((BottomRow - TopRow + TopRow + 1) shl 3) +
         DisplayedBufferRow);
-      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[5].GlyphDataBytes[1], ReadScrollablePopupS_LeftColumn,
-      (ReadScrollablePopupSc_BottomRow shl 3) + DisplayedBufferRow);
-      for SharedLoopIndexB := ReadScrollablePopupS_LeftColumn + 1 to ReadScrollablePopup_RightColumn - 1 do
+      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[5].GlyphDataBytes[1], LeftColumn,
+      (BottomRow shl 3) + DisplayedBufferRow);
+      for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
         PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[7].GlyphDataBytes[1], SharedLoopIndexB,
-        (ReadScrollablePopupSc_BottomRow shl 3) + DisplayedBufferRow);
-      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[4].GlyphDataBytes[1], ReadScrollablePopup_RightColumn,
-      (ReadScrollablePopupSc_BottomRow shl 3) + DisplayedBufferRow);
-      for SharedLoopIndexB := ReadScrollablePopupS_LeftColumn + 1 to ReadScrollablePopup_RightColumn + 1 do
+        (BottomRow shl 3) + DisplayedBufferRow);
+      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[4].GlyphDataBytes[1], RightColumn,
+      (BottomRow shl 3) + DisplayedBufferRow);
+      for SharedLoopIndexB := LeftColumn + 1 to RightColumn + 1 do
         PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], SharedLoopIndexB,
-          ((ReadScrollablePopupSc_BottomRow + 1) shl 3) + DisplayedBufferRow);
+          ((BottomRow + 1) shl 3) + DisplayedBufferRow);
       for SharedLoopIndexB := 1 to VisiblePopupRows - 2 do
         if PopupTextLines[SharedLoopIndexB] <> 'END OF WINDOW' then
-          DrawGameText(ReadScrollablePopupS_LeftColumn + 2, ReadScrollablePopupScanC_TopRow + SharedLoopIndexB + 1,
+          DrawGameText(LeftColumn + 2, TopRow + SharedLoopIndexB + 1,
           PopupTextLines[SharedLoopIndexB + ScrollLineOffset]);
     end;
-    if (ReadScrollablePopup_KeyScanCode = 72) or (ReadScrollablePopup_KeyScanCode = 73) then
+    if (KeyScanCode = 72) or (KeyScanCode = 73) then
     begin
       Dec(ScrollLineOffset, 17);
       if ScrollLineOffset < 0 then ScrollLineOffset := 0;
-      for SharedLoopIndexC := 1 to ReadScrollablePopupSc_BottomRow - ReadScrollablePopupScanC_TopRow - 1 do
-        for SharedLoopIndexB := ReadScrollablePopupS_LeftColumn + 1 to ReadScrollablePopup_RightColumn - 1 do
+      for SharedLoopIndexC := 1 to BottomRow - TopRow - 1 do
+        for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
           PgBlitOpaque8x8(PopupFrameAndGlyphBank^.GlyphEntries[9].GlyphDataBytes[1], SharedLoopIndexB,
-            ((ReadScrollablePopupScanC_TopRow + SharedLoopIndexC) shl 3) + DisplayedBufferRow);
-      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[1].GlyphDataBytes[1], ReadScrollablePopupS_LeftColumn,
-      (ReadScrollablePopupScanC_TopRow shl 3) + DisplayedBufferRow);
-      for SharedLoopIndexB := ReadScrollablePopupS_LeftColumn + 1 to ReadScrollablePopup_RightColumn - 1 do
+            ((TopRow + SharedLoopIndexC) shl 3) + DisplayedBufferRow);
+      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[1].GlyphDataBytes[1], LeftColumn,
+      (TopRow shl 3) + DisplayedBufferRow);
+      for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
         PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[2].GlyphDataBytes[1], SharedLoopIndexB,
-        (ReadScrollablePopupScanC_TopRow shl 3) + DisplayedBufferRow);
-      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[3].GlyphDataBytes[1], ReadScrollablePopup_RightColumn,
-      (ReadScrollablePopupScanC_TopRow shl 3) + DisplayedBufferRow);
-      for SharedLoopIndexB := 1 to ReadScrollablePopupSc_BottomRow - ReadScrollablePopupScanC_TopRow do
+        (TopRow shl 3) + DisplayedBufferRow);
+      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[3].GlyphDataBytes[1], RightColumn,
+      (TopRow shl 3) + DisplayedBufferRow);
+      for SharedLoopIndexB := 1 to BottomRow - TopRow do
       begin
-        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[6].GlyphDataBytes[1], ReadScrollablePopupS_LeftColumn,
-          ((ReadScrollablePopupScanC_TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
-        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[8].GlyphDataBytes[1], ReadScrollablePopup_RightColumn,
-          ((ReadScrollablePopupScanC_TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
-        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], ReadScrollablePopup_RightColumn + 1,
-          ((ReadScrollablePopupScanC_TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
+        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[6].GlyphDataBytes[1], LeftColumn,
+          ((TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
+        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[8].GlyphDataBytes[1], RightColumn,
+          ((TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
+        PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], RightColumn + 1,
+          ((TopRow + SharedLoopIndexB) shl 3) + DisplayedBufferRow);
       end;
-      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], ReadScrollablePopup_RightColumn + 1,
-        ((ReadScrollablePopupSc_BottomRow - ReadScrollablePopupScanC_TopRow + ReadScrollablePopupScanC_TopRow + 1) shl 3) +
+      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], RightColumn + 1,
+        ((BottomRow - TopRow + TopRow + 1) shl 3) +
         DisplayedBufferRow);
-      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[5].GlyphDataBytes[1], ReadScrollablePopupS_LeftColumn,
-      (ReadScrollablePopupSc_BottomRow shl 3) + DisplayedBufferRow);
-      for SharedLoopIndexB := ReadScrollablePopupS_LeftColumn + 1 to ReadScrollablePopup_RightColumn - 1 do
+      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[5].GlyphDataBytes[1], LeftColumn,
+      (BottomRow shl 3) + DisplayedBufferRow);
+      for SharedLoopIndexB := LeftColumn + 1 to RightColumn - 1 do
         PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[7].GlyphDataBytes[1], SharedLoopIndexB,
-        (ReadScrollablePopupSc_BottomRow shl 3) + DisplayedBufferRow);
-      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[4].GlyphDataBytes[1], ReadScrollablePopup_RightColumn,
-      (ReadScrollablePopupSc_BottomRow shl 3) + DisplayedBufferRow);
-      for SharedLoopIndexB := ReadScrollablePopupS_LeftColumn + 1 to ReadScrollablePopup_RightColumn + 1 do
+        (BottomRow shl 3) + DisplayedBufferRow);
+      PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[4].GlyphDataBytes[1], RightColumn,
+      (BottomRow shl 3) + DisplayedBufferRow);
+      for SharedLoopIndexB := LeftColumn + 1 to RightColumn + 1 do
         PgBlitMasked8x8(PopupFrameAndGlyphBank^.GlyphEntries[10].GlyphDataBytes[1], SharedLoopIndexB,
-          ((ReadScrollablePopupSc_BottomRow + 1) shl 3) + DisplayedBufferRow);
+          ((BottomRow + 1) shl 3) + DisplayedBufferRow);
       for SharedLoopIndexB := 1 to VisiblePopupRows - 2 do
         if PopupTextLines[SharedLoopIndexB] <> 'END OF WINDOW' then
-          DrawGameText(ReadScrollablePopupS_LeftColumn + 2, ReadScrollablePopupScanC_TopRow + SharedLoopIndexB + 1,
+          DrawGameText(LeftColumn + 2, TopRow + SharedLoopIndexB + 1,
           PopupTextLines[SharedLoopIndexB + ScrollLineOffset]);
     end;
-    if ReadScrollablePopu_AcceptAnyKey = 0 then
+    if AcceptAnyKey = 0 then
     begin
       for SharedLoopIndexB := 1 to 20 do
         if (PopupAcceptedScanCodes[SharedLoopIndexB] <> 0) and (PopupAcceptedScanCodes[SharedLoopIndexB] =
-        ReadScrollablePopup_KeyScanCode) then
+        KeyScanCode) then
         begin
-          ReadScrollablePopupScanCode := ReadScrollablePopup_KeyScanCode;
-          ReadScrollablePopup_KeyAccepted := True;
+          ReadScrollablePopupScanCode := KeyScanCode;
+          KeyAccepted := True;
         end;
     end
     else
     begin
-      ReadScrollablePopupScanCode := ReadScrollablePopup_KeyScanCode;
-      ReadScrollablePopup_KeyAccepted := True;
+      ReadScrollablePopupScanCode := KeyScanCode;
+      KeyAccepted := True;
     end;
-  until ReadScrollablePopup_KeyAccepted;
-  PgRestorePlanarRectangle(PopupSavedBackground^, ReadScrollablePopupS_LeftColumn, (ReadScrollablePopupScanC_TopRow shl 3) +
+  until KeyAccepted;
+  PgRestorePlanarRectangle(PopupSavedBackground^, LeftColumn, (TopRow shl 3) +
   DisplayedBufferRow);
   FreeMem(PopupSavedBackground, 30000);
   MemW[0:$41C] := MemW[0:$41A];
-  PopupInputReservedFlag := 0;
+  UnusedPopupInputFlag := 0;
   PlayerLeftHeld := 0;
   PlayerRightHeld := 0;
   PlayerUpHeld := 0;
   PlayerDownHeld := 0;
 end;
+
+{ Startup screens and high-score insertion. }
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
 { Loads SAMn.APO, fades in the palette and waits for a key or a timer timeout. }
 procedure ShowApogeeSplash;
 var
-  unused1, unused2, GraphicsCallResult, unused4: Word;
+  { Unused locals retain the original stack frame. }
+  UnusedSplashWord1, UnusedSplashWord2, GraphicsCallResult, UnusedSplashWord4: Word;
 begin
   FadeGamePaletteToBlack(0);
   GraphicsCallResult := PcxSetDisplayType(2);
@@ -1146,34 +1163,34 @@ end;
 { Loads SAMn.CRD and SAMn.TTL, vertically pans between them, and handles the main-menu result. }
 procedure ShowTitleAndCredits;
 var
-  PanDirection, PanDistance, ShowTitleAnd_GraphicsCallResult: Integer;
+  PanDirection, PanDistance, GraphicsCallResult: Integer;
   MenuAction: Char;
 begin
   FadeGamePaletteToBlack(0);
-  ShowTitleAnd_GraphicsCallResult := PcxSetDisplayType(2);
-  ShowTitleAnd_GraphicsCallResult := PcxSetGraphicsOrTextMode(1);
-  ShowTitleAnd_GraphicsCallResult := PgSetScreenStride($28);
+  GraphicsCallResult := PcxSetDisplayType(2);
+  GraphicsCallResult := PcxSetGraphicsOrTextMode(1);
+  GraphicsCallResult := PgSetScreenStride($28);
   CameraX := 0;
   CameraY := 0;
   DisplayedBufferRow := 0;
   GameDrawBufferRow := 0;
 {$IFDEF SAM2}
-  ShowTitleAnd_GraphicsCallResult := PcxDisplayFile('sam2.crd', 1, 0, 0);
+  GraphicsCallResult := PcxDisplayFile('sam2.crd', 1, 0, 0);
 {$ELSE}
 {$IFDEF SAM3}
-  ShowTitleAnd_GraphicsCallResult := PcxDisplayFile('sam3.crd', 1, 0, 0);
+  GraphicsCallResult := PcxDisplayFile('sam3.crd', 1, 0, 0);
 {$ELSE}
-  ShowTitleAnd_GraphicsCallResult := PcxDisplayFile('sam1.crd', 1, 0, 0);
+  GraphicsCallResult := PcxDisplayFile('sam1.crd', 1, 0, 0);
 {$ENDIF}
 {$ENDIF}
   PgCopyVideoScreenRegion320x200(0, 0, 0, $C8);
 {$IFDEF SAM2}
-  ShowTitleAnd_GraphicsCallResult := PcxDisplayFile('sam2.ttl', 1, 0, 0);
+  GraphicsCallResult := PcxDisplayFile('sam2.ttl', 1, 0, 0);
 {$ELSE}
 {$IFDEF SAM3}
-  ShowTitleAnd_GraphicsCallResult := PcxDisplayFile('sam3.ttl', 1, 0, 0);
+  GraphicsCallResult := PcxDisplayFile('sam3.ttl', 1, 0, 0);
 {$ELSE}
-  ShowTitleAnd_GraphicsCallResult := PcxDisplayFile('sam1.ttl', 1, 0, 0);
+  GraphicsCallResult := PcxDisplayFile('sam1.ttl', 1, 0, 0);
 {$ENDIF}
 {$ENDIF}
   RestoreGamePalette($14);
@@ -1272,6 +1289,8 @@ begin
     ShowHighScores;
   end;
 end;
+
+{ Graphics resources and palette reset. }
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
 { Reads and decrypts sixteen 8064-byte banks from SAMn01.GFX and three glyph banks from SAMn02.GFX. }
@@ -1362,14 +1381,16 @@ end;
 { Immediately writes zero to all sixteen EGA palette registers. }
 procedure BlackenGamePalette;
 var
-  BlackenGamePalette_PaletteIndex: Integer;
+  PaletteIndex: Integer;
 begin
-  for BlackenGamePalette_PaletteIndex := 0 to 15 do
-    PgSetPaletteRegister(BlackenGamePalette_PaletteIndex, 0);
+  for PaletteIndex := 0 to 15 do
+    PgSetPaletteRegister(PaletteIndex, 0);
 end;
+
+{ Campaign snapshots and save files. }
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
-{ Copies player position, score, ammo, level flags and powerup state into d_6D18. }
+{ Copies player position, score, ammo, level flags and powerup state into GameSnapshot. }
 procedure CaptureGameSnapshot;
 var
   LevelFlagIndex: Integer;
@@ -1398,10 +1419,10 @@ begin
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
-{ Copies d_6D18 back to the live player and game state. }
+{ Copies GameSnapshot back to the live player and game state. }
 procedure RestoreGameSnapshot;
 var
-  RestoreGameSnaps_LevelFlagIndex: Integer;
+  LevelFlagIndex: Integer;
 begin
   GameActors[1].ActorWorldX := GameSnapshot.SavedPlayerX;
   GameActors[1].ActorWorldY := GameSnapshot.SavedPlayerY;
@@ -1409,8 +1430,8 @@ begin
   PlayerProgressCount := GameSnapshot.SavedProgressCount;
   PlayerAmmo := GameSnapshot.SavedPlayerAmmo;
   PlayerProjectileLimit := GameSnapshot.SavedProjectileLimit;
-  for RestoreGameSnaps_LevelFlagIndex := 1 to 20 do
-    LevelBlueprintFlags[RestoreGameSnaps_LevelFlagIndex] := GameSnapshot.SavedBlueprintFlags[RestoreGameSnaps_LevelFlagIndex];
+  for LevelFlagIndex := 1 to 20 do
+    LevelBlueprintFlags[LevelFlagIndex] := GameSnapshot.SavedBlueprintFlags[LevelFlagIndex];
   PlayerSpeedBoost := GameSnapshot.SavedSpeedBoost;
   SpeedBoostTimeLeft := GameSnapshot.SavedSpeedTimeLeft;
   PlayerControlsReversed := GameSnapshot.SavedControlsReversed;
@@ -1421,9 +1442,9 @@ begin
   SavedAuxiliaryCounter := GameSnapshot.SavedAuxiliaryValue;
   LevelEntranceAnimationTick := GameSnapshot.SavedEntranceAnimationTick;
   EnteredLevelNumber := GameSnapshot.SavedEnteredLevelNumber;
-  for RestoreGameSnaps_LevelFlagIndex := 1 to 20 do
-    LevelCompletedFlags[RestoreGameSnaps_LevelFlagIndex] :=
-    GameSnapshot.SavedCompletedLevelFlags[RestoreGameSnaps_LevelFlagIndex];
+  for LevelFlagIndex := 1 to 20 do
+    LevelCompletedFlags[LevelFlagIndex] :=
+    GameSnapshot.SavedCompletedLevelFlags[LevelFlagIndex];
   ExtraAmmoCheatUsed := GameSnapshot.SavedExtraAmmoCheatUsed;
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
@@ -1432,7 +1453,7 @@ end;
 procedure WriteSavedGame(SaveSlot: Integer);
 var
   SaveOutputFile: TSaveGameOutputFile;
-  WriteSavedGame_LevelFlagIndex: Word;
+  LevelFlagIndex: Word;
   SlotNumberText: string;
 begin
   GameSnapshot.SavedPlayerX := LongInt(GameActors[1].ActorWorldX + 8) and $FFF0;
@@ -1441,8 +1462,8 @@ begin
   GameSnapshot.SavedProgressCount := PlayerProgressCount;
   GameSnapshot.SavedPlayerAmmo := PlayerAmmo;
   GameSnapshot.SavedProjectileLimit := PlayerProjectileLimit;
-  for WriteSavedGame_LevelFlagIndex := 1 to 20 do
-    GameSnapshot.SavedBlueprintFlags[WriteSavedGame_LevelFlagIndex] := LevelBlueprintFlags[WriteSavedGame_LevelFlagIndex];
+  for LevelFlagIndex := 1 to 20 do
+    GameSnapshot.SavedBlueprintFlags[LevelFlagIndex] := LevelBlueprintFlags[LevelFlagIndex];
   GameSnapshot.SavedSpeedBoost := PlayerSpeedBoost;
   GameSnapshot.SavedSpeedTimeLeft := SpeedBoostTimeLeft;
   GameSnapshot.SavedControlsReversed := PlayerControlsReversed;
@@ -1453,9 +1474,9 @@ begin
   GameSnapshot.SavedAuxiliaryValue := SavedAuxiliaryCounter;
   GameSnapshot.SavedEntranceAnimationTick := LevelEntranceAnimationTick;
   GameSnapshot.SavedEnteredLevelNumber := EnteredLevelNumber;
-  for WriteSavedGame_LevelFlagIndex := 1 to 20 do
-    GameSnapshot.SavedCompletedLevelFlags[WriteSavedGame_LevelFlagIndex] :=
-    LevelCompletedFlags[WriteSavedGame_LevelFlagIndex];
+  for LevelFlagIndex := 1 to 20 do
+    GameSnapshot.SavedCompletedLevelFlags[LevelFlagIndex] :=
+    LevelCompletedFlags[LevelFlagIndex];
   GameSnapshot.SavedExtraAmmoCheatUsed := ExtraAmmoCheatUsed;
 
   Str(SaveSlot:1, SlotNumberText);
@@ -1475,23 +1496,23 @@ end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
 { Reads SAMn-<slot>.SAV into the live game state; reports File Not Found and returns success. }
-function ReadSavedGame(ReadSavedGame_SaveSlot: Integer): Boolean;
+function ReadSavedGame(SaveSlot: Integer): Boolean;
 var
   SaveInputFile: TSaveGameInputFile;
-  ReadSavedGame_LevelFlagIndex: Integer;
-  ReadSavedGame_SlotNumberText: string;
+  LevelFlagIndex: Integer;
+  SlotNumberText: string;
   FileOpenSucceeded: Boolean;
 begin
-  Str(ReadSavedGame_SaveSlot:1, ReadSavedGame_SlotNumberText);
+  Str(SaveSlot:1, SlotNumberText);
 {$I-}
 {$IFDEF SAM1}
-  Assign(SaveInputFile, 'SAM1-' + ReadSavedGame_SlotNumberText + '.SAV');
+  Assign(SaveInputFile, 'SAM1-' + SlotNumberText + '.SAV');
 {$ENDIF}
 {$IFDEF SAM2}
-  Assign(SaveInputFile, 'SAM2-' + ReadSavedGame_SlotNumberText + '.SAV');
+  Assign(SaveInputFile, 'SAM2-' + SlotNumberText + '.SAV');
 {$ENDIF}
 {$IFDEF SAM3}
-  Assign(SaveInputFile, 'SAM3-' + ReadSavedGame_SlotNumberText + '.SAV');
+  Assign(SaveInputFile, 'SAM3-' + SlotNumberText + '.SAV');
 {$ENDIF}
   Reset(SaveInputFile);
   FileOpenSucceeded := IOResult = 0;
@@ -1508,8 +1529,8 @@ begin
     PlayerProgressCount := GameSnapshot.SavedProgressCount;
     PlayerAmmo := GameSnapshot.SavedPlayerAmmo;
     PlayerProjectileLimit := GameSnapshot.SavedProjectileLimit;
-    for ReadSavedGame_LevelFlagIndex := 1 to 20 do
-      LevelBlueprintFlags[ReadSavedGame_LevelFlagIndex] := GameSnapshot.SavedBlueprintFlags[ReadSavedGame_LevelFlagIndex];
+    for LevelFlagIndex := 1 to 20 do
+      LevelBlueprintFlags[LevelFlagIndex] := GameSnapshot.SavedBlueprintFlags[LevelFlagIndex];
     PlayerSpeedBoost := GameSnapshot.SavedSpeedBoost;
     SpeedBoostTimeLeft := GameSnapshot.SavedSpeedTimeLeft;
     PlayerControlsReversed := GameSnapshot.SavedControlsReversed;
@@ -1520,9 +1541,9 @@ begin
     SavedAuxiliaryCounter := GameSnapshot.SavedAuxiliaryValue;
     LevelEntranceAnimationTick := GameSnapshot.SavedEntranceAnimationTick;
     EnteredLevelNumber := GameSnapshot.SavedEnteredLevelNumber;
-    for ReadSavedGame_LevelFlagIndex := 1 to 20 do
-      LevelCompletedFlags[ReadSavedGame_LevelFlagIndex] :=
-      GameSnapshot.SavedCompletedLevelFlags[ReadSavedGame_LevelFlagIndex];
+    for LevelFlagIndex := 1 to 20 do
+      LevelCompletedFlags[LevelFlagIndex] :=
+      GameSnapshot.SavedCompletedLevelFlags[LevelFlagIndex];
     ExtraAmmoCheatUsed := GameSnapshot.SavedExtraAmmoCheatUsed;
     ReadSavedGame := True;
   end
@@ -1533,6 +1554,8 @@ begin
   end;
 {$I+}
 end;
+
+{ Instructions and mission pages. }
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
 { Builds CONTROLLING AGENT 006, item, enemy, health and playing-tip pages and invokes the scrolling popup. }
@@ -2030,228 +2053,228 @@ end;
 { Builds CONFIDENTIAL/BACKGROUND FILE and YOUR MISSION pages describing the blueprints and DVS. }
 procedure ShowMissionBriefing;
 var
-  ShowMissionBriefi_TextLineIndex: Integer;
+  TextLineIndex: Integer;
 begin
   ClearPopupText;
-  ShowMissionBriefi_TextLineIndex := 1;
+  TextLineIndex := 1;
 {$IFDEF SAM1}
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'CONFIDENTIAL FILE         Pg. 1';
+  PopupTextLines[TextLineIndex] := 'CONFIDENTIAL FILE         Pg. 1';
 {$ELSE}
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'BACKGROUND FILE           Pg. 1';
+  PopupTextLines[TextLineIndex] := 'BACKGROUND FILE           Pg. 1';
 {$ENDIF}
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := '-------------------------------';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex][0] := #0;
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'To:        Agent 006';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'Priority:  For Your Eyes Only';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex][0] := #0;
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := '**Destroy file after reading**';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex][0] := #0;
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'Our government scientists have';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'been working on a secret';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'project: A ruby-powered laser';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'satellite with the ability to';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'pinpoint and fire upon any';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'target from Earth orbit, code';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'named "Red Rock Rover".';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := '-------------------------------';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'Press PgUp-PgDn        Esc-Exit';
-  Inc(ShowMissionBriefi_TextLineIndex);
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '-------------------------------';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'To:        Agent 006';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Priority:  For Your Eyes Only';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '**Destroy file after reading**';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Our government scientists have';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'been working on a secret';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'project: A ruby-powered laser';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'satellite with the ability to';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'pinpoint and fire upon any';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'target from Earth orbit, code';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'named "Red Rock Rover".';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '-------------------------------';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Press PgUp-PgDn        Esc-Exit';
+  Inc(TextLineIndex);
 {$IFNDEF SAM1}
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'MISSION UPDATE            Pg. 2';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := '-------------------------------';
-  Inc(ShowMissionBriefi_TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'MISSION UPDATE            Pg. 2';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '-------------------------------';
+  Inc(TextLineIndex);
 {$IFDEF SAM2}
-  PopupTextLines[ShowMissionBriefi_TextLineIndex][0] := #0;
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := '006 successfully infiltrated';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'DVS headquarters on the first';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'island, and gained possession of';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'the first of three blueprints.';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex][0] := #0;
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'Using a jet raft, 006 has';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'landed upon the second island';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'fortress, and must find the';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'next blueprint to the "Red Rock';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'Rover" weapon.';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex][0] := #0;
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex][0] := #0;
-  Inc(ShowMissionBriefi_TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '006 successfully infiltrated';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'DVS headquarters on the first';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'island, and gained possession of';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'the first of three blueprints.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Using a jet raft, 006 has';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'landed upon the second island';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'fortress, and must find the';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'next blueprint to the "Red Rock';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Rover" weapon.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
 {$ELSE}
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := '006 has destroyed the DVS';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'headquarters on the first and';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'second island fortresses, and';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'secured possession of two';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'crucial blueprints.';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex][0] := #0;
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'Using scuba gear, 006 slipped';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'past the security net set up';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'around the final island.';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'Getting the final blueprint';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'will be the most dangerous';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'assignment yet, since this';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'island id the DVS stronghold!';
-  Inc(ShowMissionBriefi_TextLineIndex);
+  PopupTextLines[TextLineIndex] := '006 has destroyed the DVS';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'headquarters on the first and';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'second island fortresses, and';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'secured possession of two';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'crucial blueprints.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Using scuba gear, 006 slipped';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'past the security net set up';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'around the final island.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Getting the final blueprint';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'will be the most dangerous';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'assignment yet, since this';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'island id the DVS stronghold!';
+  Inc(TextLineIndex);
 {$ENDIF}
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := '-------------------------------';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'Press PgUp-PgDn        Esc-Exit';
-  Inc(ShowMissionBriefi_TextLineIndex);
+  PopupTextLines[TextLineIndex] := '-------------------------------';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Press PgUp-PgDn        Esc-Exit';
+  Inc(TextLineIndex);
 {$ENDIF}
 {$IFDEF SAM1}
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'YOUR MISSION              Pg. 2';
+  PopupTextLines[TextLineIndex] := 'YOUR MISSION              Pg. 2';
 {$ELSE}
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'YOUR MISSION              Pg. 3';
+  PopupTextLines[TextLineIndex] := 'YOUR MISSION              Pg. 3';
 {$ENDIF}
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := '-------------------------------';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex][0] := #0;
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'Two weeks ago the blueprints';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'were stolen by the Diabolical';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'Villain Society (DVS), which';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'will use them to build the';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'ultimate terrorist threat.';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex][0] := #0;
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'You@ve been chosen by the';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'Bureau to infiltrate DVS';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'headquarters and secure the';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'blueprints.  The headquarters';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'are located on a series of';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'islands in the Pacific basin.';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := '-------------------------------';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'Press PgUp-PgDn        Esc-Exit';
-  Inc(ShowMissionBriefi_TextLineIndex);
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '-------------------------------';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Two weeks ago the blueprints';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'were stolen by the Diabolical';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Villain Society (DVS), which';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'will use them to build the';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'ultimate terrorist threat.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'You@ve been chosen by the';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Bureau to infiltrate DVS';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'headquarters and secure the';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'blueprints.  The headquarters';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'are located on a series of';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'islands in the Pacific basin.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '-------------------------------';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Press PgUp-PgDn        Esc-Exit';
+  Inc(TextLineIndex);
 {$IFDEF SAM1}
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'YOUR MISSION              Pg. 3';
+  PopupTextLines[TextLineIndex] := 'YOUR MISSION              Pg. 3';
 {$ELSE}
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'YOUR MISSION              Pg. 4';
+  PopupTextLines[TextLineIndex] := 'YOUR MISSION              Pg. 4';
 {$ENDIF}
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := '-------------------------------';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex][0] := #0;
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'Your mission, should you choose';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'to accept it, is to bring back';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'the secret blueprints to the';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := '"Red Rock Rover" project.  You';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'will be isolated from outside';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'help.';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex][0] := #0;
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'You should be warned that this';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'mission is of global importance';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'and must succeed in order to';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'maintain a balance of world';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'power.';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := '-------------------------------';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'Press PgUp-PgDn        Esc-Exit';
-  Inc(ShowMissionBriefi_TextLineIndex);
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '-------------------------------';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Your mission, should you choose';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'to accept it, is to bring back';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'the secret blueprints to the';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '"Red Rock Rover" project.  You';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'will be isolated from outside';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'help.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'You should be warned that this';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'mission is of global importance';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'and must succeed in order to';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'maintain a balance of world';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'power.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '-------------------------------';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Press PgUp-PgDn        Esc-Exit';
+  Inc(TextLineIndex);
 {$IFDEF SAM1}
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'YOUR MISSION              Pg. 4';
+  PopupTextLines[TextLineIndex] := 'YOUR MISSION              Pg. 4';
 {$ELSE}
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'YOUR MISSION              Pg. 5';
+  PopupTextLines[TextLineIndex] := 'YOUR MISSION              Pg. 5';
 {$ENDIF}
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := '-------------------------------';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex][0] := #0;
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'We do not have a file on the';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'head of DVS, but he is';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'suspected to be very cunning';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'and dangerous.  DVS';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'headquarters are built up';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'as an elaborate series of';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'fortresses on three well';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'guarded islands.';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex][0] := #0;
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'As always, should you be caught';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'the Bureau will disavow any';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'knowledge of your existence.';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := '-------------------------------';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'Press PgUp-PgDn        Esc-Exit';
-  Inc(ShowMissionBriefi_TextLineIndex);
-  PopupTextLines[ShowMissionBriefi_TextLineIndex] := 'END OF WINDOW';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '-------------------------------';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'We do not have a file on the';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'head of DVS, but he is';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'suspected to be very cunning';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'and dangerous.  DVS';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'headquarters are built up';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'as an elaborate series of';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'fortresses on three well';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'guarded islands.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'As always, should you be caught';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'the Bureau will disavow any';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'knowledge of your existence.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '-------------------------------';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Press PgUp-PgDn        Esc-Exit';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'END OF WINDOW';
   PopupAcceptedScanCodes[1] := 1;
   PopupSelectionScanCode := ReadScrollablePopupScanCode(0);
   EscapePressed := 0;
@@ -2262,256 +2285,258 @@ end;
 { Builds MISSION SUCCESSFUL and HOW TO ORDER MORE GAMES pages for the current episode. }
 procedure ShowMissionSuccessText;
 var
-  ShowMissionSucces_TextLineIndex: Integer;
+  TextLineIndex: Integer;
 begin
   ClearPopupText;
-  ShowMissionSucces_TextLineIndex := 1;
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'MISSION SUCCESSFUL        Pg. 1';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '-------------------------------';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'Congratulations 006, you have';
-  Inc(ShowMissionSucces_TextLineIndex);
+  TextLineIndex := 1;
+  PopupTextLines[TextLineIndex] := 'MISSION SUCCESSFUL        Pg. 1';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '-------------------------------';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Congratulations 006, you have';
+  Inc(TextLineIndex);
 {$IFDEF SAM1}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'successfully destroyed the';
+  PopupTextLines[TextLineIndex] := 'successfully destroyed the';
 {$ELSE}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'successfully infiltrated DVS';
+  PopupTextLines[TextLineIndex] := 'successfully infiltrated DVS';
 {$ENDIF}
-  Inc(ShowMissionSucces_TextLineIndex);
+  Inc(TextLineIndex);
 {$IFDEF SAM1}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'first DVS headquarters and';
+  PopupTextLines[TextLineIndex] := 'first DVS headquarters and';
 {$ENDIF}
 {$IFDEF SAM2}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'headquarters on the island,';
+  PopupTextLines[TextLineIndex] := 'headquarters on the island,';
 {$ENDIF}
 {$IFDEF SAM3}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'headquarters on the last island';
+  PopupTextLines[TextLineIndex] := 'headquarters on the last island';
 {$ENDIF}
-  Inc(ShowMissionSucces_TextLineIndex);
+  Inc(TextLineIndex);
 {$IFDEF SAM1}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'retrieved the first blueprint.';
+  PopupTextLines[TextLineIndex] := 'retrieved the first blueprint.';
 {$ELSE}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'and gained possession of the';
+  PopupTextLines[TextLineIndex] := 'and gained possession of the';
 {$ENDIF}
-  Inc(ShowMissionSucces_TextLineIndex);
+  Inc(TextLineIndex);
 {$IFDEF SAM1}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '';
+  PopupTextLines[TextLineIndex] := '';
 {$ENDIF}
 {$IFDEF SAM2}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'second blueprint.  The Bureau';
+  PopupTextLines[TextLineIndex] := 'second blueprint.  The Bureau';
 {$ENDIF}
 {$IFDEF SAM3}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'final blueprint.';
+  PopupTextLines[TextLineIndex] := 'final blueprint.';
 {$ENDIF}
-  Inc(ShowMissionSucces_TextLineIndex);
+  Inc(TextLineIndex);
 {$IFDEF SAM1}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'The Bureau has hidden a jet';
+  PopupTextLines[TextLineIndex] := 'The Bureau has hidden a jet';
 {$ENDIF}
 {$IFDEF SAM2}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'has hidden scuba gear on the';
+  PopupTextLines[TextLineIndex] := 'has hidden scuba gear on the';
 {$ENDIF}
 {$IFDEF SAM3}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '';
+  PopupTextLines[TextLineIndex] := '';
 {$ENDIF}
-  Inc(ShowMissionSucces_TextLineIndex);
+  Inc(TextLineIndex);
 {$IFDEF SAM1}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'raft on the island that you can';
+  PopupTextLines[TextLineIndex] := 'raft on the island that you can';
 {$ENDIF}
 {$IFDEF SAM2}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'island that you must use to';
+  PopupTextLines[TextLineIndex] := 'island that you must use to';
 {$ENDIF}
 {$IFDEF SAM3}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'Dr. No Body and the DVS have';
+  PopupTextLines[TextLineIndex] := 'Dr. No Body and the DVS have';
 {$ENDIF}
-  Inc(ShowMissionSucces_TextLineIndex);
+  Inc(TextLineIndex);
 {$IFDEF SAM1}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'use to reach the second island';
+  PopupTextLines[TextLineIndex] := 'use to reach the second island';
 {$ENDIF}
 {$IFDEF SAM2}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'reach the third island';
+  PopupTextLines[TextLineIndex] := 'reach the third island';
 {$ENDIF}
 {$IFDEF SAM3}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'all been stopped and the world';
+  PopupTextLines[TextLineIndex] := 'all been stopped and the world';
 {$ENDIF}
-  Inc(ShowMissionSucces_TextLineIndex);
+  Inc(TextLineIndex);
 {$IFDEF SAM1}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'fortress.  Once there, you will';
+  PopupTextLines[TextLineIndex] := 'fortress.  Once there, you will';
 {$ENDIF}
 {$IFDEF SAM2}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'fortress.  Once there, you will';
+  PopupTextLines[TextLineIndex] := 'fortress.  Once there, you will';
 {$ENDIF}
 {$IFDEF SAM3}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'is once again safe, well for a';
+  PopupTextLines[TextLineIndex] := 'is once again safe, well for a';
 {$ENDIF}
-  Inc(ShowMissionSucces_TextLineIndex);
+  Inc(TextLineIndex);
 {$IFDEF SAM1}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'overcome new dangers and traps';
+  PopupTextLines[TextLineIndex] := 'overcome new dangers and traps';
 {$ENDIF}
 {$IFDEF SAM2}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'overcome new dangers and traps';
+  PopupTextLines[TextLineIndex] := 'overcome new dangers and traps';
 {$ENDIF}
 {$IFDEF SAM3}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'few more days anyway...';
+  PopupTextLines[TextLineIndex] := 'few more days anyway...';
 {$ENDIF}
-  Inc(ShowMissionSucces_TextLineIndex);
+  Inc(TextLineIndex);
 {$IFDEF SAM1}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'to secure the second blueprint';
+  PopupTextLines[TextLineIndex] := 'to secure the second blueprint';
 {$ENDIF}
 {$IFDEF SAM2}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'to secure the final blueprint';
+  PopupTextLines[TextLineIndex] := 'to secure the final blueprint';
 {$ENDIF}
 {$IFDEF SAM3}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '';
+  PopupTextLines[TextLineIndex] := '';
 {$ENDIF}
-  Inc(ShowMissionSucces_TextLineIndex);
+  Inc(TextLineIndex);
 {$IFDEF SAM1}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'to the "Red Rock Rover" weapon.';
+  PopupTextLines[TextLineIndex] := 'to the "Red Rock Rover" weapon.';
 {$ENDIF}
 {$IFDEF SAM2}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'to the "Red Rock Rover" weapon.';
+  PopupTextLines[TextLineIndex] := 'to the "Red Rock Rover" weapon.';
 {$ENDIF}
 {$IFDEF SAM3}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '';
+  PopupTextLines[TextLineIndex] := '';
 {$ENDIF}
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '-------------------------------';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'Press PgUp-PgDn        Esc-Exit';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'HOW TO ORDER MORE GAMES   Pg. 2';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '-------------------------------';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '';
-  Inc(ShowMissionSucces_TextLineIndex);
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '-------------------------------';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Press PgUp-PgDn        Esc-Exit';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'HOW TO ORDER MORE GAMES   Pg. 2';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '-------------------------------';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '';
+  Inc(TextLineIndex);
 {$IFDEF SAM1}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'Be sure to play the next two';
+  PopupTextLines[TextLineIndex] := 'Be sure to play the next two';
 {$ELSE}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'Be sure to play all the';
+  PopupTextLines[TextLineIndex] := 'Be sure to play all the';
 {$ENDIF}
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'exciting missions, otherwise';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'the world will fall prey to the';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'evil intentions of the DVS!';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '';
-  Inc(ShowMissionSucces_TextLineIndex);
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'exciting missions, otherwise';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'the world will fall prey to the';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'evil intentions of the DVS!';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '';
+  Inc(TextLineIndex);
 {$IFDEF SAM1}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'The next two missions are:';
+  PopupTextLines[TextLineIndex] := 'The next two missions are:';
 {$ELSE}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'Get all the Secret Agent games:';
+  PopupTextLines[TextLineIndex] := 'Get all the Secret Agent games:';
 {$ENDIF}
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '';
-  Inc(ShowMissionSucces_TextLineIndex);
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '';
+  Inc(TextLineIndex);
 {$IFDEF SAM1}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := ' * Kill Again Island';
+  PopupTextLines[TextLineIndex] := ' * Kill Again Island';
 {$ELSE}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := ' * The Hunt For Red Rock Rover';
+  PopupTextLines[TextLineIndex] := ' * The Hunt For Red Rock Rover';
 {$ENDIF}
-  Inc(ShowMissionSucces_TextLineIndex);
+  Inc(TextLineIndex);
 {$IFDEF SAM1}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := ' * Dr. No Body';
+  PopupTextLines[TextLineIndex] := ' * Dr. No Body';
 {$ELSE}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := ' * Kill Again Island';
+  PopupTextLines[TextLineIndex] := ' * Kill Again Island';
 {$ENDIF}
-  Inc(ShowMissionSucces_TextLineIndex);
+  Inc(TextLineIndex);
 {$IFDEF SAM1}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '';
+  PopupTextLines[TextLineIndex] := '';
 {$ELSE}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := ' * Dr. No Body';
+  PopupTextLines[TextLineIndex] := ' * Dr. No Body';
 {$ENDIF}
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '-------------------------------';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'Press PgUp-PgDn        Esc-Exit';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'HOW TO ORDER MORE GAMES   Pg. 3';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '-------------------------------';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '';
-  Inc(ShowMissionSucces_TextLineIndex);
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '-------------------------------';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Press PgUp-PgDn        Esc-Exit';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'HOW TO ORDER MORE GAMES   Pg. 3';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '-------------------------------';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '';
+  Inc(TextLineIndex);
 {$IFDEF SAM1}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'In these two missions you will';
+  PopupTextLines[TextLineIndex] := 'In these two missions you will';
 {$ELSE}
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'In the other missions you will';
+  PopupTextLines[TextLineIndex] := 'In the other missions you will';
 {$ENDIF}
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'encounter all-new challenges,';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'hazards, henchmen, levels,';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'puzzles, prizes, and basically';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'put to test all of your secret';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'agent skills!';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'To order, call 1-800-GAME-123';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'between the hours of 8am - 7pm';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'Central Standard Time (CST).';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'Price: $34 (incl. $4 Shipping)';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '-------------------------------';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'Press PgUp-PgDn        Esc-Exit';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'HOW TO ORDER MORE GAMES   Pg. 4';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '-------------------------------';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'This price ($34) includes all';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'three Secret Agent missions,';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'which also sell for $15 apiece.';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'You may also order by mail:';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '     Apogee Software';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '     P.O. Box 476389';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '     Garland, TX  75047';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'All orders include: hint sheet,';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'cheat password, and bonus game.';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := '-------------------------------';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'Press PgUp-PgDn        Esc-Exit';
-  Inc(ShowMissionSucces_TextLineIndex);
-  PopupTextLines[ShowMissionSucces_TextLineIndex] := 'END OF WINDOW';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'encounter all-new challenges,';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'hazards, henchmen, levels,';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'puzzles, prizes, and basically';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'put to test all of your secret';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'agent skills!';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'To order, call 1-800-GAME-123';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'between the hours of 8am - 7pm';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Central Standard Time (CST).';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Price: $34 (incl. $4 Shipping)';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '-------------------------------';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Press PgUp-PgDn        Esc-Exit';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'HOW TO ORDER MORE GAMES   Pg. 4';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '-------------------------------';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'This price ($34) includes all';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'three Secret Agent missions,';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'which also sell for $15 apiece.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'You may also order by mail:';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '     Apogee Software';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '     P.O. Box 476389';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '     Garland, TX  75047';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'All orders include: hint sheet,';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'cheat password, and bonus game.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '-------------------------------';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Press PgUp-PgDn        Esc-Exit';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'END OF WINDOW';
   PopupAcceptedScanCodes[1] := 1;
   PopupSelectionScanCode := ReadScrollablePopupScanCode(0);
   EscapePressed := 0;
   GameOptionsRequested := 0;
 end;
+
+{ Keyboard setup, menus and settings dialogs. }
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
 { Shows Congratulations! High score! and Enter your name; accepts at most twenty characters. }
@@ -2531,9 +2556,11 @@ end;
 { Prompts for left/right/up/down/jump/fire, rejects unavailable or duplicate keys and confirms the choices. }
 procedure RedefineKeyboardBindings;
 var
-  NewRightScanCode, NewLeftScanCode, NewUpScanCode, NewDownScanCode, NewFireScanCode, NewJumpScanCode, SpareWord: Word;
+  { Unused locals retain the original stack frame. }
+  NewRightScanCode, NewLeftScanCode, NewUpScanCode, NewDownScanCode, NewFireScanCode, NewJumpScanCode, UnusedKeyBindingWord:
+  Word;
   KeyIsValid, RedefineNotCancelled: Boolean;
-  { Nested in u3_892b; shows the six chosen key names, confirms Y/N and assigns the scan-code bindings. }
+  { Nested in RedefineKeyboardBindings; shows the six chosen key names, confirms Y/N and assigns the scan-code bindings. }
   procedure ConfirmKeyboardBindings;
   begin
     ClearPopupText;
@@ -2571,7 +2598,7 @@ var
     end;
   end;
 
-  { Nested in u3_892b; displays Sorry, that key is unavailable and waits for any scan code. }
+  { Nested in RedefineKeyboardBindings; displays Sorry, that key is unavailable and waits for any scan code. }
   procedure ShowUnavailableKey;
   var
     DismissScanCode: Word;
@@ -2839,28 +2866,28 @@ end;
 { Dispatches MAIN MENU selections to New Game, Restore, Story, Instructions. }
 function RunMainMenu: Char;
 var
-  RunMainMenu_TextLineIndex: Word;
+  TextLineIndex: Word;
 begin
-  RunMainMenu_TextLineIndex := 0;
+  TextLineIndex := 0;
   ClearPopupText;
-  Inc(RunMainMenu_TextLineIndex); PopupTextLines[RunMainMenu_TextLineIndex] := '     MAIN MENU';
-  Inc(RunMainMenu_TextLineIndex); PopupTextLines[RunMainMenu_TextLineIndex][0] := #0;
-  Inc(RunMainMenu_TextLineIndex); PopupTextLines[RunMainMenu_TextLineIndex] := ' N)ew Game';
-  Inc(RunMainMenu_TextLineIndex); PopupTextLines[RunMainMenu_TextLineIndex] := ' R)estore Old Game';
-  Inc(RunMainMenu_TextLineIndex); PopupTextLines[RunMainMenu_TextLineIndex] := ' S)tory';
-  Inc(RunMainMenu_TextLineIndex); PopupTextLines[RunMainMenu_TextLineIndex] := ' I)nstructions';
-  Inc(RunMainMenu_TextLineIndex); PopupTextLines[RunMainMenu_TextLineIndex] := ' H)igh Scores';
-  Inc(RunMainMenu_TextLineIndex); PopupTextLines[RunMainMenu_TextLineIndex][0] := #0;
-  Inc(RunMainMenu_TextLineIndex); PopupTextLines[RunMainMenu_TextLineIndex] := ' O)rdering Info.';
-  Inc(RunMainMenu_TextLineIndex); PopupTextLines[RunMainMenu_TextLineIndex] := ' F)oreign Orders';
-  Inc(RunMainMenu_TextLineIndex); PopupTextLines[RunMainMenu_TextLineIndex] := ' C)all Our BBS';
-  Inc(RunMainMenu_TextLineIndex); PopupTextLines[RunMainMenu_TextLineIndex] := ' V)ideo Support';
-  Inc(RunMainMenu_TextLineIndex); PopupTextLines[RunMainMenu_TextLineIndex] := ' A)bout Apogee';
-  Inc(RunMainMenu_TextLineIndex); PopupTextLines[RunMainMenu_TextLineIndex][0] := #0;
-  Inc(RunMainMenu_TextLineIndex); PopupTextLines[RunMainMenu_TextLineIndex] := ' Q)uit to DOS';
-  Inc(RunMainMenu_TextLineIndex); PopupTextLines[RunMainMenu_TextLineIndex][0] := #0;
-  Inc(RunMainMenu_TextLineIndex); PopupTextLines[RunMainMenu_TextLineIndex] := 'Make a selection: ^';
-  Inc(RunMainMenu_TextLineIndex); PopupTextLines[RunMainMenu_TextLineIndex] := 'END OF WINDOW';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '     MAIN MENU';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' N)ew Game';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' R)estore Old Game';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' S)tory';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' I)nstructions';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' H)igh Scores';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' O)rdering Info.';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' F)oreign Orders';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' C)all Our BBS';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' V)ideo Support';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' A)bout Apogee';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' Q)uit to DOS';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := 'Make a selection: ^';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := 'END OF WINDOW';
 
   PopupAcceptedScanCodes[1] := $31;
   PopupAcceptedScanCodes[2] := $17;
@@ -3163,7 +3190,7 @@ begin
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
-{ Prompts Sounds On (Y-N) and assigns d_34AF, which gates PC-speaker sound in the timer ISR. }
+{ Prompts Sounds On (Y-N) and assigns SoundEnabled, which gates PC-speaker sound in the timer ISR. }
 procedure SelectSoundSetting;
 begin
   ClearPopupText;
@@ -3188,7 +3215,7 @@ begin
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
-{ Prompts Alternate video setting (Y-N); d_70C6 selects the alternate retrace-pan routine. }
+{ Prompts Alternate video setting (Y-N); AlternateVideoTiming selects the alternate retrace-pan routine. }
 procedure SelectVideoCompatibility;
 begin
   ClearPopupText;
@@ -3260,43 +3287,43 @@ begin
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
-{ Prompts for a centered joystick, then measures axes 0 and 1 into d_6D68/d_6D6A. }
+{ Prompts for a centered joystick, then measures axes 0 and 1 into JoystickCenterX/JoystickCenterY. }
 procedure CalibrateJoystickCenter;
 var
-  CalibrateJoystick_TextLineIndex: Word;
+  TextLineIndex: Word;
 begin
   ClearPopupText;
-  CalibrateJoystick_TextLineIndex := 0;
-  Inc(CalibrateJoystick_TextLineIndex);
-  PopupTextLines[CalibrateJoystick_TextLineIndex] := '  Set your joystick so that';
-  Inc(CalibrateJoystick_TextLineIndex);
-  PopupTextLines[CalibrateJoystick_TextLineIndex] := 'it is in the middle position.';
-  Inc(CalibrateJoystick_TextLineIndex);
-  PopupTextLines[CalibrateJoystick_TextLineIndex] := ' ';
-  Inc(CalibrateJoystick_TextLineIndex);
-  PopupTextLines[CalibrateJoystick_TextLineIndex] := '   Press SPACE when this is';
-  Inc(CalibrateJoystick_TextLineIndex);
-  PopupTextLines[CalibrateJoystick_TextLineIndex] := ' done, and the joystick will';
-  Inc(CalibrateJoystick_TextLineIndex);
-  PopupTextLines[CalibrateJoystick_TextLineIndex] := '       be calibrated.';
-  Inc(CalibrateJoystick_TextLineIndex);
-  PopupTextLines[CalibrateJoystick_TextLineIndex] := ' ';
-  Inc(CalibrateJoystick_TextLineIndex);
-  PopupTextLines[CalibrateJoystick_TextLineIndex] := 'This step is not necessary if';
-  Inc(CalibrateJoystick_TextLineIndex);
-  PopupTextLines[CalibrateJoystick_TextLineIndex] := ' your joystick is set in the';
-  Inc(CalibrateJoystick_TextLineIndex);
-  PopupTextLines[CalibrateJoystick_TextLineIndex] := ' middle when the game loads.';
-  Inc(CalibrateJoystick_TextLineIndex);
-  PopupTextLines[CalibrateJoystick_TextLineIndex] := ' ';
-  Inc(CalibrateJoystick_TextLineIndex);
-  PopupTextLines[CalibrateJoystick_TextLineIndex] := 'Press Escape if your joystick';
-  Inc(CalibrateJoystick_TextLineIndex);
-  PopupTextLines[CalibrateJoystick_TextLineIndex] := '         is not on.';
-  Inc(CalibrateJoystick_TextLineIndex);
-  PopupTextLines[CalibrateJoystick_TextLineIndex] := '              ^';
-  Inc(CalibrateJoystick_TextLineIndex);
-  PopupTextLines[CalibrateJoystick_TextLineIndex] := 'END OF WINDOW';
+  TextLineIndex := 0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '  Set your joystick so that';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'it is in the middle position.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' ';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '   Press SPACE when this is';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' done, and the joystick will';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '       be calibrated.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' ';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'This step is not necessary if';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' your joystick is set in the';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' middle when the game loads.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' ';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Press Escape if your joystick';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '         is not on.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '              ^';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'END OF WINDOW';
 
   PopupAcceptedScanCodes[1] := 1;
   PopupAcceptedScanCodes[2] := $39;
@@ -3391,57 +3418,59 @@ end;
 procedure PopupNoOpHook;
 begin
 end;
+
+{ Ordering and publisher information. }
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
 { Shows mail/phone ordering instructions and the ORDER.FRM fax ordering page. }
 procedure ShowOrderContactDetails;
 var
-  ShowOrderContactD_TextLineIndex: Word;
-  ShowOrderContac_DismissScanCode: Word;
+  TextLineIndex: Word;
+  DismissScanCode: Word;
 begin
   ClearPopupText;
-  ShowOrderContactD_TextLineIndex := 0;
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] :=
+  TextLineIndex := 0;
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] :=
   'ORDERING THE SECRET AGENT SERIES!';
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex][0] := #0;
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] := '    Please specify disk size:';
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] := '         5.25"  or  3.5"';
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex][0] := #0;
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] := '   To order send $34, check or';
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] := '   money order (USA funds) to:';
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex][0] := #0;
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] := '         Apogee Software';
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] := '         P.O. Box 476386';
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] := '     Garland, TX 75047  (USA)';
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex][0] := #0;
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] := '     Or CALL NOW toll free:';
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] := '         1-800-GAME123';
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] := '     (Visa and MasterCard)';
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex][0] := #0;
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] := '    Continued...Press Any Key';
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] := 'END OF WINDOW';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '    Please specify disk size:';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '         5.25"  or  3.5"';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '   To order send $34, check or';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '   money order (USA funds) to:';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '         Apogee Software';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '         P.O. Box 476386';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '     Garland, TX 75047  (USA)';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '     Or CALL NOW toll free:';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '         1-800-GAME123';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '     (Visa and MasterCard)';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '    Continued...Press Any Key';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := 'END OF WINDOW';
   MemW[0:$41C] := MemW[0:$41A];
-  ShowOrderContac_DismissScanCode := ReadPopupScanCode(1);
+  DismissScanCode := ReadPopupScanCode(1);
   EscapePressed := 1;
   PopupNoOpHook;
   ClearPopupText;
-  ShowOrderContactD_TextLineIndex := 0;
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] := ' USE YOUR FAX MACHINE TO ORDER!';
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex][0] := #0;
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] := 'You can now use your FAX machine';
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] := ' to order your favorite Apogee';
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] := '   games quickly and easily.';
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex][0] := #0;
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] := ' Simply print out the ORDER.FRM';
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] := '  file, fill it out and FAX it';
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] := '  to us for prompt processing.';
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex][0] := #0;
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] := '   FAX Orders: (214) 278-4670';
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex][0] := #0;
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] := '          Press Any Key';
-  Inc(ShowOrderContactD_TextLineIndex); PopupTextLines[ShowOrderContactD_TextLineIndex] := 'END OF WINDOW';
+  TextLineIndex := 0;
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' USE YOUR FAX MACHINE TO ORDER!';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := 'You can now use your FAX machine';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' to order your favorite Apogee';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '   games quickly and easily.';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' Simply print out the ORDER.FRM';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '  file, fill it out and FAX it';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '  to us for prompt processing.';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '   FAX Orders: (214) 278-4670';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '          Press Any Key';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := 'END OF WINDOW';
   MemW[0:$41C] := MemW[0:$41A];
-  ShowOrderContac_DismissScanCode := ReadPopupScanCode(1);
+  DismissScanCode := ReadPopupScanCode(1);
   EscapePressed := 1;
   PopupNoOpHook;
 end;
@@ -3450,49 +3479,49 @@ end;
 { Lists all three missions, hint sheet, cheat password and bonus game included with an order. }
 procedure ShowOrderPackageDetails;
 var
-  ShowOrderPackageD_TextLineIndex: Word;
-  ShowOrderPackag_DismissScanCode: Word;
+  TextLineIndex: Word;
+  DismissScanCode: Word;
 begin
   ClearPopupText;
-  ShowOrderPackageD_TextLineIndex := 0;
-  Inc(ShowOrderPackageD_TextLineIndex);
-  PopupTextLines[ShowOrderPackageD_TextLineIndex] := 'ORDERING THE SECRET AGENT SERIES!';
-  Inc(ShowOrderPackageD_TextLineIndex);
-  PopupTextLines[ShowOrderPackageD_TextLineIndex][0] := #0;
-  Inc(ShowOrderPackageD_TextLineIndex);
-  PopupTextLines[ShowOrderPackageD_TextLineIndex] := '     Order now and receive:';
-  Inc(ShowOrderPackageD_TextLineIndex);
-  PopupTextLines[ShowOrderPackageD_TextLineIndex][0] := #0;
-  Inc(ShowOrderPackageD_TextLineIndex);
-  PopupTextLines[ShowOrderPackageD_TextLineIndex] := '  * All three devious missions';
-  Inc(ShowOrderPackageD_TextLineIndex);
-  PopupTextLines[ShowOrderPackageD_TextLineIndex] := '  * The hints and tricks sheet';
-  Inc(ShowOrderPackageD_TextLineIndex);
-  PopupTextLines[ShowOrderPackageD_TextLineIndex] := '  * The secret cheat password';
-  Inc(ShowOrderPackageD_TextLineIndex);
-  PopupTextLines[ShowOrderPackageD_TextLineIndex] := '  * Exciting new bonus game';
-  Inc(ShowOrderPackageD_TextLineIndex);
-  PopupTextLines[ShowOrderPackageD_TextLineIndex][0] := #0;
-  Inc(ShowOrderPackageD_TextLineIndex);
-  PopupTextLines[ShowOrderPackageD_TextLineIndex] := '    To order, call toll free:';
-  Inc(ShowOrderPackageD_TextLineIndex);
-  PopupTextLines[ShowOrderPackageD_TextLineIndex] := '         1-800-426-3123';
-  Inc(ShowOrderPackageD_TextLineIndex);
-  PopupTextLines[ShowOrderPackageD_TextLineIndex] := '  (Visa and MasterCard Welcome)';
-  Inc(ShowOrderPackageD_TextLineIndex);
-  PopupTextLines[ShowOrderPackageD_TextLineIndex][0] := #0;
-  Inc(ShowOrderPackageD_TextLineIndex);
-  PopupTextLines[ShowOrderPackageD_TextLineIndex] := 'Foreign orders:  Please read the';
-  Inc(ShowOrderPackageD_TextLineIndex);
-  PopupTextLines[ShowOrderPackageD_TextLineIndex] := '  "Foreign Orders" menu option.';
-  Inc(ShowOrderPackageD_TextLineIndex);
-  PopupTextLines[ShowOrderPackageD_TextLineIndex][0] := #0;
-  Inc(ShowOrderPackageD_TextLineIndex);
-  PopupTextLines[ShowOrderPackageD_TextLineIndex] := '    Continued...Press Any Key';
-  Inc(ShowOrderPackageD_TextLineIndex);
-  PopupTextLines[ShowOrderPackageD_TextLineIndex] := 'END OF WINDOW';
+  TextLineIndex := 0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'ORDERING THE SECRET AGENT SERIES!';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '     Order now and receive:';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '  * All three devious missions';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '  * The hints and tricks sheet';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '  * The secret cheat password';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '  * Exciting new bonus game';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '    To order, call toll free:';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '         1-800-426-3123';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '  (Visa and MasterCard Welcome)';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Foreign orders:  Please read the';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '  "Foreign Orders" menu option.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '    Continued...Press Any Key';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'END OF WINDOW';
   MemW[0:$041C] := MemW[0:$041A];
-  ShowOrderPackag_DismissScanCode := ReadPopupScanCode(1);
+  DismissScanCode := ReadPopupScanCode(1);
   EscapePressed := 1;
   PopupNoOpHook;
 end;
@@ -3501,34 +3530,34 @@ end;
 { Introduces the three-episode series and prices, then calls the package and contact detail pages. }
 procedure ShowOrderingInformation;
 var
-  ShowOrderingInfor_TextLineIndex: Word;
-  ShowOrderingInf_DismissScanCode: Word;
+  TextLineIndex: Word;
+  DismissScanCode: Word;
 begin
   ClearPopupText;
-  ShowOrderingInfor_TextLineIndex := 0;
-  Inc(ShowOrderingInfor_TextLineIndex); PopupTextLines[ShowOrderingInfor_TextLineIndex] :=
+  TextLineIndex := 0;
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] :=
   'ORDERING THE SECRET AGENT SERIES!';
-  Inc(ShowOrderingInfor_TextLineIndex); PopupTextLines[ShowOrderingInfor_TextLineIndex][0] := #0;
-  Inc(ShowOrderingInfor_TextLineIndex); PopupTextLines[ShowOrderingInfor_TextLineIndex] := ' Secret Agent consists of three';
-  Inc(ShowOrderingInfor_TextLineIndex); PopupTextLines[ShowOrderingInfor_TextLineIndex] :=
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' Secret Agent consists of three';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] :=
   'original and incredible missions:';
-  Inc(ShowOrderingInfor_TextLineIndex); PopupTextLines[ShowOrderingInfor_TextLineIndex][0] := #0;
-  Inc(ShowOrderingInfor_TextLineIndex); PopupTextLines[ShowOrderingInfor_TextLineIndex] := '  1) The Hunt for Red Rock Rover';
-  Inc(ShowOrderingInfor_TextLineIndex); PopupTextLines[ShowOrderingInfor_TextLineIndex] := '  2) Kill Again Island';
-  Inc(ShowOrderingInfor_TextLineIndex); PopupTextLines[ShowOrderingInfor_TextLineIndex] := '  3) Dr. No Body';
-  Inc(ShowOrderingInfor_TextLineIndex); PopupTextLines[ShowOrderingInfor_TextLineIndex][0] := #0;
-  Inc(ShowOrderingInfor_TextLineIndex); PopupTextLines[ShowOrderingInfor_TextLineIndex] := ' You may order the entire series';
-  Inc(ShowOrderingInfor_TextLineIndex); PopupTextLines[ShowOrderingInfor_TextLineIndex] := ' for only $30, plus $4 shipping.';
-  Inc(ShowOrderingInfor_TextLineIndex); PopupTextLines[ShowOrderingInfor_TextLineIndex][0] := #0;
-  Inc(ShowOrderingInfor_TextLineIndex); PopupTextLines[ShowOrderingInfor_TextLineIndex] := ' Each episode is set on a unique';
-  Inc(ShowOrderingInfor_TextLineIndex); PopupTextLines[ShowOrderingInfor_TextLineIndex] :=
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '  1) The Hunt for Red Rock Rover';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '  2) Kill Again Island';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '  3) Dr. No Body';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' You may order the entire series';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' for only $30, plus $4 shipping.';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' Each episode is set on a unique';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] :=
   'island, with all-new dangers, new';
-  Inc(ShowOrderingInfor_TextLineIndex); PopupTextLines[ShowOrderingInfor_TextLineIndex] := ' levels, and all-new challenges.';
-  Inc(ShowOrderingInfor_TextLineIndex); PopupTextLines[ShowOrderingInfor_TextLineIndex][0] := #0;
-  Inc(ShowOrderingInfor_TextLineIndex); PopupTextLines[ShowOrderingInfor_TextLineIndex] := '    Continued...Press Any Key';
-  Inc(ShowOrderingInfor_TextLineIndex); PopupTextLines[ShowOrderingInfor_TextLineIndex] := 'END OF WINDOW';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := ' levels, and all-new challenges.';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := '    Continued...Press Any Key';
+  Inc(TextLineIndex); PopupTextLines[TextLineIndex] := 'END OF WINDOW';
   MemW[0:$41C] := MemW[0:$41A];
-  ShowOrderingInf_DismissScanCode := ReadPopupScanCode(1);
+  DismissScanCode := ReadPopupScanCode(1);
   EscapePressed := 1;
   PopupNoOpHook;
   ShowOrderPackageDetails;
@@ -3539,251 +3568,251 @@ end;
 { Displays official dealers and ordering details for Australia, Canada, Germany and the UK. }
 procedure ShowForeignDealers;
 var
-  ShowForeignDealer_TextLineIndex: Word;
-  ShowForeignDeal_DismissScanCode: Word;
+  TextLineIndex: Word;
+  DismissScanCode: Word;
 begin
   ClearPopupText;
-  ShowForeignDealer_TextLineIndex := 0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := '       FOREIGN CUSTOMERS';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := '       -----------------';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'The following screens list our';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := '  dealers outside the United';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'States, for Australia, Germany,';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Canada and the United Kingdom.';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := '  These are official Apogee';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := '   dealers with the latest';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := '      games and updates.';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'If your country is not listed,';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := ' you may order directly from';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Apogee by phone or USA check.';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := '        Press Any Key ^';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'END OF WINDOW';
+  TextLineIndex := 0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '       FOREIGN CUSTOMERS';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '       -----------------';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'The following screens list our';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '  dealers outside the United';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'States, for Australia, Germany,';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Canada and the United Kingdom.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '  These are official Apogee';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '   dealers with the latest';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '      games and updates.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'If your country is not listed,';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' you may order directly from';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Apogee by phone or USA check.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '        Press Any Key ^';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'END OF WINDOW';
   LastKeyboardScanCode := 999;
   MemW[0:$041C] := MemW[0:$041A];
-  ShowForeignDeal_DismissScanCode := ReadPopupScanCode(1);
+  DismissScanCode := ReadPopupScanCode(1);
   PopupNoOpHook;
 
   ClearPopupText;
-  ShowForeignDealer_TextLineIndex := 0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := '      AUSTRALIAN CUSTOMERS';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'PRICE: $45 + $5 shipping.';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'BudgetWare';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'P.O. Box 496';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Newtown, NSW  2042';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Phone:      (02) 519-4233';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Toll free:  (008) 022-064';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Fax:        (02) 516-4236';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'CompuServe: 71520,1475';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Use MasterCard, Visa, Bankcard,';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'cheques.';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'END OF WINDOW';
+  TextLineIndex := 0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '      AUSTRALIAN CUSTOMERS';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'PRICE: $45 + $5 shipping.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'BudgetWare';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'P.O. Box 496';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Newtown, NSW  2042';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Phone:      (02) 519-4233';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Toll free:  (008) 022-064';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Fax:        (02) 516-4236';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'CompuServe: 71520,1475';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Use MasterCard, Visa, Bankcard,';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'cheques.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'END OF WINDOW';
   LastKeyboardScanCode := 999;
   MemW[0:$041C] := MemW[0:$041A];
-  ShowForeignDeal_DismissScanCode := ReadPopupScanCode(1);
+  DismissScanCode := ReadPopupScanCode(1);
   PopupNoOpHook;
 
   ClearPopupText;
-  ShowForeignDealer_TextLineIndex := 0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := '      AUSTRALIAN CUSTOMERS';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'PRICE: $45 + $5 shipping.';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Manaccom';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := '9 Camford Str.';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Milton, Qld. 4064';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Phone: (07) 368-2366';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Fax:   (07) 369-7589';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Use MasterCard, Visa, Bankcard,';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'American Express, or cheques.';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'END OF WINDOW';
+  TextLineIndex := 0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '      AUSTRALIAN CUSTOMERS';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'PRICE: $45 + $5 shipping.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Manaccom';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '9 Camford Str.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Milton, Qld. 4064';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Phone: (07) 368-2366';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Fax:   (07) 369-7589';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Use MasterCard, Visa, Bankcard,';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'American Express, or cheques.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'END OF WINDOW';
   LastKeyboardScanCode := 999;
   MemW[0:$041C] := MemW[0:$041A];
-  ShowForeignDeal_DismissScanCode := ReadPopupScanCode(1);
+  DismissScanCode := ReadPopupScanCode(1);
   PopupNoOpHook;
 
   ClearPopupText;
-  ShowForeignDealer_TextLineIndex := 0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := '    CANADIAN CUSTOMERS';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'PRICE: $42 Canadian.';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Distant Markets';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Box 1149';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := '194 - 3803 Calgary Trail S.';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Edmondton, Alb.  T6J 5M8';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'CANADA';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Orders:    1-800-661-7383';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Inquiries: (403) 436-3009';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Fax:       (403) 435-0928';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Use MasterCard, Visa or';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'money orders.';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'END OF WINDOW';
+  TextLineIndex := 0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '    CANADIAN CUSTOMERS';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'PRICE: $42 Canadian.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Distant Markets';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Box 1149';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '194 - 3803 Calgary Trail S.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Edmondton, Alb.  T6J 5M8';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'CANADA';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Orders:    1-800-661-7383';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Inquiries: (403) 436-3009';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Fax:       (403) 435-0928';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Use MasterCard, Visa or';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'money orders.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'END OF WINDOW';
   LastKeyboardScanCode := 999;
   MemW[0:$041C] := MemW[0:$041A];
-  ShowForeignDeal_DismissScanCode := ReadPopupScanCode(1);
+  DismissScanCode := ReadPopupScanCode(1);
   PopupNoOpHook;
 
   ClearPopupText;
-  ShowForeignDealer_TextLineIndex := 0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := '        GERMAN CUSTOMERS';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Price: 49,-- DM plus 10,-- DM';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Total: 59,-- DM (Deutsche Mark)';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'CDV-Software';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Ettlingerstr. 5';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := '7500 Karlsruhe 1  GERMANY';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Phone: 0721-22295';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Fax:   0721-21314';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Compuserve: 1000022,274';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Use Visa, MasterCard, EuroCard,';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'American Express, cheque, money';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'order, or C.O.D.';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'END OF WINDOW';
+  TextLineIndex := 0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '        GERMAN CUSTOMERS';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Price: 49,-- DM plus 10,-- DM';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Total: 59,-- DM (Deutsche Mark)';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'CDV-Software';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Ettlingerstr. 5';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '7500 Karlsruhe 1  GERMANY';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Phone: 0721-22295';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Fax:   0721-21314';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Compuserve: 1000022,274';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Use Visa, MasterCard, EuroCard,';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'American Express, cheque, money';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'order, or C.O.D.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'END OF WINDOW';
   LastKeyboardScanCode := 999;
   MemW[0:$041C] := MemW[0:$041A];
-  ShowForeignDeal_DismissScanCode := ReadPopupScanCode(1);
+  DismissScanCode := ReadPopupScanCode(1);
   PopupNoOpHook;
 
   ClearPopupText;
-  ShowForeignDealer_TextLineIndex := 0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := '    UNITED KINGDOM CUSTOMERS';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Price: /29 + VAT + /2 P&P';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Precision Software Applications';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Unit 3, Valley Court Offices';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Lower Rd';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Croydon, Near Royston';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Harts. SG8 0HF, United Kingdom';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Phone: +44 (0) 223 208 288';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'FAX:   +44 (0) 223 208 089';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex][0] := #0;
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Credit cards, Access, cheques,';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'postal & Bankers orders.';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'Make cheques payable to PSA.';
-  Inc(ShowForeignDealer_TextLineIndex);
-  PopupTextLines[ShowForeignDealer_TextLineIndex] := 'END OF WINDOW';
+  TextLineIndex := 0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '    UNITED KINGDOM CUSTOMERS';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Price: /29 + VAT + /2 P&P';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Precision Software Applications';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Unit 3, Valley Court Offices';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Lower Rd';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Croydon, Near Royston';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Harts. SG8 0HF, United Kingdom';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Phone: +44 (0) 223 208 288';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'FAX:   +44 (0) 223 208 089';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Credit cards, Access, cheques,';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'postal & Bankers orders.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Make cheques payable to PSA.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'END OF WINDOW';
   LastKeyboardScanCode := 999;
   MemW[0:$041C] := MemW[0:$041A];
-  ShowForeignDeal_DismissScanCode := ReadPopupScanCode(1);
+  DismissScanCode := ReadPopupScanCode(1);
   PopupNoOpHook;
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
@@ -3791,51 +3820,51 @@ end;
 { Displays THE OFFICIAL APOGEE BBS, Software Creations and modem phone numbers. }
 procedure ShowApogeeBbsInformation;
 var
-  ShowApogeeBbsInfo_TextLineIndex: Word;
-  ShowApogeeBbsIn_DismissScanCode: Word;
+  TextLineIndex: Word;
+  DismissScanCode: Word;
 begin
   ClearPopupText;
-  ShowApogeeBbsInfo_TextLineIndex := 0;
-  Inc(ShowApogeeBbsInfo_TextLineIndex);
-  PopupTextLines[ShowApogeeBbsInfo_TextLineIndex] := '   THE OFFICIAL APOGEE BBS';
-  Inc(ShowApogeeBbsInfo_TextLineIndex);
-  PopupTextLines[ShowApogeeBbsInfo_TextLineIndex] := '   -----------------------';
-  Inc(ShowApogeeBbsInfo_TextLineIndex);
-  PopupTextLines[ShowApogeeBbsInfo_TextLineIndex][0] := #0;
-  Inc(ShowApogeeBbsInfo_TextLineIndex);
-  PopupTextLines[ShowApogeeBbsInfo_TextLineIndex] := 'The SOFTWARE CREATIONS BBS is';
-  Inc(ShowApogeeBbsInfo_TextLineIndex);
-  PopupTextLines[ShowApogeeBbsInfo_TextLineIndex] := ' the home BBS for the latest';
-  Inc(ShowApogeeBbsInfo_TextLineIndex);
-  PopupTextLines[ShowApogeeBbsInfo_TextLineIndex] := ' Apogee games.  Check out our';
-  Inc(ShowApogeeBbsInfo_TextLineIndex);
-  PopupTextLines[ShowApogeeBbsInfo_TextLineIndex] := 'FREE "Apogee" file section for';
-  Inc(ShowApogeeBbsInfo_TextLineIndex);
-  PopupTextLines[ShowApogeeBbsInfo_TextLineIndex] := '  new releases and updates.';
-  Inc(ShowApogeeBbsInfo_TextLineIndex);
-  PopupTextLines[ShowApogeeBbsInfo_TextLineIndex][0] := #0;
-  Inc(ShowApogeeBbsInfo_TextLineIndex);
-  PopupTextLines[ShowApogeeBbsInfo_TextLineIndex] := '       BBS phone lines:';
-  Inc(ShowApogeeBbsInfo_TextLineIndex);
-  PopupTextLines[ShowApogeeBbsInfo_TextLineIndex] := '(508) 365-2359  2400 baud';
-  Inc(ShowApogeeBbsInfo_TextLineIndex);
-  PopupTextLines[ShowApogeeBbsInfo_TextLineIndex] := '(508) 365-9825  9600 baud';
-  Inc(ShowApogeeBbsInfo_TextLineIndex);
-  PopupTextLines[ShowApogeeBbsInfo_TextLineIndex] := '(508) 365-9668  14.4k dual HST';
-  Inc(ShowApogeeBbsInfo_TextLineIndex);
-  PopupTextLines[ShowApogeeBbsInfo_TextLineIndex][0] := #0;
-  Inc(ShowApogeeBbsInfo_TextLineIndex);
-  PopupTextLines[ShowApogeeBbsInfo_TextLineIndex] := '  Many node lines available!';
-  Inc(ShowApogeeBbsInfo_TextLineIndex);
-  PopupTextLines[ShowApogeeBbsInfo_TextLineIndex][0] := #0;
-  Inc(ShowApogeeBbsInfo_TextLineIndex);
-  PopupTextLines[ShowApogeeBbsInfo_TextLineIndex] := '        Press Any Key ^';
-  Inc(ShowApogeeBbsInfo_TextLineIndex);
-  PopupTextLines[ShowApogeeBbsInfo_TextLineIndex] := 'END OF WINDOW';
+  TextLineIndex := 0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '   THE OFFICIAL APOGEE BBS';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '   -----------------------';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'The SOFTWARE CREATIONS BBS is';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' the home BBS for the latest';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' Apogee games.  Check out our';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'FREE "Apogee" file section for';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '  new releases and updates.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '       BBS phone lines:';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '(508) 365-2359  2400 baud';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '(508) 365-9825  9600 baud';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '(508) 365-9668  14.4k dual HST';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '  Many node lines available!';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '        Press Any Key ^';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'END OF WINDOW';
 
   LastKeyboardScanCode := $03E7;
   MemW[$0000:$041C] := MemW[$0000:$041A];
-  ShowApogeeBbsIn_DismissScanCode := ReadPopupScanCode(1);
+  DismissScanCode := ReadPopupScanCode(1);
   PopupNoOpHook;
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
@@ -3843,85 +3872,87 @@ end;
 { Displays About Apogee Software and the shareware-support message. }
 procedure ShowAboutApogee;
 var
-  ShowAboutApogee_TextLineIndex, ShowAboutApogee_DismissScanCode: Word;
+  TextLineIndex, DismissScanCode: Word;
 begin
   ClearPopupText;
-  ShowAboutApogee_TextLineIndex := 0;
-  Inc(ShowAboutApogee_TextLineIndex);
-  PopupTextLines[ShowAboutApogee_TextLineIndex] := '     About Apogee Software';
-  Inc(ShowAboutApogee_TextLineIndex);
-  PopupTextLines[ShowAboutApogee_TextLineIndex][0] := #0;
-  Inc(ShowAboutApogee_TextLineIndex);
-  PopupTextLines[ShowAboutApogee_TextLineIndex] := 'Our goal is to establish Apogee';
-  Inc(ShowAboutApogee_TextLineIndex);
-  PopupTextLines[ShowAboutApogee_TextLineIndex] := '  as the leader in commercial';
-  Inc(ShowAboutApogee_TextLineIndex);
-  PopupTextLines[ShowAboutApogee_TextLineIndex] := ' quality shareware games. With';
-  Inc(ShowAboutApogee_TextLineIndex);
-  PopupTextLines[ShowAboutApogee_TextLineIndex] := ' enthusiasm and dedication we';
-  Inc(ShowAboutApogee_TextLineIndex);
-  PopupTextLines[ShowAboutApogee_TextLineIndex] := 'think our goal can be achieved.';
-  Inc(ShowAboutApogee_TextLineIndex);
-  PopupTextLines[ShowAboutApogee_TextLineIndex][0] := #0;
-  Inc(ShowAboutApogee_TextLineIndex);
-  PopupTextLines[ShowAboutApogee_TextLineIndex] := 'However,  we need your support.';
-  Inc(ShowAboutApogee_TextLineIndex);
-  PopupTextLines[ShowAboutApogee_TextLineIndex] := 'Shareware is not free software.';
-  Inc(ShowAboutApogee_TextLineIndex);
-  PopupTextLines[ShowAboutApogee_TextLineIndex][0] := #0;
-  Inc(ShowAboutApogee_TextLineIndex);
-  PopupTextLines[ShowAboutApogee_TextLineIndex] := '  We thank you in advance for';
-  Inc(ShowAboutApogee_TextLineIndex);
-  PopupTextLines[ShowAboutApogee_TextLineIndex] := '   your contribution to the';
-  Inc(ShowAboutApogee_TextLineIndex);
-  PopupTextLines[ShowAboutApogee_TextLineIndex] := '  growing shareware community.';
-  Inc(ShowAboutApogee_TextLineIndex);
-  PopupTextLines[ShowAboutApogee_TextLineIndex] := '      Your honesty pays...';
-  Inc(ShowAboutApogee_TextLineIndex);
-  PopupTextLines[ShowAboutApogee_TextLineIndex][0] := #0;
-  Inc(ShowAboutApogee_TextLineIndex);
-  PopupTextLines[ShowAboutApogee_TextLineIndex] := '        Press any key ^';
-  Inc(ShowAboutApogee_TextLineIndex);
-  PopupTextLines[ShowAboutApogee_TextLineIndex] := 'END OF WINDOW';
+  TextLineIndex := 0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '     About Apogee Software';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Our goal is to establish Apogee';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '  as the leader in commercial';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' quality shareware games. With';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' enthusiasm and dedication we';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'think our goal can be achieved.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'However,  we need your support.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Shareware is not free software.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '  We thank you in advance for';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '   your contribution to the';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '  growing shareware community.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '      Your honesty pays...';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '        Press any key ^';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'END OF WINDOW';
   LastKeyboardScanCode := $03E7;
   MemW[0:$041C] := MemW[0:$041A];
-  ShowAboutApogee_DismissScanCode := ReadPopupScanCode(1);
+  DismissScanCode := ReadPopupScanCode(1);
   PopupNoOpHook;
 end;
+
+{ Level-completion notices. }
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
 { Announces that the island security system is knocked out and the blueprint level can now be entered. }
 procedure ShowFortressUnlockedMessage;
 var
-  ShowFortressUnloc_TextLineIndex: Word;
-  ShowFortressUnl_DismissScanCode: Word;
+  TextLineIndex: Word;
+  DismissScanCode: Word;
 begin
   ClearPopupText;
-  ShowFortressUnloc_TextLineIndex := 0;
-  Inc(ShowFortressUnloc_TextLineIndex);
-  PopupTextLines[ShowFortressUnloc_TextLineIndex] := 'Good work 006, you@ve knocked';
-  Inc(ShowFortressUnloc_TextLineIndex);
-  PopupTextLines[ShowFortressUnloc_TextLineIndex] := 'out the island security system';
-  Inc(ShowFortressUnloc_TextLineIndex);
-  PopupTextLines[ShowFortressUnloc_TextLineIndex] := '  and can now infiltrate the';
-  Inc(ShowFortressUnloc_TextLineIndex);
-  PopupTextLines[ShowFortressUnloc_TextLineIndex] := '     level containing the';
-  Inc(ShowFortressUnloc_TextLineIndex);
-  PopupTextLines[ShowFortressUnloc_TextLineIndex] := ' blueprints to the "Red Rock';
-  Inc(ShowFortressUnloc_TextLineIndex);
-  PopupTextLines[ShowFortressUnloc_TextLineIndex] := '      Rover" satellite.';
-  Inc(ShowFortressUnloc_TextLineIndex);
-  PopupTextLines[ShowFortressUnloc_TextLineIndex][0] := #0;
-  Inc(ShowFortressUnloc_TextLineIndex);
-  PopupTextLines[ShowFortressUnloc_TextLineIndex] := 'Press ESCAPE!          ';
-  Inc(ShowFortressUnloc_TextLineIndex);
-  PopupTextLines[ShowFortressUnloc_TextLineIndex] := 'END OF WINDOW';
+  TextLineIndex := 0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Good work 006, you@ve knocked';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'out the island security system';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '  and can now infiltrate the';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '     level containing the';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' blueprints to the "Red Rock';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '      Rover" satellite.';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Press ESCAPE!          ';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'END OF WINDOW';
   PopupAcceptedScanCodes[1] := 1;
   PopupAcceptedScanCodes[2] := $1C;
   PopupAcceptedScanCodes[3] := $39;
   LastKeyboardScanCode := $03E7;
   MemW[0:$041C] := MemW[0:$041A];
-  ShowFortressUnl_DismissScanCode := ReadPopupScanCode(0);
+  DismissScanCode := ReadPopupScanCode(0);
   EscapePressed := 0;
   GameOptionsRequested := 0;
   PopupNoOpHook;
@@ -3931,48 +3962,51 @@ end;
 { Displays the 25,000 point BONUS for finishing a level with perfect health. }
 procedure ShowPerfectHealthBonus;
 var
-  ShowPerfectHealth_TextLineIndex, ShowPerfectHeal_DismissScanCode: Word;
+  TextLineIndex, DismissScanCode: Word;
 begin
   ClearPopupText;
-  ShowPerfectHealth_TextLineIndex := 0;
-  Inc(ShowPerfectHealth_TextLineIndex);
-  PopupTextLines[ShowPerfectHealth_TextLineIndex] := ' 25,000 point BONUS for';
-  Inc(ShowPerfectHealth_TextLineIndex);
-  PopupTextLines[ShowPerfectHealth_TextLineIndex] := 'finishing the level with';
-  Inc(ShowPerfectHealth_TextLineIndex);
-  PopupTextLines[ShowPerfectHealth_TextLineIndex] := '    perfect health!';
-  Inc(ShowPerfectHealth_TextLineIndex);
-  PopupTextLines[ShowPerfectHealth_TextLineIndex][0] := #0;
-  Inc(ShowPerfectHealth_TextLineIndex);
-  PopupTextLines[ShowPerfectHealth_TextLineIndex] := 'Press ESCAPE!          ';
-  Inc(ShowPerfectHealth_TextLineIndex);
-  PopupTextLines[ShowPerfectHealth_TextLineIndex] := 'END OF WINDOW';
+  TextLineIndex := 0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := ' 25,000 point BONUS for';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'finishing the level with';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := '    perfect health!';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex][0] := #0;
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'Press ESCAPE!          ';
+  Inc(TextLineIndex);
+  PopupTextLines[TextLineIndex] := 'END OF WINDOW';
   PopupAcceptedScanCodes[1] := 1;
   PopupAcceptedScanCodes[2] := $1C;
   PopupAcceptedScanCodes[3] := $39;
   LastKeyboardScanCode := $03E7;
   MemW[$0000:$041C] := MemW[$0000:$041A];
-  ShowPerfectHeal_DismissScanCode := ReadPopupScanCode(0);
+  DismissScanCode := ReadPopupScanCode(0);
   EscapePressed := 0;
   GameOptionsRequested := 0;
   PopupNoOpHook;
 end;
+
+{ Exit and episode-ending screens. }
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
 { Switches to text mode and draws the ordering screen (SAM1) or distribution notice (SAM2/3). }
 procedure ShowDosExitScreen;
 var
-  BorderStripeIndex, D_2, D_3, D_4: Word;
+  { Unused locals retain the original stack frame. }
+  BorderStripeIndex, UnusedExitScreenWord2, UnusedExitScreenWord3, UnusedExitScreenWord4: Word;
 begin
   TextMode(3);
   ClrScr;
   GotoXY(1, 1);
   for BorderStripeIndex := 0 to 19 do
   begin
-    WriteVerticalText(4 * BorderStripeIndex + 1, 1, 8, 0, t_u3_dbc2_border);
-    WriteVerticalText(4 * BorderStripeIndex + 2, 1, 7, 0, t_u3_dbc2_border);
-    WriteVerticalText(4 * BorderStripeIndex + 3, 1, 15, 0, t_u3_dbc2_border);
-    WriteVerticalText(4 * BorderStripeIndex + 4, 1, 7, 0, t_u3_dbc2_border);
+    WriteVerticalText(4 * BorderStripeIndex + 1, 1, 8, 0, DosExitBorder);
+    WriteVerticalText(4 * BorderStripeIndex + 2, 1, 7, 0, DosExitBorder);
+    WriteVerticalText(4 * BorderStripeIndex + 3, 1, 15, 0, DosExitBorder);
+    WriteVerticalText(4 * BorderStripeIndex + 4, 1, 7, 0, DosExitBorder);
   end;
 {$IFDEF SAM1}
   DrawFilledTextBox(9, 2, 72, 4, 15, 4, 3);
@@ -4013,23 +4047,23 @@ end;
 { Loads SAMn.END (two screens in SAM3), shows success text. }
 procedure ShowEpisodeEnding;
 var
-  EndingDelayIteration, ShowEpisodeE_GraphicsCallResult: Word;
+  EndingDelayIteration, GraphicsCallResult: Word;
 begin
   PgSetToolboxVideoMode(0);
-  ShowEpisodeE_GraphicsCallResult := PcxSetDisplayType(2);
-  ShowEpisodeE_GraphicsCallResult := PcxSetGraphicsOrTextMode(1);
-  ShowEpisodeE_GraphicsCallResult := PgSetScreenStride($28);
+  GraphicsCallResult := PcxSetDisplayType(2);
+  GraphicsCallResult := PcxSetGraphicsOrTextMode(1);
+  GraphicsCallResult := PgSetScreenStride($28);
   CameraX := 0;
   CameraY := 0;
   DisplayedBufferRow := 0;
   GameDrawBufferRow := 0;
 {$IFDEF SAM1}
-  ShowEpisodeE_GraphicsCallResult := PcxDisplayFile('SAM1.END', 1, 0, 0);
+  GraphicsCallResult := PcxDisplayFile('SAM1.END', 1, 0, 0);
 {$ELSE}
 {$IFDEF SAM2}
-  ShowEpisodeE_GraphicsCallResult := PcxDisplayFile('SAM2.END', 1, 0, 0);
+  GraphicsCallResult := PcxDisplayFile('SAM2.END', 1, 0, 0);
 {$ELSE}
-  ShowEpisodeE_GraphicsCallResult := PcxDisplayFile('SAM3A.END', 1, 0, 0);
+  GraphicsCallResult := PcxDisplayFile('SAM3A.END', 1, 0, 0);
 {$ENDIF}
 {$ENDIF}
   RestoreGamePalette(0);
@@ -4043,7 +4077,7 @@ begin
   repeat until KeyPressed;
 {$IFDEF SAM3}
   FadeGamePaletteToBlack(0);
-  ShowEpisodeE_GraphicsCallResult := PcxDisplayFile('SAM3B.END', 1, 0, 0);
+  GraphicsCallResult := PcxDisplayFile('SAM3B.END', 1, 0, 0);
   RestoreGamePalette(0);
   MemW[0:$041C] := MemW[0:$041A];
   repeat until KeyPressed;
@@ -4055,6 +4089,6 @@ begin
   QuitGameRequested := 0;
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
-{ The u3 unit initialization block is empty. }
+{ No unit initialization is required. }
 begin
 end.

@@ -1,66 +1,101 @@
-# Secret Agent - standalone game source
+# Secret Agent standalone source
 
-One source tree builds all three episodes with Turbo Pascal 5.0 (including
-its original TURBO.TPL), Turbo Assembler 1.0 and LZEXE 0.91. Put TPC, TASM
-and LZEXE on the DOS PATH, and make TURBO.TPL available beside TPC or in
-this directory. Run BUILD 1, BUILD 2 or BUILD 3. Define exactly one SAMn
-symbol; BUILD selects it for both Pascal and assembly. The batch assembles
-all six objects, makes SAM.PAS and its units, copies SAM.EXE to SAMn.EXE,
-then packs that copy. SAM.EXE and SAM.MAP retain the unpacked build.
-BUILD removes the nine generated game-unit TPU files before compiling, so changing
-episodes rebuilds every game unit. The host verifier always stages fresh,
-isolated copies for each episode.
+This source tree builds all three episodes of Apogee's Secret Agent. Pascal
+identifiers describe the observed behavior; `layout/names.json` in the host
+repository retains their original logical coordinates and naming evidence.
+The program entry file is `SAM.PAS`, with program identifier `SAMMAIN`.
 
-| File | Contents |
+## Build under DOS
+
+Use Turbo Pascal 5.0 with its original `TURBO.TPL`, Turbo Assembler 1.0 and
+LZEXE 0.91. Put `TPC`, `TASM` and `LZEXE` on the DOS PATH and make
+`TURBO.TPL` available beside TPC or in the source directory. From this
+directory, select an episode:
+
+```bat
+BUILD 1
+BUILD 2
+BUILD 3
+```
+
+Each command defines exactly one `SAMn` symbol for Pascal and assembly,
+assembles the six objects, removes the nine game-unit TPU files and compiles
+the program. It leaves `SAM.EXE` and `SAM.MAP` from the unpacked build,
+copies the executable to `SAMn.EXE` and packs that copy with LZEXE.
+
+The compiler switches are `/M /GD /DSAMn /$S- /$I- /$R- /$B-`;
+the program sets `$M 16384,0,655360`. System, Crt and Dos come from the
+original TP 5.0 library. Python and the reconstruction tools are unnecessary
+for a DOS build. The original episode assets are needed to run the game;
+assets, original executables and historical tool binaries are not included
+in this tree.
+
+## Verified reconstruction
+
+From the host repository root, run:
+
+```text
+python tools/standalone.py game
+python tools/standalone.py game --episodes sam2
+```
+
+The verifier stages source-only builds for each episode with the pinned
+tools in `layout/toolchain.json` and compares against the original unpacked
+executables. The current proof is:
+
+| Episode | Equal load-image bytes | Image size | Differences in accepted holes | Differences outside holes |
+|---|---:|---:|---:|---:|
+| SAM1 | 188647 | 188736 | 89 | 0 |
+| SAM2 | 189664 | 189744 | 80 | 0 |
+| SAM3 | 189761 | 189792 | 31 | 0 |
+
+Every defined code and DATA byte matches. All checks are equal: relocation
+set, DATA length, entry/stack/allocation fields, segment layout, link order,
+unit initialization chain, library data anchors, global offsets and routine
+entries. LZEXE also preserves each freshly linked load image through its
+pack/unpack round trip.
+
+There are 102 bytes of undefined `DB ?`/`DW ?` object storage: seven in
+`CMOSPIT.ASM` and 95 in `PROGRAPX.ASM`. These contain compiler-buffer
+residue. The verifier checks the accepted object-hole ranges independently
+and permits differences only within those ranges; the differing-byte counts
+are 89/80/31 above. The source retains the undefined storage without filling
+holes or patching linked bytes. Comment or source-line changes can affect
+this residue, so each readability batch is checked against the same totals.
+
+Packed executable equality is not claimed: the residue differences also
+change the packed files. The original unpacked MZ header's storage size and
+ordering were lost during LZEXE packing, so those header details are not
+claimed equal. The verifier reports both exceptions separately from the
+defined-byte and structural proof.
+
+Unused storage declarations and their original writes remain in place to
+preserve DATA and stack layouts. Episode conditionals retain whole
+declarations and statements; shared code appears once. The keyboard input
+guard uses structured control flow and retains the original emitted bytes.
+
+## Files
+
+| File | Role |
 |---|---|
-| SAM.PAS | Program, interrupt handlers and main loop |
-| SAMPLAY.PAS | Actor updates, movement, collision and pickups (U1) |
-| SAMLEVEL.PAS | Level loading and layer drawing (U2) |
-| SAMUI.PAS | Menus, HUD, saved games and resource loading (U3) |
-| TEXT80.PAS | Text-mode drawing and adapter detection (U4) |
-| PCXGENUS.PAS | Genus PCX toolkit interface (U5) |
-| GAMEJOY.PAS | Joystick interface (U6) |
-| SAMSOUND.PAS | PC-speaker effect selection (U7) |
-| SAMDATA.PAS | Shared declarations, defaults and asset decoder (U8) |
-| PROGRPHX.PAS | ProGraphx EGA/VGA toolbox interface (U9) |
-| CMOSPIT.ASM | Program CMOS/date/PIT routines |
-| TEXTOUT.ASM | U4 text writer |
-| GENUS.ASM | U5 Genus PCX Programmer's Toolkit 3.56 |
-| JOYSTICK.ASM | U6 joystick routines |
-| DECODE.ASM | U8 asset decoder |
-| PROGRAPX.ASM | U9 ProGraphx 2.0 EGA toolbox |
+| SAM.PAS | Startup, interrupt handlers, configuration and main game loop |
+| SAMPLAY.PAS | Actor/projectile updates, player movement, collisions and pickups |
+| SAMLEVEL.PAS | Level loading, symbol decoding, actor placement and tile layers |
+| SAMUI.PAS | HUD, popups, menus, saved games, graphics resources and information screens |
+| TEXT80.PAS | DOS text drawing and video-adapter queries |
+| PCXGENUS.PAS | Pascal interface to Genus PCX Programmer's Toolkit 3.56 |
+| GAMEJOY.PAS | Joystick presence, buttons and axis interface |
+| SAMSOUND.PAS | PC-speaker effect selection |
+| SAMDATA.PAS | Shared declarations, defaults, state resets and asset-decoder interface |
+| PROGRPHX.PAS | Pascal interface to ProGraphx 2.0 by Peder Jungck |
+| CMOSPIT.ASM | CMOS/DOS clock synchronization and PIT timer programming |
+| TEXTOUT.ASM | Text-memory string output and BIOS video queries for TEXT80 |
+| GENUS.ASM | Genus PCX Programmer's Toolkit 3.56 implementation |
+| JOYSTICK.ASM | Game-port axis-timing routines for GAMEJOY |
+| DECODE.ASM | In-place game-asset decoder for SAMDATA |
+| PROGRAPX.ASM | ProGraphx 2.0 EGA/VGA drawing, sprites, fonts and buffer copies |
+| BUILD.BAT | DOS assembly, Pascal compile and episode packing recipe |
 
-Compiler options: /M /GD /DSAMn /$S- /$I- /$R- /$B-; the program sets
-$M 16384,0,655360. Crt, Dos and System come from the pinned TP 5.0 library.
-No Python, reconstruction recipe, harness or oracle is needed to build
-the game under DOS. The host comparison needs this reconstruction repo,
-the pinned tools in layout/toolchain.json and the original game files.
-From the repo run:
-
-    python tools/standalone.py game
-    python tools/standalone.py game --episodes sam2
-
-The accepted whole-program reconstruction proves every defined code byte,
-the DATA image, relocation set, entry/stack/allocation fields, link order
-and unit initialization chain for SAM1, SAM2 and SAM3. The original
-unpacked MZ header's storage size/order was lost when LZEXE packed it and
-cannot be claimed equal. See the host report for this standalone build's
-fresh measurements and the LZEXE round-trip check.
-
-Exception: 102 bytes of undefined DB ? object storage (7 in CMOSPIT,
-95 in PROGRAPX) contain compiler-buffer residue. The earlier generated
-builds differed at 89/80/31 of these bytes for SAM1/SAM2/SAM3. Source
-merging and line-number changes can change that residue; the verifier
-lists both sides and permits differences only in the accepted holes.
-No hole is filled and no linked byte is patched. Packed executables
-therefore also differ from the originals; packed byte equality is not
-claimed. LZEXE must preserve the freshly linked load image exactly.
-
-Episode conditionals preserve whole declarations/statements and shared
-source appears once. Semantic identifiers come from layout/names.json, which
-keeps their logical coordinates, confidence and behavioral evidence. Routine
-comments describe the existing code; main/unit initialization blocks retain
-their original structure. SAM.PAS stays the build entry file and its program
-identifier is SAMMAIN. The six object filenames and link directives remain
-unchanged. Original binaries/assets and historical tool binaries are not
-included in this tree.
+The six object filenames and Pascal link directives are retained. This
+directory contains only source and documentation; the host verifier writes
+build products and proof receipts outside it.

@@ -1,6 +1,5 @@
-; Unit u8 linked decoder object, SAM1 offsets 0C14-0CFC.
-; Builds the 1991 copyright key in its stack frame, reverses each
-; source byte's bit order, then XORs the cyclic key into that byte.
+; Asset decoder used by SAMDATA: reverses bits and applies the cyclic
+; Copyright 1991 Peder Jungck XOR key to a supplied buffer.
 CODE segment byte public
 assume cs:CODE
 public DecryptGameAssetBuffer

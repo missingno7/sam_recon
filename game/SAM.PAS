@@ -1,3 +1,5 @@
+{ Secret Agent program: installs input/timer handlers, loads configuration,
+  and runs the game loop and scene transitions. }
 program SAMMAIN;
 {$M 16384,0,655360}
 {$A+}{$D+}{$L+}{$F-}
@@ -9,11 +11,14 @@ var
   VideoBiosRegisters: TVideoBiosRegs;
   DetectedBiosVideoMode: Word;
   DetectedVideoAdapter: Byte;
-  reserved_02bb: Byte;
+  { Unused storage retains DATA layout. }
+  UnusedVideoProbePadLater: Byte;
 {$ENDIF}
+
+{ DOS clock and programmable timer helpers. }
 {$L CMOSPIT.OBJ}
 {$F+}
-{ p.asm reads CMOS time/date and invokes DOS INT 21h AH=$2D and $2B to set DOS time/date. }
+{ Reads CMOS time/date and invokes DOS INT 21h AH=$2D and $2B to set DOS time/date. }
 procedure SyncDosClockFromCmos; external;
 {$F-}
 {$F+}
@@ -23,12 +28,12 @@ procedure SetFastGameTimer; external;
 {$F+}
 { Programs PIT channel 0 with mode $36 and zero divisor, restoring the default 65536-count period. }
 procedure RestoreDefaultTimer; external;
+
+{ Keyboard, joystick and timer processing. }
 {$F-}
 {$F-}
 { Reads scan codes from port $60, handles make/break controls and cheat chords. }
 procedure KeyboardInterrupt; interrupt;
-label
-  ChainKeyboardHandler;
 var
   ShotSlot: Integer;
   ShotSpawned: Byte;
@@ -46,358 +51,359 @@ begin
       LastKeyboardScanCode := Integer(LeftKeyScanCode) + 128;
   end;
 
-  if PlayerInputLocked <> 0 then
-    goto ChainKeyboardHandler;
-
-  if LastKeyboardScanCode = Integer(LeftKeyScanCode) then
+  if PlayerInputLocked = 0 then
   begin
-    PlayerLeftHeld := 1;
-    PlayerRightHeld := 0;
-    PlayerOnMovingSupport := 0;
-    GameActors[1].ActorSpriteBase := 5;
-    if PlayerJumping <> 0 then
-      GameActors[1].ActorSpriteBase := 14;
-  end
-  else if Integer(LeftKeyScanCode) + 128 = LastKeyboardScanCode then
-  begin
-    PlayerLeftHeld := 0;
-    if PlayerJumping = 0 then
+    if LastKeyboardScanCode = Integer(LeftKeyScanCode) then
     begin
-      if PlayerRightHeld = 0 then
-        GameActors[1].ActorSpriteBase := 10
-      else
-        GameActors[1].ActorSpriteBase := 1;
+      PlayerLeftHeld := 1;
+      PlayerRightHeld := 0;
+      PlayerOnMovingSupport := 0;
+      GameActors[1].ActorSpriteBase := 5;
+      if PlayerJumping <> 0 then
+        GameActors[1].ActorSpriteBase := 14;
     end
-    else if PlayerRightHeld = 1 then
-      GameActors[1].ActorSpriteBase := 13
-    else
-      GameActors[1].ActorSpriteBase := 14;
-  end
-  else if LastKeyboardScanCode = Integer(RightKeyScanCode) then
-  begin
-    PlayerRightHeld := 1;
-    PlayerLeftHeld := 0;
-    PlayerOnMovingSupport := 0;
-    GameActors[1].ActorSpriteBase := 1;
-    if PlayerJumping <> 0 then
-      GameActors[1].ActorSpriteBase := 13;
-  end
-  else if Integer(RightKeyScanCode) + 128 = LastKeyboardScanCode then
-  begin
-    PlayerRightHeld := 0;
-    if PlayerJumping = 0 then
+    else if Integer(LeftKeyScanCode) + 128 = LastKeyboardScanCode then
     begin
-      if PlayerLeftHeld = 0 then
-        GameActors[1].ActorSpriteBase := 9
-      else
-        GameActors[1].ActorSpriteBase := 5;
-    end
-    else if PlayerLeftHeld = 1 then
-      GameActors[1].ActorSpriteBase := 14
-    else
-      GameActors[1].ActorSpriteBase := 13;
-  end
-  else if LastKeyboardScanCode = Integer(FireKeyScanCode) then
-  begin
-    if PlayerAmmo = 0 then
-      StartSoundEffect(20)
-    else if PlayerAmmo > 0 then
-    begin
-      if PlayerDying = 0 then
+      PlayerLeftHeld := 0;
+      if PlayerJumping = 0 then
       begin
-        if CurrentLevelNumber > 1 then
+        if PlayerRightHeld = 0 then
+          GameActors[1].ActorSpriteBase := 10
+        else
+          GameActors[1].ActorSpriteBase := 1;
+      end
+      else if PlayerRightHeld = 1 then
+        GameActors[1].ActorSpriteBase := 13
+      else
+        GameActors[1].ActorSpriteBase := 14;
+    end
+    else if LastKeyboardScanCode = Integer(RightKeyScanCode) then
+    begin
+      PlayerRightHeld := 1;
+      PlayerLeftHeld := 0;
+      PlayerOnMovingSupport := 0;
+      GameActors[1].ActorSpriteBase := 1;
+      if PlayerJumping <> 0 then
+        GameActors[1].ActorSpriteBase := 13;
+    end
+    else if Integer(RightKeyScanCode) + 128 = LastKeyboardScanCode then
+    begin
+      PlayerRightHeld := 0;
+      if PlayerJumping = 0 then
+      begin
+        if PlayerLeftHeld = 0 then
+          GameActors[1].ActorSpriteBase := 9
+        else
+          GameActors[1].ActorSpriteBase := 5;
+      end
+      else if PlayerLeftHeld = 1 then
+        GameActors[1].ActorSpriteBase := 14
+      else
+        GameActors[1].ActorSpriteBase := 13;
+    end
+    else if LastKeyboardScanCode = Integer(FireKeyScanCode) then
+    begin
+      if PlayerAmmo = 0 then
+        StartSoundEffect(20)
+      else if PlayerAmmo > 0 then
+      begin
+        if PlayerDying = 0 then
         begin
-          ShotSpawned := 0;
-          ShotSlot := 0;
-          repeat
-            Inc(ShotSlot);
-            if PlayerShots[ShotSlot].ActorSlotInactive = 1 then
-            begin
-              PlayerShots[ShotSlot].ActorWorldX := GameActors[1].ActorWorldX;
-              PlayerShots[ShotSlot].ActorWorldY := GameActors[1].ActorWorldY;
-              PlayerShots[ShotSlot].ActorPreviousX := GameActors[1].ActorPreviousX;
-              PlayerShots[ShotSlot].ActorPreviousY := GameActors[1].ActorPreviousY;
-              PlayerShots[ShotSlot].ActorSpriteBase := 39;
-              if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 13) or (GameActors[1].ActorSpriteBase
-              = 9) or (GameActors[1].ActorSpriteBase = 11) then
+          if CurrentLevelNumber > 1 then
+          begin
+            ShotSpawned := 0;
+            ShotSlot := 0;
+            repeat
+              Inc(ShotSlot);
+              if PlayerShots[ShotSlot].ActorSlotInactive = 1 then
               begin
-                PlayerShots[ShotSlot].ActorDirectionX := 1;
-                GameActors[1].ActorSpriteBase := 11;
-              end
-              else
-              begin
-                PlayerShots[ShotSlot].ActorDirectionX := -1;
-                GameActors[1].ActorSpriteBase := 12;
+                PlayerShots[ShotSlot].ActorWorldX := GameActors[1].ActorWorldX;
+                PlayerShots[ShotSlot].ActorWorldY := GameActors[1].ActorWorldY;
+                PlayerShots[ShotSlot].ActorPreviousX := GameActors[1].ActorPreviousX;
+                PlayerShots[ShotSlot].ActorPreviousY := GameActors[1].ActorPreviousY;
+                PlayerShots[ShotSlot].ActorSpriteBase := 39;
+                if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 13) or
+                (GameActors[1].ActorSpriteBase
+                = 9) or (GameActors[1].ActorSpriteBase = 11) then
+                begin
+                  PlayerShots[ShotSlot].ActorDirectionX := 1;
+                  GameActors[1].ActorSpriteBase := 11;
+                end
+                else
+                begin
+                  PlayerShots[ShotSlot].ActorDirectionX := -1;
+                  GameActors[1].ActorSpriteBase := 12;
+                end;
+                PlayerShots[ShotSlot].DirectionY := 0;
+                PlayerShots[ShotSlot].ActorAnimationCounter := 1;
+                PlayerShots[ShotSlot].ActorMovementStep := 8;
+                PlayerShots[ShotSlot].ActorCounterA := 0;
+                PlayerShots[ShotSlot].ActorCounterB := 0;
+                PlayerShots[ShotSlot].ActorKindCode := 7;
+                PlayerShots[ShotSlot].ActorSlotInactive := 0;
+                PlayerShots[ShotSlot].ActorRemovalPending := 0;
+                ShotSpawned := 1;
+                Dec(PlayerAmmo);
+                StatusBarCameraX := -1;
+                StartSoundEffect(2);
+                if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 9) or
+                (GameActors[1].ActorSpriteBase
+                = 13) or (GameActors[1].ActorSpriteBase = 11) then
+                  GameActors[1].ActorSpriteBase := 11
+                else
+                  GameActors[1].ActorSpriteBase := 12;
               end;
-              PlayerShots[ShotSlot].DirectionY := 0;
-              PlayerShots[ShotSlot].ActorAnimationCounter := 1;
-              PlayerShots[ShotSlot].ActorMovementStep := 8;
-              PlayerShots[ShotSlot].ActorCounterA := 0;
-              PlayerShots[ShotSlot].ActorCounterB := 0;
-              PlayerShots[ShotSlot].ActorKindCode := 7;
-              PlayerShots[ShotSlot].ActorSlotInactive := 0;
-              PlayerShots[ShotSlot].ActorRemovalPending := 0;
-              ShotSpawned := 1;
-              Dec(PlayerAmmo);
-              StatusBarCameraX := -1;
-              StartSoundEffect(2);
-              if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 9) or (GameActors[1].ActorSpriteBase
-              = 13) or (GameActors[1].ActorSpriteBase = 11) then
-                GameActors[1].ActorSpriteBase := 11
-              else
-                GameActors[1].ActorSpriteBase := 12;
-            end;
-          until (ShotSlot = PlayerProjectileLimit) or (ShotSpawned <> 0);
+            until (ShotSlot = PlayerProjectileLimit) or (ShotSpawned <> 0);
+          end;
         end;
       end;
-    end;
-  end  else if Integer(FireKeyScanCode) + 128 = LastKeyboardScanCode then
-  begin
-    if GameActors[1].ActorSpriteBase = 11 then
-      GameActors[1].ActorSpriteBase := 9
-    else if GameActors[1].ActorSpriteBase = 12 then
-      GameActors[1].ActorSpriteBase := 10;
-  end
-  else if LastKeyboardScanCode = Integer(JumpKeyScanCode) then
-  begin
-    PlayerJumpHeld := 1;
-  end
-  else if Integer(JumpKeyScanCode) + 128 = LastKeyboardScanCode then
-  begin
-    PlayerJumpHeld := 0;
-  end
-  else if LastKeyboardScanCode = Integer(UpKeyScanCode) then
-  begin
-    if CurrentLevelNumber = 1 then
+    end  else if Integer(FireKeyScanCode) + 128 = LastKeyboardScanCode then
     begin
-      PlayerUpHeld := 1;
-      PlayerDownHeld := 0;
-      if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 9) or (GameActors[1].ActorSpriteBase = 11)
-      then
-        GameActors[1].ActorSpriteBase := 1
-      else
-        GameActors[1].ActorSpriteBase := 5;
-    end;
-  end
-  else if Integer(UpKeyScanCode) + 128 = LastKeyboardScanCode then
-  begin
-    if CurrentLevelNumber = 1 then
-    begin
-      PlayerUpHeld := 0;
-      if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 9) or (GameActors[1].ActorSpriteBase = 11)
-      then
+      if GameActors[1].ActorSpriteBase = 11 then
         GameActors[1].ActorSpriteBase := 9
-      else
+      else if GameActors[1].ActorSpriteBase = 12 then
         GameActors[1].ActorSpriteBase := 10;
-    end;
-  end
-  else if LastKeyboardScanCode = Integer(DownKeyScanCode) then
-  begin
-    if CurrentLevelNumber = 1 then
+    end
+    else if LastKeyboardScanCode = Integer(JumpKeyScanCode) then
     begin
-      PlayerDownHeld := 1;
-      PlayerUpHeld := 0;
-      if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 9) or (GameActors[1].ActorSpriteBase = 11)
-      then
-        GameActors[1].ActorSpriteBase := 1
-      else
-        GameActors[1].ActorSpriteBase := 5;
-    end;
-  end
-  else if Integer(DownKeyScanCode) + 128 = LastKeyboardScanCode then
-  begin
-    if CurrentLevelNumber = 1 then
+      PlayerJumpHeld := 1;
+    end
+    else if Integer(JumpKeyScanCode) + 128 = LastKeyboardScanCode then
     begin
-      PlayerDownHeld := 0;
-      if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 9) or (GameActors[1].ActorSpriteBase = 11)
-      then
-        GameActors[1].ActorSpriteBase := 9
-      else
-        GameActors[1].ActorSpriteBase := 10;
-    end;
-  end
-  else if LastKeyboardScanCode = 1 then
-  begin
-    EscapePressed := 1;
-    GameOptionsRequested := 1;
-  end
-  else if LastKeyboardScanCode = 16 then
-    GameOptionsRequested := 1
-  else if LastKeyboardScanCode = 59 then
-    GameOptionsRequested := 1
-  else if LastKeyboardScanCode = 60 then
-    GameOptionsRequested := 1
-  else if LastKeyboardScanCode = 61 then
-    GameOptionsRequested := 1
-  else if LastKeyboardScanCode = 62 then
-    GameOptionsRequested := 1
-  else if LastKeyboardScanCode = 63 then
-    GameOptionsRequested := 1
-  else if LastKeyboardScanCode = 64 then
-    GameOptionsRequested := 1
-  else if LastKeyboardScanCode = 65 then
-    GameOptionsRequested := 1
-  else if LastKeyboardScanCode = 66 then
-    GameOptionsRequested := 1
-  else if LastKeyboardScanCode = 67 then
-    GameOptionsRequested := 1
-  else if LastKeyboardScanCode = 68 then
-    GameOptionsRequested := 1
-  else if LastKeyboardScanCode = $16 then
-  begin
-    AmmoChordUHeld := 1;
-    if (AmmoChordVHeld <> 0) and (AmmoChordKHeld <> 0) and (ExtraAmmoCheatUsed = 0) then
+      PlayerJumpHeld := 0;
+    end
+    else if LastKeyboardScanCode = Integer(UpKeyScanCode) then
     begin
-      PlayerAmmo := PlayerAmmo + 25;
-      ExtraAmmoCheatUsed := 1;
-      StatusBarCameraX := -1;
-    end;
-  end
-  else if LastKeyboardScanCode = $96 then
-    AmmoChordUHeld := 0
-  else if LastKeyboardScanCode = $2F then
-  begin
-    AmmoChordVHeld := 1;
-    if (AmmoChordUHeld <> 0) and (AmmoChordKHeld <> 0) and (ExtraAmmoCheatUsed = 0) then
+      if CurrentLevelNumber = 1 then
+      begin
+        PlayerUpHeld := 1;
+        PlayerDownHeld := 0;
+        if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 9) or (GameActors[1].ActorSpriteBase = 11)
+        then
+          GameActors[1].ActorSpriteBase := 1
+        else
+          GameActors[1].ActorSpriteBase := 5;
+      end;
+    end
+    else if Integer(UpKeyScanCode) + 128 = LastKeyboardScanCode then
     begin
-      PlayerAmmo := PlayerAmmo + 25;
-      ExtraAmmoCheatUsed := 1;
-      StatusBarCameraX := -1;
-    end;
-  end
-  else if LastKeyboardScanCode = $AF then
-    AmmoChordVHeld := 0
-  else if LastKeyboardScanCode = $25 then
-  begin
-    AmmoChordKHeld := 1;
-    if (AmmoChordUHeld <> 0) and (AmmoChordVHeld <> 0) and (ExtraAmmoCheatUsed = 0) then
+      if CurrentLevelNumber = 1 then
+      begin
+        PlayerUpHeld := 0;
+        if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 9) or (GameActors[1].ActorSpriteBase = 11)
+        then
+          GameActors[1].ActorSpriteBase := 9
+        else
+          GameActors[1].ActorSpriteBase := 10;
+      end;
+    end
+    else if LastKeyboardScanCode = Integer(DownKeyScanCode) then
     begin
-      PlayerAmmo := PlayerAmmo + 25;
-      ExtraAmmoCheatUsed := 1;
-      StatusBarCameraX := -1;
-    end;
-  end
-  else if LastKeyboardScanCode = $A5 then
-    AmmoChordKHeld := 0
-  else if LastKeyboardScanCode = $2C then
-  begin
-    InventoryChordZHeld := 1;
-    if (InventoryChordGHeld <> 0) and (InventoryChordIHeld <> 0) then
+      if CurrentLevelNumber = 1 then
+      begin
+        PlayerDownHeld := 1;
+        PlayerUpHeld := 0;
+        if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 9) or (GameActors[1].ActorSpriteBase = 11)
+        then
+          GameActors[1].ActorSpriteBase := 1
+        else
+          GameActors[1].ActorSpriteBase := 5;
+      end;
+    end
+    else if Integer(DownKeyScanCode) + 128 = LastKeyboardScanCode then
     begin
-      PlayerHasFloppyDisk := 1;
-      PlayerHasDynamite := 1;
-      StatusBarCameraX := -1;
-    end;
-  end
-  else if LastKeyboardScanCode = $AC then
-    InventoryChordZHeld := 0
-  else if LastKeyboardScanCode = $22 then
-  begin
-    InventoryChordGHeld := 1;
-    if (InventoryChordZHeld <> 0) and (InventoryChordIHeld <> 0) then
+      if CurrentLevelNumber = 1 then
+      begin
+        PlayerDownHeld := 0;
+        if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 9) or (GameActors[1].ActorSpriteBase = 11)
+        then
+          GameActors[1].ActorSpriteBase := 9
+        else
+          GameActors[1].ActorSpriteBase := 10;
+      end;
+    end
+    else if LastKeyboardScanCode = 1 then
     begin
-      PlayerHasFloppyDisk := 1;
-      PlayerHasDynamite := 1;
-      StatusBarCameraX := -1;
-    end;
-  end
-  else if LastKeyboardScanCode = $A2 then
-    InventoryChordGHeld := 0
-  else if LastKeyboardScanCode = $17 then
-  begin
-    InventoryChordIHeld := 1;
-    if (InventoryChordGHeld <> 0) and (InventoryChordZHeld <> 0) then
+      EscapePressed := 1;
+      GameOptionsRequested := 1;
+    end
+    else if LastKeyboardScanCode = 16 then
+      GameOptionsRequested := 1
+    else if LastKeyboardScanCode = 59 then
+      GameOptionsRequested := 1
+    else if LastKeyboardScanCode = 60 then
+      GameOptionsRequested := 1
+    else if LastKeyboardScanCode = 61 then
+      GameOptionsRequested := 1
+    else if LastKeyboardScanCode = 62 then
+      GameOptionsRequested := 1
+    else if LastKeyboardScanCode = 63 then
+      GameOptionsRequested := 1
+    else if LastKeyboardScanCode = 64 then
+      GameOptionsRequested := 1
+    else if LastKeyboardScanCode = 65 then
+      GameOptionsRequested := 1
+    else if LastKeyboardScanCode = 66 then
+      GameOptionsRequested := 1
+    else if LastKeyboardScanCode = 67 then
+      GameOptionsRequested := 1
+    else if LastKeyboardScanCode = 68 then
+      GameOptionsRequested := 1
+    else if LastKeyboardScanCode = $16 then
     begin
-      PlayerHasFloppyDisk := 1;
-      PlayerHasDynamite := 1;
-      StatusBarCameraX := -1;
-    end;
-  end
-  else if LastKeyboardScanCode = $97 then
-    InventoryChordIHeld := 0
-  else if LastKeyboardScanCode = $19 then
-  begin
-    GodChordPHeld := 1;
-    if (GodChordJHeld <> 0) and (GodChordXHeld <> 0) then
+      AmmoChordUHeld := 1;
+      if (AmmoChordVHeld <> 0) and (AmmoChordKHeld <> 0) and (ExtraAmmoCheatUsed = 0) then
+      begin
+        PlayerAmmo := PlayerAmmo + 25;
+        ExtraAmmoCheatUsed := 1;
+        StatusBarCameraX := -1;
+      end;
+    end
+    else if LastKeyboardScanCode = $96 then
+      AmmoChordUHeld := 0
+    else if LastKeyboardScanCode = $2F then
     begin
-      if PlayerGodMode = 0 then
-        PlayerGodMode := 1
-      else
-        PlayerGodMode := 0;
-      GodModeMessagePending := 1;
-    end;
-    LevelCheatPBHeld := 1;
-    if (WarpChordOHeld <> 0) and (WarpChordNHeld <> 0) and (WarpChordDHeld <> 0) then
-      WarpLevelRequested := 1;
-  end
-  else if LastKeyboardScanCode = $99 then
-  begin
-    GodChordPHeld := 0;
-    LevelCheatPBHeld := 0;
-  end
-  else if LastKeyboardScanCode = $24 then
-  begin
-    GodChordJHeld := 1;
-    if (GodChordPHeld <> 0) and (GodChordXHeld <> 0) then
+      AmmoChordVHeld := 1;
+      if (AmmoChordUHeld <> 0) and (AmmoChordKHeld <> 0) and (ExtraAmmoCheatUsed = 0) then
+      begin
+        PlayerAmmo := PlayerAmmo + 25;
+        ExtraAmmoCheatUsed := 1;
+        StatusBarCameraX := -1;
+      end;
+    end
+    else if LastKeyboardScanCode = $AF then
+      AmmoChordVHeld := 0
+    else if LastKeyboardScanCode = $25 then
     begin
-      if PlayerGodMode = 0 then
-        PlayerGodMode := 1
-      else
-        PlayerGodMode := 0;
-      GodModeMessagePending := 1;
-    end;
-  end
-  else if LastKeyboardScanCode = $A4 then
-    GodChordJHeld := 0
-  else if LastKeyboardScanCode = $2D then
-  begin
-    GodChordXHeld := 1;
-    if (GodChordPHeld <> 0) and (GodChordJHeld <> 0) then
+      AmmoChordKHeld := 1;
+      if (AmmoChordUHeld <> 0) and (AmmoChordVHeld <> 0) and (ExtraAmmoCheatUsed = 0) then
+      begin
+        PlayerAmmo := PlayerAmmo + 25;
+        ExtraAmmoCheatUsed := 1;
+        StatusBarCameraX := -1;
+      end;
+    end
+    else if LastKeyboardScanCode = $A5 then
+      AmmoChordKHeld := 0
+    else if LastKeyboardScanCode = $2C then
     begin
-      if PlayerGodMode = 0 then
-        PlayerGodMode := 1
-      else
-        PlayerGodMode := 0;
-      GodModeMessagePending := 1;
-    end;
-  end
-  else if LastKeyboardScanCode = $30 then
-    LevelCheatPBHeld := 1
-  else if LastKeyboardScanCode = $B0 then
-    LevelCheatPBHeld := 0
-  else if LastKeyboardScanCode = $AD then
-    GodChordXHeld := 0
-  else if LastKeyboardScanCode = $18 then
-  begin
-    WarpChordOHeld := 1;
-    if (LevelCheatPBHeld <> 0) and (WarpChordNHeld <> 0) and (WarpChordDHeld <> 0) then
-      WarpLevelRequested := 1;
-  end
-  else if LastKeyboardScanCode = $98 then
-    WarpChordOHeld := 0
-  else if LastKeyboardScanCode = $31 then
-  begin
-    WarpChordNHeld := 1;
-    if (WarpChordOHeld <> 0) and (LevelCheatPBHeld <> 0) and (WarpChordDHeld <> 0) then
-      WarpLevelRequested := 1;
-  end
-  else if LastKeyboardScanCode = $B1 then
-    WarpChordNHeld := 0
-  else if LastKeyboardScanCode = $20 then
-  begin
-    WarpChordDHeld := 1;
-    if (WarpChordOHeld <> 0) and (WarpChordNHeld <> 0) and (LevelCheatPBHeld <> 0) then
-      WarpLevelRequested := 1;
-  end
-  else if LastKeyboardScanCode = $A0 then
-    WarpChordDHeld := 0;
+      InventoryChordZHeld := 1;
+      if (InventoryChordGHeld <> 0) and (InventoryChordIHeld <> 0) then
+      begin
+        PlayerHasFloppyDisk := 1;
+        PlayerHasDynamite := 1;
+        StatusBarCameraX := -1;
+      end;
+    end
+    else if LastKeyboardScanCode = $AC then
+      InventoryChordZHeld := 0
+    else if LastKeyboardScanCode = $22 then
+    begin
+      InventoryChordGHeld := 1;
+      if (InventoryChordZHeld <> 0) and (InventoryChordIHeld <> 0) then
+      begin
+        PlayerHasFloppyDisk := 1;
+        PlayerHasDynamite := 1;
+        StatusBarCameraX := -1;
+      end;
+    end
+    else if LastKeyboardScanCode = $A2 then
+      InventoryChordGHeld := 0
+    else if LastKeyboardScanCode = $17 then
+    begin
+      InventoryChordIHeld := 1;
+      if (InventoryChordGHeld <> 0) and (InventoryChordZHeld <> 0) then
+      begin
+        PlayerHasFloppyDisk := 1;
+        PlayerHasDynamite := 1;
+        StatusBarCameraX := -1;
+      end;
+    end
+    else if LastKeyboardScanCode = $97 then
+      InventoryChordIHeld := 0
+    else if LastKeyboardScanCode = $19 then
+    begin
+      GodChordPHeld := 1;
+      if (GodChordJHeld <> 0) and (GodChordXHeld <> 0) then
+      begin
+        if PlayerGodMode = 0 then
+          PlayerGodMode := 1
+        else
+          PlayerGodMode := 0;
+        GodModeMessagePending := 1;
+      end;
+      LevelCheatPBHeld := 1;
+      if (WarpChordOHeld <> 0) and (WarpChordNHeld <> 0) and (WarpChordDHeld <> 0) then
+        WarpLevelRequested := 1;
+    end
+    else if LastKeyboardScanCode = $99 then
+    begin
+      GodChordPHeld := 0;
+      LevelCheatPBHeld := 0;
+    end
+    else if LastKeyboardScanCode = $24 then
+    begin
+      GodChordJHeld := 1;
+      if (GodChordPHeld <> 0) and (GodChordXHeld <> 0) then
+      begin
+        if PlayerGodMode = 0 then
+          PlayerGodMode := 1
+        else
+          PlayerGodMode := 0;
+        GodModeMessagePending := 1;
+      end;
+    end
+    else if LastKeyboardScanCode = $A4 then
+      GodChordJHeld := 0
+    else if LastKeyboardScanCode = $2D then
+    begin
+      GodChordXHeld := 1;
+      if (GodChordPHeld <> 0) and (GodChordJHeld <> 0) then
+      begin
+        if PlayerGodMode = 0 then
+          PlayerGodMode := 1
+        else
+          PlayerGodMode := 0;
+        GodModeMessagePending := 1;
+      end;
+    end
+    else if LastKeyboardScanCode = $30 then
+      LevelCheatPBHeld := 1
+    else if LastKeyboardScanCode = $B0 then
+      LevelCheatPBHeld := 0
+    else if LastKeyboardScanCode = $AD then
+      GodChordXHeld := 0
+    else if LastKeyboardScanCode = $18 then
+    begin
+      WarpChordOHeld := 1;
+      if (LevelCheatPBHeld <> 0) and (WarpChordNHeld <> 0) and (WarpChordDHeld <> 0) then
+        WarpLevelRequested := 1;
+    end
+    else if LastKeyboardScanCode = $98 then
+      WarpChordOHeld := 0
+    else if LastKeyboardScanCode = $31 then
+    begin
+      WarpChordNHeld := 1;
+      if (WarpChordOHeld <> 0) and (LevelCheatPBHeld <> 0) and (WarpChordDHeld <> 0) then
+        WarpLevelRequested := 1;
+    end
+    else if LastKeyboardScanCode = $B1 then
+      WarpChordNHeld := 0
+    else if LastKeyboardScanCode = $20 then
+    begin
+      WarpChordDHeld := 1;
+      if (WarpChordOHeld <> 0) and (WarpChordNHeld <> 0) and (LevelCheatPBHeld <> 0) then
+        WarpLevelRequested := 1;
+    end
+    else if LastKeyboardScanCode = $A0 then
+      WarpChordDHeld := 0;
 
-ChainKeyboardHandler:
+  end;
   if (PlayerUpHeld = 0) and (PlayerDownHeld = 0) and (PlayerRightHeld = 0) and (PlayerLeftHeld = 0) then
     MoveRampTicks := 0;
-  { chain to the previous INT 9 handler (d_70D2, saved by p_0e67) }
-  inline($FF/$36/>SavedKeyboardVector+2/     { push word ptr OldInt9+2 }
-         $FF/$36/>SavedKeyboardVector/       { push word ptr OldInt9 }
+  { chain to the previous INT 9 handler (SavedKeyboardVector, saved by InstallGameHandlers) }
+  inline($FF/$36/>SavedKeyboardVector+2/     { push word ptr SavedKeyboardVector+2 }
+         $FF/$36/>SavedKeyboardVector/       { push word ptr SavedKeyboardVector }
          $5B/$58/$87/$5E/$0E/$87/$46/$10/$89/$EC/$5D/$07/$1F/$5F/$5E/$5A/$59/$CB);
   { acknowledge the keyboard and send EOI (unreachable after the chain; the original
     has $80 where MOV AL,20h would be $B0) }
@@ -408,8 +414,8 @@ end;
 { Reads joystick axes, compares each with calibrated center +/-50. }
 procedure PollJoystickControls;
 var
-  PollJoystickControls_ShotSlot: Integer;
-  PollJoystickControl_ShotSpawned: Byte;
+  ShotSlot: Integer;
+  ShotSpawned: Byte;
 begin
   JoystickAxisX := ReadJoystickAxis(0);
   JoystickAxisY := ReadJoystickAxis(1);
@@ -498,39 +504,39 @@ begin
   if PlayerDying <> 0 then
     Exit;
 
-  PollJoystickControl_ShotSpawned := 0;
-  PollJoystickControls_ShotSlot := 0;
+  ShotSpawned := 0;
+  ShotSlot := 0;
   repeat
-    Inc(PollJoystickControls_ShotSlot);
-    if PlayerShots[PollJoystickControls_ShotSlot].ActorSlotInactive = 1 then
+    Inc(ShotSlot);
+    if PlayerShots[ShotSlot].ActorSlotInactive = 1 then
     begin
-      PlayerShots[PollJoystickControls_ShotSlot].ActorWorldX := GameActors[1].ActorWorldX;
-      PlayerShots[PollJoystickControls_ShotSlot].ActorWorldY := GameActors[1].ActorWorldY;
-      PlayerShots[PollJoystickControls_ShotSlot].ActorPreviousX := GameActors[1].ActorPreviousX;
-      PlayerShots[PollJoystickControls_ShotSlot].ActorPreviousY := GameActors[1].ActorPreviousY;
-      PlayerShots[PollJoystickControls_ShotSlot].ActorSpriteBase := 39;
+      PlayerShots[ShotSlot].ActorWorldX := GameActors[1].ActorWorldX;
+      PlayerShots[ShotSlot].ActorWorldY := GameActors[1].ActorWorldY;
+      PlayerShots[ShotSlot].ActorPreviousX := GameActors[1].ActorPreviousX;
+      PlayerShots[ShotSlot].ActorPreviousY := GameActors[1].ActorPreviousY;
+      PlayerShots[ShotSlot].ActorSpriteBase := 39;
       if (GameActors[1].ActorSpriteBase = 1) or (GameActors[1].ActorSpriteBase = 13) or (GameActors[1].ActorSpriteBase = 9) or
       (GameActors[1].ActorSpriteBase = 11) then
       begin
-        PlayerShots[PollJoystickControls_ShotSlot].ActorDirectionX := 1;
+        PlayerShots[ShotSlot].ActorDirectionX := 1;
         JoystickFirePosePending := 1;
         GameActors[1].ActorSpriteBase := 11;
       end
       else
       begin
-        PlayerShots[PollJoystickControls_ShotSlot].ActorDirectionX := -1;
+        PlayerShots[ShotSlot].ActorDirectionX := -1;
         JoystickFirePosePending := 1;
         GameActors[1].ActorSpriteBase := 12;
       end;
-      PlayerShots[PollJoystickControls_ShotSlot].DirectionY := 0;
-      PlayerShots[PollJoystickControls_ShotSlot].ActorAnimationCounter := 1;
-      PlayerShots[PollJoystickControls_ShotSlot].ActorMovementStep := 8;
-      PlayerShots[PollJoystickControls_ShotSlot].ActorCounterA := 0;
-      PlayerShots[PollJoystickControls_ShotSlot].ActorCounterB := 0;
-      PlayerShots[PollJoystickControls_ShotSlot].ActorKindCode := 7;
-      PlayerShots[PollJoystickControls_ShotSlot].ActorSlotInactive := 0;
-      PlayerShots[PollJoystickControls_ShotSlot].ActorRemovalPending := 0;
-      PollJoystickControl_ShotSpawned := 1;
+      PlayerShots[ShotSlot].DirectionY := 0;
+      PlayerShots[ShotSlot].ActorAnimationCounter := 1;
+      PlayerShots[ShotSlot].ActorMovementStep := 8;
+      PlayerShots[ShotSlot].ActorCounterA := 0;
+      PlayerShots[ShotSlot].ActorCounterB := 0;
+      PlayerShots[ShotSlot].ActorKindCode := 7;
+      PlayerShots[ShotSlot].ActorSlotInactive := 0;
+      PlayerShots[ShotSlot].ActorRemovalPending := 0;
+      ShotSpawned := 1;
       Dec(PlayerAmmo);
       StatusBarCameraX := -1;
       StartSoundEffect(2);
@@ -540,7 +546,7 @@ begin
       else
         GameActors[1].ActorSpriteBase := 12;
     end;
-  until (PollJoystickControls_ShotSlot = PlayerProjectileLimit) or (PollJoystickControl_ShotSpawned <> 0);
+  until (ShotSlot = PlayerProjectileLimit) or (ShotSpawned <> 0);
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F-}
@@ -629,6 +635,8 @@ begin
   end;
   inline($FB);
 end;
+
+{ Interrupt and exit-handler installation/restoration. }
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
 { Restores ExitProc and the saved INT 1Ch and INT 9 vectors. }
@@ -640,7 +648,7 @@ begin
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F-}
-{ Saves ExitProc/INT 1Ch/INT 9 and installs p_0e33, p_0be5 and p_0000. }
+{ Saves ExitProc/INT 1Ch/INT 9 and installs RestoreExitHandlers, TimerInterrupt and KeyboardInterrupt. }
 procedure InstallGameHandlers;
 begin
   SavedExitProc := ExitProc;
@@ -658,9 +666,11 @@ begin
   SetIntVec($1C, SavedTimerVector);
   SetIntVec($09, SavedKeyboardVector);
 end;
+
+{ Persistent episode configuration. }
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$F+}
-{ Copies sound/input/video settings into d_6B44 and writes SAM1.CFG/SAM2.CFG/SAM3.CFG. }
+{ Copies sound/input/video settings into GameConfiguration and writes SAM1.CFG/SAM2.CFG/SAM3.CFG. }
 procedure SaveGameConfig;
 var
   ConfigFile: TGameConfigFile;
@@ -694,28 +704,28 @@ end;
 { Reads the episode CFG into high scores/settings or installs default arrows, Ctrl jump. }
 procedure LoadGameConfig;
 var
-  LoadGameConfig_ConfigFile: t_p_0f75_tconfi_TGameConfigFile;
+  ConfigFile: TGameConfigInputFile;
   ConfigOpened: Boolean;
 begin
 {$I-}
 {$IFDEF SAM1}
-  Assign(LoadGameConfig_ConfigFile, 'SAM1.CFG');
+  Assign(ConfigFile, 'SAM1.CFG');
 {$ENDIF}
 {$IFDEF SAM2}
-  Assign(LoadGameConfig_ConfigFile, 'SAM2.CFG');
+  Assign(ConfigFile, 'SAM2.CFG');
 {$ENDIF}
 {$IFDEF SAM3}
-  Assign(LoadGameConfig_ConfigFile, 'SAM3.CFG');
+  Assign(ConfigFile, 'SAM3.CFG');
 {$ENDIF}
-  Reset(LoadGameConfig_ConfigFile);
+  Reset(ConfigFile);
   ConfigOpened := IOResult = 0;
-  Reset(LoadGameConfig_ConfigFile);
+  Reset(ConfigFile);
   ConfigOpened := IOResult = 0;
 
   if ConfigOpened then
   begin
-    Read(LoadGameConfig_ConfigFile, GameConfiguration);
-    Close(LoadGameConfig_ConfigFile);
+    Read(ConfigFile, GameConfiguration);
+    Close(ConfigFile);
     SoundEnabled := GameConfiguration.ConfigSoundEnabled;
     UpKeyScanCode := GameConfiguration.ConfigUpScanCode;
     DownKeyScanCode := GameConfiguration.ConfigDownScanCode;
@@ -745,6 +755,8 @@ begin
   end;
 {$I+}
 end;
+
+{ BIOS video probing for episodes 2 and 3. }
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$IFDEF SAM1}
 {$ELSE}
@@ -774,7 +786,7 @@ begin
 end;
 {$S-}{$I-}{$R-}{$B-}{$F-}
 {$ENDIF}
-{ Main program body checks memory/video, loads three SND banks, runs title/game loops. }
+{ Startup, resource loading, island/mission transitions and the main game loop. }
 begin
   if MemAvail < 200000 then
   begin
@@ -836,9 +848,9 @@ begin
     SoundEnabled := 1;
     InitializeGameDefaults;
     CaptureGameSnapshot;
-    StartupWorkOne := 0;
-    StartupWorkTwo := 0;
-    StartupWorkThree := 0;
+    UnusedStartupWord1 := 0;
+    UnusedStartupWord2 := 0;
+    UnusedStartupWord3 := 0;
     RestoreGamePalette(0);
     JoystickActive := IsJoystickPresent;
     JoystickHorizontalMoved := 0;
@@ -905,7 +917,7 @@ begin
             RedrawLevelCell(GameActors[1].ActorPreviousX+16,GameActors[1].ActorPreviousY-16);
             RedrawLevelCell(GameActors[1].ActorPreviousX+16,GameActors[1].ActorPreviousY);
             RedrawLevelCell(GameActors[1].ActorPreviousX+16,GameActors[1].ActorPreviousY+16);
-            {1554}
+
             for SharedLoopIndexA := 2 to 25 do
               if GameActors[SharedLoopIndexA].ActorSlotInactive = 0 then
                 if GameActors[SharedLoopIndexA].ActorRemovalPending <> 0 then
@@ -972,7 +984,7 @@ begin
                     end;
                   end;
                 end;
-            {1978}
+
             for SharedLoopIndexA := 1 to PlayerProjectileLimit do
             begin
               RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorPreviousX,PlayerShots[SharedLoopIndexA].ActorPreviousY);
@@ -981,7 +993,7 @@ begin
               RedrawLevelCell(PlayerShots[SharedLoopIndexA].ActorPreviousX+16,PlayerShots[SharedLoopIndexA].ActorPreviousY+
               16);
             end;
-            {1a21}
+
             if (PlayerDying=0) and (PlayerLeavingLevel=0) then
             begin
               MovePlayerAndCamera;
@@ -1026,7 +1038,7 @@ begin
                 else Inc(GameActors[1].ActorWorldX,2);
             end;
             UpdateActorsAndShots;
-            {1b62}
+
             for SharedLoopIndexA := 1 to PlayerProjectileLimit do
               if PlayerShots[SharedLoopIndexA].ActorSlotInactive=0 then
               begin
@@ -1080,7 +1092,7 @@ begin
                     PgBlitMasked16x16(SpriteBank001^.SpriteEntries[PlayerShots[SharedLoopIndexA].ActorSpriteBase-1+
                     PlayerShots[SharedLoopIndexA].ActorAnimationCounter].SpriteDataBytes[1],
     PlayerShots[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
                   PlayerShots[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
                   end;
                   DrawCellForeground(PlayerShots[SharedLoopIndexA].ActorWorldX,PlayerShots[SharedLoopIndexA].ActorWorldY);
@@ -1090,7 +1102,7 @@ begin
                   16);
                 end;
               end;
-            {2014}
+
             if PlayerTeleporting<>0 then
             begin
               Dec(TeleportAnimationTick);
@@ -1132,7 +1144,7 @@ begin
                 30: GameActors[1].FlashFrames := 5;
               end;
             end;
-            {2139}
+
             if GameActors[1].FlashFrames>0 then
             begin
               PgOrShifted16x16(PlayerSpriteBank^.SpriteEntries[GameActors[1].ActorAnimationCounter div
@@ -1162,7 +1174,7 @@ begin
               GameActors[1].ActorSpriteBase := 5
             else if (PlayerRightHeld<>0) and (GameActors[1].ActorSpriteBase=11) then
               GameActors[1].ActorSpriteBase := 1;
-            {227e}
+
             for SharedLoopIndexA := 2 to 25 do
               if GameActors[SharedLoopIndexA].ActorSlotInactive=0 then
                 if GameActors[SharedLoopIndexA].ActorRemovalPending=0 then
@@ -1207,49 +1219,49 @@ case GameActors[SharedLoopIndexA].ActorSpriteBase of
   PgOrShifted16x16(SpriteBank101^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-100+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 151..200:
   PgOrShifted16x16(SpriteBank151^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-150+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 251..300:
   PgOrShifted16x16(SpriteBank251^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-250+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 301..350:
   PgOrShifted16x16(SpriteBank301^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-300+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 351..400:
   PgOrShifted16x16(SpriteBank351^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-350+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 401..450:
   PgOrShifted16x16(SpriteBank401^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-400+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 451..487:
   PgOrShifted16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 488..490:
   PgOrShifted16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
   GameActors[SharedLoopIndexA].ActorAnimationCounter shr 3].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 491:
   PgOrShifted16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
@@ -1260,43 +1272,43 @@ case GameActors[SharedLoopIndexA].ActorSpriteBase of
   PgOrShifted16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+(
   GameActors[SharedLoopIndexA].ActorAnimationCounter-21) shr 3].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 495..500:
   PgOrShifted16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 501..550:
   PgOrShifted16x16(SpriteBank001^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-500+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 601..650:
   PgOrShifted16x16(SpriteBank601^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-600+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 651..700:
   PgOrShifted16x16(SpriteBank651^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-650+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 701..750:
   PgOrShifted16x16(SpriteBank701^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-700+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 751..800:
   PgOrShifted16x16(SpriteBank751^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-750+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 801: begin
 PgOrShifted16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-800+
@@ -1339,13 +1351,13 @@ end;
   PgOrShifted16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-800+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 837..850:
   PgOrShifted16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-800+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 851: begin
 PgOrShifted16x16(SpriteBank851^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-850+
@@ -1367,7 +1379,7 @@ case GameActors[SharedLoopIndexA].ActorSpriteBase of
   PgBlitMasked16x16(SpriteBank001^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 101: begin
     if GameActors[SharedLoopIndexA].StateValueB=0 then
@@ -1375,7 +1387,7 @@ case GameActors[SharedLoopIndexA].ActorSpriteBase of
       PgBlitMasked16x16(SpriteBank101^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-100+
       GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16);
       if GameActors[SharedLoopIndexA].ActorDirectionX<0 then
         PgBlitMasked16x16(SpriteBank101^.SpriteEntries[5].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX shr
@@ -1395,7 +1407,7 @@ case GameActors[SharedLoopIndexA].ActorSpriteBase of
       PgBlitMasked16x16(SpriteBank101^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-96+
       GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
     end;
   end;
@@ -1403,109 +1415,109 @@ case GameActors[SharedLoopIndexA].ActorSpriteBase of
   PgBlitMasked16x16(SpriteBank101^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-100+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 151..200:
   PgBlitMasked16x16(SpriteBank151^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-150+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 251..300:
   PgBlitMasked16x16(SpriteBank251^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-250+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 301..350:
   PgBlitMasked16x16(SpriteBank301^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-300+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 351..400:
   PgBlitMasked16x16(SpriteBank351^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-350+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 401..450:
   PgBlitMasked16x16(SpriteBank401^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-400+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 451..487:
   PgBlitMasked16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 488..490:
   PgBlitMasked16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
   GameActors[SharedLoopIndexA].ActorAnimationCounter shr 3].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 491:
   PgBlitMasked16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 492..494:
   PgBlitMasked16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+(
   GameActors[SharedLoopIndexA].ActorAnimationCounter-21) shr 3].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 495..500:
   PgBlitMasked16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 501..550:
   PgBlitMasked16x16(SpriteBank001^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-500+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 601..624:
   PgBlitMasked16x16(SpriteBank601^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-600+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 625:
   PgBlitMasked16x16(SpriteBank601^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-600+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 3].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 626..650:
   PgBlitMasked16x16(SpriteBank601^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-600+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 651..700:
   PgBlitMasked16x16(SpriteBank651^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-650+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 701..750:
   PgBlitMasked16x16(SpriteBank701^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-700+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 751..800:
   PgBlitMasked16x16(SpriteBank751^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-750+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 801: begin
 PgBlitMasked16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-800+
@@ -1522,7 +1534,7 @@ end;
       PgBlitMasked16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-800+
       GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow-16);
       if GameActors[SharedLoopIndexA].ActorDirectionX<0 then
         PgBlitMasked16x16(SpriteBank801^.SpriteEntries[21].SpriteDataBytes[1],GameActors[SharedLoopIndexA].ActorWorldX shr
@@ -1542,7 +1554,7 @@ end;
       PgBlitMasked16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-796+
       GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
     end;
   end;
@@ -1550,13 +1562,13 @@ end;
   PgBlitMasked16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-800+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 837..850:
   PgBlitMasked16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-800+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX shr 3,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 851: begin
 PgBlitMasked16x16(SpriteBank851^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-850+
@@ -1609,49 +1621,49 @@ case GameActors[SharedLoopIndexA].ActorSpriteBase of
   PgBlitMaskedShifted16x16(SpriteBank101^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-100+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 151..200:
   PgBlitMaskedShifted16x16(SpriteBank151^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-150+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 251..300:
   PgBlitMaskedShifted16x16(SpriteBank251^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-250+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 301..350:
   PgBlitMaskedShifted16x16(SpriteBank301^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-300+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 351..400:
   PgBlitMaskedShifted16x16(SpriteBank351^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-350+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 401..450:
   PgBlitMaskedShifted16x16(SpriteBank401^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-400+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 451..487:
   PgBlitMaskedShifted16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 488..490:
   PgBlitMaskedShifted16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
   GameActors[SharedLoopIndexA].ActorAnimationCounter shr 3].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 491:
   PgBlitMaskedShifted16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
@@ -1662,19 +1674,19 @@ case GameActors[SharedLoopIndexA].ActorSpriteBase of
   PgBlitMaskedShifted16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+(
   GameActors[SharedLoopIndexA].ActorAnimationCounter-21) shr 3].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 495..500:
   PgBlitMaskedShifted16x16(SpriteBank451^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-450+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 501..550:
   PgBlitMaskedShifted16x16(SpriteBank001^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-500+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 601..650:
   PgBlitMaskedShifted16x16(SpriteBank601^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-600+
@@ -1684,19 +1696,19 @@ case GameActors[SharedLoopIndexA].ActorSpriteBase of
   PgBlitMaskedShifted16x16(SpriteBank651^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-650+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 701..750:
   PgBlitMaskedShifted16x16(SpriteBank701^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-700+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 751..800:
   PgBlitMaskedShifted16x16(SpriteBank751^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-750+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 801: begin
 PgBlitMaskedShifted16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-800+
@@ -1739,13 +1751,13 @@ end;
   PgBlitMaskedShifted16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-800+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 837..850:
   PgBlitMaskedShifted16x16(SpriteBank801^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-800+
   GameActors[SharedLoopIndexA].ActorAnimationCounter div 5].SpriteDataBytes[1],
     GameActors[SharedLoopIndexA].ActorWorldX,
-    
+
       GameActors[SharedLoopIndexA].ActorWorldY+GameDrawBufferRow);
 851: begin
 PgBlitMaskedShifted16x16(SpriteBank851^.SpriteEntries[GameActors[SharedLoopIndexA].ActorSpriteBase-850+
@@ -1759,7 +1771,7 @@ PgBlitMaskedShifted16x16(SpriteBank851^.SpriteEntries[GameActors[SharedLoopIndex
 end;
 end;
                     end;
-            {49d1}
+
   DrawCellForeground(GameActors[1].ActorPreviousX-16,GameActors[1].ActorPreviousY-16);
   DrawCellForeground(GameActors[1].ActorPreviousX-16,GameActors[1].ActorPreviousY);
   DrawCellForeground(GameActors[1].ActorPreviousX-16,GameActors[1].ActorPreviousY+16);
@@ -1841,7 +1853,7 @@ if PlayerDying<>0 then
   PgBlitMaskedShifted16x16(PlayerSpriteBank^.SpriteEntries[GameActors[1].ActorAnimationCounter div
   5+GameActors[1].ActorSpriteBase].SpriteDataBytes[1],
     GameActors[1].ActorWorldX,GameActors[1].ActorWorldY+GameDrawBufferRow);
-            {4fd4}
+
             ShowGameDrawBuffer;
             if ConfusionEndedMessagePending <> 0 then
             begin

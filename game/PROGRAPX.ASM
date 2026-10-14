@@ -1,7 +1,5 @@
-; ProGraphx 2.0 toolbox object: SAM1 u9:00E6-303A.
-; CS scratch is reserved with ?; it is not linker-buffer data.
-; Explicit SHORT/NEAR preserves the original jump encodings.
-; NOPs are the original reserved forward-JMP slots.
+; ProGraphx 2.0 by Peder Jungck, assembly implementation for PROGRPHX.
+; EGA/VGA drawing, sprites, fonts and video-buffer copies; undefined scratch is retained.
 CODE segment byte public
 assume cs:CODE
 public PgSetToolboxVideoMode,PgSetBiosVideoMode,PgSetScreenStride,PgPanDisplayAtRetraceStart,PgPanDisplayAtRetraceEnd
@@ -33,11 +31,16 @@ PgTransferYEnd         dw ?
 PgTransferXStart       dw ?
 PgTransferYStart       dw ?
 PgScreenStrideBytes          dw 40
-PgToolboxMarker         dw 0666h
-PgBannerNewlines        db 23 dup (10)
-PgProductBanner                 db 'ProGraphx EGA/VGA Toolbox',13,10,26
-PgVersionBanner                db 'Version 2.0 320x200 EGA/VGA',13,10,26
-PgCopyrightBanner              db 'Copyright 1991 by Peder Jungck',13,10,26
+; Unused storage retains the original object layout.
+UnusedPgToolboxMarker         dw 0666h
+; Unused storage retains the original object layout.
+UnusedPgBannerNewlines        db 23 dup (10)
+; Unused storage retains the original object layout.
+UnusedPgProductBanner                 db 'ProGraphx EGA/VGA Toolbox',13,10,26
+; Unused storage retains the original object layout.
+UnusedPgVersionBanner                db 'Version 2.0 320x200 EGA/VGA',13,10,26
+; Unused storage retains the original object layout.
+UnusedPgCopyrightBanner              db 'Copyright 1991 by Peder Jungck',13,10,26
 PgDrawPage              dw 0
 PgDrawColor             dw 1
 PgDrawOperation         db 0
@@ -47,8 +50,9 @@ PgClipTopRow               dw 0
 PgClipBottomRow            dw 199
 PgClipLeftPixel       dw 0
 PgClipRightPixel      dw 319
-; set toolbox video mode
-; src/asm/u9.asm u9_01a3: set toolbox video mode.
+
+; Video modes, panning and palette control.
+; Set toolbox video mode.
 PgSetToolboxVideoMode proc far
     push bp
     mov bp,sp
@@ -73,8 +77,7 @@ mode_set_bios:
     retf 2
 PgSetToolboxVideoMode endp
 
-; set bios video mode
-; src/asm/u9.asm u9_01c5: set bios video mode.
+; Set bios video mode.
 PgSetBiosVideoMode proc far
     push bp
     mov bp,sp
@@ -85,8 +88,7 @@ PgSetBiosVideoMode proc far
     retf 2
 PgSetBiosVideoMode endp
 
-; set screen stride
-; src/asm/u9.asm u9_01d3: set screen stride.
+; Set screen stride.
 PgSetScreenStride proc far
     push bp
     mov bp,sp
@@ -210,7 +212,7 @@ pan_b_repeat_35:
 PgPanDisplayAtRetraceEnd endp
 
 ; set split scanline
-; Programs line-compare register 18h and overflow bit 8; p_1148 calls this path when the adapter is not VGA.
+; Programs line-compare register 18h and overflow bit 8; RunSecretAgent calls this path when the adapter is not VGA.
 PgSetEgaSplitScanline proc far
     push bp
     mov bp,sp
@@ -244,8 +246,7 @@ split_repeat_15:
     retf 2
 PgSetEgaSplitScanline endp
 
-; wait vertical retrace
-; src/asm/u9.asm u9_02db: wait vertical retrace.
+; Wait vertical retrace.
 PgWaitVerticalRetrace proc far
     push es
     xor ax,ax
@@ -273,7 +274,7 @@ retrace_continue_19:
 PgWaitVerticalRetrace endp
 
 ; set split scanline registers
-; Programs line-compare and overflow registers including register 9; p_1148 selects this path for VGA.
+; Programs line-compare and overflow registers including register 9; RunSecretAgent selects this path for VGA.
 PgSetVgaSplitScanline proc far
     push bp
     mov bp,sp
@@ -315,8 +316,7 @@ splitregs_continue_38:
     retf 2
 PgSetVgaSplitScanline endp
 
-; set border color
-; src/asm/u9.asm u9_0337: set border color.
+; Set border color.
 PgSetBorderColor proc far
     push bp
     mov bp,sp
@@ -329,8 +329,7 @@ PgSetBorderColor proc far
     retf 2
 PgSetBorderColor endp
 
-; reset current video mode
-; src/asm/u9.asm u9_0349: reset current video mode.
+; Reset current video mode.
 PgResetCurrentVideoMode proc far
     mov ah,0fh
     int 10h
@@ -339,8 +338,7 @@ PgResetCurrentVideoMode proc far
     retf
 PgResetCurrentVideoMode endp
 
-; set palette register
-; src/asm/u9.asm u9_0352: set palette register.
+; Set palette register.
 PgSetPaletteRegister proc far
     push bp
     mov bp,sp
@@ -352,8 +350,7 @@ PgSetPaletteRegister proc far
     retf 4
 PgSetPaletteRegister endp
 
-; set text direction
-; src/asm/u9.asm u9_0364: set text direction.
+; Set text direction.
 PgSetTextDirection proc far
     push bp
     mov bp,sp
@@ -363,8 +360,8 @@ PgSetTextDirection proc far
     retf 2
 PgSetTextDirection endp
 
-; blit masked 32x16
-; src/asm/u9.asm u9_0372: blit masked 32x16.
+; Fixed-size masked sprites.
+; Blit masked 32x16.
 PgBlitMasked32x16 proc far
     push bp
     mov bp,sp
@@ -513,8 +510,7 @@ masked32_continue_94:
     retf 8
 PgBlitMasked32x16 endp
 
-; blit masked 16x16
-; src/asm/u9.asm u9_0475: blit masked 16x16.
+; Blit masked 16x16.
 PgBlitMasked16x16 proc far
     push bp
     mov bp,sp
@@ -609,8 +605,7 @@ masked16_row_loop_44:
     retf 8
 PgBlitMasked16x16 endp
 
-; blit masked 8x8
-; src/asm/u9.asm u9_051f: blit masked 8x8.
+; Blit masked 8x8.
 PgBlitMasked8x8 proc far
     push bp
     mov bp,sp
@@ -681,8 +676,7 @@ masked8_row_loop_40:
 PgBlitMasked8x8 endp
 
 PgPlaneRectHeight      dw 0
-; blit single plane rectangle
-; src/asm/u9.asm u9_05a1: blit single plane rectangle.
+; Blit single plane rectangle.
 PgBlitSinglePlaneRectangle proc far
     push bp
     mov bp,sp
@@ -748,6 +742,7 @@ plane_rect_equal_73:
     retf 0ch
 PgBlitSinglePlaneRectangle endp
 
+; Drawing state, pixels and mouse cursor.
 ; set color or plane mask
 ; Stores the requested word in CS:draw_color, used as the four-plane fill/pixel color.
 PgSetDrawColor proc far
@@ -759,8 +754,7 @@ PgSetDrawColor proc far
     retf 2
 PgSetDrawColor endp
 
-; select draw page
-; src/asm/u9.asm u9_0633: select draw page.
+; Select draw page.
 PgSelectDrawPage proc far
     push bp
     mov bp,sp
@@ -770,8 +764,7 @@ PgSelectDrawPage proc far
     retf 2
 PgSelectDrawPage endp
 
-; put pixel
-; src/asm/u9.asm u9_0641: put pixel.
+; Put pixel.
 PgPutPixel proc far
     push bp
     mov bp,sp
@@ -837,8 +830,7 @@ putpixel_equal_17:
     retf 4
 PgPutPixel endp
 
-; put pixel clipped
-; src/asm/u9.asm u9_06c1: put pixel clipped.
+; Put pixel clipped.
 PgPutPixelClipped proc far
     push bp
     mov bp,sp
@@ -913,8 +905,7 @@ clip_pixel_less_97:
     retf 4
 PgPutPixelClipped endp
 
-; get pixel
-; src/asm/u9.asm u9_075d: get pixel.
+; Get pixel.
 PgGetPixel proc far
     push bp
     mov bp,sp
@@ -971,8 +962,7 @@ getpixel_equal_5b:
     retf 4
 PgGetPixel endp
 
-; show video page bios
-; src/asm/u9.asm u9_07c6: show video page bios.
+; Show video page bios.
 PgShowVideoPageBios proc far
     push bp
     mov bp,sp
@@ -1001,8 +991,9 @@ PgSetMouseCursorShape proc far
 PgSetMouseCursorShape endp
 
 PgByteRectHeight       dw 0
-; fill rectangle byte aligned
-; src/asm/u9.asm u9_07ee: fill rectangle byte aligned.
+
+; Rectangles and line drawing.
+; Fill rectangle byte aligned.
 PgFillRectangleByteAligned proc far
     push bp
     mov bp,sp
@@ -1069,8 +1060,7 @@ rect_bytes_equal_81:
     retf 8
 PgFillRectangleByteAligned endp
 
-; fill rectangle clipped
-; src/asm/u9.asm u9_087e: fill rectangle clipped.
+; Fill rectangle clipped.
 PgFillRectangleClipped proc far
     push bp
     mov bp,sp
@@ -1189,8 +1179,7 @@ clip_rect_bytes_continue_fa:
     retf 8
 PgFillRectangleClipped endp
 
-; pixel address and bit helper
-; src/asm/u9.asm u9_098a: pixel address and bit helper.
+; Pixel address and bit helper.
 PgPixelAddressAndBitHelper proc far
     mov cl,bl
     push dx
@@ -1229,8 +1218,7 @@ PgLineRowAddressStep            dw ?
 PgLineDoubleMinorDelta            dw ?
 PgLineErrorAdjustment             dw ?
 PgLineMajorAxis       dw ?
-; draw line bresenham
-; src/asm/u9.asm u9_09ce: draw line bresenham.
+; Draw line bresenham.
 PgDrawLineBresenham proc far
     push bp
     mov bp,sp
@@ -1432,8 +1420,7 @@ line_a_continue_18a:
     retf 8
 PgDrawLineBresenham endp
 
-; draw line bresenham variant
-; src/asm/u9.asm u9_0b6a: draw line bresenham variant.
+; Draw line bresenham variant.
 PgDrawLineBresenhamVariant proc far
     push bp
     mov bp,sp
@@ -1637,8 +1624,7 @@ line_b_continue_18e:
     retf 8
 PgDrawLineBresenhamVariant endp
 
-; draw rectangle outline
-; src/asm/u9.asm u9_0d0a: draw rectangle outline.
+; Draw rectangle outline.
 PgDrawRectangleOutline proc far
     push bp
     mov bp,sp
@@ -1814,8 +1800,7 @@ outline_continue_127:
     retf 8
 PgDrawRectangleOutline endp
 
-; draw rectangle outline clipped
-; src/asm/u9.asm u9_0e48: draw rectangle outline clipped.
+; Draw rectangle outline clipped.
 PgDrawRectangleOutlineClipped proc far
     push bp
     mov bp,sp
@@ -2081,8 +2066,7 @@ clip_outline_continue_215:
     retf 8
 PgDrawRectangleOutlineClipped endp
 
-; fill rectangle
-; src/asm/u9.asm u9_106f: fill rectangle.
+; Fill rectangle.
 PgFillRectangle proc far
     push bp
     mov bp,sp
@@ -2167,8 +2151,7 @@ fill_rect_continue_71:
     retf 8
 PgFillRectangle endp
 
-; fill rectangle clipped pixels
-; src/asm/u9.asm u9_1105: fill rectangle clipped pixels.
+; Fill rectangle clipped pixels.
 PgFillRectangleClippedPixels proc far
     push bp
     mov bp,sp
@@ -2292,8 +2275,7 @@ clip_fill_rect_continue_ea:
     retf 8
 PgFillRectangleClippedPixels endp
 
-; draw horizontal span
-; src/asm/u9.asm u9_1204: draw horizontal span.
+; Draw horizontal span.
 PgDrawHorizontalSpan proc far
     push bp
     mov bp,sp
@@ -2378,8 +2360,7 @@ hspan_continue_81:
     retf 6
 PgDrawHorizontalSpan endp
 
-; draw vertical span
-; src/asm/u9.asm u9_129c: draw vertical span.
+; Draw vertical span.
 PgDrawVerticalSpan proc far
     push bp
     mov bp,sp
@@ -2435,6 +2416,8 @@ PgCircleY               dw ?
 PgCircleError           dw ?
 PgCircleSpanLeft         dw ?
 PgCircleSpanRight         dw ?
+
+; Circle drawing.
 ; draw circle variant a
 ; Midpoint-circle error recurrence emits horizontal spans between center X +/- offset at symmetric rows.
 PgFillCircle proc far
@@ -2719,8 +2702,10 @@ PgFillCircle endp
 PgCircle2X              dw ?
 PgCircle2Y              dw ?
 PgCircle2Error          dw ?
-PgCircle2Work1          dw ?
-PgCircle2Work2          dw ?
+; Unused storage retains the original object layout.
+UnusedPgCircleWord1          dw ?
+; Unused storage retains the original object layout.
+UnusedPgCircleWord2          dw ?
 ; draw circle symmetric
 ; Midpoint-circle recurrence emits symmetric individual perimeter pixels rather than horizontal filled spans.
 PgDrawCircle proc far
@@ -2889,6 +2874,7 @@ circle_b_less_18f:
     retf 6
 PgDrawCircle endp
 
+; Clip rectangle state.
 ; set clip rectangle
 ; Stores left/right byte-column bounds plus top/bottom pixel rows; defaults are 0..39 by 0..199.
 PgSetByteClipRectangle proc far
@@ -2951,22 +2937,20 @@ PgGetPixelClipRight proc far
     retf
 PgGetPixelClipRight endp
 
-; get clip top
-; src/asm/u9.asm u9_178b: get clip top.
+; Get clip top.
 PgGetClipTop proc far
     mov ax,word ptr cs:[PgClipTopRow]
     retf
 PgGetClipTop endp
 
-; get clip bottom
-; src/asm/u9.asm u9_1790: get clip bottom.
+; Get clip bottom.
 PgGetClipBottom proc far
     mov ax,word ptr cs:[PgClipBottomRow]
     retf
 PgGetClipBottom endp
 
-; capture planar rectangle
-; src/asm/u9.asm u9_1795: capture planar rectangle.
+; Planar rectangle capture and shifted sprites.
+; Capture planar rectangle.
 PgCapturePlanarRectangle proc far
     push bp
     mov bp,sp
@@ -3051,8 +3035,7 @@ capture_repeat_70:
     retf 0ch
 PgCapturePlanarRectangle endp
 
-; restore planar rectangle
-; src/asm/u9.asm u9_1831: restore planar rectangle.
+; Restore planar rectangle.
 PgRestorePlanarRectangle proc far
     push bp
     mov bp,sp
@@ -3274,8 +3257,7 @@ masked_shift_continue_bf:
     retf 8
 PgBlitMaskedShifted32x16 endp
 
-; blit masked shifted 16x16
-; src/asm/u9.asm u9_19f9: blit masked shifted 16x16.
+; Blit masked shifted 16x16.
 PgBlitMaskedShifted16x16 proc far
     push bp
     mov bp,sp
@@ -3417,8 +3399,10 @@ PgBlitMaskedShifted16x16 endp
 
 PgGlyphMaskHigh           db ?
 PgGlyphMaskLow          db ?
-PgSpriteWork1           db ?
-PgSpriteWork2           db ?
+; Unused storage retains the original object layout.
+UnusedPgSpriteByte1           db ?
+; Unused storage retains the original object layout.
+UnusedPgSpriteByte2           db ?
 PgGlyphLeftShift          db ?
 ; blit masked variable sprite
 ; Loops over exactly eight rows, splitting one mask and four plane bytes across two destination bytes.
@@ -3555,6 +3539,7 @@ masked_var_continue_c1:
     retf 8
 PgBlitMaskedShifted8x8 endp
 
+; Ellipse plotting.
 ; draw ellipse or curve
 ; Squares two independent radius operands and emits symmetric pixels around the supplied center.
 PgDrawEllipse proc far
@@ -3733,7 +3718,7 @@ ellipse_nonnegative_172:
 PgDrawEllipse endp
 
 ; curve symmetric pixel helper
-; Private helper inherited from u9_1c58 updates symmetric pixel masks/addresses and writes the four.
+; Private helper inherited from PgDrawEllipse updates symmetric pixel masks/addresses and writes the four.
 PgPlotEllipseSymmetricPixels proc near
     push ax
     push bx
@@ -3787,8 +3772,7 @@ curve_pixels_equal_13:
     ret
 PgPlotEllipseSymmetricPixels endp
 
-; multiply partial products helper
-; src/asm/u9.asm u9_1e73: multiply partial products helper.
+; Multiply partial products helper.
 PgMultiplyPartialProductsHelper proc near
     push ax
     mov ax,dx
@@ -3804,8 +3788,9 @@ PgSpriteTopClipped        dw 0
 PgSpriteBottomClipped     dw 0
 PgSpriteLeftClipped       dw 0
 PgSpriteRightClipped      dw 0
-; blit masked 32x16 clipped
-; src/asm/u9.asm u9_1e87: blit masked 32x16 clipped.
+
+; Clipped sprites and pixel rectangle capture.
+; Blit masked 32x16 clipped.
 PgBlitMasked32x16Clipped proc far
     push bp
     mov bp,sp
@@ -4042,8 +4027,7 @@ clip_masked32_continue_1ac:
     retf 8
 PgBlitMasked32x16Clipped endp
 
-; blit masked 16x16 clipped
-; src/asm/u9.asm u9_2053: blit masked 16x16 clipped.
+; Blit masked 16x16 clipped.
 PgBlitMasked16x16Clipped proc far
     push bp
     mov bp,sp
@@ -4437,6 +4421,7 @@ restore_b_continue_113:
     retf 8
 PgRestorePixelRectangle endp
 
+; Shifted read-before-OR sprite drawing.
 ; blit opaque shifted sprite variant a
 ; Processes 16 rows of four shifted byte groups using source masks and read-before-OR destination writes.
 PgOrShifted32x16 proc far
@@ -4840,19 +4825,24 @@ PgOrShifted8x8 endp
 PgFontOffset            dw ?
 PgFontSegment           dw ?
 PgFontHeight            dw ?
-PgFontDefaultOffset    dw 0
-PgFontDefaultHeight    dw 8
+; Unused storage retains the original object layout.
+UnusedPgFontDefaultOffset    dw 0
+; Unused storage retains the original object layout.
+UnusedPgFontDefaultHeight    dw 8
 PgRom8Offset            dw ?
 PgRom8Segment           dw ?
 PgRom8Height            dw 8
 PgRom14Offset           dw ?
 PgRom14Segment          dw ?
 PgRom14Height           dw 14
-PgFontWork3             dw ?
+; Unused storage retains the original object layout.
+UnusedPgFontWord             dw ?
 PgTextDirection         dw 0
+
+; ROM font text output.
 ; draw pascal string
 ; PUSH DS precedes BP: arguments start at BP+8.
-; src/asm/u9.asm u9_26e9: draw pascal string.
+; Draw pascal string.
 PgDrawPascalString proc far
     push ds
     push bp
@@ -4948,8 +4938,7 @@ text_continue_f0:
     retf 8
 PgDrawPascalString endp
 
-; initialize rom fonts
-; src/asm/u9.asm u9_27e2: initialize rom fonts.
+; Initialize rom fonts.
 PgInitializeRomFonts proc far
     push bp
     mov bp,sp
@@ -4985,8 +4974,7 @@ PgInitializeRomFonts proc far
     retf
 PgInitializeRomFonts endp
 
-; draw font row horizontal helper
-; src/asm/u9.asm u9_2829: draw font row horizontal helper.
+; Draw font row horizontal helper.
 PgDrawFontRowHorizontalHelper proc near
     mov ax,word ptr cs:[PgTextX]
     and ax,7
@@ -5032,8 +5020,7 @@ PgDrawFontRowHorizontalHelper proc near
     ret
 PgDrawFontRowHorizontalHelper endp
 
-; draw font row vertical helper
-; src/asm/u9.asm u9_28a7: draw font row vertical helper.
+; Draw font row vertical helper.
 PgDrawFontRowVerticalHelper proc near
     mov ax,word ptr cs:[PgTextX]
     mov word ptr cs:[PgFontPixelX],ax
@@ -5066,8 +5053,7 @@ font_vrow_continue_3e:
     ret
 PgDrawFontRowVerticalHelper endp
 
-; set ega bit mask helper
-; src/asm/u9.asm u9_28e8: set ega bit mask helper.
+; Set ega bit mask helper.
 PgSetEgaBitMaskHelper proc near
     mov ah,al
     mov al,8
@@ -5076,8 +5062,7 @@ PgSetEgaBitMaskHelper proc near
     ret
 PgSetEgaBitMaskHelper endp
 
-; set ega set reset helper
-; src/asm/u9.asm u9_28f1: set ega set reset helper.
+; Set ega set reset helper.
 PgSetEgaSetResetHelper proc near
     mov ah,al
     mov al,0
@@ -5089,8 +5074,7 @@ PgSetEgaSetResetHelper proc near
     ret
 PgSetEgaSetResetHelper endp
 
-; set ega data rotate helper
-; src/asm/u9.asm u9_28ff: set ega data rotate helper.
+; Set ega data rotate helper.
 PgSetEgaDataRotateHelper proc near
     mov ah,al
     mov al,3
@@ -5099,8 +5083,7 @@ PgSetEgaDataRotateHelper proc near
     ret
 PgSetEgaDataRotateHelper endp
 
-; font pixel address helper
-; src/asm/u9.asm u9_2908: font pixel address helper.
+; Font pixel address helper.
 PgFontPixelAddressHelper proc near
     mov ax,word ptr cs:[PgFontPixelY]
     mov cx,word ptr cs:[PgScreenStrideBytes]
@@ -5122,8 +5105,7 @@ font_address_equal_2b:
     ret
 PgFontPixelAddressHelper endp
 
-; draw font pixel helper
-; src/asm/u9.asm u9_2936: draw font pixel helper.
+; Draw font pixel helper.
 PgDrawFontPixelHelper proc near
     call near ptr PgFontPixelAddressHelper
     mov ax,word ptr cs:[PgFontPixelX]
@@ -5154,8 +5136,7 @@ PgDrawFontPixelHelper proc near
     ret
 PgDrawFontPixelHelper endp
 
-; select rom font
-; src/asm/u9.asm u9_2981: select rom font.
+; Select rom font.
 PgSelectRomFont proc far
     push bp
     mov bp,sp
@@ -5182,8 +5163,8 @@ selectfont_continue_3e:
     retf 2
 PgSelectRomFont endp
 
-; blit opaque 32x16
-; src/asm/u9.asm u9_29c3: blit opaque 32x16.
+; Opaque fixed-size sprite drawing.
+; Blit opaque 32x16.
 PgBlitOpaque32x16 proc far
     push bp
     mov bp,sp
@@ -5314,8 +5295,7 @@ opaque32_continue_8a:
     retf 8
 PgBlitOpaque32x16 endp
 
-; blit opaque 16x16
-; src/asm/u9.asm u9_2a9f: blit opaque 16x16.
+; Blit opaque 16x16.
 PgBlitOpaque16x16 proc far
     push bp
     mov bp,sp
@@ -5403,8 +5383,7 @@ opaque16_row_loop_45:
     retf 8
 PgBlitOpaque16x16 endp
 
-; blit opaque 8x8
-; src/asm/u9.asm u9_2b38: blit opaque 8x8.
+; Blit opaque 8x8.
 PgBlitOpaque8x8 proc far
     push bp
     mov bp,sp
@@ -5471,8 +5450,7 @@ opaque8_row_loop_45:
     retf 8
 PgBlitOpaque8x8 endp
 
-; blit opaque 32x16 clipped
-; src/asm/u9.asm u9_2bb2: blit opaque 32x16 clipped.
+; Blit opaque 32x16 clipped.
 PgBlitOpaque32x16Clipped proc far
     push bp
     mov bp,sp
@@ -5689,8 +5667,7 @@ clip_opaque32_continue_18b:
     retf 8
 PgBlitOpaque32x16Clipped endp
 
-; blit opaque 16x16 clipped
-; src/asm/u9.asm u9_2d5d: blit opaque 16x16 clipped.
+; Blit opaque 16x16 clipped.
 PgBlitOpaque16x16Clipped proc far
     push bp
     mov bp,sp
@@ -5827,8 +5804,8 @@ clip_opaque16_continue_f2:
     retf 8
 PgBlitOpaque16x16Clipped endp
 
-; copy cached video tile 16x16
-; src/asm/u9.asm u9_2e6d: copy cached video tile 16x16.
+; Cached tiles and video-buffer copies.
+; Copy cached video tile 16x16.
 PgCopyCachedVideoTile16x16 proc far
     push bp
     mov bp,sp
@@ -5884,8 +5861,7 @@ cache_copy_repeat_48:
     retf 6
 PgCopyCachedVideoTile16x16 endp
 
-; copy video screen region 320x200
-; src/asm/u9.asm u9_2ecf: copy video screen region 320x200.
+; Copy video screen region 320x200.
 PgCopyVideoScreenRegion320x200 proc far
     push bp
     mov bp,sp
@@ -5937,7 +5913,7 @@ screen_copy_repeat_47:
 PgCopyVideoScreenRegion320x200 endp
 
 ; copy video band 320x8
-; Copies eight 40-byte rows from VRAM offset 28h to offset 0; u3_0261 calls it before drawing the status bar.
+; Copies eight 40-byte rows from VRAM offset 28h to offset 0; DrawGameStatusBar calls it before drawing the status bar.
 PgCopyStatusBandTemplate proc far
     push bp
     mov bp,sp
@@ -5981,9 +5957,10 @@ band_copy_repeat_2f:
     retf
 PgCopyStatusBandTemplate endp
 
+; Unused caller-cleanup copy entries.
 ; copy video tile 16x16 unused cdecl
 ; Active caller-cleanup RETF, then unreachable Pascal RETF n.
-; src/asm/u9.asm u9_2f7b: copy video tile 16x16 unused cdecl.
+; Copy video tile 16x16 unused cdecl.
 PgCopyVideoTile16x16UnusedCdecl proc far
     push bp
     mov bp,sp
@@ -6036,7 +6013,7 @@ PgCopyVideoTile16x16UnusedCdecl endp
 
 ; copy video rectangle unused cdecl
 ; Active caller-cleanup RETF, then unreachable Pascal RETF n.
-; src/asm/u9.asm u9_2fd7: copy video rectangle unused cdecl.
+; Copy video rectangle unused cdecl.
 PgCopyVideoRectangleUnusedCdecl proc far
     push bp
     mov bp,sp

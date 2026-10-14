@@ -354,15 +354,19 @@ def reverse_names(names):
 
 
 def validate_names(names):
-    seen = {}
+    # Exported symbols share a namespace; record fields and routine locals
+    # belong to their declaring scope and may repeat in unrelated scopes.
+    seen, scoped = {}, {}
     for cat in CATEGORIES:
         for old, row in names.get(cat, {}).items():
             if row.get("confidence") not in CONFIDENCE or not row.get("evidence"):
                 raise ValueError(f"{cat}.{old}: missing confidence/evidence")
-            entries = [(old, row["name"])]
+            entries = [(old, row["name"], seen)]
             for key in ("fields", "params", "locals", "labels"):
-                entries += [(old + "." + key + "." + k, v) for k, v in row.get(key, {}).items()]
-            for entity, name in entries:
+                namespace = scoped.setdefault((cat, old, "fields" if key == "fields" else "routine"), {})
+                entries += [(old + "." + key + "." + k, v, namespace)
+                            for k, v in row.get(key, {}).items()]
+            for entity, name, namespace in entries:
                 # A no-op is not a new name (e.g. standard BIOS AX/AL fields).
                 if entity.rsplit(".", 1)[-1].lower() == name.lower():
                     continue
@@ -372,10 +376,11 @@ def validate_names(names):
                     raise ValueError(f"{entity}: unit name exceeds DOS 8.3")
                 if cat == "units" and name.upper() in DOS_DEVICES:
                     raise ValueError(f"{entity}: unit name is a reserved DOS device")
-                if name.lower() in seen:
-                    raise ValueError(f"{entity}: {name} already used by {seen[name.lower()]}")
-                seen[name.lower()] = entity
-    return seen
+                if name.lower() in namespace:
+                    raise ValueError(f"{entity}: {name} already used by {namespace[name.lower()]}")
+                namespace[name.lower()] = entity
+    return {**seen, **{name: entity for namespace in scoped.values()
+                      for name, entity in namespace.items()}}
 
 
 def merge_proposals(a, b, sources):

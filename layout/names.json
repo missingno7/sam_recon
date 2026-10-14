@@ -2,14 +2,14 @@
  "globals": {
   "banner": {
    "confidence": "high",
-   "evidence": "src/asm/u9.asm CS banner is DB 'ProGraphx EGA/VGA Toolbox',13,10,26. No consuming reference establishes a more specific role.",
-   "name": "PgProductBanner",
+   "evidence": "src/asm/u9.asm CS banner is DB 'ProGraphx EGA/VGA Toolbox',13,10,26. No consuming reference establishes a more specific role. No consuming read remains in the standalone source; storage and any writes are retained.",
+   "name": "UnusedPgProductBanner",
    "proposal": "names-b"
   },
   "banner_newlines": {
    "confidence": "high",
-   "evidence": "src/asm/u9.asm CS banner_newlines is DB 23 dup (10). No consuming reference establishes a more specific role.",
-   "name": "PgBannerNewlines",
+   "evidence": "src/asm/u9.asm CS banner_newlines is DB 23 dup (10). No consuming reference establishes a more specific role. No consuming read remains in the standalone source; storage and any writes are retained.",
+   "name": "UnusedPgBannerNewlines",
    "proposal": "names-b"
   },
   "byte_rect_height": {
@@ -26,14 +26,14 @@
   },
   "circle2_work1": {
    "confidence": "low",
-   "evidence": "src/asm/u9.asm CS circle2_work1 is DW ?. No consuming reference establishes a more specific role.",
-   "name": "PgCircle2Work1",
+   "evidence": "src/asm/u9.asm CS circle2_work1 is DW ?. No consuming reference establishes a more specific role. No consuming read remains in the standalone source; storage and any writes are retained.",
+   "name": "UnusedPgCircleWord1",
    "proposal": "names-b"
   },
   "circle2_work2": {
    "confidence": "low",
-   "evidence": "src/asm/u9.asm CS circle2_work2 is DW ?. No consuming reference establishes a more specific role.",
-   "name": "PgCircle2Work2",
+   "evidence": "src/asm/u9.asm CS circle2_work2 is DW ?. No consuming reference establishes a more specific role. No consuming read remains in the standalone source; storage and any writes are retained.",
+   "name": "UnusedPgCircleWord2",
    "proposal": "names-b"
   },
   "circle2_x": {
@@ -152,8 +152,8 @@
   },
   "copyright": {
    "confidence": "high",
-   "evidence": "src/asm/u9.asm CS copyright is DB 'Copyright 1991 by Peder Jungck',13,10,26. No consuming reference establishes a more specific role.",
-   "name": "PgCopyrightBanner",
+   "evidence": "src/asm/u9.asm CS copyright is DB 'Copyright 1991 by Peder Jungck',13,10,26. No consuming reference establishes a more specific role. No consuming read remains in the standalone source; storage and any writes are retained.",
+   "name": "UnusedPgCopyrightBanner",
    "proposal": "names-b"
   },
   "d_0000": {
@@ -194,8 +194,8 @@
   },
   "d_21da": {
    "confidence": "low",
-   "evidence": "Assigned 200 by u4_048c; no consumer occurs in the reconstructed scoped code.",
-   "name": "TextAuxiliaryValue",
+   "evidence": "Assigned 200 by u4_048c; no consumer occurs in the reconstructed scoped code. No consuming read remains in the standalone source; storage and any writes are retained.",
+   "name": "UnusedTextAuxiliaryValue",
    "proposal": "names-b"
   },
   "d_21de": {
@@ -380,22 +380,22 @@
   },
   "d_380c": {
    "confidence": "low",
-   "evidence": "p_1148 assigns zero; no further consumer establishes a role.",
-   "name": "StartupWorkOne",
+   "evidence": "p_1148 assigns zero; no further consumer establishes a role. No consuming read remains in the standalone source; storage and any writes are retained.",
+   "name": "UnusedStartupWord1",
    "proposal": "names-b",
    "scope": "shared_game_state"
   },
   "d_380e": {
    "confidence": "low",
-   "evidence": "p_1148 assigns zero; no further consumer establishes a role.",
-   "name": "StartupWorkTwo",
+   "evidence": "p_1148 assigns zero; no further consumer establishes a role. No consuming read remains in the standalone source; storage and any writes are retained.",
+   "name": "UnusedStartupWord2",
    "proposal": "names-b",
    "scope": "shared_game_state"
   },
   "d_3810": {
    "confidence": "low",
-   "evidence": "p_1148 assigns zero; no further consumer establishes a role.",
-   "name": "StartupWorkThree",
+   "evidence": "p_1148 assigns zero; no further consumer establishes a role. No consuming read remains in the standalone source; storage and any writes are retained.",
+   "name": "UnusedStartupWord3",
    "proposal": "names-b",
    "scope": "shared_game_state"
   },
@@ -508,8 +508,8 @@
   },
   "d_6830": {
    "confidence": "low",
-   "evidence": "Reset to zero by all three u8 state routines; no consuming reference occurs in reconstructed code.",
-   "name": "GameReservedWord",
+   "evidence": "Reset to zero by all three u8 state routines; no consuming reference occurs in reconstructed code. No consuming read remains in the standalone source; storage and any writes are retained.",
+   "name": "UnusedGameStateWord",
    "proposal": "names-b"
   },
   "d_6832": {
@@ -570,8 +570,8 @@
   },
   "d_6843": {
    "confidence": "low",
-   "evidence": "Present in canonical declarations beside mission/blueprint flags; no consuming reference is present in reconstructed routines.",
-   "name": "LevelStatusReservedByte",
+   "evidence": "Present in canonical declarations beside mission/blueprint flags; no consuming reference is present in reconstructed routines. No consuming read remains in the standalone source; storage and any writes are retained.",
+   "name": "UnusedLevelStatusByte",
    "proposal": "names-b",
    "scope": "shared_game_state"
   },
@@ -830,8 +830,8 @@
   },
   "d_69e8": {
    "confidence": "low",
-   "evidence": "Cleared by u8 resets next to key flags; no consumer establishes its meaning.",
-   "name": "InventoryReservedFlag",
+   "evidence": "Cleared by u8 resets next to key flags; no consumer establishes its meaning. No consuming read remains in the standalone source; storage and any writes are retained.",
+   "name": "UnusedInventoryFlag",
    "proposal": "names-b"
   },
   "d_69e9": {
@@ -1233,8 +1233,8 @@
   },
   "d_6ec9": {
    "confidence": "low",
-   "evidence": "All u8 reset routines clear this byte; no consumer establishes another role.",
-   "name": "GameTransitionReservedFlag",
+   "evidence": "All u8 reset routines clear this byte; no consumer establishes another role. No consuming read remains in the standalone source; storage and any writes are retained.",
+   "name": "UnusedTransitionFlag",
    "proposal": "names-b"
   },
   "d_6eca": {
@@ -1251,8 +1251,8 @@
   },
   "d_6ecc": {
    "confidence": "low",
-   "evidence": "Popup exit paths clear this byte; no consumer identifies its intended input role.",
-   "name": "PopupInputReservedFlag",
+   "evidence": "Popup exit paths clear this byte; no consumer identifies its intended input role. No consuming read remains in the standalone source; storage and any writes are retained.",
+   "name": "UnusedPopupInputFlag",
    "proposal": "names-b"
   },
   "d_6ecd": {
@@ -1416,14 +1416,14 @@
   },
   "font_default_height": {
    "confidence": "low",
-   "evidence": "src/asm/u9.asm CS font_default_height is DW 8. No consuming reference establishes a more specific role.",
-   "name": "PgFontDefaultHeight",
+   "evidence": "src/asm/u9.asm CS font_default_height is DW 8. No consuming reference establishes a more specific role. No consuming read remains in the standalone source; storage and any writes are retained.",
+   "name": "UnusedPgFontDefaultHeight",
    "proposal": "names-b"
   },
   "font_default_offset": {
    "confidence": "low",
-   "evidence": "src/asm/u9.asm CS font_default_offset is DW 0. No consuming reference establishes a more specific role.",
-   "name": "PgFontDefaultOffset",
+   "evidence": "src/asm/u9.asm CS font_default_offset is DW 0. No consuming reference establishes a more specific role. No consuming read remains in the standalone source; storage and any writes are retained.",
+   "name": "UnusedPgFontDefaultOffset",
    "proposal": "names-b"
   },
   "font_height": {
@@ -1470,8 +1470,8 @@
   },
   "font_work3": {
    "confidence": "low",
-   "evidence": "src/asm/u9.asm CS font_work3 is DW ?. No consuming reference establishes a more specific role.",
-   "name": "PgFontWork3",
+   "evidence": "src/asm/u9.asm CS font_work3 is DW ?. No consuming reference establishes a more specific role. No consuming read remains in the standalone source; storage and any writes are retained.",
+   "name": "UnusedPgFontWord",
    "proposal": "names-b"
   },
   "glyph_left": {
@@ -1539,6 +1539,336 @@
    "evidence": "src/asm/u9.asm CS plane_rect_height is DW 0. Used by u9_05a1: mov word ptr cs:[plane_rect_height],ax.",
    "name": "PgPlaneRectHeight",
    "proposal": "names-b"
+  },
+  "reserved_02bb": {
+   "confidence": "high",
+   "evidence": "Unreferenced byte after the SAM2/SAM3 video-adapter probe globals; preserves DATA layout.",
+   "name": "UnusedVideoProbePadLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_21d9": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the TextSyncPad declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedTextSyncPadSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_21e8": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the PcxModeStorage declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedPcxModeStorageSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_21ff": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the TextSyncPad declarations; retains the original Later DATA layout.",
+   "name": "UnusedTextSyncPadLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_220e": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the PcxModeStorage declarations; retains the original Later DATA layout.",
+   "name": "UnusedPcxModeStorageLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_2a80": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the PcxReadStorage declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedPcxReadStorageSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_2a9b": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the PcxReadPad declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedPcxReadPadSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_2aa6": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the PcxReadStorage declarations; retains the original Later DATA layout.",
+   "name": "UnusedPcxReadStorageLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_2ac1": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the PcxReadPad declarations; retains the original Later DATA layout.",
+   "name": "UnusedPcxReadPadLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_341b": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the PcxPrinterPad declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedPcxPrinterPadSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_341d": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the JoystickStatePad declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedJoystickStatePadSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_3441": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the PcxPrinterPad declarations; retains the original Later DATA layout.",
+   "name": "UnusedPcxPrinterPadLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_3443": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the JoystickStatePad declarations; retains the original Later DATA layout.",
+   "name": "UnusedJoystickStatePadLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_34c3": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the JumpTablePad declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedJumpTablePadSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_34e9": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the JumpTablePad declarations; retains the original Later DATA layout.",
+   "name": "UnusedJumpTablePadLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_67f5": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the PopupTextPad declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedPopupTextPadSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_680e": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the PopupKeyStorage declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedPopupKeyStorageSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_6817": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the OptionsPad declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedOptionsPadSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_681b": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the PopupTextPad declarations; retains the original Later DATA layout.",
+   "name": "UnusedPopupTextPadLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_6834": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the PopupKeyStorage declarations; retains the original Later DATA layout.",
+   "name": "UnusedPopupKeyStorageLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_6837": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the MovementPad declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedMovementPadSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_683d": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the OptionsPad declarations; retains the original Later DATA layout.",
+   "name": "UnusedOptionsPadLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_685d": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the MovementPad declarations; retains the original Later DATA layout.",
+   "name": "UnusedMovementPadLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_69b1": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the SlowMovementPad declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedSlowMovementPadSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_69b5": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the InputLockPad declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedInputLockPadSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_69d7": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the SlowMovementPad declarations; retains the original Later DATA layout.",
+   "name": "UnusedSlowMovementPadLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_69db": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the InputLockPad declarations; retains the original Later DATA layout.",
+   "name": "UnusedInputLockPadLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_69e1": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the TeleportPad declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedTeleportPadSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_69f7": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the DeathStatePad declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedDeathStatePadSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_6a07": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the TeleportPad declarations; retains the original Later DATA layout.",
+   "name": "UnusedTeleportPadLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_6a1d": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the DeathStatePad declarations; retains the original Later DATA layout.",
+   "name": "UnusedDeathStatePadLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_6a43": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the DamageStatePad declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedDamageStatePadSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_6a69": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the DamageStatePad declarations; retains the original Later DATA layout.",
+   "name": "UnusedDamageStatePadLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_6d17": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the ConfigPad declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedConfigPadSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_6d3d": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the ConfigPad declarations; retains the original Later DATA layout.",
+   "name": "UnusedConfigPadLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_6d67": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the BlueprintPad declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedBlueprintPadSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_6d8d": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the BlueprintPad declarations; retains the original Later DATA layout.",
+   "name": "UnusedBlueprintPadLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_6f1f": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the UpKeyTextPad declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedUpKeyTextPadSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_6f45": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the UpKeyTextPad declarations; retains the original Later DATA layout.",
+   "name": "UnusedUpKeyTextPadLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_6f71": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the DownKeyTextPad declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedDownKeyTextPadSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_6f97": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the DownKeyTextPad declarations; retains the original Later DATA layout.",
+   "name": "UnusedDownKeyTextPadLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_6fc3": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the FireKeyTextPad declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedFireKeyTextPadSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_6fe9": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the FireKeyTextPad declarations; retains the original Later DATA layout.",
+   "name": "UnusedFireKeyTextPadLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_7015": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the RightKeyTextPad declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedRightKeyTextPadSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_703b": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the RightKeyTextPad declarations; retains the original Later DATA layout.",
+   "name": "UnusedRightKeyTextPadLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_7067": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the JumpKeyTextPad declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedJumpKeyTextPadSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_708d": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the JumpKeyTextPad declarations; retains the original Later DATA layout.",
+   "name": "UnusedJumpKeyTextPadLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_70b9": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the LeftKeyTextPad declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedLeftKeyTextPadSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_70d6": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the VectorStorage declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedVectorStorageSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_70df": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the LeftKeyTextPad declarations; retains the original Later DATA layout.",
+   "name": "UnusedLeftKeyTextPadLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_70ee": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the PgContactStorage declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedPgContactStorageSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_70fc": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the VectorStorage declarations; retains the original Later DATA layout.",
+   "name": "UnusedVectorStorageLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_7114": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the PgContactStorage declarations; retains the original Later DATA layout.",
+   "name": "UnusedPgContactStorageLater",
+   "proposal": "sol-polish"
+  },
+  "reserved_7191": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the PgContactPad declarations; retains the original Sam1 DATA layout.",
+   "name": "UnusedPgContactPadSam1",
+   "proposal": "sol-polish"
+  },
+  "reserved_71b7": {
+   "confidence": "high",
+   "evidence": "Unreferenced storage before/after the PgContactPad declarations; retains the original Later DATA layout.",
+   "name": "UnusedPgContactPadLater",
+   "proposal": "sol-polish"
   },
   "rom14_height": {
    "confidence": "medium",
@@ -1674,15 +2004,21 @@
   },
   "sprite_work1": {
    "confidence": "low",
-   "evidence": "src/asm/u9.asm CS sprite_work1 is DB ?. No consuming reference establishes a more specific role.",
-   "name": "PgSpriteWork1",
+   "evidence": "src/asm/u9.asm CS sprite_work1 is DB ?. No consuming reference establishes a more specific role. No consuming read remains in the standalone source; storage and any writes are retained.",
+   "name": "UnusedPgSpriteByte1",
    "proposal": "names-b"
   },
   "sprite_work2": {
    "confidence": "low",
-   "evidence": "src/asm/u9.asm CS sprite_work2 is DB ?. No consuming reference establishes a more specific role.",
-   "name": "PgSpriteWork2",
+   "evidence": "src/asm/u9.asm CS sprite_work2 is DB ?. No consuming reference establishes a more specific role. No consuming read remains in the standalone source; storage and any writes are retained.",
+   "name": "UnusedPgSpriteByte2",
    "proposal": "names-b"
+  },
+  "t_u3_dbc2_border": {
+   "confidence": "high",
+   "evidence": "ShowDosExitScreen repeats this 23-character #176 string down each text-mode border stripe.",
+   "name": "DosExitBorder",
+   "proposal": "sol-polish"
   },
   "text_char_code": {
    "confidence": "medium",
@@ -1722,8 +2058,8 @@
   },
   "toolbox_marker": {
    "confidence": "low",
-   "evidence": "Unconsumed code-segment word 0666h in the ProGraphx object; no stronger signature purpose is established.",
-   "name": "PgToolboxMarker",
+   "evidence": "Unconsumed code-segment word 0666h in the ProGraphx object; no stronger signature purpose is established. No consuming read remains in the standalone source; storage and any writes are retained.",
+   "name": "UnusedPgToolboxMarker",
    "proposal": "names-b"
   },
   "transfer_height": {
@@ -1764,8 +2100,8 @@
   },
   "version": {
    "confidence": "high",
-   "evidence": "src/asm/u9.asm CS version is DB 'Version 2.0 320x200 EGA/VGA',13,10,26. No consuming reference establishes a more specific role.",
-   "name": "PgVersionBanner",
+   "evidence": "src/asm/u9.asm CS version is DB 'Version 2.0 320x200 EGA/VGA',13,10,26. No consuming reference establishes a more specific role. No consuming read remains in the standalone source; storage and any writes are retained.",
+   "name": "UnusedPgVersionBanner",
    "proposal": "names-b"
   }
  },
@@ -6443,1041 +6779,1214 @@
   "qualified_names": [
    {
     "entity": "types.t_p_0f75_tconfigfile",
-    "name": "t_p_0f75_tconfi_TGameConfigFile",
+    "name": "TGameConfigInputFile",
+    "previous_name": "t_p_0f75_tconfi_TGameConfigFile",
     "proposed": "TGameConfigFile",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Distinct descriptive name for a hoisted type declaration"
    },
    {
     "entity": "types.t_u2_2530_tmapcell",
-    "name": "t_u2_2530_tmapcell_TMapCellView",
+    "name": "TForegroundCellView",
+    "previous_name": "t_u2_2530_tmapcell_TMapCellView",
     "proposed": "TMapCellView",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Distinct descriptive name for a hoisted type declaration"
    },
    {
     "entity": "types.t_u2_0000_tmapcell.fields.E",
-    "name": "TMapCellView_SupportsLanding",
+    "name": "SupportsLanding",
+    "previous_name": "TMapCellView_SupportsLanding",
     "proposed": "SupportsLanding",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "types.t_u2_2530_tmapcell.fields.A",
-    "name": "t_u2_2530_tmapcell_TMa_BaseTile",
+    "name": "BaseTile",
+    "previous_name": "t_u2_2530_tmapcell_TMa_BaseTile",
     "proposed": "BaseTile",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "types.t_u2_2530_tmapcell.fields.B",
-    "name": "t_u2_2530_tmapcell_T_MiddleTile",
+    "name": "MiddleTile",
+    "previous_name": "t_u2_2530_tmapcell_T_MiddleTile",
     "proposed": "MiddleTile",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "types.t_u2_2530_tmapcell.fields.C",
-    "name": "t_u2_2530_tmapcell_TM_FrontTile",
+    "name": "FrontTile",
+    "previous_name": "t_u2_2530_tmapcell_TM_FrontTile",
     "proposed": "FrontTile",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "types.t_u2_2530_tmapcell.fields.D",
-    "name": "t_u2_2530_tmapce_BlocksMovement",
+    "name": "BlocksMovement",
+    "previous_name": "t_u2_2530_tmapce_BlocksMovement",
     "proposed": "BlocksMovement",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "types.t_u2_2530_tmapcell.fields.E",
-    "name": "t_u2_2530_tmapc_SupportsLanding",
+    "name": "SupportsLanding",
+    "previous_name": "t_u2_2530_tmapc_SupportsLanding",
     "proposed": "SupportsLanding",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.p_08a2.locals.i",
-    "name": "PollJoystickControls_ShotSlot",
+    "name": "ShotSlot",
+    "previous_name": "PollJoystickControls_ShotSlot",
     "proposed": "ShotSlot",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.p_08a2.locals.changed",
-    "name": "PollJoystickControl_ShotSpawned",
+    "name": "ShotSpawned",
+    "previous_name": "PollJoystickControl_ShotSpawned",
     "proposed": "ShotSpawned",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.p_0f75.locals.f",
-    "name": "LoadGameConfig_ConfigFile",
+    "name": "ConfigFile",
+    "previous_name": "LoadGameConfig_ConfigFile",
     "proposed": "ConfigFile",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u1_008d.params.margin",
-    "name": "ShotNearViewport_MarginPixels",
+    "name": "MarginPixels",
+    "previous_name": "ShotNearViewport_MarginPixels",
     "proposed": "MarginPixels",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u1_008d.params.slot",
-    "name": "ShotNearViewport_ShotSlot",
+    "name": "ShotSlot",
+    "previous_name": "ShotNearViewport_ShotSlot",
     "proposed": "ShotSlot",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u1_027c.locals.I",
-    "name": "ConsumeShotsAtActor_ShotSlot",
+    "name": "ShotSlot",
+    "previous_name": "ConsumeShotsAtActor_ShotSlot",
     "proposed": "ShotSlot",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u1_03f0.locals.idx",
-    "name": "SpawnScorePopup_ActorSlot",
+    "name": "ActorSlot",
+    "previous_name": "SpawnScorePopup_ActorSlot",
     "proposed": "ActorSlot",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u1_0584.params.TypeCode",
-    "name": "SpawnEnemyProjectile_Direction",
+    "name": "Direction",
+    "previous_name": "SpawnEnemyProjectile_Direction",
     "proposed": "Direction",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u1_0584.locals.I",
-    "name": "SpawnEnemyProjectile_ActorSlot",
+    "name": "ActorSlot",
+    "previous_name": "SpawnEnemyProjectile_ActorSlot",
     "proposed": "ActorSlot",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u1_0837.params.Item",
-    "name": "UpdateBasicActor_ActorSlot",
+    "name": "ActorSlot",
+    "previous_name": "UpdateBasicActor_ActorSlot",
     "proposed": "ActorSlot",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u1_2f6b.locals.X",
-    "name": "UpdateActorsAndShots_ProposedX",
+    "name": "ProposedX",
+    "previous_name": "UpdateActorsAndShots_ProposedX",
     "proposed": "ProposedX",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u1_2f6b.locals.Y",
-    "name": "UpdateActorsAndSho_VerticalWork",
+    "name": "VerticalWork",
+    "previous_name": "UpdateActorsAndSho_VerticalWork",
     "proposed": "VerticalWork",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u1_2f6b.locals.J",
-    "name": "UpdateActorsAndS_HorizontalWork",
+    "name": "HorizontalWork",
+    "previous_name": "UpdateActorsAndS_HorizontalWork",
     "proposed": "HorizontalWork",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u1_2f6b.locals.L",
-    "name": "UpdateActorsAnd_RightCellColumn",
+    "name": "RightCellColumn",
+    "previous_name": "UpdateActorsAnd_RightCellColumn",
     "proposed": "RightCellColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u1_2f6b.locals.M",
-    "name": "UpdateActorsAndSho_UpperCellRow",
+    "name": "UpperCellRow",
+    "previous_name": "UpdateActorsAndSho_UpperCellRow",
     "proposed": "UpperCellRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u1_65d9.locals.x2",
-    "name": "PlayerPositionI_RightCellColumn",
+    "name": "RightCellColumn",
+    "previous_name": "PlayerPositionI_RightCellColumn",
     "proposed": "RightCellColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u1_6d0e.params.X",
-    "name": "ProcessPlayerTileConta_ContactX",
+    "name": "ContactX",
+    "previous_name": "ProcessPlayerTileConta_ContactX",
     "proposed": "ContactX",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u1_6d0e.params.Y",
-    "name": "ProcessPlayerTileConta_ContactY",
+    "name": "ContactY",
+    "previous_name": "ProcessPlayerTileConta_ContactY",
     "proposed": "ContactY",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_1185.params.X",
-    "name": "DrawLevelCellResolved_WorldX",
+    "name": "WorldX",
+    "previous_name": "DrawLevelCellResolved_WorldX",
     "proposed": "WorldX",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_1185.params.Y",
-    "name": "DrawLevelCellResolved_WorldY",
+    "name": "WorldY",
+    "previous_name": "DrawLevelCellResolved_WorldY",
     "proposed": "WorldY",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_1185.locals.TileX",
-    "name": "DrawLevelCellResolve_TileColumn",
+    "name": "TileColumn",
+    "previous_name": "DrawLevelCellResolve_TileColumn",
     "proposed": "TileColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_1185.locals.TileY",
-    "name": "DrawLevelCellResolved_TileRow",
+    "name": "TileRow",
+    "previous_name": "DrawLevelCellResolved_TileRow",
     "proposed": "TileRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_2530.params.X",
-    "name": "DrawCellForeground_WorldX",
+    "name": "WorldX",
+    "previous_name": "DrawCellForeground_WorldX",
     "proposed": "WorldX",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_2530.params.Y",
-    "name": "DrawCellForeground_WorldY",
+    "name": "WorldY",
+    "previous_name": "DrawCellForeground_WorldY",
     "proposed": "WorldY",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_2530.locals.X0",
-    "name": "DrawCellForeground_TileColumn",
+    "name": "TileColumn",
+    "previous_name": "DrawCellForeground_TileColumn",
     "proposed": "TileColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_2530.locals.Y0",
-    "name": "DrawCellForeground_TileRow",
+    "name": "TileRow",
+    "previous_name": "DrawCellForeground_TileRow",
     "proposed": "TileRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_2c6e.params.X",
-    "name": "SetAndDrawLevelCell_TileColumn",
+    "name": "TileColumn",
+    "previous_name": "SetAndDrawLevelCell_TileColumn",
     "proposed": "TileColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_2c6e.params.Y",
-    "name": "SetAndDrawLevelCell_TileRow",
+    "name": "TileRow",
+    "previous_name": "SetAndDrawLevelCell_TileRow",
     "proposed": "TileRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_2c6e.params.Tile",
-    "name": "SetAndDrawLevelCell_BaseTile",
+    "name": "BaseTile",
+    "previous_name": "SetAndDrawLevelCell_BaseTile",
     "proposed": "BaseTile",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_2c6e.params.A",
-    "name": "SetAndDrawLevelCell_MiddleTile",
+    "name": "MiddleTile",
+    "previous_name": "SetAndDrawLevelCell_MiddleTile",
     "proposed": "MiddleTile",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_2c6e.params.B",
-    "name": "SetAndDrawLevelCell_FrontTile",
+    "name": "FrontTile",
+    "previous_name": "SetAndDrawLevelCell_FrontTile",
     "proposed": "FrontTile",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_2c6e.params.C",
-    "name": "SetAndDrawLevelC_BlocksMovement",
+    "name": "BlocksMovement",
+    "previous_name": "SetAndDrawLevelC_BlocksMovement",
     "proposed": "BlocksMovement",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_2c6e.params.D",
-    "name": "SetAndDrawLevel_SupportsLanding",
+    "name": "SupportsLanding",
+    "previous_name": "SetAndDrawLevel_SupportsLanding",
     "proposed": "SupportsLanding",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_2e88.params.X",
-    "name": "DecodeIslandSymbol_TileColumn",
+    "name": "TileColumn",
+    "previous_name": "DecodeIslandSymbol_TileColumn",
     "proposed": "TileColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_2e88.params.Y",
-    "name": "DecodeIslandSymbol_TileRow",
+    "name": "TileRow",
+    "previous_name": "DecodeIslandSymbol_TileRow",
     "proposed": "TileRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_2e88.locals.Foreground",
-    "name": "DecodeIslandSymb_ForegroundOnly",
+    "name": "ForegroundOnly",
+    "previous_name": "DecodeIslandSymb_ForegroundOnly",
     "proposed": "ForegroundOnly",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_3a91.params.X",
-    "name": "SpawnActorFromMapSym_TileColumn",
+    "name": "TileColumn",
+    "previous_name": "SpawnActorFromMapSym_TileColumn",
     "proposed": "TileColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_3a91.params.Y",
-    "name": "SpawnActorFromMapSymbol_TileRow",
+    "name": "TileRow",
+    "previous_name": "SpawnActorFromMapSymbol_TileRow",
     "proposed": "TileRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_3a91.params.Symbol",
-    "name": "SpawnActorFromMapSymb_MapSymbol",
+    "name": "MapSymbol",
+    "previous_name": "SpawnActorFromMapSymb_MapSymbol",
     "proposed": "MapSymbol",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_3a91.params.Foreground",
-    "name": "SpawnActorFromMa_ForegroundOnly",
+    "name": "ForegroundOnly",
+    "previous_name": "SpawnActorFromMa_ForegroundOnly",
     "proposed": "ForegroundOnly",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_68a9.params.rowIndex",
-    "name": "DecodeLevelRow_TileRow",
+    "name": "TileRow",
+    "previous_name": "DecodeLevelRow_TileRow",
     "proposed": "TileRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_68a9.locals.col",
-    "name": "DecodeLevelRow_TileColumn",
+    "name": "TileColumn",
+    "previous_name": "DecodeLevelRow_TileColumn",
     "proposed": "TileColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_68a9.locals.symbol",
-    "name": "DecodeLevelRow_MapSymbol",
+    "name": "MapSymbol",
+    "previous_name": "DecodeLevelRow_MapSymbol",
     "proposed": "MapSymbol",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_68a9.locals.overlay",
-    "name": "DecodeLevelRow_ForegroundOnly",
+    "name": "ForegroundOnly",
+    "previous_name": "DecodeLevelRow_ForegroundOnly",
     "proposed": "ForegroundOnly",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u2_a1ae.locals.Row",
-    "name": "LoadLevelMap_EncodedRow",
+    "name": "EncodedRow",
+    "previous_name": "LoadLevelMap_EncodedRow",
     "proposed": "EncodedRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_0232.params.Ticks",
-    "name": "FadeGamePaletteT_PaletteDelayMs",
+    "name": "PaletteDelayMs",
+    "previous_name": "FadeGamePaletteT_PaletteDelayMs",
     "proposed": "PaletteDelayMs",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_1601.locals.moveCount",
-    "name": "ReadPopupScanCode_SparkFrame",
+    "name": "SparkFrame",
+    "previous_name": "ReadPopupScanCode_SparkFrame",
     "proposed": "SparkFrame",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_1601.locals.selected",
-    "name": "ReadPopupScanCode_SparkActive",
+    "name": "SparkActive",
+    "previous_name": "ReadPopupScanCode_SparkActive",
     "proposed": "SparkActive",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_1e2a.locals.CursorX",
-    "name": "ReadPopupText_CursorColumn",
+    "name": "CursorColumn",
+    "previous_name": "ReadPopupText_CursorColumn",
     "proposed": "CursorColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_1e2a.locals.CursorY",
-    "name": "ReadPopupText_CursorRow",
+    "name": "CursorRow",
+    "previous_name": "ReadPopupText_CursorRow",
     "proposed": "CursorRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_1e2a.locals.WindowIndex",
-    "name": "ReadPopupText_CursorFrame",
+    "name": "CursorFrame",
+    "previous_name": "ReadPopupText_CursorFrame",
     "proposed": "CursorFrame",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_1e2a.locals.MaxWidth",
-    "name": "ReadPopupText_MaxLineColumns",
+    "name": "MaxLineColumns",
+    "previous_name": "ReadPopupText_MaxLineColumns",
     "proposed": "MaxLineColumns",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_1e2a.locals.LastRow",
-    "name": "ReadPopupText_PopupRowCount",
+    "name": "PopupRowCount",
+    "previous_name": "ReadPopupText_PopupRowCount",
     "proposed": "PopupRowCount",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_1e2a.locals.Left",
-    "name": "ReadPopupText_LeftColumn",
+    "name": "LeftColumn",
+    "previous_name": "ReadPopupText_LeftColumn",
     "proposed": "LeftColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_1e2a.locals.Top",
-    "name": "ReadPopupText_TopRow",
+    "name": "TopRow",
+    "previous_name": "ReadPopupText_TopRow",
     "proposed": "TopRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_1e2a.locals.Right",
-    "name": "ReadPopupText_RightColumn",
+    "name": "RightColumn",
+    "previous_name": "ReadPopupText_RightColumn",
     "proposed": "RightColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_1e2a.locals.Bottom",
-    "name": "ReadPopupText_BottomRow",
+    "name": "BottomRow",
+    "previous_name": "ReadPopupText_BottomRow",
     "proposed": "BottomRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_1e2a.locals.BlinkX",
-    "name": "ReadPopupText_SparkColumn",
+    "name": "SparkColumn",
+    "previous_name": "ReadPopupText_SparkColumn",
     "proposed": "SparkColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_1e2a.locals.BlinkY",
-    "name": "ReadPopupText_SparkPixelY",
+    "name": "SparkPixelY",
+    "previous_name": "ReadPopupText_SparkPixelY",
     "proposed": "SparkPixelY",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_1e2a.locals.BlinkCount",
-    "name": "ReadPopupText_SparkFrame",
+    "name": "SparkFrame",
+    "previous_name": "ReadPopupText_SparkFrame",
     "proposed": "SparkFrame",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_1e2a.locals.BlinkMode",
-    "name": "ReadPopupText_SparkOnTopBorder",
+    "name": "SparkOnTopBorder",
+    "previous_name": "ReadPopupText_SparkOnTopBorder",
     "proposed": "SparkOnTopBorder",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_1e2a.locals.StopFlag",
-    "name": "ReadPopupText_SparkActive",
+    "name": "SparkActive",
+    "previous_name": "ReadPopupText_SparkActive",
     "proposed": "SparkActive",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_26cf.params.Mode",
-    "name": "ReadScrollablePopu_AcceptAnyKey",
+    "name": "AcceptAnyKey",
+    "previous_name": "ReadScrollablePopu_AcceptAnyKey",
     "proposed": "AcceptAnyKey",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_26cf.locals.CursorX",
-    "name": "ReadScrollablePopu_CursorColumn",
+    "name": "CursorColumn",
+    "previous_name": "ReadScrollablePopu_CursorColumn",
     "proposed": "CursorColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_26cf.locals.CursorY",
-    "name": "ReadScrollablePopupSc_CursorRow",
+    "name": "CursorRow",
+    "previous_name": "ReadScrollablePopupSc_CursorRow",
     "proposed": "CursorRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_26cf.locals.Width",
-    "name": "ReadScrollablePo_MaxLineColumns",
+    "name": "MaxLineColumns",
+    "previous_name": "ReadScrollablePo_MaxLineColumns",
     "proposed": "MaxLineColumns",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_26cf.locals.Left",
-    "name": "ReadScrollablePopupS_LeftColumn",
+    "name": "LeftColumn",
+    "previous_name": "ReadScrollablePopupS_LeftColumn",
     "proposed": "LeftColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_26cf.locals.Top",
-    "name": "ReadScrollablePopupScanC_TopRow",
+    "name": "TopRow",
+    "previous_name": "ReadScrollablePopupScanC_TopRow",
     "proposed": "TopRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_26cf.locals.Right",
-    "name": "ReadScrollablePopup_RightColumn",
+    "name": "RightColumn",
+    "previous_name": "ReadScrollablePopup_RightColumn",
     "proposed": "RightColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_26cf.locals.Bottom",
-    "name": "ReadScrollablePopupSc_BottomRow",
+    "name": "BottomRow",
+    "previous_name": "ReadScrollablePopupSc_BottomRow",
     "proposed": "BottomRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_26cf.locals.Key",
-    "name": "ReadScrollablePopup_KeyScanCode",
+    "name": "KeyScanCode",
+    "previous_name": "ReadScrollablePopup_KeyScanCode",
     "proposed": "KeyScanCode",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_26cf.locals.SparkX",
-    "name": "ReadScrollablePopup_SparkColumn",
+    "name": "SparkColumn",
+    "previous_name": "ReadScrollablePopup_SparkColumn",
     "proposed": "SparkColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_26cf.locals.SparkY",
-    "name": "ReadScrollablePopup_SparkPixelY",
+    "name": "SparkPixelY",
+    "previous_name": "ReadScrollablePopup_SparkPixelY",
     "proposed": "SparkPixelY",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_26cf.locals.Horizontal",
-    "name": "ReadScrollable_SparkOnTopBorder",
+    "name": "SparkOnTopBorder",
+    "previous_name": "ReadScrollable_SparkOnTopBorder",
     "proposed": "SparkOnTopBorder",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_26cf.locals.Done",
-    "name": "ReadScrollablePopup_KeyAccepted",
+    "name": "KeyAccepted",
+    "previous_name": "ReadScrollablePopup_KeyAccepted",
     "proposed": "KeyAccepted",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_3505.locals.ResultWord",
-    "name": "ShowTitleAnd_GraphicsCallResult",
+    "name": "GraphicsCallResult",
+    "previous_name": "ShowTitleAnd_GraphicsCallResult",
     "proposed": "GraphicsCallResult",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_3c93.locals.I",
-    "name": "BlackenGamePalette_PaletteIndex",
+    "name": "PaletteIndex",
+    "previous_name": "BlackenGamePalette_PaletteIndex",
     "proposed": "PaletteIndex",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_3d6b.locals.I",
-    "name": "RestoreGameSnaps_LevelFlagIndex",
+    "name": "LevelFlagIndex",
+    "previous_name": "RestoreGameSnaps_LevelFlagIndex",
     "proposed": "LevelFlagIndex",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_3e29.locals.i",
-    "name": "WriteSavedGame_LevelFlagIndex",
+    "name": "LevelFlagIndex",
+    "previous_name": "WriteSavedGame_LevelFlagIndex",
     "proposed": "LevelFlagIndex",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_3f8c.params.Slot",
-    "name": "ReadSavedGame_SaveSlot",
+    "name": "SaveSlot",
+    "previous_name": "ReadSavedGame_SaveSlot",
     "proposed": "SaveSlot",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_3f8c.locals.I",
-    "name": "ReadSavedGame_LevelFlagIndex",
+    "name": "LevelFlagIndex",
+    "previous_name": "ReadSavedGame_LevelFlagIndex",
     "proposed": "LevelFlagIndex",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_3f8c.locals.NumberString",
-    "name": "ReadSavedGame_SlotNumberText",
+    "name": "SlotNumberText",
+    "previous_name": "ReadSavedGame_SlotNumberText",
     "proposed": "SlotNumberText",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_6ea9.locals.I",
-    "name": "ShowMissionBriefi_TextLineIndex",
+    "name": "TextLineIndex",
+    "previous_name": "ShowMissionBriefi_TextLineIndex",
     "proposed": "TextLineIndex",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_7c17.locals.Row",
-    "name": "ShowMissionSucces_TextLineIndex",
+    "name": "TextLineIndex",
+    "previous_name": "ShowMissionSucces_TextLineIndex",
     "proposed": "TextLineIndex",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_9340.locals.I",
-    "name": "RunMainMenu_TextLineIndex",
+    "name": "TextLineIndex",
+    "previous_name": "RunMainMenu_TextLineIndex",
     "proposed": "TextLineIndex",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_a3b6.locals.i",
-    "name": "CalibrateJoystick_TextLineIndex",
+    "name": "TextLineIndex",
+    "previous_name": "CalibrateJoystick_TextLineIndex",
     "proposed": "TextLineIndex",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_af56.locals.I",
-    "name": "ShowOrderContactD_TextLineIndex",
+    "name": "TextLineIndex",
+    "previous_name": "ShowOrderContactD_TextLineIndex",
     "proposed": "TextLineIndex",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_af56.locals.KeyCode",
-    "name": "ShowOrderContac_DismissScanCode",
+    "name": "DismissScanCode",
+    "previous_name": "ShowOrderContac_DismissScanCode",
     "proposed": "DismissScanCode",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_b4d6.locals.Row",
-    "name": "ShowOrderPackageD_TextLineIndex",
+    "name": "TextLineIndex",
+    "previous_name": "ShowOrderPackageD_TextLineIndex",
     "proposed": "TextLineIndex",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_b4d6.locals.ModeResult",
-    "name": "ShowOrderPackag_DismissScanCode",
+    "name": "DismissScanCode",
+    "previous_name": "ShowOrderPackag_DismissScanCode",
     "proposed": "DismissScanCode",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_b898.locals.I",
-    "name": "ShowOrderingInfor_TextLineIndex",
+    "name": "TextLineIndex",
+    "previous_name": "ShowOrderingInfor_TextLineIndex",
     "proposed": "TextLineIndex",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_b898.locals.KeyCode",
-    "name": "ShowOrderingInf_DismissScanCode",
+    "name": "DismissScanCode",
+    "previous_name": "ShowOrderingInf_DismissScanCode",
     "proposed": "DismissScanCode",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_c10d.locals.Row",
-    "name": "ShowForeignDealer_TextLineIndex",
+    "name": "TextLineIndex",
+    "previous_name": "ShowForeignDealer_TextLineIndex",
     "proposed": "TextLineIndex",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_c10d.locals.KeyCode",
-    "name": "ShowForeignDeal_DismissScanCode",
+    "name": "DismissScanCode",
+    "previous_name": "ShowForeignDeal_DismissScanCode",
     "proposed": "DismissScanCode",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_cf40.locals.menuIndex",
-    "name": "ShowApogeeBbsInfo_TextLineIndex",
+    "name": "TextLineIndex",
+    "previous_name": "ShowApogeeBbsInfo_TextLineIndex",
     "proposed": "TextLineIndex",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_cf40.locals.selectedValue",
-    "name": "ShowApogeeBbsIn_DismissScanCode",
+    "name": "DismissScanCode",
+    "previous_name": "ShowApogeeBbsIn_DismissScanCode",
     "proposed": "DismissScanCode",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_d323.locals.menuIndex",
-    "name": "ShowAboutApogee_TextLineIndex",
+    "name": "TextLineIndex",
+    "previous_name": "ShowAboutApogee_TextLineIndex",
     "proposed": "TextLineIndex",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_d323.locals.selectedValue",
-    "name": "ShowAboutApogee_DismissScanCode",
+    "name": "DismissScanCode",
+    "previous_name": "ShowAboutApogee_DismissScanCode",
     "proposed": "DismissScanCode",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_d645.locals.i",
-    "name": "ShowFortressUnloc_TextLineIndex",
+    "name": "TextLineIndex",
+    "previous_name": "ShowFortressUnloc_TextLineIndex",
     "proposed": "TextLineIndex",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_d645.locals.resultWord",
-    "name": "ShowFortressUnl_DismissScanCode",
+    "name": "DismissScanCode",
+    "previous_name": "ShowFortressUnl_DismissScanCode",
     "proposed": "DismissScanCode",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_d820.locals.menuIndex",
-    "name": "ShowPerfectHealth_TextLineIndex",
+    "name": "TextLineIndex",
+    "previous_name": "ShowPerfectHealth_TextLineIndex",
     "proposed": "TextLineIndex",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_d820.locals.selectedValue",
-    "name": "ShowPerfectHeal_DismissScanCode",
+    "name": "DismissScanCode",
+    "previous_name": "ShowPerfectHeal_DismissScanCode",
     "proposed": "DismissScanCode",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u3_ddd2.locals.ResultWord",
-    "name": "ShowEpisodeE_GraphicsCallResult",
+    "name": "GraphicsCallResult",
+    "previous_name": "ShowEpisodeE_GraphicsCallResult",
     "proposed": "GraphicsCallResult",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0097.params.X1",
-    "name": "FillTextRectangle_LeftColumn",
+    "name": "LeftColumn",
+    "previous_name": "FillTextRectangle_LeftColumn",
     "proposed": "LeftColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0097.params.Y1",
-    "name": "FillTextRectangle_TopRow",
+    "name": "TopRow",
+    "previous_name": "FillTextRectangle_TopRow",
     "proposed": "TopRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0097.params.X2",
-    "name": "FillTextRectangle_RightColumn",
+    "name": "RightColumn",
+    "previous_name": "FillTextRectangle_RightColumn",
     "proposed": "RightColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0097.params.Y2",
-    "name": "FillTextRectangle_BottomRow",
+    "name": "BottomRow",
+    "previous_name": "FillTextRectangle_BottomRow",
     "proposed": "BottomRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0097.params.Fore",
-    "name": "FillTextRectang_ForegroundColor",
+    "name": "ForegroundColor",
+    "previous_name": "FillTextRectang_ForegroundColor",
     "proposed": "ForegroundColor",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0097.params.Back",
-    "name": "FillTextRectang_BackgroundColor",
+    "name": "BackgroundColor",
+    "previous_name": "FillTextRectang_BackgroundColor",
     "proposed": "BackgroundColor",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0101.params.A",
-    "name": "DrawTextBoxBorder_LeftColumn",
+    "name": "LeftColumn",
+    "previous_name": "DrawTextBoxBorder_LeftColumn",
     "proposed": "LeftColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0101.params.B",
-    "name": "DrawTextBoxBorder_TopRow",
+    "name": "TopRow",
+    "previous_name": "DrawTextBoxBorder_TopRow",
     "proposed": "TopRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0101.params.C",
-    "name": "DrawTextBoxBorder_RightColumn",
+    "name": "RightColumn",
+    "previous_name": "DrawTextBoxBorder_RightColumn",
     "proposed": "RightColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0101.params.D",
-    "name": "DrawTextBoxBorder_BottomRow",
+    "name": "BottomRow",
+    "previous_name": "DrawTextBoxBorder_BottomRow",
     "proposed": "BottomRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0101.params.E",
-    "name": "DrawTextBoxBord_ForegroundColor",
+    "name": "ForegroundColor",
+    "previous_name": "DrawTextBoxBord_ForegroundColor",
     "proposed": "ForegroundColor",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0101.params.F",
-    "name": "DrawTextBoxBord_BackgroundColor",
+    "name": "BackgroundColor",
+    "previous_name": "DrawTextBoxBord_BackgroundColor",
     "proposed": "BackgroundColor",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0309.params.A",
-    "name": "DrawFilledTextBox_LeftColumn",
+    "name": "LeftColumn",
+    "previous_name": "DrawFilledTextBox_LeftColumn",
     "proposed": "LeftColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0309.params.B",
-    "name": "DrawFilledTextBox_TopRow",
+    "name": "TopRow",
+    "previous_name": "DrawFilledTextBox_TopRow",
     "proposed": "TopRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0309.params.C",
-    "name": "DrawFilledTextBox_RightColumn",
+    "name": "RightColumn",
+    "previous_name": "DrawFilledTextBox_RightColumn",
     "proposed": "RightColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0309.params.D",
-    "name": "DrawFilledTextBox_BottomRow",
+    "name": "BottomRow",
+    "previous_name": "DrawFilledTextBox_BottomRow",
     "proposed": "BottomRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0309.params.E",
-    "name": "DrawFilledTextB_ForegroundColor",
+    "name": "ForegroundColor",
+    "previous_name": "DrawFilledTextB_ForegroundColor",
     "proposed": "ForegroundColor",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0309.params.F",
-    "name": "DrawFilledTextB_BackgroundColor",
+    "name": "BackgroundColor",
+    "previous_name": "DrawFilledTextB_BackgroundColor",
     "proposed": "BackgroundColor",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0309.params.G",
-    "name": "DrawFilledTextBox_BorderStyle",
+    "name": "BorderStyle",
+    "previous_name": "DrawFilledTextBox_BorderStyle",
     "proposed": "BorderStyle",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0349.params.A",
-    "name": "WriteCenteredText_TextRow",
+    "name": "TextRow",
+    "previous_name": "WriteCenteredText_TextRow",
     "proposed": "TextRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0349.params.B",
-    "name": "WriteCenteredTe_ForegroundColor",
+    "name": "ForegroundColor",
+    "previous_name": "WriteCenteredTe_ForegroundColor",
     "proposed": "ForegroundColor",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0349.params.C",
-    "name": "WriteCenteredTe_BackgroundColor",
+    "name": "BackgroundColor",
+    "previous_name": "WriteCenteredTe_BackgroundColor",
     "proposed": "BackgroundColor",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0349.params.Text",
-    "name": "WriteCenteredText_DisplayText",
+    "name": "DisplayText",
+    "previous_name": "WriteCenteredText_DisplayText",
     "proposed": "DisplayText",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0399.params.x",
-    "name": "WriteVerticalText_TextColumn",
+    "name": "TextColumn",
+    "previous_name": "WriteVerticalText_TextColumn",
     "proposed": "TextColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0399.params.fg",
-    "name": "WriteVerticalTe_ForegroundColor",
+    "name": "ForegroundColor",
+    "previous_name": "WriteVerticalTe_ForegroundColor",
     "proposed": "ForegroundColor",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0399.params.bg",
-    "name": "WriteVerticalTe_BackgroundColor",
+    "name": "BackgroundColor",
+    "previous_name": "WriteVerticalTe_BackgroundColor",
     "proposed": "BackgroundColor",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0399.params.source",
-    "name": "WriteVerticalText_DisplayText",
+    "name": "DisplayText",
+    "previous_name": "WriteVerticalText_DisplayText",
     "proposed": "DisplayText",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_0399.locals.i",
-    "name": "WriteVerticalTex_CharacterIndex",
+    "name": "CharacterIndex",
+    "previous_name": "WriteVerticalTex_CharacterIndex",
     "proposed": "CharacterIndex",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_04bf.params.X",
-    "name": "WriteColoredText_TextColumn",
+    "name": "TextColumn",
+    "previous_name": "WriteColoredText_TextColumn",
     "proposed": "TextColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_04bf.params.Y",
-    "name": "WriteColoredText_TextRow",
+    "name": "TextRow",
+    "previous_name": "WriteColoredText_TextRow",
     "proposed": "TextRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_04bf.params.Attr",
-    "name": "WriteColoredText_TextAttr",
+    "name": "ColorAttribute",
+    "previous_name": "WriteColoredText_TextAttr",
     "proposed": "TextAttr",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u4_04bf.params.Text",
-    "name": "WriteColoredText_DisplayText",
+    "name": "DisplayText",
+    "previous_name": "WriteColoredText_DisplayText",
     "proposed": "DisplayText",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u5_01ac.params.DisplayType",
-    "name": "PcxGetDisplayDescr_DisplayIndex",
+    "name": "DisplayIndex",
+    "previous_name": "PcxGetDisplayDescr_DisplayIndex",
     "proposed": "DisplayIndex",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u5_1915.params.A",
-    "name": "PcxDisplayFile_ImageX",
+    "name": "ImageX",
+    "previous_name": "PcxDisplayFile_ImageX",
     "proposed": "ImageX",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u5_1915.params.B",
-    "name": "PcxDisplayFile_ImageY",
+    "name": "ImageY",
+    "previous_name": "PcxDisplayFile_ImageY",
     "proposed": "ImageY",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u5_1915.params.C",
-    "name": "PcxDisplayFile_VideoPage",
+    "name": "VideoPage",
+    "previous_name": "PcxDisplayFile_VideoPage",
     "proposed": "VideoPage",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_01c5.params.N",
-    "name": "PgSetBiosVideoMode_BiosMode",
+    "name": "BiosMode",
+    "previous_name": "PgSetBiosVideoMode_BiosMode",
     "proposed": "BiosMode",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_024c.params.A",
-    "name": "PgPanDisplayAtRetrace_PanPixelX",
+    "name": "PanPixelX",
+    "previous_name": "PgPanDisplayAtRetrace_PanPixelX",
     "proposed": "PanPixelX",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_024c.params.B",
-    "name": "PgPanDisplayAtRetrace_PanPixelY",
+    "name": "PanPixelY",
+    "previous_name": "PgPanDisplayAtRetrace_PanPixelY",
     "proposed": "PanPixelY",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_02fa.params.N",
-    "name": "PgSetVgaSplitScan_SplitScanline",
+    "name": "SplitScanline",
+    "previous_name": "PgSetVgaSplitScan_SplitScanline",
     "proposed": "SplitScanline",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_0352.params.X",
-    "name": "PgSetPaletteRegist_PaletteIndex",
+    "name": "PaletteIndex",
+    "previous_name": "PgSetPaletteRegist_PaletteIndex",
     "proposed": "PaletteIndex",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_051f.params.Data",
-    "name": "PgBlitMasked8x8_ImageSource",
+    "name": "ImageSource",
+    "previous_name": "PgBlitMasked8x8_ImageSource",
     "proposed": "ImageSource",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_051f.params.X",
-    "name": "PgBlitMasked8x8_ByteColumn",
+    "name": "ByteColumn",
+    "previous_name": "PgBlitMasked8x8_ByteColumn",
     "proposed": "ByteColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_051f.params.Y",
-    "name": "PgBlitMasked8x8_PixelRow",
+    "name": "PixelRow",
+    "previous_name": "PgBlitMasked8x8_PixelRow",
     "proposed": "PixelRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_1795.params.X1",
-    "name": "PgCapturePlanarR_LeftByteColumn",
+    "name": "LeftByteColumn",
+    "previous_name": "PgCapturePlanarR_LeftByteColumn",
     "proposed": "LeftByteColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_1795.params.Y1",
-    "name": "PgCapturePlanarRect_TopPixelRow",
+    "name": "TopPixelRow",
+    "previous_name": "PgCapturePlanarRect_TopPixelRow",
     "proposed": "TopPixelRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_1831.params.Data",
-    "name": "PgRestorePlanarRe_CapturedImage",
+    "name": "CapturedImage",
+    "previous_name": "PgRestorePlanarRe_CapturedImage",
     "proposed": "CapturedImage",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_1831.params.X",
-    "name": "PgRestorePlanarRecta_ByteColumn",
+    "name": "ByteColumn",
+    "previous_name": "PgRestorePlanarRecta_ByteColumn",
     "proposed": "ByteColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_1831.params.Y",
-    "name": "PgRestorePlanarRectang_PixelRow",
+    "name": "PixelRow",
+    "previous_name": "PgRestorePlanarRectang_PixelRow",
     "proposed": "PixelRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_1b27.params.x",
-    "name": "PgBlitMaskedShifted8x8_PixelX",
+    "name": "PixelX",
+    "previous_name": "PgBlitMaskedShifted8x8_PixelX",
     "proposed": "PixelX",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_1b27.params.y",
-    "name": "PgBlitMaskedShifted8x8_PixelY",
+    "name": "PixelY",
+    "previous_name": "PgBlitMaskedShifted8x8_PixelY",
     "proposed": "PixelY",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_2463.params.Data",
-    "name": "PgOrShifted16x16_SpriteSource",
+    "name": "SpriteSource",
+    "previous_name": "PgOrShifted16x16_SpriteSource",
     "proposed": "SpriteSource",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_2463.params.X",
-    "name": "PgOrShifted16x16_PixelX",
+    "name": "PixelX",
+    "previous_name": "PgOrShifted16x16_PixelX",
     "proposed": "PixelX",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_2463.params.Y",
-    "name": "PgOrShifted16x16_PixelY",
+    "name": "PixelY",
+    "previous_name": "PgOrShifted16x16_PixelY",
     "proposed": "PixelY",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_2a9f.params.Data",
-    "name": "PgBlitOpaque16x16_ImageSource",
+    "name": "ImageSource",
+    "previous_name": "PgBlitOpaque16x16_ImageSource",
     "proposed": "ImageSource",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_2a9f.params.X",
-    "name": "PgBlitOpaque16x16_ByteColumn",
+    "name": "ByteColumn",
+    "previous_name": "PgBlitOpaque16x16_ByteColumn",
     "proposed": "ByteColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_2a9f.params.Y",
-    "name": "PgBlitOpaque16x16_PixelRow",
+    "name": "PixelRow",
+    "previous_name": "PgBlitOpaque16x16_PixelRow",
     "proposed": "PixelRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_2b38.params.Data",
-    "name": "PgBlitOpaque8x8_ImageSource",
+    "name": "ImageSource",
+    "previous_name": "PgBlitOpaque8x8_ImageSource",
     "proposed": "ImageSource",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_2b38.params.X",
-    "name": "PgBlitOpaque8x8_ByteColumn",
+    "name": "ByteColumn",
+    "previous_name": "PgBlitOpaque8x8_ByteColumn",
     "proposed": "ByteColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_2b38.params.Y",
-    "name": "PgBlitOpaque8x8_PixelRow",
+    "name": "PixelRow",
+    "previous_name": "PgBlitOpaque8x8_PixelRow",
     "proposed": "PixelRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_2e6d.params.X",
-    "name": "PgCopyCachedVideoTil_ByteColumn",
+    "name": "ByteColumn",
+    "previous_name": "PgCopyCachedVideoTil_ByteColumn",
     "proposed": "ByteColumn",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    },
    {
     "entity": "routines.u9_2e6d.params.Y",
-    "name": "PgCopyCachedVideoTile1_PixelRow",
+    "name": "PixelRow",
+    "previous_name": "PgCopyCachedVideoTile1_PixelRow",
     "proposed": "PixelRow",
-    "reason": "program-wide uniqueness / existing or Borland identifier"
+    "reason": "Unique within its Pascal routine or record scope"
    }
   ]
  },
@@ -7531,8 +8040,8 @@
     }
    },
    "locals": {
-    "changed": "PollJoystickControl_ShotSpawned",
-    "i": "PollJoystickControls_ShotSlot"
+    "changed": "ShotSpawned",
+    "i": "ShotSlot"
    },
    "name": "PollJoystickControls",
    "params": {},
@@ -7604,7 +8113,7 @@
    },
    "locals": {
     "OK": "ConfigOpened",
-    "f": "LoadGameConfig_ConfigFile"
+    "f": "ConfigFile"
    },
    "name": "LoadGameConfig",
    "params": {},
@@ -7708,8 +8217,8 @@
     }
    },
    "params": {
-    "margin": "ShotNearViewport_MarginPixels",
-    "slot": "ShotNearViewport_ShotSlot"
+    "margin": "MarginPixels",
+    "slot": "ShotSlot"
    },
    "proposal": "names-a"
   },
@@ -7763,7 +8272,7 @@
     }
    },
    "locals": {
-    "I": "ConsumeShotsAtActor_ShotSlot"
+    "I": "ShotSlot"
    },
    "name": "ConsumeShotsAtActor",
    "param_details": {
@@ -7801,7 +8310,7 @@
    },
    "locals": {
     "found": "PopupAllocated",
-    "idx": "SpawnScorePopup_ActorSlot"
+    "idx": "ActorSlot"
    },
    "name": "SpawnScorePopup",
    "param_details": {
@@ -7855,7 +8364,7 @@
    },
    "locals": {
     "Found": "ProjectileAllocated",
-    "I": "SpawnEnemyProjectile_ActorSlot",
+    "I": "ActorSlot",
     "Spare1": "UnusedSpawnWord1",
     "Spare2": "UnusedSpawnWord2"
    },
@@ -7889,7 +8398,7 @@
    },
    "params": {
     "EntryId": "ProjectileSprite",
-    "TypeCode": "SpawnEnemyProjectile_Direction",
+    "TypeCode": "Direction",
     "Value": "MoveSpeed",
     "X": "SpawnX",
     "Y": "SpawnY"
@@ -7957,7 +8466,7 @@
    },
    "params": {
     "I": "ScanColumn",
-    "Item": "UpdateBasicActor_ActorSlot",
+    "Item": "ActorSlot",
     "J": "ScanRow",
     "X": "ProposedX",
     "Y": "ProposedY"
@@ -8018,12 +8527,12 @@
     "A": "UnusedScanSeedX",
     "B": "UnusedScanSeedY",
     "I": "EntitySlot",
-    "J": "UpdateActorsAndS_HorizontalWork",
+    "J": "HorizontalWork",
     "K": "VerticalWork2",
-    "L": "UpdateActorsAnd_RightCellColumn",
-    "M": "UpdateActorsAndSho_UpperCellRow",
-    "X": "UpdateActorsAndShots_ProposedX",
-    "Y": "UpdateActorsAndSho_VerticalWork"
+    "L": "RightCellColumn",
+    "M": "UpperCellRow",
+    "X": "ProposedX",
+    "Y": "VerticalWork"
    },
    "name": "UpdateActorsAndShots",
    "params": {},
@@ -8056,7 +8565,7 @@
    },
    "locals": {
     "x1": "LeftCellColumn",
-    "x2": "PlayerPositionI_RightCellColumn",
+    "x2": "RightCellColumn",
     "y1": "TopCellRow",
     "y2": "BottomCellRow"
    },
@@ -8142,8 +8651,8 @@
     }
    },
    "params": {
-    "X": "ProcessPlayerTileConta_ContactX",
-    "Y": "ProcessPlayerTileConta_ContactY"
+    "X": "ContactX",
+    "Y": "ContactY"
    },
    "proposal": "names-a"
   },
@@ -8241,8 +8750,8 @@
     }
    },
    "locals": {
-    "TileX": "DrawLevelCellResolve_TileColumn",
-    "TileY": "DrawLevelCellResolved_TileRow"
+    "TileX": "TileColumn",
+    "TileY": "TileRow"
    },
    "name": "DrawLevelCellResolved",
    "param_details": {
@@ -8258,8 +8767,8 @@
     }
    },
    "params": {
-    "X": "DrawLevelCellResolved_WorldX",
-    "Y": "DrawLevelCellResolved_WorldY"
+    "X": "WorldX",
+    "Y": "WorldY"
    },
    "proposal": "names-a"
   },
@@ -8279,8 +8788,8 @@
     }
    },
    "locals": {
-    "X0": "DrawCellForeground_TileColumn",
-    "Y0": "DrawCellForeground_TileRow"
+    "X0": "TileColumn",
+    "Y0": "TileRow"
    },
    "name": "DrawCellForeground",
    "param_details": {
@@ -8296,8 +8805,8 @@
     }
    },
    "params": {
-    "X": "DrawCellForeground_WorldX",
-    "Y": "DrawCellForeground_WorldY"
+    "X": "WorldX",
+    "Y": "WorldY"
    },
    "proposal": "names-a"
   },
@@ -8349,14 +8858,14 @@
     }
    },
    "params": {
-    "A": "SetAndDrawLevelCell_MiddleTile",
-    "B": "SetAndDrawLevelCell_FrontTile",
-    "C": "SetAndDrawLevelC_BlocksMovement",
-    "D": "SetAndDrawLevel_SupportsLanding",
+    "A": "MiddleTile",
+    "B": "FrontTile",
+    "C": "BlocksMovement",
+    "D": "SupportsLanding",
     "Foreground": "ForegroundOnly",
-    "Tile": "SetAndDrawLevelCell_BaseTile",
-    "X": "SetAndDrawLevelCell_TileColumn",
-    "Y": "SetAndDrawLevelCell_TileRow"
+    "Tile": "BaseTile",
+    "X": "TileColumn",
+    "Y": "TileRow"
    },
    "proposal": "names-a"
   },
@@ -8382,7 +8891,7 @@
    },
    "locals": {
     "Count": "CompletedLevelCount",
-    "Foreground": "DecodeIslandSymb_ForegroundOnly",
+    "Foreground": "ForegroundOnly",
     "I": "LevelIndex"
    },
    "name": "DecodeIslandSymbol",
@@ -8405,8 +8914,8 @@
    },
    "params": {
     "Symbol": "MapSymbol",
-    "X": "DecodeIslandSymbol_TileColumn",
-    "Y": "DecodeIslandSymbol_TileRow"
+    "X": "TileColumn",
+    "Y": "TileRow"
    },
    "proposal": "names-a"
   },
@@ -8438,10 +8947,10 @@
     }
    },
    "params": {
-    "Foreground": "SpawnActorFromMa_ForegroundOnly",
-    "Symbol": "SpawnActorFromMapSymb_MapSymbol",
-    "X": "SpawnActorFromMapSym_TileColumn",
-    "Y": "SpawnActorFromMapSymbol_TileRow"
+    "Foreground": "ForegroundOnly",
+    "Symbol": "MapSymbol",
+    "X": "TileColumn",
+    "Y": "TileRow"
    },
    "proposal": "names-a"
   },
@@ -8476,11 +8985,11 @@
     }
    },
    "locals": {
-    "col": "DecodeLevelRow_TileColumn",
-    "overlay": "DecodeLevelRow_ForegroundOnly",
+    "col": "TileColumn",
+    "overlay": "ForegroundOnly",
     "savedCol": "SavedStartColumn",
     "savedRow": "SavedStartRow",
-    "symbol": "DecodeLevelRow_MapSymbol"
+    "symbol": "MapSymbol"
    },
    "name": "DecodeLevelRow",
    "param_details": {
@@ -8497,7 +9006,7 @@
    },
    "params": {
     "row": "EncodedRow",
-    "rowIndex": "DecodeLevelRow_TileRow"
+    "rowIndex": "TileRow"
    },
    "proposal": "names-a"
   },
@@ -8529,7 +9038,7 @@
    "locals": {
     "F": "LevelFile",
     "I": "LoadIndex",
-    "Row": "LoadLevelMap_EncodedRow",
+    "Row": "EncodedRow",
     "Work": "BackdropText"
    },
    "name": "LoadLevelMap",
@@ -8572,6 +9081,16 @@
      "evidence": "u3_0000: egaFlags := PByte(PPointer(Ptr(0, $0487))^)^;",
      "proposal": "names-b"
     },
+    "pad": {
+     "confidence": "high",
+     "evidence": "DetectGameVideoAdapter has no consuming read of this local; preserves the original stack frame and any writes.",
+     "proposal": "sol-polish"
+    },
+    "prefixByte": {
+     "confidence": "high",
+     "evidence": "DetectGameVideoAdapter has no consuming read of this local; preserves the original stack frame and any writes.",
+     "proposal": "sol-polish"
+    },
     "regs": {
      "confidence": "high",
      "evidence": "u3_0000: regs.ES := Seg(buffer);",
@@ -8587,6 +9106,8 @@
     "adapter": "AdapterCode",
     "buffer": "VideoStateBuffer",
     "egaFlags": "EgaDisplayFlags",
+    "pad": "UnusedVideoProbePad",
+    "prefixByte": "UnusedVideoProbeByte",
     "regs": "BiosRegs",
     "shift": "EquipmentDisplayBits"
    },
@@ -8649,7 +9170,7 @@
     }
    },
    "params": {
-    "Ticks": "FadeGamePaletteT_PaletteDelayMs"
+    "Ticks": "PaletteDelayMs"
    },
    "proposal": "names-b"
   },
@@ -8803,6 +9324,11 @@
      "evidence": "u3_1601: selectedCode := d_6824;",
      "proposal": "names-b"
     },
+    "unusedWord": {
+     "confidence": "high",
+     "evidence": "ReadPopupScanCode has no consuming read of this local; preserves the original stack frame and any writes.",
+     "proposal": "sol-polish"
+    },
     "xLimit": {
      "confidence": "high",
      "evidence": "u3_1601: xLimit := xOrigin + longestName + 4;",
@@ -8838,13 +9364,14 @@
     "endRow": "PopupRowCount",
     "found": "KeyAccepted",
     "longestName": "MaxLineColumns",
-    "moveCount": "ReadPopupScanCode_SparkFrame",
+    "moveCount": "SparkFrame",
     "moveVertical": "SparkOnTopBorder",
     "moveX": "SparkColumn",
     "moveY": "SparkPixelY",
     "phase": "CursorFrame",
-    "selected": "ReadPopupScanCode_SparkActive",
+    "selected": "SparkActive",
     "selectedCode": "KeyScanCode",
+    "unusedWord": "UnusedPopupWord",
     "xLimit": "RightColumn",
     "xOrigin": "LeftColumn",
     "xPos": "CursorColumn",
@@ -8949,6 +9476,11 @@
      "evidence": "u3_1e2a: Top := ((200 - (LastRow shl 3)) div 2 + d_683A) div 8 - 2;",
      "proposal": "names-b"
     },
+    "UnusedWord": {
+     "confidence": "high",
+     "evidence": "ReadPopupText has no consuming read of this local; preserves the original stack frame and any writes.",
+     "proposal": "sol-polish"
+    },
     "WindowIndex": {
      "confidence": "high",
      "evidence": "u3_1e2a: u9_051F(d_6E3A^.Glyphs[WindowIndex + 45].Pixels[1], CursorX,",
@@ -8956,23 +9488,24 @@
     }
    },
    "locals": {
-    "BlinkCount": "ReadPopupText_SparkFrame",
-    "BlinkMode": "ReadPopupText_SparkOnTopBorder",
-    "BlinkX": "ReadPopupText_SparkColumn",
-    "BlinkY": "ReadPopupText_SparkPixelY",
-    "Bottom": "ReadPopupText_BottomRow",
-    "CursorX": "ReadPopupText_CursorColumn",
-    "CursorY": "ReadPopupText_CursorRow",
+    "BlinkCount": "SparkFrame",
+    "BlinkMode": "SparkOnTopBorder",
+    "BlinkX": "SparkColumn",
+    "BlinkY": "SparkPixelY",
+    "Bottom": "BottomRow",
+    "CursorX": "CursorColumn",
+    "CursorY": "CursorRow",
     "InputText": "EditedText",
     "Key": "InputChar",
-    "LastRow": "ReadPopupText_PopupRowCount",
-    "Left": "ReadPopupText_LeftColumn",
-    "MaxWidth": "ReadPopupText_MaxLineColumns",
+    "LastRow": "PopupRowCount",
+    "Left": "LeftColumn",
+    "MaxWidth": "MaxLineColumns",
     "Position": "InputLength",
-    "Right": "ReadPopupText_RightColumn",
-    "StopFlag": "ReadPopupText_SparkActive",
-    "Top": "ReadPopupText_TopRow",
-    "WindowIndex": "ReadPopupText_CursorFrame"
+    "Right": "RightColumn",
+    "StopFlag": "SparkActive",
+    "Top": "TopRow",
+    "UnusedWord": "UnusedPopupWord",
+    "WindowIndex": "CursorFrame"
    },
    "name": "ReadPopupText",
    "param_details": {
@@ -9011,6 +9544,11 @@
      "evidence": "u3_26cf: until Done;",
      "proposal": "names-b"
     },
+    "FirstLine": {
+     "confidence": "high",
+     "evidence": "ReadScrollablePopupScanCode has no consuming read of this local; preserves the original stack frame and any writes.",
+     "proposal": "sol-polish"
+    },
     "Height": {
      "confidence": "high",
      "evidence": "u3_26cf: if d_3812[d_6828] = 'END OF WINDOW' then Height := d_6828 - 2;",
@@ -9035,6 +9573,11 @@
      "confidence": "high",
      "evidence": "u3_26cf: LineCount := Height;",
      "proposal": "names-b"
+    },
+    "PreviousKey": {
+     "confidence": "high",
+     "evidence": "ReadScrollablePopupScanCode has no consuming read of this local; preserves the original stack frame and any writes.",
+     "proposal": "sol-polish"
     },
     "Right": {
      "confidence": "high",
@@ -9078,23 +9621,25 @@
     }
    },
    "locals": {
-    "Bottom": "ReadScrollablePopupSc_BottomRow",
-    "CursorX": "ReadScrollablePopu_CursorColumn",
-    "CursorY": "ReadScrollablePopupSc_CursorRow",
-    "Done": "ReadScrollablePopup_KeyAccepted",
+    "Bottom": "BottomRow",
+    "CursorX": "CursorColumn",
+    "CursorY": "CursorRow",
+    "Done": "KeyAccepted",
+    "FirstLine": "UnusedFirstLine",
     "Height": "VisiblePopupRows",
-    "Horizontal": "ReadScrollable_SparkOnTopBorder",
-    "Key": "ReadScrollablePopup_KeyScanCode",
-    "Left": "ReadScrollablePopupS_LeftColumn",
+    "Horizontal": "SparkOnTopBorder",
+    "Key": "KeyScanCode",
+    "Left": "LeftColumn",
     "LineCount": "TotalTextRows",
-    "Right": "ReadScrollablePopup_RightColumn",
+    "PreviousKey": "UnusedPreviousKey",
+    "Right": "RightColumn",
     "Scroll": "ScrollLineOffset",
     "SparkActive": "IsSparkActive",
     "SparkFrame": "SparkFrameIndex",
-    "SparkX": "ReadScrollablePopup_SparkColumn",
-    "SparkY": "ReadScrollablePopup_SparkPixelY",
-    "Top": "ReadScrollablePopupScanC_TopRow",
-    "Width": "ReadScrollablePo_MaxLineColumns"
+    "SparkX": "SparkColumn",
+    "SparkY": "SparkPixelY",
+    "Top": "TopRow",
+    "Width": "MaxLineColumns"
    },
    "name": "ReadScrollablePopupScanCode",
    "param_details": {
@@ -9105,7 +9650,7 @@
     }
    },
    "params": {
-    "Mode": "ReadScrollablePopu_AcceptAnyKey"
+    "Mode": "AcceptAnyKey"
    },
    "proposal": "names-b"
   },
@@ -9117,10 +9662,28 @@
      "confidence": "high",
      "evidence": "u3_344c: resultWord := u5_000f(2);",
      "proposal": "names-b"
+    },
+    "unused1": {
+     "confidence": "high",
+     "evidence": "ShowApogeeSplash has no consuming read of this local; preserves the original stack frame and any writes.",
+     "proposal": "sol-polish"
+    },
+    "unused2": {
+     "confidence": "high",
+     "evidence": "ShowApogeeSplash has no consuming read of this local; preserves the original stack frame and any writes.",
+     "proposal": "sol-polish"
+    },
+    "unused4": {
+     "confidence": "high",
+     "evidence": "ShowApogeeSplash has no consuming read of this local; preserves the original stack frame and any writes.",
+     "proposal": "sol-polish"
     }
    },
    "locals": {
-    "resultWord": "GraphicsCallResult"
+    "resultWord": "GraphicsCallResult",
+    "unused1": "UnusedSplashWord1",
+    "unused2": "UnusedSplashWord2",
+    "unused4": "UnusedSplashWord4"
    },
    "name": "ShowApogeeSplash",
    "params": {},
@@ -9155,7 +9718,7 @@
     "Direction": "PanDirection",
     "I": "PanDistance",
     "Key": "MenuAction",
-    "ResultWord": "ShowTitleAnd_GraphicsCallResult"
+    "ResultWord": "GraphicsCallResult"
    },
    "name": "ShowTitleAndCredits",
    "params": {},
@@ -9209,7 +9772,7 @@
     }
    },
    "locals": {
-    "I": "BlackenGamePalette_PaletteIndex"
+    "I": "PaletteIndex"
    },
    "name": "BlackenGamePalette",
    "params": {},
@@ -9243,7 +9806,7 @@
     }
    },
    "locals": {
-    "I": "RestoreGameSnaps_LevelFlagIndex"
+    "I": "LevelFlagIndex"
    },
    "name": "RestoreGameSnapshot",
    "params": {},
@@ -9271,7 +9834,7 @@
    },
    "locals": {
     "f": "SaveOutputFile",
-    "i": "WriteSavedGame_LevelFlagIndex",
+    "i": "LevelFlagIndex",
     "slotText": "SlotNumberText"
    },
    "name": "WriteSavedGame",
@@ -9314,8 +9877,8 @@
    },
    "locals": {
     "F": "SaveInputFile",
-    "I": "ReadSavedGame_LevelFlagIndex",
-    "NumberString": "ReadSavedGame_SlotNumberText",
+    "I": "LevelFlagIndex",
+    "NumberString": "SlotNumberText",
     "OK": "FileOpenSucceeded"
    },
    "name": "ReadSavedGame",
@@ -9327,7 +9890,7 @@
     }
    },
    "params": {
-    "Slot": "ReadSavedGame_SaveSlot"
+    "Slot": "SaveSlot"
    },
    "proposal": "names-b"
   },
@@ -9359,7 +9922,7 @@
     }
    },
    "locals": {
-    "I": "ShowMissionBriefi_TextLineIndex"
+    "I": "TextLineIndex"
    },
    "name": "ShowMissionBriefing",
    "params": {},
@@ -9376,7 +9939,7 @@
     }
    },
    "locals": {
-    "Row": "ShowMissionSucces_TextLineIndex"
+    "Row": "TextLineIndex"
    },
    "name": "ShowMissionSuccessText",
    "params": {},
@@ -9458,6 +10021,11 @@
      "confidence": "high",
      "evidence": "u3_892b: until Retry;",
      "proposal": "names-b"
+    },
+    "SpareWord": {
+     "confidence": "high",
+     "evidence": "RedefineKeyboardBindings has no consuming read of this local; preserves the original stack frame and any writes.",
+     "proposal": "sol-polish"
     }
    },
    "locals": {
@@ -9468,7 +10036,8 @@
     "KeyLeft": "NewLeftScanCode",
     "KeyRight": "NewRightScanCode",
     "KeyUp": "NewUpScanCode",
-    "Retry": "KeyIsValid"
+    "Retry": "KeyIsValid",
+    "SpareWord": "UnusedKeyBindingWord"
    },
    "name": "RedefineKeyboardBindings",
    "params": {},
@@ -9524,7 +10093,7 @@
     }
    },
    "locals": {
-    "I": "RunMainMenu_TextLineIndex"
+    "I": "TextLineIndex"
    },
    "name": "RunMainMenu",
    "params": {},
@@ -9632,7 +10201,7 @@
     }
    },
    "locals": {
-    "i": "CalibrateJoystick_TextLineIndex"
+    "i": "TextLineIndex"
    },
    "name": "CalibrateJoystickCenter",
    "params": {},
@@ -9679,8 +10248,8 @@
     }
    },
    "locals": {
-    "I": "ShowOrderContactD_TextLineIndex",
-    "KeyCode": "ShowOrderContac_DismissScanCode"
+    "I": "TextLineIndex",
+    "KeyCode": "DismissScanCode"
    },
    "name": "ShowOrderContactDetails",
    "params": {},
@@ -9702,8 +10271,8 @@
     }
    },
    "locals": {
-    "ModeResult": "ShowOrderPackag_DismissScanCode",
-    "Row": "ShowOrderPackageD_TextLineIndex"
+    "ModeResult": "DismissScanCode",
+    "Row": "TextLineIndex"
    },
    "name": "ShowOrderPackageDetails",
    "params": {},
@@ -9725,8 +10294,8 @@
     }
    },
    "locals": {
-    "I": "ShowOrderingInfor_TextLineIndex",
-    "KeyCode": "ShowOrderingInf_DismissScanCode"
+    "I": "TextLineIndex",
+    "KeyCode": "DismissScanCode"
    },
    "name": "ShowOrderingInformation",
    "params": {},
@@ -9748,8 +10317,8 @@
     }
    },
    "locals": {
-    "KeyCode": "ShowForeignDeal_DismissScanCode",
-    "Row": "ShowForeignDealer_TextLineIndex"
+    "KeyCode": "DismissScanCode",
+    "Row": "TextLineIndex"
    },
    "name": "ShowForeignDealers",
    "params": {},
@@ -9771,8 +10340,8 @@
     }
    },
    "locals": {
-    "menuIndex": "ShowApogeeBbsInfo_TextLineIndex",
-    "selectedValue": "ShowApogeeBbsIn_DismissScanCode"
+    "menuIndex": "TextLineIndex",
+    "selectedValue": "DismissScanCode"
    },
    "name": "ShowApogeeBbsInformation",
    "params": {},
@@ -9794,8 +10363,8 @@
     }
    },
    "locals": {
-    "menuIndex": "ShowAboutApogee_TextLineIndex",
-    "selectedValue": "ShowAboutApogee_DismissScanCode"
+    "menuIndex": "TextLineIndex",
+    "selectedValue": "DismissScanCode"
    },
    "name": "ShowAboutApogee",
    "params": {},
@@ -9817,8 +10386,8 @@
     }
    },
    "locals": {
-    "i": "ShowFortressUnloc_TextLineIndex",
-    "resultWord": "ShowFortressUnl_DismissScanCode"
+    "i": "TextLineIndex",
+    "resultWord": "DismissScanCode"
    },
    "name": "ShowFortressUnlockedMessage",
    "params": {},
@@ -9840,8 +10409,8 @@
     }
    },
    "locals": {
-    "menuIndex": "ShowPerfectHealth_TextLineIndex",
-    "selectedValue": "ShowPerfectHeal_DismissScanCode"
+    "menuIndex": "TextLineIndex",
+    "selectedValue": "DismissScanCode"
    },
    "name": "ShowPerfectHealthBonus",
    "params": {},
@@ -9851,6 +10420,21 @@
    "confidence": "high",
    "evidence": "Switches to text mode and draws the ordering screen (SAM1) or distribution notice (SAM2/3).",
    "local_details": {
+    "D_2": {
+     "confidence": "high",
+     "evidence": "ShowDosExitScreen has no consuming read of this local; preserves the original stack frame and any writes.",
+     "proposal": "sol-polish"
+    },
+    "D_3": {
+     "confidence": "high",
+     "evidence": "ShowDosExitScreen has no consuming read of this local; preserves the original stack frame and any writes.",
+     "proposal": "sol-polish"
+    },
+    "D_4": {
+     "confidence": "high",
+     "evidence": "ShowDosExitScreen has no consuming read of this local; preserves the original stack frame and any writes.",
+     "proposal": "sol-polish"
+    },
     "I": {
      "confidence": "high",
      "evidence": "u3_dbc2: for I := 0 to 19 do",
@@ -9858,6 +10442,9 @@
     }
    },
    "locals": {
+    "D_2": "UnusedExitScreenWord2",
+    "D_3": "UnusedExitScreenWord3",
+    "D_4": "UnusedExitScreenWord4",
     "I": "BorderStripeIndex"
    },
    "name": "ShowDosExitScreen",
@@ -9881,7 +10468,7 @@
    },
    "locals": {
     "I": "EndingDelayIteration",
-    "ResultWord": "ShowEpisodeE_GraphicsCallResult"
+    "ResultWord": "GraphicsCallResult"
    },
    "name": "ShowEpisodeEnding",
    "params": {},
@@ -10003,12 +10590,12 @@
     }
    },
    "params": {
-    "Back": "FillTextRectang_BackgroundColor",
-    "Fore": "FillTextRectang_ForegroundColor",
-    "X1": "FillTextRectangle_LeftColumn",
-    "X2": "FillTextRectangle_RightColumn",
-    "Y1": "FillTextRectangle_TopRow",
-    "Y2": "FillTextRectangle_BottomRow"
+    "Back": "BackgroundColor",
+    "Fore": "ForegroundColor",
+    "X1": "LeftColumn",
+    "X2": "RightColumn",
+    "Y1": "TopRow",
+    "Y2": "BottomRow"
    },
    "proposal": "names-b"
   },
@@ -10106,12 +10693,12 @@
     }
    },
    "params": {
-    "A": "DrawTextBoxBorder_LeftColumn",
-    "B": "DrawTextBoxBorder_TopRow",
-    "C": "DrawTextBoxBorder_RightColumn",
-    "D": "DrawTextBoxBorder_BottomRow",
-    "E": "DrawTextBoxBord_ForegroundColor",
-    "F": "DrawTextBoxBord_BackgroundColor",
+    "A": "LeftColumn",
+    "B": "TopRow",
+    "C": "RightColumn",
+    "D": "BottomRow",
+    "E": "ForegroundColor",
+    "F": "BackgroundColor",
     "G": "BorderStyle"
    },
    "proposal": "names-b"
@@ -10159,13 +10746,13 @@
     }
    },
    "params": {
-    "A": "DrawFilledTextBox_LeftColumn",
-    "B": "DrawFilledTextBox_TopRow",
-    "C": "DrawFilledTextBox_RightColumn",
-    "D": "DrawFilledTextBox_BottomRow",
-    "E": "DrawFilledTextB_ForegroundColor",
-    "F": "DrawFilledTextB_BackgroundColor",
-    "G": "DrawFilledTextBox_BorderStyle"
+    "A": "LeftColumn",
+    "B": "TopRow",
+    "C": "RightColumn",
+    "D": "BottomRow",
+    "E": "ForegroundColor",
+    "F": "BackgroundColor",
+    "G": "BorderStyle"
    },
    "proposal": "names-b"
   },
@@ -10197,10 +10784,10 @@
     }
    },
    "params": {
-    "A": "WriteCenteredText_TextRow",
-    "B": "WriteCenteredTe_ForegroundColor",
-    "C": "WriteCenteredTe_BackgroundColor",
-    "Text": "WriteCenteredText_DisplayText"
+    "A": "TextRow",
+    "B": "ForegroundColor",
+    "C": "BackgroundColor",
+    "Text": "DisplayText"
    },
    "proposal": "names-b"
   },
@@ -10221,7 +10808,7 @@
    },
    "locals": {
     "chText": "CharacterText",
-    "i": "WriteVerticalTex_CharacterIndex"
+    "i": "CharacterIndex"
    },
    "name": "WriteVerticalText",
    "param_details": {
@@ -10252,10 +10839,10 @@
     }
    },
    "params": {
-    "bg": "WriteVerticalTe_BackgroundColor",
-    "fg": "WriteVerticalTe_ForegroundColor",
-    "source": "WriteVerticalText_DisplayText",
-    "x": "WriteVerticalText_TextColumn",
+    "bg": "BackgroundColor",
+    "fg": "ForegroundColor",
+    "source": "DisplayText",
+    "x": "TextColumn",
     "y": "FirstTextRow"
    },
    "proposal": "names-b"
@@ -10326,10 +10913,10 @@
     }
    },
    "params": {
-    "Attr": "WriteColoredText_TextAttr",
-    "Text": "WriteColoredText_DisplayText",
-    "X": "WriteColoredText_TextColumn",
-    "Y": "WriteColoredText_TextRow"
+    "Attr": "ColorAttribute",
+    "Text": "DisplayText",
+    "X": "TextColumn",
+    "Y": "TextRow"
    },
    "proposal": "names-b"
   },
@@ -10486,7 +11073,7 @@
     }
    },
    "params": {
-    "DisplayType": "PcxGetDisplayDescr_DisplayIndex"
+    "DisplayType": "DisplayIndex"
    },
    "proposal": "names-b"
   },
@@ -10748,9 +11335,9 @@
     }
    },
    "params": {
-    "A": "PcxDisplayFile_ImageX",
-    "B": "PcxDisplayFile_ImageY",
-    "C": "PcxDisplayFile_VideoPage",
+    "A": "ImageX",
+    "B": "ImageY",
+    "C": "VideoPage",
     "P": "ImageFileName"
    },
    "proposal": "names-b"
@@ -11160,7 +11747,16 @@
   "u8_0a89": {
    "confidence": "high",
    "evidence": "Clears the status band, movement/inventory/transition flags and temporary effects while retaining score and session progress.",
-   "locals": {},
+   "local_details": {
+    "FrameWord": {
+     "confidence": "high",
+     "evidence": "ResetLevelTransientState has no consuming read of this local; preserves the original stack frame and any writes.",
+     "proposal": "sol-polish"
+    }
+   },
+   "locals": {
+    "FrameWord": "UnusedResetWord"
+   },
    "name": "ResetLevelTransientState",
    "params": {},
    "proposal": "names-b"
@@ -11264,7 +11860,7 @@
     }
    },
    "params": {
-    "N": "PgSetBiosVideoMode_BiosMode"
+    "N": "BiosMode"
    },
    "proposal": "names-b"
   },
@@ -11326,8 +11922,8 @@
     }
    },
    "params": {
-    "A": "PgPanDisplayAtRetrace_PanPixelX",
-    "B": "PgPanDisplayAtRetrace_PanPixelY"
+    "A": "PanPixelX",
+    "B": "PanPixelY"
    },
    "proposal": "names-b"
   },
@@ -11369,7 +11965,7 @@
     }
    },
    "params": {
-    "N": "PgSetVgaSplitScan_SplitScanline"
+    "N": "SplitScanline"
    },
    "proposal": "names-b"
   },
@@ -11416,7 +12012,7 @@
     }
    },
    "params": {
-    "X": "PgSetPaletteRegist_PaletteIndex",
+    "X": "PaletteIndex",
     "Y": "PaletteColor"
    },
    "proposal": "names-b"
@@ -11521,9 +12117,9 @@
     }
    },
    "params": {
-    "Data": "PgBlitMasked8x8_ImageSource",
-    "X": "PgBlitMasked8x8_ByteColumn",
-    "Y": "PgBlitMasked8x8_PixelRow"
+    "Data": "ImageSource",
+    "X": "ByteColumn",
+    "Y": "PixelRow"
    },
    "proposal": "names-b"
   },
@@ -12267,9 +12863,9 @@
    },
    "params": {
     "Data": "CapturedImage",
-    "X1": "PgCapturePlanarR_LeftByteColumn",
+    "X1": "LeftByteColumn",
     "X2": "RightByteLimit",
-    "Y1": "PgCapturePlanarRect_TopPixelRow",
+    "Y1": "TopPixelRow",
     "Y2": "BottomPixelRow"
    },
    "proposal": "names-b"
@@ -12297,9 +12893,9 @@
     }
    },
    "params": {
-    "Data": "PgRestorePlanarRe_CapturedImage",
-    "X": "PgRestorePlanarRecta_ByteColumn",
-    "Y": "PgRestorePlanarRectang_PixelRow"
+    "Data": "CapturedImage",
+    "X": "ByteColumn",
+    "Y": "PixelRow"
    },
    "proposal": "names-b"
   },
@@ -12384,8 +12980,8 @@
    },
    "params": {
     "source": "GlyphSource",
-    "x": "PgBlitMaskedShifted8x8_PixelX",
-    "y": "PgBlitMaskedShifted8x8_PixelY"
+    "x": "PixelX",
+    "y": "PixelY"
    },
    "proposal": "names-b"
   },
@@ -12629,9 +13225,9 @@
     }
    },
    "params": {
-    "Data": "PgOrShifted16x16_SpriteSource",
-    "X": "PgOrShifted16x16_PixelX",
-    "Y": "PgOrShifted16x16_PixelY"
+    "Data": "SpriteSource",
+    "X": "PixelX",
+    "Y": "PixelY"
    },
    "proposal": "names-b"
   },
@@ -12827,9 +13423,9 @@
     }
    },
    "params": {
-    "Data": "PgBlitOpaque16x16_ImageSource",
-    "X": "PgBlitOpaque16x16_ByteColumn",
-    "Y": "PgBlitOpaque16x16_PixelRow"
+    "Data": "ImageSource",
+    "X": "ByteColumn",
+    "Y": "PixelRow"
    },
    "proposal": "names-b"
   },
@@ -12856,9 +13452,9 @@
     }
    },
    "params": {
-    "Data": "PgBlitOpaque8x8_ImageSource",
-    "X": "PgBlitOpaque8x8_ByteColumn",
-    "Y": "PgBlitOpaque8x8_PixelRow"
+    "Data": "ImageSource",
+    "X": "ByteColumn",
+    "Y": "PixelRow"
    },
    "proposal": "names-b"
   },
@@ -12942,8 +13538,8 @@
    },
    "params": {
     "Color": "CachedTileIndex",
-    "X": "PgCopyCachedVideoTil_ByteColumn",
-    "Y": "PgCopyCachedVideoTile1_PixelRow"
+    "X": "ByteColumn",
+    "Y": "PixelRow"
    },
    "proposal": "names-b"
   },
@@ -13447,7 +14043,7 @@
     "Height": "PcxDisplayHeight",
     "HorizontalScale": "PcxDisplayScaleX",
     "PageBytes": "PcxDisplayPageBytes",
-    "Reserved": "PcxDisplayReservedWords",
+    "Reserved": "UnusedPcxDisplayWords",
     "VerticalScale": "PcxDisplayScaleY",
     "VideoSegment": "PcxDisplayVideoSegment",
     "Width": "PcxDisplayWidth"
@@ -13948,7 +14544,7 @@
    "confidence": "high",
    "evidence": "Local typed file of TConfig in p_0ef2/p_0f75 used to read/write the episode CFG.",
    "fields": {},
-   "name": "t_p_0f75_tconfi_TGameConfigFile",
+   "name": "TGameConfigInputFile",
    "proposal": "names-a",
    "proposal_key": "TConfigFile"
   },
@@ -14106,7 +14702,7 @@
     "B": "MiddleTile",
     "C": "FrontTile",
     "D": "BlocksMovement",
-    "E": "TMapCellView_SupportsLanding"
+    "E": "SupportsLanding"
    },
    "name": "TMapCellView",
    "proposal": "names-a",
@@ -14143,13 +14739,13 @@
     }
    },
    "fields": {
-    "A": "t_u2_2530_tmapcell_TMa_BaseTile",
-    "B": "t_u2_2530_tmapcell_T_MiddleTile",
-    "C": "t_u2_2530_tmapcell_TM_FrontTile",
-    "D": "t_u2_2530_tmapce_BlocksMovement",
-    "E": "t_u2_2530_tmapc_SupportsLanding"
+    "A": "BaseTile",
+    "B": "MiddleTile",
+    "C": "FrontTile",
+    "D": "BlocksMovement",
+    "E": "SupportsLanding"
    },
-   "name": "t_u2_2530_tmapcell_TMapCellView",
+   "name": "TForegroundCellView",
    "proposal": "names-a",
    "proposal_key": "TMapCell"
   },
@@ -14202,6 +14798,33 @@
    "proposal": "names-b",
    "proposal_key": "u3_0000.PPointer"
   },
+  "t_u3_1601_pbytearray38": {
+   "confidence": "medium",
+   "evidence": "Hoisted pointer to the byte-array tail view declaration from ReadPopupScanCode; no runtime consumer of this type remains.",
+   "fields": {},
+   "name": "PPopupBufferTail",
+   "proposal": "sol-polish",
+   "proposal_key": "t_u3_1601_pbytearray38",
+   "scope": "declaration_only"
+  },
+  "t_u3_1601_tbytearray38": {
+   "confidence": "medium",
+   "evidence": "Hoisted array[37..32767] of Byte declaration from ReadPopupScanCode; no runtime consumer of this type remains.",
+   "fields": {},
+   "name": "TPopupBufferTail",
+   "proposal": "sol-polish",
+   "proposal_key": "t_u3_1601_tbytearray38",
+   "scope": "declaration_only"
+  },
+  "t_u3_1601_tname": {
+   "confidence": "medium",
+   "evidence": "Hoisted string[40] declaration from ReadPopupScanCode; no runtime consumer of this type remains.",
+   "fields": {},
+   "name": "TPopupLineText",
+   "proposal": "sol-polish",
+   "proposal_key": "t_u3_1601_tname",
+   "scope": "declaration_only"
+  },
   "t_u3_1601_tnamerecord": {
    "confidence": "low",
    "evidence": "u3_1601 declares this packed one-line record but its body does not consume the type.",
@@ -14218,6 +14841,24 @@
    "name": "TPopupLineWrapper",
    "proposal": "names-b",
    "proposal_key": "u3_1601.TNameRecord",
+   "scope": "declaration_only"
+  },
+  "t_u3_26cf_thelpline": {
+   "confidence": "medium",
+   "evidence": "Hoisted string[40] declaration from ReadScrollablePopupScanCode; no runtime consumer of this type remains.",
+   "fields": {},
+   "name": "TScrollablePopupLine",
+   "proposal": "sol-polish",
+   "proposal_key": "t_u3_26cf_thelpline",
+   "scope": "declaration_only"
+  },
+  "t_u3_3712_pbyte": {
+   "confidence": "medium",
+   "evidence": "Hoisted pointer to Byte declaration from InsertPlayerHighScore; no runtime consumer of this type remains.",
+   "fields": {},
+   "name": "PHighScoreByteView",
+   "proposal": "sol-polish",
+   "proposal_key": "t_u3_3712_pbyte",
    "scope": "declaration_only"
   },
   "t_u3_38ae_tbigfile": {
@@ -14302,6 +14943,60 @@
    "proposal": "names-b",
    "proposal_key": "u3_3f8c.TSaveFile"
   },
+  "t_u3_4e64_thelpline": {
+   "confidence": "medium",
+   "evidence": "Hoisted string[40] declaration from ShowGameInstructions; no runtime consumer of this type remains.",
+   "fields": {},
+   "name": "TInstructionLine",
+   "proposal": "sol-polish",
+   "proposal_key": "t_u3_4e64_thelpline",
+   "scope": "declaration_only"
+  },
+  "t_u3_6ea9_thelpline": {
+   "confidence": "medium",
+   "evidence": "Hoisted string[40] declaration from ShowMissionBriefing; no runtime consumer of this type remains.",
+   "fields": {},
+   "name": "TMissionBriefingLine",
+   "proposal": "sol-polish",
+   "proposal_key": "t_u3_6ea9_thelpline",
+   "scope": "declaration_only"
+  },
+  "t_u3_6ea9_tlevelrow": {
+   "confidence": "medium",
+   "evidence": "Hoisted array[1..42] of Char declaration from ShowMissionBriefing; no runtime consumer of this type remains.",
+   "fields": {},
+   "name": "TMissionBriefingRow",
+   "proposal": "sol-polish",
+   "proposal_key": "t_u3_6ea9_tlevelrow",
+   "scope": "declaration_only"
+  },
+  "t_u3_7c17_tlevelrow": {
+   "confidence": "medium",
+   "evidence": "Hoisted array[1..42] of Char declaration from ShowMissionSuccessText; no runtime consumer of this type remains.",
+   "fields": {},
+   "name": "TMissionSuccessRow",
+   "proposal": "sol-polish",
+   "proposal_key": "t_u3_7c17_tlevelrow",
+   "scope": "declaration_only"
+  },
+  "t_u3_848e_tstr40": {
+   "confidence": "medium",
+   "evidence": "Hoisted string[40] declaration from AskHighScoreName; no runtime consumer of this type remains.",
+   "fields": {},
+   "name": "THighScoreNameText",
+   "proposal": "sol-polish",
+   "proposal_key": "t_u3_848e_tstr40",
+   "scope": "declaration_only"
+  },
+  "t_u3_8ea3_tstr40": {
+   "confidence": "medium",
+   "evidence": "Hoisted string[40] declaration from AskWarpLevel; no runtime consumer of this type remains.",
+   "fields": {},
+   "name": "TWarpLevelText",
+   "proposal": "sol-polish",
+   "proposal_key": "t_u3_8ea3_tstr40",
+   "scope": "declaration_only"
+  },
   "t_u3_8fb6_trec41": {
    "confidence": "low",
    "evidence": "u3_8fb6 declares this one-line packed record; the body uses PopupTextLines directly.",
@@ -14336,6 +15031,24 @@
    "name": "TRestoreMenuLineView",
    "proposal": "names-b",
    "proposal_key": "u3_9163.TRec41",
+   "scope": "declaration_only"
+  },
+  "t_u3_9340_tmenutext": {
+   "confidence": "medium",
+   "evidence": "Hoisted array[1..299] of string[40] declaration from RunMainMenu; no runtime consumer of this type remains.",
+   "fields": {},
+   "name": "TMainMenuText",
+   "proposal": "sol-polish",
+   "proposal_key": "t_u3_9340_tmenutext",
+   "scope": "declaration_only"
+  },
+  "t_u3_97bb_tstring40": {
+   "confidence": "medium",
+   "evidence": "Hoisted string[40] declaration from RunGameOptionsMenu; no runtime consumer of this type remains.",
+   "fields": {},
+   "name": "TGameOptionsLine",
+   "proposal": "sol-polish",
+   "proposal_key": "t_u3_97bb_tstring40",
    "scope": "declaration_only"
   },
   "t_u3_9b3e_tbuffer": {
@@ -14403,6 +15116,15 @@
    "proposal_key": "u3_9bdf.TTextPair",
    "scope": "declaration_only"
   },
+  "t_u3_9ca9_tmenutext": {
+   "confidence": "medium",
+   "evidence": "Hoisted array[1..6] of string[40] declaration from ShowQuitDestinationMenu; no runtime consumer of this type remains.",
+   "fields": {},
+   "name": "TQuitDestinationText",
+   "proposal": "sol-polish",
+   "proposal_key": "t_u3_9ca9_tmenutext",
+   "scope": "declaration_only"
+  },
   "t_u3_9de0_trec41": {
    "confidence": "low",
    "evidence": "u3_9de0 declares this one-line packed view without a consuming reference.",
@@ -14445,6 +15167,24 @@
    "proposal_key": "u3_a1d8.TTextPair",
    "scope": "declaration_only"
   },
+  "t_u3_cf40_tmenulines": {
+   "confidence": "medium",
+   "evidence": "Hoisted array[1..299] of string[40] declaration from ShowApogeeBbsInformation; no runtime consumer of this type remains.",
+   "fields": {},
+   "name": "TBbsTextLines",
+   "proposal": "sol-polish",
+   "proposal_key": "t_u3_cf40_tmenulines",
+   "scope": "declaration_only"
+  },
+  "t_u3_d323_tmenuline": {
+   "confidence": "medium",
+   "evidence": "Hoisted string[40] declaration from ShowAboutApogee; no runtime consumer of this type remains.",
+   "fields": {},
+   "name": "TAboutApogeeLine",
+   "proposal": "sol-polish",
+   "proposal_key": "t_u3_d323_tmenuline",
+   "scope": "declaration_only"
+  },
   "t_u3_d645_tmessageslot": {
    "confidence": "low",
    "evidence": "u3_d645 declares this one-line packed view without a consuming reference.",
@@ -14461,6 +15201,15 @@
    "name": "TFortressMessageLineView",
    "proposal": "names-b",
    "proposal_key": "u3_d645.TMessageSlot",
+   "scope": "declaration_only"
+  },
+  "t_u3_d820_tmenutext": {
+   "confidence": "medium",
+   "evidence": "Hoisted array[1..6] of string[40] declaration from ShowPerfectHealthBonus; no runtime consumer of this type remains.",
+   "fields": {},
+   "name": "TPerfectHealthText",
+   "proposal": "sol-polish",
+   "proposal_key": "t_u3_d820_tmenutext",
    "scope": "declaration_only"
   }
  },

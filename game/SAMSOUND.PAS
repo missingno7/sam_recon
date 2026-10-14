@@ -1,3 +1,5 @@
+{ Sound unit: selects PC-speaker effects from the shared sound bank.
+  The program timer interrupt advances the selected effect. }
 unit SAMSOUND;
 {$A+}{$D+}{$L+}{$F-}
 interface
@@ -14,6 +16,8 @@ var
 procedure StartSoundEffect(EffectNumber: Integer);
 implementation
 uses Dos, PROGRPHX, Crt;
+
+{ PC-speaker effect selection. }
 {$F+}
 { Sets active sound number/sample=1/playing flag. }
 procedure StartSoundEffect(EffectNumber: Integer);

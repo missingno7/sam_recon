@@ -1,8 +1,5 @@
-; Episode-specific Genus identity symbol; its +1Ah field is 3.56.
-; Private register/flag helpers and decode continuations are not PUBLIC.
-; Genus PCX Toolkit 3.56 linked object, SAM1 u5:000F..22B8.
-; Original register preservation, Pascal cleanup and hardware paths retained.
-; Address words are OMF fixups; no instruction-byte emission or offset steering.
+; Genus PCX Programmer's Toolkit 3.56 assembly implementation for PCXGENUS.
+; Includes video modes, adapter-specific image decoding and printer raster output.
 DATA segment byte public
 extrn GenusPcxIdentity:byte
 extrn PcxDisplayDescriptions:byte
@@ -37,9 +34,8 @@ public PcxEndPrinterImage
 public PcxFormatUnsignedDecimal
 public PcxInitializePrinterState
 
-
-; pcx set display type
-; src/asm/u5.asm u5_000f: pcx set display type.
+; Video modes and display descriptors.
+; Pcx set display type.
 PcxSetDisplayType proc far
     push bp
     mov bp, sp
@@ -72,8 +68,7 @@ set_display_type_done_1:
     retf 2
 PcxSetDisplayType endp
 
-; pcx set graphics or text mode
-; src/asm/u5.asm u5_0047: pcx set graphics or text mode.
+; Pcx set graphics or text mode.
 PcxSetGraphicsOrTextMode proc far
     push bp
     mov bp, sp
@@ -151,8 +146,7 @@ set_graphics_or_text_mode_done_1:
     retf 2
 PcxSetGraphicsOrTextMode endp
 
-; pcx get display type
-; src/asm/u5.asm u5_00eb: pcx get display type.
+; Pcx get display type.
 PcxGetDisplayType proc far
     push bp
     mov bp, sp
@@ -182,8 +176,7 @@ get_display_type_done_1:
     retf
 PcxGetDisplayType endp
 
-; pcx get version string
-; src/asm/u5.asm u5_011a: pcx get version string.
+; Pcx get version string.
 PcxGetVersionString proc far
     push bp
     mov bp, sp
@@ -216,8 +209,7 @@ PcxGetVersionString proc far
     retf 4
 PcxGetVersionString endp
 
-; pcx set work buffer
-; src/asm/u5.asm u5_0155: pcx set work buffer.
+; Pcx set work buffer.
 PcxSetWorkBuffer proc far
     push bp
     mov bp, sp
@@ -259,8 +251,7 @@ set_work_buffer_done_1:
     retf 6
 PcxSetWorkBuffer endp
 
-; pcx get display descriptor
-; src/asm/u5.asm u5_01ac: pcx get display descriptor.
+; Pcx get display descriptor.
 PcxGetDisplayDescriptor proc far
     push bp
     mov bp, sp
@@ -307,8 +298,7 @@ get_display_descriptor_done_1:
     retf 2
 PcxGetDisplayDescriptor endp
 
-; pcx get display information
-; src/asm/u5.asm u5_0204: pcx get display information.
+; Pcx get display information.
 PcxGetDisplayInformation proc far
     push bp
     mov bp, sp
@@ -359,8 +349,7 @@ get_display_information_done_1:
     retf 6
 PcxGetDisplayInformation endp
 
-; pcx initialize video descriptors
-; src/asm/u5.asm u5_026b: pcx initialize video descriptors.
+; Pcx initialize video descriptors.
 PcxInitializeVideoDescriptors proc far
     push bp
     mov bp, sp
@@ -997,8 +986,8 @@ PcxInitializeVideoDescriptors proc far
     retf
 PcxInitializeVideoDescriptors endp
 
-; pcx hercules mode helper
-; src/asm/u5.asm u5_0c70: pcx hercules mode helper.
+; Hercules mode controls.
+; Pcx hercules mode helper.
 PcxHerculesModeHelper proc far
     push ax
     cmp al, 2
@@ -1081,7 +1070,7 @@ set_cga_palette_next_1:
 PcxSetHerculesControl endp
 
 ; pcx set mode change policy
-; Stores a validated 0/1 policy; u5_0d2d checks the selected BIOS video mode when the policy is 1.
+; Stores a validated 0/1 policy; PcxDisplayBuffer checks the selected BIOS video mode when the policy is 1.
 PcxSetModeCheckPolicy proc far
     push bp
     mov bp, sp
@@ -1111,8 +1100,8 @@ set_mode_change_policy_next_1:
     retf 2
 PcxSetModeCheckPolicy endp
 
-; pcx display buffer
-; src/asm/u5.asm u5_0d2d: pcx display buffer.
+; Image validation and decoder dispatch.
+; Pcx display buffer.
 PcxDisplayBuffer proc far
     push bp
     mov bp, sp
@@ -1184,8 +1173,7 @@ display_buffer_done_1:
     retf 0ch
 PcxDisplayBuffer endp
 
-; pcx initialize display dispatch
-; src/asm/u5.asm u5_0dc7: pcx initialize display dispatch.
+; Pcx initialize display dispatch.
 PcxInitializeDisplayDispatch proc far
     mov ax, 0
     push ax
@@ -1323,9 +1311,10 @@ PcxInitializeDisplayDispatch proc far
     retf
 PcxInitializeDisplayDispatch endp
 
+; Adapter-specific RLE decoding.
 ; pcx cga decode continuation
-; Far-jump continuation: BP and saved registers belong to u5_0d2d.
-; src/asm/u5.asm u5_0f9b: pcx cga decode continuation. RLE-decodes a PCX image using the u5_0d2d frame.
+; Far-jump continuation: BP and saved registers belong to PcxDisplayBuffer.
+; Pcx cga decode continuation. RLE-decodes a PCX image using the PcxDisplayBuffer frame.
 PcxCgaDecodeContinuation proc far
     mov ax, word ptr [si + 8]
     sub ax, word ptr [si + 4]
@@ -1470,8 +1459,8 @@ cga_decode_done_1:
 PcxCgaDecodeContinuation endp
 
 ; pcx ega decode continuation
-; Far-jump continuation: BP and saved registers belong to u5_0d2d.
-; src/asm/u5.asm u5_10d7: pcx ega decode continuation. RLE-decodes a PCX image using the u5_0d2d frame.
+; Far-jump continuation: BP and saved registers belong to PcxDisplayBuffer.
+; Pcx ega decode continuation. RLE-decodes a PCX image using the PcxDisplayBuffer frame.
 PcxEgaDecodeContinuation proc far
     mov ax, word ptr es:[di + 18h]
     mov cl, 3
@@ -1699,8 +1688,8 @@ ega_decode_done_1:
 PcxEgaDecodeContinuation endp
 
 ; pcx vga 256 decode continuation
-; Far-jump continuation: BP and saved registers belong to u5_0d2d.
-; src/asm/u5.asm u5_12b6: pcx vga 256 decode continuation. RLE-decodes a PCX image using the u5_0d2d frame.
+; Far-jump continuation: BP and saved registers belong to PcxDisplayBuffer.
+; Pcx vga 256 decode continuation. RLE-decodes a PCX image using the PcxDisplayBuffer frame.
 PcxVga256DecodeContinuation proc far
     mov ax, word ptr es:[di + 18h]
     mov word ptr [bp - 16h], ax
@@ -1793,8 +1782,8 @@ vga_256_decode_done_1:
 PcxVga256DecodeContinuation endp
 
 ; pcx hercules decode continuation
-; Far-jump continuation: BP and saved registers belong to u5_0d2d.
-; src/asm/u5.asm u5_137a: pcx hercules decode continuation. RLE-decodes a PCX image using the u5_0d2d.
+; Far-jump continuation: BP and saved registers belong to PcxDisplayBuffer.
+; Pcx hercules decode continuation. RLE-decodes a PCX image using the PcxDisplayBuffer.
 PcxHerculesDecodeContinuation proc far
     mov ax, word ptr [si + 8]
     sub ax, word ptr [si + 4]
@@ -1932,8 +1921,8 @@ hercules_decode_done_1:
 PcxHerculesDecodeContinuation endp
 
 ; pcx paradise decode continuation
-; Far-jump continuation: BP and saved registers belong to u5_0d2d.
-; src/asm/u5.asm u5_14a7: pcx paradise decode continuation. RLE-decodes a PCX image using the u5_0d2d.
+; Far-jump continuation: BP and saved registers belong to PcxDisplayBuffer.
+; Pcx paradise decode continuation. RLE-decodes a PCX image using the PcxDisplayBuffer.
 PcxParadiseDecodeContinuation proc far
     mov ax, word ptr es:[di + 18h]
     mov word ptr [bp - 16h], ax
@@ -2079,8 +2068,8 @@ paradise_decode_next_8:
 PcxParadiseDecodeContinuation endp
 
 ; pcx tseng decode continuation
-; Far-jump continuation: BP and saved registers belong to u5_0d2d.
-; src/asm/u5.asm u5_15d1: pcx tseng decode continuation. RLE-decodes a PCX image using the u5_0d2d frame.
+; Far-jump continuation: BP and saved registers belong to PcxDisplayBuffer.
+; Pcx tseng decode continuation. RLE-decodes a PCX image using the PcxDisplayBuffer frame.
 PcxTsengDecodeContinuation proc far
     mov ax, word ptr [si + 8]
     sub ax, word ptr [si + 4]
@@ -2224,8 +2213,8 @@ tseng_decode_done_1:
 PcxTsengDecodeContinuation endp
 
 ; pcx video7 decode continuation
-; Far-jump continuation: BP and saved registers belong to u5_0d2d.
-; src/asm/u5.asm u5_16f5: pcx video7 decode continuation. RLE-decodes a PCX image using the u5_0d2d frame.
+; Far-jump continuation: BP and saved registers belong to PcxDisplayBuffer.
+; Pcx video7 decode continuation. RLE-decodes a PCX image using the PcxDisplayBuffer frame.
 PcxVideo7DecodeContinuation proc far
     mov ax, word ptr es:[di + 18h]
     mov word ptr [bp - 16h], ax
@@ -2501,6 +2490,7 @@ video7_decode_done_1:
     retf 0ch
 PcxVideo7DecodeContinuation endp
 
+; DOS file reading and buffer refill.
 ; pcx decode or print buffer
 ; The original caller enters at INT3, before the BP prologue.
 ; Converts a Pascal filename, opens/reads/closes it with DOS INT 21h.
@@ -2664,8 +2654,8 @@ flush_print_buffer_done_1:
     retf 2
 PcxRefillReadBuffer endp
 
-; pcx configure printer
-; src/asm/u5.asm u5_1a5f: pcx configure printer.
+; Printer setup and raster output.
+; Pcx configure printer.
 PcxConfigurePrinter proc far
     push bp
     mov bp, sp
@@ -2716,8 +2706,7 @@ configure_printer_done_1:
     retf 0ch
 PcxConfigurePrinter endp
 
-; pcx begin printer image
-; src/asm/u5.asm u5_1ac6: pcx begin printer image.
+; Pcx begin printer image.
 PcxBeginPrinterImage proc far
     push bp
     mov bp, sp
@@ -2851,8 +2840,7 @@ begin_printer_image_done_1:
     retf 6
 PcxBeginPrinterImage endp
 
-; pcx end printer image
-; src/asm/u5.asm u5_1bf7: pcx end printer image.
+; Pcx end printer image.
 PcxEndPrinterImage proc far
     push bp
     mov bp, sp
@@ -2880,8 +2868,7 @@ end_printer_image_done_1:
     retf
 PcxEndPrinterImage endp
 
-; pcx print buffer
-; src/asm/u5.asm u5_1c28: pcx print buffer.
+; Pcx print buffer.
 PcxPrintBuffer proc far
     push bp
     mov bp, sp
@@ -3025,8 +3012,7 @@ print_buffer_done_1:
     retf 0ah
 PcxPrintBuffer endp
 
-; pcx send printer string
-; src/asm/u5.asm u5_1d60: pcx send printer string.
+; Pcx send printer string.
 PcxSendPrinterString proc far
     lodsb
     mov cl, al
@@ -3040,8 +3026,7 @@ send_printer_string_loop_1:
     retf
 PcxSendPrinterString endp
 
-; pcx print scanline
-; src/asm/u5.asm u5_1d71: pcx print scanline.
+; Pcx print scanline.
 PcxPrintScanline proc far
     push bp
     mov bp, sp
@@ -3360,10 +3345,11 @@ print_scanline_done_1:
     pop bp
     retf
 PcxPrintScanline endp
-    retf                    ; Unreachable second RETF retained from the object.
+    retf                    
+; Decimal formatting and printer defaults.
+; Unreachable second RETF retained from the object.
 
-; pcx format unsigned decimal
-; src/asm/u5.asm u5_2020: pcx format unsigned decimal.
+; Pcx format unsigned decimal.
 PcxFormatUnsignedDecimal proc far
     push bp
     mov bp, sp
@@ -3430,8 +3416,7 @@ format_unsigned_decimal_next_7:
     retf 8
 PcxFormatUnsignedDecimal endp
 
-; pcx initialize printer state
-; src/asm/u5.asm u5_20a2: pcx initialize printer state.
+; Pcx initialize printer state.
 PcxInitializePrinterState proc far
     push bp
     mov bp, sp
