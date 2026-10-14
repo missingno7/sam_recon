@@ -1,84 +1,58 @@
 # sam_recon
 
-Historical matching reconstruction of Apogee's **Secret Agent** (1992), episodes 1-3
-(`SAM1.EXE`, `SAM2.EXE`, `SAM3.EXE`), treated as three historical builds of one logical
-program. Same method as `duke1_recon`:
+Historical reconstruction of Apogee's **Secret Agent** (1992), episodes 1-3 (`SAM1.EXE`,
+`SAM2.EXE`, `SAM3.EXE`): readable Turbo Pascal 5.0 and TASM source in [game/](game/) that the
+original toolchain compiles back into the original programs.
 
-> original binary -> independent evidence -> historically compiled candidate -> exact proof -> canonical source
+Original game files and anything derived from them (unpacked images, builds) are never committed;
+supply them in `assets/` (or `$SAM_ASSET_DIR`).
 
-Original game files and anything derived from them are ignored by git and never redistributed.
+## Result
 
-## Status
+`game/` is built with the pinned Turbo Pascal 5.0 (TPC, TURBO.TPL), Turbo Assembler 1.0 and compared
+with the originals (`python tools/verify.py`):
 
-**Phase 1 complete (2026-10-14):** all 170 game routines (including nested routines, unit
-initialisation blocks and the 16.6 KB program body) and all six linked assembly objects are proven
-byte-identical in SAM1, SAM2 and SAM3: 181.7 KB of the 187.9 KB code image
-([docs/progress.md](docs/progress.md); re-proven by `python tools/validate.py`). The remaining
-6.2 KB is the Borland runtime, proven by the whole-program build (phase 2,
-[docs/roadmap.md](docs/roadmap.md)).
-
-**Phase 2 (whole program, 2026-10-14):** with one declaration per global (`src/decls/canonical.pas`),
-`python tools/progbuild.py` generates SAM.PAS + U1..U9 from the accepted sources, assembles the six
-objects and links each episode with the pinned TPC 5.0: every code segment (including Crt, Dos and
-System), the DATA segment and the relocation set are byte-identical in SAM1/2/3. The only remaining
-differences are the uninitialised `DB ?` bytes of two linked objects, which hold residual
-compiler-buffer contents of the original build (traced in [docs/object-holes.md](docs/object-holes.md)):
-89 bytes in SAM1, 80 in SAM2, 31 in SAM3. They are documented as unrecoverable residue, compared and
-listed in `evidence/final-proof.json`, never patched or filled. `python tools/finalcheck.py`
-(or `python tools/validate.py --program`) re-derives this proof:
-
-| Episode | Load image | Equal bytes | Residue (object holes) |
+| Episode | Load image | Equal bytes | Residue bytes |
 |---|---:|---:|---:|
-| SAM1 | 188,736 | 188,647 | 89 |
+| SAM1 | 188,736 | 188,644 | 92 |
 | SAM2 | 189,744 | 189,664 | 80 |
 | SAM3 | 189,792 | 189,761 | 31 |
 
-* **Oracles locked:** all three LZEXE 0.91 executables are hashed, unpacked by `tools/lz91.py`,
-  cross-checked by executing each file's own LZEXE stub in unicorn at two load segments
-  (`tools/oracle.py --crosscheck`), and **repacked byte-identically** by the pinned LZEXE 0.91
-  (`tools/repack.py --oracle`).
-* **Language:** Turbo Pascal (not C): unit-initialisation far-call chain at the entry point,
-  length-prefixed string literals in code segments, separate 16 KB stack segment,
-  `maxalloc = minalloc + 0xA000` (TP default `$M` heap maximum 655360). The System unit
-  matches Turbo Pascal 5.0 best (provisional; see `evidence/`).
+Every byte of code (the game, the Genus PCX Toolkit 3.56 and ProGraphx 2.0 libraries, and Borland's
+System/Crt/Dos runtime), every initialised data byte, the relocation set and the header fields of the
+load image are identical. The only differences are inside the 102 bytes per episode of undefined
+(`DB ?`) storage in two linked assembly objects, which the original build filled with leftover
+compiler memory (fragments of the original source text and symbol tables in SAM1/SAM2; traced in
+[docs/object-holes.md](docs/object-holes.md)). They are documented residue (`config/residue.json`),
+compared and reported, never filled or patched; consequently the LZEXE-packed files are not equal.
+
+## Layout
+
+| Path | Contents |
+|---|---|
+| [game/](game/) | the source: SAM.PAS (program), SAMPLAY, SAMLEVEL, SAMUI, SAMSOUND, SAMDATA, TEXT80, GAMEJOY, PCXGENUS, PROGRPHX units, six .ASM objects, BUILD.BAT; episode differences as `{$IFDEF SAMn}` |
+| tools/ | `oracle.py` (lock, decode, cross-check), `lz91.py`, `lz91_emulate.py`, `repack.py`, `verify.py` (build + compare), `validate.py`, `assets.py` (asset decoder) |
+| config/ | oracle lock, pinned toolchain hashes, compiler profile, residue ranges |
+| docs/ | [oracle](docs/oracle.md), [compiler](docs/compiler.md), [assembly libraries](docs/assembly.md), [object holes](docs/object-holes.md), [file formats](docs/formats.md), [actors](docs/actors.md), [runtime model](docs/runtime.md), [roadmap](docs/roadmap.md), [names and evidence](docs/names.json) |
 
 ## Requirements
 
-* Python 3.11 with `capstone` 5.0.9 and `unicorn` 2.1.4; `python tools/setup_env.py` vendors them
-  into `build/python`.
-* Pinned tools outside the repo (hashes in `layout/toolchain.json`).
-* The original files in `assets/` (or `$SAM_ASSET_DIR`).
+* Python 3.11 with `capstone` 5.0.9 and `unicorn` 2.1.4 (`python tools/setup_env.py` vendors them
+  into `build/python`).
+* Pinned tools outside the repository (hashes in `config/toolchain.json`): Turbo Pascal 5.0,
+  TASM 1.0, MS-DOS Player (`C:\tools\nmlgcdos`), DOSBox-X and LZEXE 0.91 for packing.
 
 ```bash
 python tools/setup_env.py
-python tools/oracle.py --crosscheck
-python tools/repack.py --oracle
+python tools/validate.py            # oracle, build of game/ for all three episodes, tests
+python tools/validate.py --crosscheck --pack
 ```
 
-**Phases 4-5 (standalone, readable tree):** [game/](game/) holds the program as one source per unit with
-semantic names and comments (SAM.PAS, SAMPLAY, SAMLEVEL, SAMUI, TEXT80, PCXGENUS, GAMEJOY, SAMSOUND,
-SAMDATA, PROGRPHX.PAS with `{$IFDEF SAMn}` for episode differences, six .ASM objects, BUILD.BAT).
-`python tools/standalone.py game` (or `tools/validate.py --standalone`) builds it with the pinned
-TASM 1.0 / TPC 5.0 / LZEXE 0.91 and gives the same result as above for SAM1/2/3.
+## History
 
-## Findings (2026-10-14)
-
-* **Compiler: Turbo Pascal 5.0** — a probe reproduces the complete System, Crt and Dos segments
-  (padding and relocations included) in all three episodes; TP 5.5 fails specific runtime routines.
-  Directives `$B- $I- $R- $S-`, `$M 16384,0,655360` ([docs/compiler.md](docs/compiler.md),
-  `evidence/compiler-rules.json`, probes in `probes/compiler/`).
-* **Units** (link order): program, u1-u4, u5 (Genus PCX Programmer's Toolkit 3.56: Pascal shell +
-  assembly OBJ), u6 (joystick), u7, u8 (game data + asset decoder OBJ), Crt, u9 (ProGraphx 2.0 EGA
-  toolbox by Peder Jungck: Pascal shell + 12 KB OBJ), Dos, System ([docs/assembly.md](docs/assembly.md)).
-  Only u3 and the program differ in size between episodes.
-* **Duke Nukem 1 lineage:** SAM's ProGraphx toolbox shares algorithms with DN1's toolbox
-  (planar sprite packets, mode setting, retrace/split helpers) but not byte-identical code.
-
-## Proof route
-
-`tools/search.py` builds a harness program per episode that reproduces the original data segment
-exactly (every referenced global, the Crt/u9/Dos/System blocks and the DS length are self-checked),
-includes the canonical shared declarations (`src/decls/canonical.pas`), compiles the candidate
-routine with the pinned TPC 5.0 and compares the routine's whole extent byte for byte; relocated
-segments, far/near calls, procedure pointers and CS literals must bind to the same unit/routine.
-Unit init blocks and the program body have their own harness modes. Progress: [docs/progress.md](docs/progress.md).
+The reconstruction followed the method of the sibling project duke1_recon: locked oracle -> census
+and cross-episode atlas -> every routine proven byte-identical in a harness that reproduced the
+original data segment (GPT-6 Luna / GPT-6.1 Sol workers, supervised) -> declaration consolidation ->
+whole-program link -> standalone tree -> readability passes. The per-routine sources, recipes and the
+matching tools are preserved in the git tag `matching-archive`. Next phase: an SDL3/Android port
+generated from `game/` ([docs/roadmap.md](docs/roadmap.md)).

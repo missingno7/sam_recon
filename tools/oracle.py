@@ -1,6 +1,6 @@
 """Immutable tri-episode oracle: identify, unpack, lock, verify, cross-check.
 
-    python tools/oracle.py                 verify against layout/oracle.lock.json and
+    python tools/oracle.py                 verify against config/oracle.lock.json and
                                            materialise build/oracle/<ep>/
     python tools/oracle.py --crosscheck    also execute each file's own LZEXE stub in an
                                            x86 emulator and require the identical image,

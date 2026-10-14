@@ -1,39 +1,37 @@
-# Roadmap: from proven routines to a standalone source tree
+# Roadmap
 
-## Target state
+## Reconstruction phase (closed 2026-10-14)
 
-A readable source tree that compiles and links **standalone**, with the pinned historical toolchain
-and nothing else, into byte-identical SAM1.EXE, SAM2.EXE and SAM3.EXE:
+1. **Oracle** - three LZEXE 0.91 executables locked, decoded, cross-checked by their own
+   decompressor stubs, repacked byte for byte ([oracle.md](oracle.md)).
+2. **Toolchain** - Turbo Pascal 5.0 proven by reproducing System/Crt/Dos byte for byte; TASM 1.0 as
+   the working assembler for the linked objects ([compiler.md](compiler.md), [assembly.md](assembly.md)).
+3. **Routines** - all 170 game routines (nested ones, unit init blocks, the 16.6 KB program body) and
+   all six linked objects proven individually in SAM1/2/3 (per-routine harness, OMF-level object
+   proofs; preserved in the `matching-archive` tag).
+4. **Whole program** - one declaration per global, Genus typed constants, external headers; the
+   linked program equals the originals in every byte except 89/80/31 bytes of undefined object
+   storage ([object-holes.md](object-holes.md); user decision: documented residue, never filled).
+5. **Standalone, readable tree** - [game/](../game/) with semantic names ([names.json](names.json)
+   records the evidence), named constants, comments, readable assembly; `python tools/verify.py`
+   rebuilds and compares all three episodes.
+6. **Documentation for what follows** - [formats.md](formats.md), [actors.md](actors.md),
+   [runtime.md](runtime.md), `tools/assets.py`.
 
-```
-sam/                          (final layout, names indicative)
-  BUILD.BAT                   tasm the objects, tpc /M /DSAMn SAM.PAS, lzexe, once per episode
-  SAM.PAS                     the program (main loop, keyboard/timer interrupt handlers, exit proc)
-  U1.PAS .. U8.PAS            game units (semantic names later), u8 = the globals unit
-  U5.PAS + GENUS.ASM          Genus PCX Programmer's Toolkit 3.56 shell + object
-  U9.PAS + PROGRAPX.ASM       ProGraphx 2.0 EGA toolbox shell + object
-  *.ASM                       the game's own small objects (CMOS clock/PIT, text writer, joystick,
-                              asset decoder)
-  (Crt, Dos, System come from the Turbo Pascal 5.0 TURBO.TPL)
-```
+Every change to `game/` must keep `python tools/validate.py` green.
 
-## Phases
+## Next phase: SDL3 / Android port (planned)
 
-1. **Routine reconstruction** (done, 2026-10-14): every game routine (170, including nested ones,
-   unit init blocks and the 16.6 KB program body) proven EQUAL in SAM1/2/3 in the harness
-   (`tools/search.py`, `tools/validate.py`); the six linked objects proven at OMF level
-   (`tools/asmproof.py`). Borland runtime reproduced by the compiler research probe.
-2. **Whole program** (done, 2026-10-14): one declaration per global and one header per routine
-   (`tools/consolidate.py`, `tools/rewrite_views.py`, workers sol-consolidate / sol-externals);
-   the Genus typed constants and the asm-only globals declared; `tools/progbuild.py` builds
-   SAM.PAS + U1..U9 per episode and compares the load image, MZ header and relocations, then
-   LZEXE 0.91 against the original files. Open question: the `DB ?` holes of the linked objects
-   (102 bytes per episode) hold residual compiler-buffer bytes in SAM1/2 (docs/assembly.md,
-   build/workers/sol-asmproof/REPORT.md); reproducing them may need the original unit compile order.
-3. **The build becomes the proof** (done: `tools/finalcheck.py`, `tools/standalone.py`, `validate.py --program/--standalone`; user decision: object-hole bytes are documented residue): validate.py runs progbuild; any change that moves one byte fails.
-4. **Readability pass** (done: semantic names `layout/names.json` via `tools/rename.py`, unit/section/routine comments, address comments and gotos removed) verified by phase 3: semantic names (routines, globals, types, fields; the
-   DS-order constraint is per unit), comments, removal of address comments, structured control flow.
-5. **Standalone tree** (done: `game/` with BUILD.BAT, `tools/standalone.py`).
+Keep `game/` (Turbo Pascal 5.0) as the single source of truth and generate the port's C from it with
+a purpose-built translator, as duke1_recon does with `tools/port_gen.py`:
 
-Constraints throughout: no original bytes injected as code, no post-link patching, no masking;
-original binaries and assets are never committed.
+* the translator encodes TP 5.0 semantics: 16-bit arithmetic with TP's operand typing (Integer op Word
+  -> LongInt), short strings and their truncation, sets, nested procedures (explicit parent frame),
+  `case` ranges, 1-based arrays, `var` parameters, typed files;
+* exact System behaviour where the game depends on it: `Random` (RandSeed LCG), string routines;
+* a C platform layer on SDL3 (reusing duke1's EGA/PIT/keyboard/speaker work): ProGraphx and Genus
+  rewritten at their API level onto an emulated EGA framebuffer, the 140 Hz timer interrupt,
+  keyboard interrupt state, PC speaker, file I/O ([runtime.md](runtime.md) is the checklist);
+* one binary for all three episodes; port-only changes in the platform layer, never in `game/`;
+* differential testing against the original in DOSBox-X (scripted input, frame/state comparison);
+* Android last: SDL3's Android project, assets in the APK, touch input mapped to virtual keys.

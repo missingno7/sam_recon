@@ -1,8 +1,0 @@
-{
- "description": "Curated routine code ends that recursive descent cannot find (episode -> code-segment index -> entry -> code_end, hex, segment-relative).",
- "code_end": {
-  "sam1": {"0": {"0000": {"code_end": "08a2", "evidence": "keyboard ISR: inline chain-to-old-handler RETF at 0874..0885, then keyboard acknowledge, EOI and the compiler's IRET epilogue at 0886..08A1"}}},
-  "sam2": {"0": {"0000": {"code_end": "08a2", "evidence": "as sam1"}}},
-  "sam3": {"0": {"0000": {"code_end": "08a2", "evidence": "as sam1"}}}
- }
-}

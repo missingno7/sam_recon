@@ -1,7 +1,7 @@
 """Shared paths, hashing and atomic file helpers.
 
 Nothing here knows about Secret Agent; everything game-specific lives in the
-layout/ JSON files that the other tools read.
+config/ JSON files that the other tools read.
 """
 from __future__ import annotations
 
@@ -18,13 +18,10 @@ _VENDOR = ROOT / "build" / "python"          # tools/setup_env.py: pinned capsto
 if _VENDOR.is_dir() and str(_VENDOR) not in sys.path:
     sys.path.insert(0, str(_VENDOR))
 TOOLS = ROOT / "tools"
-LAYOUT = ROOT / "layout"
-EVIDENCE = ROOT / "evidence"
-RECIPES = ROOT / "recipes"
-SRC = ROOT / "src"
-INCLUDE = ROOT / "include"
+CONFIG = ROOT / "config"
+LAYOUT = CONFIG                               # historical name used by the tools
+GAME = ROOT / "game"
 BUILD = ROOT / "build"
-STATE = ROOT / "state"
 EPISODES = ("sam1", "sam2", "sam3")
 
 
@@ -95,10 +92,3 @@ def tree_hash(paths) -> str:
         h.update(rel(p).encode() + b"\0")
         h.update(sha256_file(p).encode() + b"\n")
     return h.hexdigest()
-
-
-def tool_identity() -> str:
-    """Identity of the proof-relevant tool code (not tests/docs)."""
-    names = ("common.py", "lz91.py", "mz.py", "omf.py", "oracle.py", "toolchain.py",
-             "dosrun.py", "tcc.py", "compare.py", "census.py")
-    return tree_hash([TOOLS / n for n in names if (TOOLS / n).exists()])

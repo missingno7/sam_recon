@@ -1,4 +1,9 @@
-# sol-holes: natural build-arrangement investigation
+# Object holes: residual compiler-buffer bytes
+
+> Research report written during the matching phase. Scripts, probes and worker paths it cites
+> (`build/workers/...`, `probes/`, `tools/` that no longer exist) are preserved in the git tag
+> `matching-archive`; identifiers are the coordinate names of that phase (see docs/names.json for
+> the mapping to the names used in game/).
 
 SAM3 remains **DIFF**. No qualifying zero-producing arrangement was found.
 The default build and the implemented `--unit-processes` arrangement produce

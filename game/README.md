@@ -1,7 +1,7 @@
 # Secret Agent standalone source
 
 This source tree builds all three episodes of Apogee's Secret Agent. Pascal
-identifiers describe the observed behavior; `layout/names.json` in the host
+identifiers describe the observed behavior; `docs/names.json` in the host
 repository retains their original logical coordinates and naming evidence.
 The program entry file is `SAM.PAS`, with program identifier `SAMMAIN`.
 
@@ -35,17 +35,17 @@ in this tree.
 From the host repository root, run:
 
 ```text
-python tools/standalone.py game
-python tools/standalone.py game --episodes sam2
+python tools/verify.py
+python tools/verify.py game --episodes sam2
 ```
 
 The verifier stages source-only builds for each episode with the pinned
-tools in `layout/toolchain.json` and compares against the original unpacked
+tools in `config/toolchain.json` and compares against the original unpacked
 executables. The current proof is:
 
 | Episode | Equal load-image bytes | Image size | Differences in accepted holes | Differences outside holes |
 |---|---:|---:|---:|---:|
-| SAM1 | 188647 | 188736 | 89 | 0 |
+| SAM1 | 188644 | 188736 | 92 | 0 |
 | SAM2 | 189664 | 189744 | 80 | 0 |
 | SAM3 | 189761 | 189792 | 31 | 0 |
 
@@ -59,7 +59,7 @@ There are 102 bytes of undefined `DB ?`/`DW ?` object storage: seven in
 `CMOSPIT.ASM` and 95 in `PROGRAPX.ASM`. These contain compiler-buffer
 residue. The verifier checks the accepted object-hole ranges independently
 and permits differences only within those ranges; the differing-byte counts
-are 89/80/31 above. The source retains the undefined storage without filling
+are 92/80/31 above. The source retains the undefined storage without filling
 holes or patching linked bytes. Comment or source-line changes can affect
 this residue, so each readability batch is checked against the same totals.
 

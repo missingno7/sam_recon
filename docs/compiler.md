@@ -1,4 +1,9 @@
-# sol-compiler report
+# Compiler identification: Turbo Pascal 5.0
+
+> Research report written during the matching phase. Scripts, probes and worker paths it cites
+> (`build/workers/...`, `probes/`, `tools/` that no longer exist) are preserved in the git tag
+> `matching-archive`; identifiers are the coordinate names of that phase (see docs/names.json for
+> the mapping to the names used in game/).
 
 Research completed 2026-10-14. All probe sources, compiler scratch copies, EXEs, maps, disassemblies, and results are in this worker directory. The oracle and repository tools are read as inputs.
 

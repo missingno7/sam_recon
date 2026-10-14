@@ -1,44 +1,33 @@
 # Oracles
 
-Fixture: the supplied Duke Nukem ("Duke Nukum") v2.0 archive in `assets/`
-(never committed). All files are hashed in `layout/oracle.lock.json`
-(`fixture_files`). `DNHINT.EXE` is a separate LZ91-packed hint program and is
-not a reconstruction target.
+Fixture: the supplied Secret Agent (Apogee, 1992) episode files in `assets/` (never committed).
+All files are hashed in `config/oracle.lock.json` (`fixture_files`); the lock is immutable.
 
-| Episode | Packed SHA-256 | Size | Unpacked image | Relocs | Entry |
-|---|---|---:|---:|---:|---|
-| DN1 | `7e31ad9f…87cc5f` | 54,688 | 118,010 | 1,581 | CS:IP 0000:0000, SS:SP 255E:00E6 |
-| DN2 | `b155c58e…15910a` | 54,595 | 118,290 | 1,584 | 0000:0000, 2570:00E6 |
-| DN3 | `7966ca89…81b802` | 54,439 | 117,830 | 1,586 | 0000:0000, 2553:00E6 |
+| Episode | Packed SHA-256 | Size | Unpacked image | Relocs | Entry CS:IP | SS:SP | Extra paragraphs (min / max) |
+|---|---|---:|---:|---:|---|---|---|
+| SAM1 | `742f6c83…c63aa9` | 63,569 | 188,736 | 2,556 | 0000:1148 | 3528:4000 | 2836 / 0xAB14 |
+| SAM2 | `8bf20a9f…abdb73` | 63,950 | 189,744 | 2,571 | 0000:11C3 | 3568:4000 | 2837 / 0xAB15 |
+| SAM3 | `ce98f1a9…336922` | 63,888 | 189,792 | 2,573 | 0000:11C3 | 356B:4000 | 2837 / 0xAB15 |
 
 ## Unpacking and cross-check
 
-* `tools/lz91.py` decodes LZEXE 0.91 (bit stream, back-references, the
-  0x158-offset relocation table) as a pure function of the file.
-* `tools/lz91_emulate.py` loads each packed file as DOS would into a unicorn
-  emulator and runs **the file's own decompressor stub** until it jumps to the
-  original entry, at two different load segments. Bytes that differ by the
-  load-segment delta give the relocation set independently. Image, relocation
-  set and SS:SP/CS:IP must equal `tools/lz91.py`'s result.
-* UNLZEXE 0.5 (pinned in `layout/toolchain.json`) was tried as the second
-  implementation, but it hangs under both MS-DOS Player and DOSBox-X, even when
-  only printing its usage, so it is not used.
+* `tools/lz91.py` decodes LZEXE 0.91 (bit stream, back-references, the relocation table at loader
+  offset 0x158) as a pure function of the file.
+* LZEXE 0.91 adds the same growth to `e_maxalloc` as to `e_minalloc` unless `e_maxalloc` is 0xFFFF
+  (duke1 never hit this case); the decoder undoes it, and `max = min + 0xA000` paragraphs is exactly
+  Turbo Pascal's default `$M` heap maximum of 655,360 bytes.
+* `tools/lz91_emulate.py` loads each packed file as DOS would into a unicorn emulator and runs **the
+  file's own decompressor stub** at two load segments; image, relocation set and entry registers
+  must agree with the decoder (`python tools/oracle.py --crosscheck`).
+* `tools/repack.py` packs the canonical unpacked images with the pinned LZEXE 0.91 (DOSBox-X): all
+  three reproduce the original files byte for byte.
+* LZ91 stores relocations as ascending deltas, so the original relocation-table order and the
+  original unpacked header are not observable; comparisons use the relocation *set* and the header
+  fields that exist in a load image (CS:IP, SS:SP, min/max allocation).
 
-`python tools/oracle.py` re-derives everything and refuses any difference from
-the lock; `--write-lock` refuses to overwrite an existing lock.
+## Image structure
 
-## Structure (all episodes)
-
-| Region | DN1 linear | Size | Notes |
-|---|---|---:|---|
-| C0_TEXT | 0x00000 | 457 | Turbo C 2.0 C0L startup (incl. `DGROUP@`) |
-| ASM_TEXT | 0x001C9 | 1,082 | hand-written assembly appended to C0's `_TEXT`; byte-identical in all episodes |
-| CL.LIB `_TEXT` modules | 0x00603 | 885 | SETARGV … SCOPY (incl. the 4-byte REALCVT at 0x805, placed positionally) |
-| G1_TEXT | 0x00978 | 65,393 | first-party C unit 1, frame 0097; `main` at 0097:FF16 |
-| G2_TEXT | 0x108E9 | 18,053 / 18,116 / 18,146 | first-party C unit 2, frame 108E |
-| CL.LIB far modules | 0x14F6E (DN1) | 11,964 | IOERROR … UNGETC, plus 2/3/5 bytes of TLINK fill before the paragraph-aligned DELAY_TEXT |
-| DGROUP | 0x17E30 / 0x17E70 / 0x17E90 | | initialised data 20,170 / 20,386 / 19,894 B; BSS 35,042 B in all |
-
-Episode data differs mostly by file-name extensions (`.DN1`/`.DN2`/`.DN3`) and
-text; code differences are concentrated in G2 (12 parameterized, 2
-episode-specific, 2 unresolved functions; see `evidence/atlas.json`).
+Turbo Pascal 5.0 links code segments in reverse `uses`/initialisation order: the program, units
+u1..u8, Crt, u9 (ProGraphx), Dos, System, then DATA (initialised typed constants of every module in
+link order, then all variables in the same order) and a 16 KB stack. Only the program and u3 differ in
+size between episodes. See [compiler.md](compiler.md) and [assembly.md](assembly.md).

@@ -1,4 +1,9 @@
-# sol-asm research report
+# Assembly objects and libraries
+
+> Research report written during the matching phase. Scripts, probes and worker paths it cites
+> (`build/workers/...`, `probes/`, `tools/` that no longer exist) are preserved in the git tag
+> `matching-archive`; identifiers are the coordinate names of that phase (see docs/names.json for
+> the mapping to the names used in game/).
 
 Date: 2026-10-14. Scope: unpacked SAM1/2/3 oracle images; historical TASM, MASM, and Turbo Pascal binaries; Duke 1's reconstructed toolbox and original DN1 oracle. All offsets below are hexadecimal, relative to the **SAM1 load image segment**. Routine ends are exclusive. Names are behavioral guesses, not recovered source identifiers.
 
