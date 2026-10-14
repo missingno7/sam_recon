@@ -1,0 +1,227 @@
+{
+ "description": "Undefined (DB ?) storage of the linked objects: residual compiler-buffer bytes of the original build (docs/object-holes.md). User decision 2026-10-14: documented residue, compared and reported, never filled or patched. Ranges are linear load-image offsets [start, end).",
+ "episodes": {
+  "sam1": [
+   {
+    "end": "05151",
+    "object": "p",
+    "original": "00000000000000",
+    "start": "0514A"
+   },
+   {
+    "end": "29D20",
+    "object": "u9",
+    "original": "3029207468656e06083fff460000693208006132340020202020",
+    "start": "29D06"
+   },
+   {
+    "end": "29D3C",
+    "object": "u9",
+    "original": "6267286f626a735b7a5d2e73",
+    "start": "29D30"
+   },
+   {
+    "end": "2A5EE",
+    "object": "u9",
+    "original": "1e57bf680800f332",
+    "start": "2A5E6"
+   },
+   {
+    "end": "2AF1C",
+    "object": "u9",
+    "original": "00008933080083333300",
+    "start": "2AF12"
+   },
+   {
+    "end": "2B1B0",
+    "object": "u9",
+    "original": "202020726573746f7265",
+    "start": "2B1A6"
+   },
+   {
+    "end": "2B4EA",
+    "object": "u9",
+    "original": "52335e2e496d6167",
+    "start": "2B4E2"
+   },
+   {
+    "end": "2B747",
+    "object": "u9",
+    "original": "5d2e792b31",
+    "start": "2B742"
+   },
+   {
+    "end": "2C2F5",
+    "object": "u9",
+    "original": "64792b313629",
+    "start": "2C2EF"
+   },
+   {
+    "end": "2C2FD",
+    "object": "u9",
+    "original": "030000c5",
+    "start": "2C2F9"
+   },
+   {
+    "end": "2C303",
+    "object": "u9",
+    "original": "00c0340c",
+    "start": "2C2FF"
+   },
+   {
+    "end": "2C307",
+    "object": "u9",
+    "original": "2020",
+    "start": "2C305"
+   }
+  ],
+  "sam2": [
+   {
+    "end": "051D3",
+    "object": "p",
+    "original": "00000000000000",
+    "start": "051CC"
+   },
+   {
+    "end": "2A100",
+    "object": "u9",
+    "original": "550d045a4749495300a7010400fe00da0063010b54454c45504f",
+    "start": "2A0E6"
+   },
+   {
+    "end": "2A11C",
+    "object": "u9",
+    "original": "030b54454c45504f5254434e",
+    "start": "2A110"
+   },
+   {
+    "end": "2A9CE",
+    "object": "u9",
+    "original": "99280000c2004000",
+    "start": "2A9C6"
+   },
+   {
+    "end": "2B2FC",
+    "object": "u9",
+    "original": "04000000000009504358",
+    "start": "2B2F2"
+   },
+   {
+    "end": "2B590",
+    "object": "u9",
+    "original": "445241465451e600dc00",
+    "start": "2B586"
+   },
+   {
+    "end": "2B8CA",
+    "object": "u9",
+    "original": "dc00010000003f05",
+    "start": "2B8C2"
+   },
+   {
+    "end": "2BB27",
+    "object": "u9",
+    "original": "00dc00ecff",
+    "start": "2BB22"
+   },
+   {
+    "end": "2C6D5",
+    "object": "u9",
+    "original": "4942444952c6",
+    "start": "2C6CF"
+   },
+   {
+    "end": "2C6DD",
+    "object": "u9",
+    "original": "0553464c",
+    "start": "2C6D9"
+   },
+   {
+    "end": "2C6E3",
+    "object": "u9",
+    "original": "d4110a50",
+    "start": "2C6DF"
+   },
+   {
+    "end": "2C6E7",
+    "object": "u9",
+    "original": "4c49",
+    "start": "2C6E5"
+   }
+  ],
+  "sam3": [
+   {
+    "end": "051D3",
+    "object": "p",
+    "original": "00000000000000",
+    "start": "051CC"
+   },
+   {
+    "end": "2A130",
+    "object": "u9",
+    "original": "0000000000000000000000000000000000000000000000000000",
+    "start": "2A116"
+   },
+   {
+    "end": "2A14C",
+    "object": "u9",
+    "original": "000000000000000000000000",
+    "start": "2A140"
+   },
+   {
+    "end": "2A9FE",
+    "object": "u9",
+    "original": "0000000000000000",
+    "start": "2A9F6"
+   },
+   {
+    "end": "2B32C",
+    "object": "u9",
+    "original": "00000000000000000000",
+    "start": "2B322"
+   },
+   {
+    "end": "2B5C0",
+    "object": "u9",
+    "original": "00000000000000000000",
+    "start": "2B5B6"
+   },
+   {
+    "end": "2B8FA",
+    "object": "u9",
+    "original": "0000000000000000",
+    "start": "2B8F2"
+   },
+   {
+    "end": "2BB57",
+    "object": "u9",
+    "original": "0000000000",
+    "start": "2BB52"
+   },
+   {
+    "end": "2C705",
+    "object": "u9",
+    "original": "000000000000",
+    "start": "2C6FF"
+   },
+   {
+    "end": "2C70D",
+    "object": "u9",
+    "original": "00000000",
+    "start": "2C709"
+   },
+   {
+    "end": "2C713",
+    "object": "u9",
+    "original": "00000000",
+    "start": "2C70F"
+   },
+   {
+    "end": "2C717",
+    "object": "u9",
+    "original": "0000",
+    "start": "2C715"
+   }
+  ]
+ }
+}
