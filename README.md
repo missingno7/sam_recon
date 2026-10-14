@@ -31,3 +31,25 @@ python tools/setup_env.py
 python tools/oracle.py --crosscheck
 python tools/repack.py --oracle
 ```
+
+## Findings (2026-10-14)
+
+* **Compiler: Turbo Pascal 5.0** — a probe reproduces the complete System, Crt and Dos segments
+  (padding and relocations included) in all three episodes; TP 5.5 fails specific runtime routines.
+  Directives `$B- $I- $R- $S-`, `$M 16384,0,655360` ([docs/compiler.md](docs/compiler.md),
+  `evidence/compiler-rules.json`, probes in `probes/compiler/`).
+* **Units** (link order): program, u1-u4, u5 (Genus PCX Programmer's Toolkit 3.56: Pascal shell +
+  assembly OBJ), u6 (joystick), u7, u8 (game data + asset decoder OBJ), Crt, u9 (ProGraphx 2.0 EGA
+  toolbox by Peder Jungck: Pascal shell + 12 KB OBJ), Dos, System ([docs/assembly.md](docs/assembly.md)).
+  Only u3 and the program differ in size between episodes.
+* **Duke Nukem 1 lineage:** SAM's ProGraphx toolbox shares algorithms with DN1's toolbox
+  (planar sprite packets, mode setting, retrace/split helpers) but not byte-identical code.
+
+## Proof route
+
+`tools/search.py` builds a harness program per episode that reproduces the original data segment
+exactly (every referenced global, the Crt/u9/Dos/System blocks and the DS length are self-checked),
+includes the canonical shared declarations (`src/decls/canonical.pas`), compiles the candidate
+routine with the pinned TPC 5.0 and compares the routine's whole extent byte for byte; relocated
+segments, far/near calls, procedure pointers and CS literals must bind to the same unit/routine.
+Unit init blocks and the program body have their own harness modes. Progress: [docs/progress.md](docs/progress.md).

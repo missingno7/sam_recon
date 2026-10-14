@@ -1,0 +1,5048 @@
+[
+  {
+    "segment": "0000",
+    "start": "0bf5",
+    "end": "0bf6",
+    "name_guess": "timer_interrupt_inline_cli",
+    "classification": "pascal_inline_fragment",
+    "convention": "embedded in Pascal interrupt procedure 0BE5..0E33; no separate call boundary",
+    "evidence": [
+      "Single CLI/STI byte inside TP interrupt frame. TP5 interrupt probe emits neither automatically; numeric INLINE is supported."
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "0bf5",
+        "0bf6"
+      ]
+    ]
+  },
+  {
+    "segment": "0000",
+    "start": "0e26",
+    "end": "0e27",
+    "name_guess": "timer_interrupt_inline_sti",
+    "classification": "pascal_inline_fragment",
+    "convention": "embedded in Pascal interrupt procedure 0BE5..0E33; no separate call boundary",
+    "evidence": [
+      "Single CLI/STI byte inside TP interrupt frame. TP5 interrupt probe emits neither automatically; numeric INLINE is supported."
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "0e26",
+        "0e27"
+      ]
+    ]
+  },
+  {
+    "segment": "0000",
+    "start": "5151",
+    "end": "516d",
+    "name_guess": "read_cmos_bcd",
+    "classification": "linked_assembly_probable",
+    "convention": "far register convention, no stack arguments; RETF; AL = CMOS index, AX = decoded byte",
+    "evidence": [
+      "Entry bytes: e670eb00eb00e471eb00eb008ae0d0ec",
+      "Returns: 516c: cb retf ",
+      "AL selects CMOS register; OUT 70h / IN 71h, four SHR AH, AND AX,0F0Fh and AAD 10 convert packed BCD; four JMP $+2 instructions are I/O delays.",
+      "Hardware/BIOS: 5151: out 0x70, al; 5157: in al, 0x71"
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "5151",
+        "516d"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "0000",
+    "start": "516d",
+    "end": "51df",
+    "name_guess": "synchronize_dos_clock_from_cmos",
+    "classification": "linked_assembly_probable",
+    "convention": "far register convention, no stack arguments; RETF",
+    "evidence": [
+      "Entry bytes: 2bc09a515100002ea24c51b0029a5151",
+      "Returns: 51de: cb retf ",
+      "Calls CMOS reader for second, minute, hour, day, month, year; INT 21h AH=2Dh/2Bh sets DOS time/date; year adds 1900.",
+      "CS data references: 514a, 514b, 514c, 514d, 514e, 514f",
+      "Hardware/BIOS: 51c4: int 0x21; 51dc: int 0x21"
+    ],
+    "argument_accesses": [],
+    "cs_data": [
+      "514a",
+      "514b",
+      "514c",
+      "514d",
+      "514e",
+      "514f"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "516d",
+        "51df"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "0000",
+    "start": "51df",
+    "end": "51f3",
+    "name_guess": "set_pit_timer_140hz",
+    "classification": "linked_assembly_probable",
+    "convention": "far register convention, no stack arguments; RETF",
+    "evidence": [
+      "Entry bytes: bb4721fab036e643b0008ac3e6408ac7",
+      "Returns: 51f2: cb retf ",
+      "Loads BX=2147h; CLI; writes PIT control 36h to port 43h and divisor low/high bytes to port 40h; STI.",
+      "Hardware/BIOS: 51e5: out 0x43, al; 51eb: out 0x40, al; 51ef: out 0x40, al"
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "51df",
+        "51f3"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "0000",
+    "start": "51f3",
+    "end": "5200",
+    "name_guess": "restore_pit_timer_default",
+    "classification": "linked_assembly_probable",
+    "convention": "far register convention, no stack arguments; RETF",
+    "evidence": [
+      "Entry bytes: fab036e643b000e640e640fbcb",
+      "Returns: 51ff: cb retf ",
+      "Writes PIT divisor zero (65536) with control 36h, restoring the conventional IRQ0 rate.",
+      "Hardware/BIOS: 51f6: out 0x43, al; 51fa: out 0x40, al; 51fc: out 0x40, al"
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "51f3",
+        "5200"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "25e5",
+    "start": "04a3",
+    "end": "04bf",
+    "name_guess": "text_cell_address_helper",
+    "classification": "linked_assembly_probable",
+    "convention": "near register/helper convention; RET; may inherit caller BP frame",
+    "evidence": [
+      "Entry bytes: 33c08ac88af8fecdd1e98bf9d1efd1ef",
+      "Returns: 04be: c3 ret ",
+      "Default DS direct data references: 21d6"
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [
+      "21d6"
+    ],
+    "code_ranges": [
+      [
+        "04a3",
+        "04bf"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "25e5",
+    "start": "04bf",
+    "end": "0508",
+    "name_guess": "write_colored_pascal_string",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 10 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e8a6e0c8a5e0ee8d7ff8a0ed8",
+      "Returns: 0505: ca0a00 retf 0xa",
+      "Default DS direct data references: 21d8",
+      "Hardware/BIOS: 04e6: in al, dx; 04ef: in al, dx"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 1,
+        "count": 1
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 1,
+        "count": 1
+      },
+      {
+        "bp_offset": "000e",
+        "bytes": 1,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [
+      "21d8"
+    ],
+    "code_ranges": [
+      [
+        "04bf",
+        "04fc"
+      ],
+      [
+        "04fd",
+        "0508"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "25e5",
+    "start": "0508",
+    "end": "054f",
+    "name_guess": "write_pascal_string_characters_only",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e8a6e0a8a5e0ce88eff8a0ed8",
+      "Returns: 054c: ca0800 retf 8",
+      "Default DS direct data references: 21d8",
+      "Hardware/BIOS: 052c: in al, dx; 0535: in al, dx"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 1,
+        "count": 1
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 1,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [
+      "21d8"
+    ],
+    "code_ranges": [
+      [
+        "0508",
+        "0543"
+      ],
+      [
+        "0544",
+        "054f"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "25e5",
+    "start": "054f",
+    "end": "0557",
+    "name_guess": "query_bios_video_mode_helper",
+    "classification": "linked_assembly_probable",
+    "convention": "near register/helper convention; RET; may inherit caller BP frame",
+    "evidence": [
+      "Entry bytes: b40fcd10a2de21c3",
+      "Returns: 0556: c3 ret ",
+      "Default DS direct data references: 21de",
+      "Hardware/BIOS: 0551: int 0x10"
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [
+      "21de"
+    ],
+    "code_ranges": [
+      [
+        "054f",
+        "0557"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "25e5",
+    "start": "0557",
+    "end": "05c3",
+    "name_guess": "detect_video_adapter",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, no stack arguments; RETF; internal helper inputs may be registers",
+    "evidence": [
+      "Entry bytes: e8f5ffc606df2104b9ffffb8001ccd10",
+      "Returns: 05af: cb retf ",
+      "Default DS direct data references: 21de, 21df",
+      "Hardware/BIOS: 0565: int 0x10; 0575: int 0x10; 0589: int 0x10"
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [
+      "21de",
+      "21df"
+    ],
+    "code_ranges": [
+      [
+        "0557",
+        "05c3"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "25e5",
+    "start": "05c3",
+    "end": "05c7",
+    "name_guess": "get_video_mode",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, no stack arguments; RETF; internal helper inputs may be registers",
+    "evidence": [
+      "Entry bytes: e889ffcb",
+      "Returns: 05c6: cb retf "
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "05c3",
+        "05c7"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "000f",
+    "end": "0047",
+    "name_guess": "pcx_set_display_type",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 2 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec83ec021e065657b8ea2d8ed88b",
+      "Returns: 0044: ca0200 retf 2",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings.",
+      "Default DS direct data references: 21e0"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [
+      "21e0"
+    ],
+    "code_ranges": [
+      [
+        "000f",
+        "0047"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "0047",
+    "end": "00eb",
+    "name_guess": "pcx_set_graphics_or_text_mode",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 2 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec83ec021e065657b8ea2d8ed8c7",
+      "Returns: 00e8: ca0200 retf 2",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings.",
+      "Default DS direct data references: 21e0, 21e2, 21e4",
+      "Hardware/BIOS: 0090: int 0x10; 00a1: int 0x10; 00ca: int 0x10"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [
+      "21e0",
+      "21e2",
+      "21e4"
+    ],
+    "code_ranges": [
+      [
+        "0047",
+        "00eb"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "00eb",
+    "end": "011a",
+    "name_guess": "pcx_get_display_type",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, no stack arguments; RETF; internal helper inputs may be registers",
+    "evidence": [
+      "Entry bytes: 558bec83ec021e065657b8ea2d8ed8a1",
+      "Returns: 0119: cb retf ",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings.",
+      "Default DS direct data references: 21e0"
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [
+      "21e0"
+    ],
+    "code_ranges": [
+      [
+        "00eb",
+        "011a"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "011a",
+    "end": "0155",
+    "name_guess": "pcx_get_version_string",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 4 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec83ec021e065657b8ea2d8ed88b",
+      "Returns: 0152: ca0400 retf 4",
+      "Copies four version characters from DS:001Ah into a length-prefixed string; initialized DS banner identifies Toolkit 3.56.",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings."
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "011a",
+        "0155"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "0155",
+    "end": "01ac",
+    "name_guess": "pcx_set_work_buffer",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 6 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec83ec021e065657b8ea2d8ed88b",
+      "Returns: 01a9: ca0600 retf 6",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings.",
+      "Default DS direct data references: 2a8a, 2a8c, 2a8e"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 2
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [
+      "2a8a",
+      "2a8c",
+      "2a8e"
+    ],
+    "code_ranges": [
+      [
+        "0155",
+        "01ac"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "01ac",
+    "end": "0204",
+    "name_guess": "pcx_get_display_descriptor",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 2 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec83ec021e065657b8ea2d8ed88b",
+      "Returns: 0201: ca0200 retf 2",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings."
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 1,
+        "count": 1
+      },
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 2
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "01ac",
+        "0204"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "0204",
+    "end": "026b",
+    "name_guess": "pcx_get_display_information",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 6 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec83ec021e065657b8ea2d8ed88b",
+      "Returns: 0268: ca0600 retf 6",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings."
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 2
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 2
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "0204",
+        "026b"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "026b",
+    "end": "0c70",
+    "name_guess": "pcx_initialize_video_descriptors",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, no stack arguments; RETF; internal helper inputs may be registers",
+    "evidence": [
+      "Entry bytes: 558bec83ec021e065657b8ea2d8ed8c7",
+      "Returns: 0c6f: cb retf ",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings.",
+      "Default DS direct data references: 21e0, 21e2, 21e4, 21e6, 2a8a, 2a8c, 2a8e, 2a90, 2a96, 2a97, 2a98, 2a99, 2a9a"
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [
+      "21e0",
+      "21e2",
+      "21e4",
+      "21e6",
+      "2a8a",
+      "2a8c",
+      "2a8e",
+      "2a90",
+      "2a96",
+      "2a97",
+      "2a98",
+      "2a99",
+      "2a9a"
+    ],
+    "code_ranges": [
+      [
+        "026b",
+        "0c70"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "0c70",
+    "end": "0cc4",
+    "name_guess": "pcx_hercules_mode_helper",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, no stack arguments; RETF; internal helper inputs may be registers",
+    "evidence": [
+      "Entry bytes: 503c02740dbe7e33bb200753bbd00753",
+      "Returns: 0cc3: cb retf ",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings.",
+      "Hardware/BIOS: 0c94: out dx, al; 0ca0: out dx, al; 0ca9: out dx, al; 0cc2: out dx, al"
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "0c70",
+        "0cc4"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "0cc4",
+    "end": "0cf9",
+    "name_guess": "pcx_set_cga_palette",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 2 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec83ec021e065657b8ea2d8ed88b",
+      "Returns: 0cf6: ca0200 retf 2",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings.",
+      "Hardware/BIOS: 0ce6: out dx, al"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "0cc4",
+        "0cf9"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "0cf9",
+    "end": "0d2d",
+    "name_guess": "pcx_set_mode_change_policy",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 2 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec83ec021e065657b8ea2d8ed88b",
+      "Returns: 0d2a: ca0200 retf 2",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings.",
+      "Default DS direct data references: 21e6"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [
+      "21e6"
+    ],
+    "code_ranges": [
+      [
+        "0cf9",
+        "0d2d"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "0d2d",
+    "end": "0dc7",
+    "name_guess": "pcx_display_buffer",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 12 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec83ec1e1e065657b8ea2d8ed880",
+      "Returns: 0dc4: ca0c00 retf 0xc",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings.",
+      "Default DS direct data references: 21e6, 2a96",
+      "Hardware/BIOS: 0da6: int 0x10"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000e",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0010",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [
+      "21e6",
+      "2a96"
+    ],
+    "code_ranges": [
+      [
+        "0d2d",
+        "0dc7"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "0dc7",
+    "end": "0f9b",
+    "name_guess": "pcx_initialize_display_dispatch",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, no stack arguments; RETF; internal helper inputs may be registers",
+    "evidence": [
+      "Entry bytes: b80000509aac0142268bd8c747249b0f",
+      "Returns: 0f9a: cb retf ",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings.",
+      "Default DS direct data references: 2a96"
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [
+      "2a96"
+    ],
+    "code_ranges": [
+      [
+        "0dc7",
+        "0f9b"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "0f9b",
+    "end": "10d7",
+    "name_guess": "pcx_cga_decode_continuation",
+    "classification": "linked_assembly_probable",
+    "convention": "far-jump continuation of pcx_display_buffer; inherits BP frame; Pascal far callee cleanup 12 bytes",
+    "evidence": [
+      "Entry bytes: 8b44082b4404408b5e0a03d8263b5d18",
+      "Returns: 10d4: ca0c00 retf 0xc",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings."
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 4
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 3
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "0f9b",
+        "10d7"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "10d7",
+    "end": "12b6",
+    "name_guess": "pcx_ega_decode_continuation",
+    "classification": "linked_assembly_probable",
+    "convention": "far-jump continuation of pcx_display_buffer; inherits BP frame; Pascal far callee cleanup 12 bytes",
+    "evidence": [
+      "Entry bytes: 268b4518b103d3e88946eac746f20000",
+      "Returns: 12b3: ca0c00 retf 0xc",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings.",
+      "Hardware/BIOS: 1138: out dx, al; 113c: out dx, al; 1142: out dx, al; 1146: out dx, al; 1150: out dx, al; 1155: out dx, al; 1180: out dx, al; 1184: out dx, al; 1233: out dx, al; 1238: out dx, al; 1246: out dx, al; 124a: out dx, al"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 3
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 3
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "10d7",
+        "12b6"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "12b6",
+    "end": "137a",
+    "name_guess": "pcx_vga_256_decode_continuation",
+    "classification": "linked_assembly_probable",
+    "convention": "far-jump continuation of pcx_display_buffer; inherits BP frame; Pascal far callee cleanup 12 bytes",
+    "evidence": [
+      "Entry bytes: 268b45188946ea8b44082b4404408b5e",
+      "Returns: 1377: ca0c00 retf 0xc",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings."
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 3
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 3
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "12b6",
+        "137a"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "137a",
+    "end": "14a7",
+    "name_guess": "pcx_hercules_decode_continuation",
+    "classification": "linked_assembly_probable",
+    "convention": "far-jump continuation of pcx_display_buffer; inherits BP frame; Pascal far callee cleanup 12 bytes",
+    "evidence": [
+      "Entry bytes: 8b44082b4404408b5e0a03d8263b5d18",
+      "Returns: 14a4: ca0c00 retf 0xc",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings."
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 4
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 3
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "137a",
+        "14a7"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "14a7",
+    "end": "15d1",
+    "name_guess": "pcx_paradise_decode_continuation",
+    "classification": "linked_assembly_probable",
+    "convention": "far-jump continuation of pcx_display_buffer; inherits BP frame; Pascal far callee cleanup 12 bytes",
+    "evidence": [
+      "Entry bytes: 268b45188946ea8b44082b4404408b5e",
+      "Returns: 15ce: ca0c00 retf 0xc",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings.",
+      "Hardware/BIOS: 1527: out dx, al; 152b: out dx, al; 153f: out dx, al; 1544: out dx, al; 1587: out dx, al; 158b: out dx, al; 15b5: out dx, al; 15b9: out dx, al; 15bf: out dx, al; 15c3: out dx, al"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 3
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 4
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "14a7",
+        "15d1"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "15d1",
+    "end": "16f5",
+    "name_guess": "pcx_tseng_decode_continuation",
+    "classification": "linked_assembly_probable",
+    "convention": "far-jump continuation of pcx_display_buffer; inherits BP frame; Pascal far callee cleanup 12 bytes",
+    "evidence": [
+      "Entry bytes: 8b44082b4404408b5e0a03d8263b5d18",
+      "Returns: 16f2: ca0c00 retf 0xc",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings.",
+      "Hardware/BIOS: 1642: out dx, al; 1689: out dx, al; 16ae: out dx, al; 16e1: out dx, al"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 3
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 3
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "15d1",
+        "16f5"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "16f5",
+    "end": "1915",
+    "name_guess": "pcx_video7_decode_continuation",
+    "classification": "linked_assembly_probable",
+    "convention": "far-jump continuation of pcx_display_buffer; inherits BP frame; Pascal far callee cleanup 12 bytes",
+    "evidence": [
+      "Entry bytes: 268b45188946ea8b44082b4404408b5e",
+      "Returns: 1912: ca0c00 retf 0xc",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings.",
+      "Hardware/BIOS: 175f: out dx, al; 1763: out dx, al; 1773: out dx, al; 1777: out dx, al; 1788: in al, dx; 1792: out dx, al; 1798: out dx, al; 179a: in al, dx; 17ad: out dx, al; 17f1: out dx, al; 17f5: out dx, al; 1806: in al, dx"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 3
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 3
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "16f5",
+        "1915"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "1915",
+    "end": "19e3",
+    "name_guess": "pcx_decode_or_print_buffer",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 10 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: cc558bec81ec84001e065657b8ea2d8e",
+      "Returns: 19e0: ca0a00 retf 0xa",
+      "Far-call target is the INT3 at 1915; PUSH BP / MOV BP,SP begins at 1916. Keeps inherited Pascal args and invokes printer/decode paths.",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings.",
+      "Default DS direct data references: 2a8a, 2a8c, 2a8e, 2a90, 2a92, 2a94",
+      "Hardware/BIOS: 1915: int3 ; 1959: int 0x21; 199d: int 0x21; 19ce: int 0x21"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 3
+      },
+      {
+        "bp_offset": "000e",
+        "bytes": 2,
+        "count": 3
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [
+      "2a8a",
+      "2a8c",
+      "2a8e",
+      "2a90",
+      "2a92",
+      "2a94"
+    ],
+    "code_ranges": [
+      [
+        "1915",
+        "19e3"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "low"
+  },
+  {
+    "segment": "2642",
+    "start": "19e3",
+    "end": "1a5f",
+    "name_guess": "pcx_flush_print_buffer",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 2 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec83ec021e065657b8ea2d8ed853",
+      "Returns: 1a5c: ca0200 retf 2",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings.",
+      "Default DS direct data references: 2a8a, 2a8c, 2a8e, 2a90, 2a92, 2a94",
+      "Hardware/BIOS: 1a36: int 0x21; 1a49: int 0x21"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [
+      "2a8a",
+      "2a8c",
+      "2a8e",
+      "2a90",
+      "2a92",
+      "2a94"
+    ],
+    "code_ranges": [
+      [
+        "19e3",
+        "1a5f"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "1a5f",
+    "end": "1ac6",
+    "name_guess": "pcx_configure_printer",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 12 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec83ec021e065657b8ea2d8ed88b",
+      "Returns: 1ac3: ca0c00 retf 0xc",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings.",
+      "Default DS direct data references: 2e9e, 2ea0, 338a, 338c, 338e, 3390"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000e",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0010",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [
+      "2e9e",
+      "2ea0",
+      "338a",
+      "338c",
+      "338e",
+      "3390"
+    ],
+    "code_ranges": [
+      [
+        "1a5f",
+        "1ac6"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "1ac6",
+    "end": "1bf7",
+    "name_guess": "pcx_begin_printer_image",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 6 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec83ec021e065657b8ea2d8ed8b8",
+      "Returns: 1bf4: ca0600 retf 6",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings.",
+      "Default DS direct data references: 2ea0, 338a, 338c, 3390, 3392, 3394",
+      "Hardware/BIOS: 1b83: int 0x17"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [
+      "2ea0",
+      "338a",
+      "338c",
+      "3390",
+      "3392",
+      "3394"
+    ],
+    "code_ranges": [
+      [
+        "1ac6",
+        "1bf7"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "1bf7",
+    "end": "1c28",
+    "name_guess": "pcx_end_printer_image",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, no stack arguments; RETF; internal helper inputs may be registers",
+    "evidence": [
+      "Entry bytes: 558bec83ec021e065657b8ea2d8ed8be",
+      "Returns: 1c27: cb retf ",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings.",
+      "Default DS direct data references: 338e"
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [
+      "338e"
+    ],
+    "code_ranges": [
+      [
+        "1bf7",
+        "1c28"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "1c28",
+    "end": "1d60",
+    "name_guess": "pcx_print_buffer",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 10 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec83ec0e1e065657b8ea2d8ed88b",
+      "Returns: 1d5d: ca0a00 retf 0xa",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings."
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 2
+      },
+      {
+        "bp_offset": "000e",
+        "bytes": 2,
+        "count": 2
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "1c28",
+        "1d60"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "1d60",
+    "end": "1d71",
+    "name_guess": "pcx_send_printer_string",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, no stack arguments; RETF; internal helper inputs may be registers",
+    "evidence": [
+      "Entry bytes: ac8ac832ed8b168a33acb400cd17e2f9",
+      "Returns: 1d70: cb retf ",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings.",
+      "Default DS direct data references: 338a",
+      "Hardware/BIOS: 1d6c: int 0x17"
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [
+      "338a"
+    ],
+    "code_ranges": [
+      [
+        "1d60",
+        "1d71"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "1d71",
+    "end": "201f",
+    "name_guess": "pcx_print_scanline",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, no stack arguments; RETF; internal helper inputs may be registers",
+    "evidence": [
+      "Entry bytes: 558bec83ec041e065657b8ea2d8ed8c7",
+      "Returns: 201e: cb retf ",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings.",
+      "Default DS direct data references: 2e9c, 2ea0, 338a, 338c, 3392, 3394",
+      "Hardware/BIOS: 1fc5: int 0x17; 1fe7: int 0x17; 2001: int 0x16; 2009: int 0x16"
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [
+      "2e9c",
+      "2ea0",
+      "338a",
+      "338c",
+      "3392",
+      "3394"
+    ],
+    "code_ranges": [
+      [
+        "1d71",
+        "201f"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "2020",
+    "end": "20a2",
+    "name_guess": "pcx_format_unsigned_decimal",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec83ec041e065657b8ea2d8ed88b",
+      "Returns: 209f: ca0800 retf 8",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings."
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "2020",
+        "20a2"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2642",
+    "start": "20a2",
+    "end": "22b8",
+    "name_guess": "pcx_initialize_printer_state",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, no stack arguments; RETF; internal helper inputs may be registers",
+    "evidence": [
+      "Entry bytes: 558bec83ec021e065657b8ea2d8ed8c7",
+      "Returns: 22b7: cb retf ",
+      "Genus PCX Toolkit 3.56; non-TP prologue 55 8B EC, explicit DS setup/preservation; initialized DS copyright/version strings.",
+      "Default DS direct data references: 2e9e, 2ea0, 338a, 338c, 338e, 3390"
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [
+      "2e9e",
+      "2ea0",
+      "338a",
+      "338c",
+      "338e",
+      "3390"
+    ],
+    "code_ranges": [
+      [
+        "20a2",
+        "22b8"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "286e",
+    "start": "007f",
+    "end": "00cc",
+    "name_guess": "read_four_joystick_axes_unused",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 16 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec06ba0102c47e12b401e81b00c4",
+      "Returns: 00c9: ca1000 retf 0x10",
+      "Four VAR Word far pointers at BP+12h,0Eh,0Ah,06h; helper calls are NEAR E8 but helper ends CB: suspicious unused API."
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000e",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0012",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "007f",
+        "00a8"
+      ],
+      [
+        "00c5",
+        "00cc"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "286e",
+    "start": "00a9",
+    "end": "00c5",
+    "name_guess": "measure_joystick_axis_helper",
+    "classification": "linked_assembly_probable",
+    "convention": "internal near call E8; register arguments DX/AH/ES:DI; anomalous RETF",
+    "evidence": [
+      "Entry bytes: b9ffffec84e0e0fbb9fffffaeeec84e0",
+      "Returns: 00c4: cb retf ",
+      "Internal near-call target uses DX=201h, AH axis mask, ES:DI result; its CB is inconsistent with its E8 callers.",
+      "Hardware/BIOS: 00ac: in al, dx; 00b5: out dx, al; 00b6: in al, dx"
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "00a9",
+        "00c5"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "286e",
+    "start": "00cc",
+    "end": "00fb",
+    "name_guess": "read_joystick_axis",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 2 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558becba01028b46068ac8b401d2e4b9",
+      "Returns: 00f8: ca0200 retf 2",
+      "BP+6 selects joystick axis; CLI/OUT/IN/LOOPNE times port 201h, NEG CX / ADD CX,-1; returns AX, RETF 2.",
+      "Hardware/BIOS: 00de: in al, dx; 00e7: out dx, al; 00e8: in al, dx"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "00cc",
+        "00fb"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "2890",
+    "start": "0c14",
+    "end": "0cfc",
+    "name_guess": "decrypt_asset_buffer",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 6 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec83ec5456571e8cd8fac646ac43",
+      "Returns: 0cf9: ca0600 retf 6",
+      "Reverses each input byte bit order, then XORs cyclic 28-byte key Copyright 1991 Peder Jungck + NUL; key built at BP-54h; CLI/STI; pointer BP+8, length BP+6."
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 3
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "0c14",
+        "0cfc"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "01a3",
+    "end": "01c5",
+    "name_guess": "set_toolbox_video_mode",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 2 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec8b46063c007505b00deb0e903c",
+      "Returns: 01c2: ca0200 retf 2",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "Hardware/BIOS: 01bf: int 0x10"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "01a3",
+        "01b1"
+      ],
+      [
+        "01b2",
+        "01bc"
+      ],
+      [
+        "01bd",
+        "01c5"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "01c5",
+    "end": "01d3",
+    "name_guess": "set_bios_video_mode",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 2 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec8b460632e4cd105dca0200",
+      "Returns: 01d0: ca0200 retf 2",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "Hardware/BIOS: 01cd: int 0x10"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "01c5",
+        "01d3"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "01d3",
+    "end": "01f9",
+    "name_guess": "set_screen_stride",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 2 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec8b5e0683fb287d03bb28002e89",
+      "Returns: 01f6: ca0200 retf 2",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c",
+      "Hardware/BIOS: 01ed: out dx, ax; 01f3: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "01d3",
+        "01f9"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "01f9",
+    "end": "024c",
+    "name_guess": "pan_display_retrace_variant_a",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 4 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558becbada03eca80874fbeca80875fb",
+      "Returns: 0249: ca0400 retf 4",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c",
+      "Hardware/BIOS: 01ff: in al, dx; 0204: in al, dx; 0224: out dx, ax; 0229: out dx, ax; 022e: in al, dx; 0243: out dx, al; 0246: out dx, al"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 2
+      }
+    ],
+    "cs_data": [
+      "011c"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "01f9",
+        "024c"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "low"
+  },
+  {
+    "segment": "29c2",
+    "start": "024c",
+    "end": "029f",
+    "name_guess": "pan_display_retrace_variant_b",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 4 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558becbada03eca80874fbeca80875fb",
+      "Returns: 029c: ca0400 retf 4",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c",
+      "Hardware/BIOS: 0252: in al, dx; 0257: in al, dx; 0277: out dx, ax; 027c: out dx, ax; 0281: in al, dx; 0296: out dx, al; 0299: out dx, al"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 2
+      }
+    ],
+    "cs_data": [
+      "011c"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "024c",
+        "029f"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "low"
+  },
+  {
+    "segment": "29c2",
+    "start": "029f",
+    "end": "02db",
+    "name_guess": "set_split_scanline",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 2 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558becb840008ec0268b16630080c206",
+      "Returns: 02d8: ca0200 retf 2",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "Hardware/BIOS: 02af: in al, dx; 02b4: in al, dx; 02cc: out dx, ax; 02d6: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "029f",
+        "02db"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "02db",
+    "end": "02fa",
+    "name_guess": "wait_vertical_retrace",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, no stack arguments; RETF; internal helper inputs may be registers",
+    "evidence": [
+      "Entry bytes: 0633c08ec0bada03eceb00a8087407ec",
+      "Returns: 02f9: cb retf ",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "Hardware/BIOS: 02e3: in al, dx; 02ea: in al, dx; 02f1: in al, dx"
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "02db",
+        "02fa"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "02fa",
+    "end": "0337",
+    "name_guess": "set_split_scanline_registers",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 2 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec0ee8daff0633c08ec0bad403b0",
+      "Returns: 0334: ca0200 retf 2",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "Hardware/BIOS: 030b: out dx, al; 0310: out dx, al; 0314: out dx, al; 0316: in al, dx; 0325: out dx, al; 0329: out dx, al; 032b: in al, dx; 032e: out dx, al"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0007",
+        "bytes": 1,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "02fa",
+        "0331"
+      ],
+      [
+        "0332",
+        "0337"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "0337",
+    "end": "0349",
+    "name_guess": "set_border_color",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 2 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558becb410b0018b5e068afbcd105dca",
+      "Returns: 0346: ca0200 retf 2",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "Hardware/BIOS: 0343: int 0x10"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "0337",
+        "0349"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "0349",
+    "end": "0352",
+    "name_guess": "reset_current_video_mode",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, no stack arguments; RETF; internal helper inputs may be registers",
+    "evidence": [
+      "Entry bytes: b40fcd1032e4cd10cb",
+      "Returns: 0351: cb retf ",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "Hardware/BIOS: 034b: int 0x10; 034f: int 0x10"
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "0349",
+        "0352"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "0352",
+    "end": "0364",
+    "name_guess": "set_palette_register",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 4 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558becb800108a5e088a7e06cd105dca",
+      "Returns: 0361: ca0400 retf 4",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "Hardware/BIOS: 035e: int 0x10"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 1,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 1,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "0352",
+        "0364"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "0364",
+    "end": "0372",
+    "name_guess": "set_text_direction",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 2 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec8b46062ea3e7265dca0200",
+      "Returns: 036f: ca0200 retf 2",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 26e7"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "26e7"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "0364",
+        "0372"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "0372",
+    "end": "0475",
+    "name_guess": "blit_masked_32x16",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e5756c5760aba00a08ec28b5e",
+      "Returns: 0472: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0192",
+      "Hardware/BIOS: 03ac: out dx, al; 03b8: out dx, ax; 03be: out dx, al; 03c5: out dx, al; 03cc: out dx, al; 03d3: out dx, al; 03e1: out dx, ax; 03e7: out dx, al; 03ee: out dx, al; 03f5: out dx, al; 03fc: out dx, al; 040f: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0192"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "0372",
+        "0403"
+      ],
+      [
+        "0406",
+        "0475"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "0475",
+    "end": "051f",
+    "name_guess": "blit_masked_16x16",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e57562e8b3e1c014fc5760aba",
+      "Returns: 051c: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0192",
+      "Hardware/BIOS: 04b5: out dx, al; 04c1: out dx, ax; 04c7: out dx, al; 04ce: out dx, al; 04d5: out dx, al; 04dc: out dx, al; 04ea: out dx, ax; 04f0: out dx, al; 04f7: out dx, al; 04fe: out dx, al; 0505: out dx, al; 0510: out dx, al"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0192"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "0475",
+        "051f"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "051f",
+    "end": "059f",
+    "name_guess": "blit_masked_8x8",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e5756c5760aba00a08ec28b5e",
+      "Returns: 059c: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0192",
+      "Hardware/BIOS: 055b: out dx, al; 0567: out dx, ax; 056d: out dx, al; 0574: out dx, al; 057b: out dx, al; 0582: out dx, al; 0590: out dx, al; 0597: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0192"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "051f",
+        "059f"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "05a1",
+    "end": "0625",
+    "name_guess": "blit_single_plane_rectangle",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 12 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e5756c5760eba00a08ec28b5e",
+      "Returns: 0622: ca0c00 retf 0xc",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0192, 0194, 059f",
+      "Hardware/BIOS: 05df: out dx, al; 05f5: out dx, al; 0616: out dx, al; 061d: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 2
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000e",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0192",
+      "0194",
+      "059f"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "05a1",
+        "0625"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "0625",
+    "end": "0633",
+    "name_guess": "set_color_or_plane_mask",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 2 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec8b46062ea394015dca0200",
+      "Returns: 0630: ca0200 retf 2",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 0194"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "0194"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "0625",
+        "0633"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "0633",
+    "end": "0641",
+    "name_guess": "select_draw_page",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 2 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec8b46062ea392015dca0200",
+      "Returns: 063e: ca0200 retf 2",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 0192"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "0192"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "0633",
+        "0641"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "0641",
+    "end": "06c1",
+    "name_guess": "put_pixel",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 4 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1eba00a02ea192013c0074088b",
+      "Returns: 06be: ca0400 retf 4",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0192, 0194",
+      "Hardware/BIOS: 0689: out dx, al; 068f: out dx, al; 0695: out dx, al; 069b: out dx, al; 06a9: out dx, al; 06af: out dx, al; 06b5: out dx, al; 06bb: out dx, al"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 2
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0192",
+      "0194"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "0641",
+        "06c1"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "06c1",
+    "end": "075d",
+    "name_guess": "put_pixel_clipped",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 4 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1eba00a02ea192013c0074088b",
+      "Returns: 075a: ca0400 retf 4",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0192, 0194, 019b, 019d, 019f, 01a1",
+      "Hardware/BIOS: 0725: out dx, al; 072b: out dx, al; 0731: out dx, al; 0737: out dx, al; 0745: out dx, al; 074b: out dx, al; 0751: out dx, al; 0757: out dx, al"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 2
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0192",
+      "0194",
+      "019b",
+      "019d",
+      "019f",
+      "01a1"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "06c1",
+        "075d"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "075d",
+    "end": "07c6",
+    "name_guess": "get_pixel",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 4 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e8b5e088b4e06ba00a02ea192",
+      "Returns: 07c3: ca0400 retf 4",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0192",
+      "Hardware/BIOS: 07a6: out dx, al; 07ac: out dx, al"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0192"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "075d",
+        "07c6"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "07c6",
+    "end": "07d4",
+    "name_guess": "show_video_page_bios",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 2 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec8b4606b405cd105dca0200",
+      "Returns: 07d1: ca0200 retf 2",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "Hardware/BIOS: 07ce: int 0x10"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "07c6",
+        "07d4"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "07d4",
+    "end": "07ec",
+    "name_guess": "set_mouse_cursor_shape",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1eb809008b5e088b5e06c4560a",
+      "Returns: 07e9: ca0800 retf 8",
+      "BIOS-style mouse INT 33h AX=9; loads BX twice from BP+8 and BP+6, probably a dead buggy cursor routine.",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "Hardware/BIOS: 07e5: int 0x33"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "07d4",
+        "07ec"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "07ee",
+    "end": "087e",
+    "name_guess": "fill_rectangle_byte_aligned",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1eba00a08ec28b5e0c2e8b1692",
+      "Returns: 087b: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0192, 0194, 07ec",
+      "Hardware/BIOS: 0827: out dx, al; 083d: out dx, al; 084e: out dx, al; 0871: out dx, al; 0878: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 2
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0192",
+      "0194",
+      "07ec"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "07ee",
+        "087e"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "087e",
+    "end": "098a",
+    "name_guess": "fill_rectangle_clipped",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1eba00a08ec28b5e0c2e3b1e99",
+      "Returns: 0987: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0192, 0194, 0197, 0199, 019b, 019d, 07ec",
+      "Hardware/BIOS: 0930: out dx, al; 0946: out dx, al; 0957: out dx, al; 097d: out dx, al; 0984: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 6
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 3
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 7
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 3
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0192",
+      "0194",
+      "0197",
+      "0199",
+      "019b",
+      "019d",
+      "07ec"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "087e",
+        "098a"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "098a",
+    "end": "09c6",
+    "name_guess": "pixel_address_and_bit_helper",
+    "classification": "linked_assembly_probable",
+    "convention": "far register helper, AX=y and BX=x; returns ES:BX/CL/AH; RETF",
+    "evidence": [
+      "Entry bytes: 8acb5257508bc02ef7261c018bf8588b",
+      "Returns: 09c5: cb retf ",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0192"
+    ],
+    "argument_accesses": [],
+    "cs_data": [
+      "011c",
+      "0192"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "098a",
+        "09c6"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "09ce",
+    "end": "0b6a",
+    "name_guess": "draw_line_bresenham",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec5657bace032e8a26940132c0ef",
+      "Returns: 0b67: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0194, 09c6, 09c8, 09ca, 09cc",
+      "Hardware/BIOS: 09dd: out dx, ax; 09e1: out dx, ax; 09e6: out dx, ax; 0a83: out dx, ax; 0ada: out dx, ax; 0adf: out dx, ax; 0ae4: out dx, ax; 0afc: out dx, ax; 0b07: out dx, ax; 0b14: out dx, ax; 0b39: out dx, ax; 0b5a: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 4
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 5
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 5
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 6
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0194",
+      "09c6",
+      "09c8",
+      "09ca",
+      "09cc"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "09ce",
+        "0b6a"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "0b6a",
+    "end": "0d0a",
+    "name_guess": "draw_line_bresenham_variant",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec5657bace03b80500ef2e8a2694",
+      "Returns: 0d07: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0194, 09c6, 09c8, 09ca, 09cc",
+      "Hardware/BIOS: 0b75: out dx, ax; 0b7d: out dx, ax; 0b81: out dx, ax; 0b86: out dx, ax; 0c23: out dx, ax; 0c7a: out dx, ax; 0c7f: out dx, ax; 0c84: out dx, ax; 0c9c: out dx, ax; 0ca7: out dx, ax; 0cb4: out dx, ax; 0cd9: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 4
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 5
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 5
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 6
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0194",
+      "09c6",
+      "09c8",
+      "09ca",
+      "09cc"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "0b6a",
+        "0d0a"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "low"
+  },
+  {
+    "segment": "29c2",
+    "start": "0d0a",
+    "end": "0e48",
+    "name_guess": "draw_rectangle_outline",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec5657bace032ea1940186e032c0",
+      "Returns: 0e45: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0194, 0196",
+      "Hardware/BIOS: 0d1a: out dx, ax; 0d1e: out dx, ax; 0d23: out dx, ax; 0d34: out dx, ax; 0d57: out dx, ax; 0d7d: out dx, ax; 0dd1: out dx, ax; 0dd6: out dx, ax; 0ddb: out dx, ax; 0e29: out dx, ax; 0e2e: out dx, ax; 0e33: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 3
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 5
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 3
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 5
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0194",
+      "0196"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "0d0a",
+        "0e48"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "0e48",
+    "end": "106f",
+    "name_guess": "draw_rectangle_outline_clipped",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec5657bace032ea1940186e032c0",
+      "Returns: 106c: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0194, 019b, 019d, 019f, 01a1",
+      "Hardware/BIOS: 0e58: out dx, ax; 0e5c: out dx, ax; 0e61: out dx, ax; 0e69: out dx, ax; 0ed0: out dx, ax; 0f1b: out dx, ax; 0fb5: out dx, ax; 0fba: out dx, ax; 0fbf: out dx, ax; 1050: out dx, ax; 1055: out dx, ax; 105a: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 5
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 7
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 4
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 7
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0194",
+      "019b",
+      "019d",
+      "019f",
+      "01a1"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "0e48",
+        "0f26"
+      ],
+      [
+        "0f27",
+        "0fc4"
+      ],
+      [
+        "0fc5",
+        "106f"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "106f",
+    "end": "1105",
+    "name_guess": "fill_rectangle",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec5657bace032e8a26940132c0ef",
+      "Returns: 1102: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0194",
+      "Hardware/BIOS: 107e: out dx, ax; 1082: out dx, ax; 1087: out dx, ax; 10d8: out dx, ax; 10dd: out dx, ax; 10e2: out dx, ax; 10f5: out dx, ax; 10f7: out dx, ax; 10fa: out dx, ax; 10fe: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 2
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 3
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 2
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0194"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "106f",
+        "1105"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "1105",
+    "end": "1204",
+    "name_guess": "fill_rectangle_clipped_pixels",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec5657eb03e9e0008b460c2e3b06",
+      "Returns: 1201: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0194, 019b, 019d, 019f, 01a1",
+      "Hardware/BIOS: 117a: out dx, ax; 117e: out dx, ax; 1183: out dx, ax; 11d4: out dx, ax; 11d9: out dx, ax; 11de: out dx, ax; 11f4: out dx, ax; 11f6: out dx, ax; 11f9: out dx, ax; 11fd: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 3
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 4
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 5
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 4
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0194",
+      "019b",
+      "019d",
+      "019f",
+      "01a1"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "1105",
+        "1204"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "1204",
+    "end": "129c",
+    "name_guess": "draw_horizontal_span",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 6 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec5657bace032e8a26940132c0ef",
+      "Returns: 1299: ca0600 retf 6",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0194",
+      "Hardware/BIOS: 1213: out dx, ax; 1217: out dx, ax; 121c: out dx, ax; 127d: out dx, ax; 1282: out dx, ax; 1287: out dx, ax; 128c: out dx, ax; 128e: out dx, ax; 1291: out dx, ax; 1295: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 4
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 4
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0194"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "1204",
+        "129c"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "129c",
+    "end": "12f2",
+    "name_guess": "draw_vertical_span",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 6 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec5657bace032e8a26940132c0ef",
+      "Returns: 12ef: ca0600 retf 6",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0194",
+      "Hardware/BIOS: 12ab: out dx, ax; 12af: out dx, ax; 12b4: out dx, ax; 12d7: out dx, ax; 12e2: out dx, ax; 12e4: out dx, ax; 12e7: out dx, ax; 12eb: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0194"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "129c",
+        "12f2"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "12fc",
+    "end": "1586",
+    "name_guess": "draw_circle_variant_a",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 6 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec5657bace032e8a26940132c0ef",
+      "Returns: 1583: ca0600 retf 6",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0194, 12f2, 12f4, 12f6, 12f8, 12fa",
+      "Hardware/BIOS: 130b: out dx, ax; 130f: out dx, ax; 1314: out dx, ax; 139e: out dx, ax; 13a3: out dx, ax; 13a8: out dx, ax; 1415: out dx, ax; 141a: out dx, ax; 141f: out dx, ax; 148c: out dx, ax; 1491: out dx, ax; 1496: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 3
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 4
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 8
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0194",
+      "12f2",
+      "12f4",
+      "12f6",
+      "12f8",
+      "12fa"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "12fc",
+        "1544"
+      ],
+      [
+        "1545",
+        "1586"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "low"
+  },
+  {
+    "segment": "29c2",
+    "start": "1590",
+    "end": "1731",
+    "name_guess": "draw_circle_symmetric",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 6 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec5657bace032e8a26940132c0ef",
+      "Returns: 172e: ca0600 retf 6",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0194, 1586, 1588, 158a",
+      "Hardware/BIOS: 159f: out dx, ax; 15a3: out dx, ax; 15a8: out dx, ax; 15e4: out dx, ax; 1602: out dx, ax; 1620: out dx, ax; 163e: out dx, ax; 165c: out dx, ax; 167a: out dx, ax; 1698: out dx, ax; 16b6: out dx, ax; 1721: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 3
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 8
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 8
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0194",
+      "1586",
+      "1588",
+      "158a"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "1590",
+        "16ef"
+      ],
+      [
+        "16f0",
+        "1731"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "1731",
+    "end": "1754",
+    "name_guess": "set_clip_rectangle",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec8b460c2ea397018b46082ea399",
+      "Returns: 1751: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 0197, 0199, 019b, 019d"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "0197",
+      "0199",
+      "019b",
+      "019d"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "1731",
+        "1754"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "1754",
+    "end": "1759",
+    "name_guess": "get_clip_left",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, no stack arguments; RETF; internal helper inputs may be registers",
+    "evidence": [
+      "Entry bytes: 2ea19701cb",
+      "Returns: 1758: cb retf ",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 0197"
+    ],
+    "argument_accesses": [],
+    "cs_data": [
+      "0197"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "1754",
+        "1759"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "1759",
+    "end": "175e",
+    "name_guess": "get_clip_right",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, no stack arguments; RETF; internal helper inputs may be registers",
+    "evidence": [
+      "Entry bytes: 2ea19901cb",
+      "Returns: 175d: cb retf ",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 0199"
+    ],
+    "argument_accesses": [],
+    "cs_data": [
+      "0199"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "1759",
+        "175e"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "175e",
+    "end": "1781",
+    "name_guess": "set_clip_rectangle_variant",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec8b460c2ea39f018b46082ea3a1",
+      "Returns: 177e: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 019b, 019d, 019f, 01a1"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "019b",
+      "019d",
+      "019f",
+      "01a1"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "175e",
+        "1781"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "low"
+  },
+  {
+    "segment": "29c2",
+    "start": "1781",
+    "end": "1786",
+    "name_guess": "get_clip_left_variant",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, no stack arguments; RETF; internal helper inputs may be registers",
+    "evidence": [
+      "Entry bytes: 2ea19f01cb",
+      "Returns: 1785: cb retf ",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 019f"
+    ],
+    "argument_accesses": [],
+    "cs_data": [
+      "019f"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "1781",
+        "1786"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "low"
+  },
+  {
+    "segment": "29c2",
+    "start": "1786",
+    "end": "178b",
+    "name_guess": "get_clip_right_variant",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, no stack arguments; RETF; internal helper inputs may be registers",
+    "evidence": [
+      "Entry bytes: 2ea1a101cb",
+      "Returns: 178a: cb retf ",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 01a1"
+    ],
+    "argument_accesses": [],
+    "cs_data": [
+      "01a1"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "1786",
+        "178b"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "low"
+  },
+  {
+    "segment": "29c2",
+    "start": "178b",
+    "end": "1790",
+    "name_guess": "get_clip_top",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, no stack arguments; RETF; internal helper inputs may be registers",
+    "evidence": [
+      "Entry bytes: 2ea19b01cb",
+      "Returns: 178f: cb retf ",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 019b"
+    ],
+    "argument_accesses": [],
+    "cs_data": [
+      "019b"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "178b",
+        "1790"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "1790",
+    "end": "1795",
+    "name_guess": "get_clip_bottom",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, no stack arguments; RETF; internal helper inputs may be registers",
+    "evidence": [
+      "Entry bytes: 2ea19d01cb",
+      "Returns: 1794: cb retf ",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 019d"
+    ],
+    "argument_accesses": [],
+    "cs_data": [
+      "019d"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "1790",
+        "1795"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "1795",
+    "end": "1831",
+    "name_guess": "capture_planar_rectangle",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 12 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e56578b46082b460c508b4606",
+      "Returns: 182e: ca0c00 retf 0xc",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 0110, 0112, 011c, 0192",
+      "Hardware/BIOS: 17f3: out dx, ax; 17f7: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 2
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 2
+      },
+      {
+        "bp_offset": "000e",
+        "bytes": 2,
+        "count": 2
+      }
+    ],
+    "cs_data": [
+      "0110",
+      "0112",
+      "011c",
+      "0192"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "1795",
+        "1831"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "1831",
+    "end": "18c2",
+    "name_guess": "restore_planar_rectangle",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e5657c5760aad2ea31001ad2e",
+      "Returns: 18bf: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 0110, 0112, 011c, 0192",
+      "Hardware/BIOS: 1878: out dx, al; 187f: out dx, al"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000e",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "0110",
+      "0112",
+      "011c",
+      "0192"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "1831",
+        "18c2"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "18ca",
+    "end": "19f9",
+    "name_guess": "blit_masked_shifted_sprite_variant_a",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e5657c5760aba00a08ec28b5e",
+      "Returns: 19f6: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0192, 18c2, 18c3, 18c4, 18c5, 18c6, 18c7, 18c8, 18c9",
+      "Hardware/BIOS: 191d: out dx, al; 194a: out dx, ax; 1950: out dx, al; 195d: out dx, al; 196a: out dx, al; 1977: out dx, al; 199b: out dx, ax; 19a1: out dx, al; 19ad: out dx, al; 19b9: out dx, al; 19c5: out dx, al; 19ea: out dx, al"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 2
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0192",
+      "18c2",
+      "18c3",
+      "18c4",
+      "18c5",
+      "18c6",
+      "18c7",
+      "18c8",
+      "18c9"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "18ca",
+        "1984"
+      ],
+      [
+        "1987",
+        "19f9"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "low"
+  },
+  {
+    "segment": "29c2",
+    "start": "19f9",
+    "end": "1b22",
+    "name_guess": "blit_masked_shifted_16x16",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e56572e8b3e1c014f4fc5760a",
+      "Returns: 1b1f: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 18c2, 18c3, 18c4, 18c6, 18c7, 18c8, 18c9",
+      "Hardware/BIOS: 1a43: out dx, al; 1a6c: out dx, ax; 1a74: out dx, al; 1a83: out dx, al; 1a92: out dx, al; 1aa1: out dx, al; 1ac2: out dx, ax; 1aca: out dx, al; 1ad8: out dx, al; 1ae6: out dx, al; 1af4: out dx, al; 1b13: out dx, al"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 2
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "18c2",
+      "18c3",
+      "18c4",
+      "18c6",
+      "18c7",
+      "18c8",
+      "18c9"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "19f9",
+        "1aae"
+      ],
+      [
+        "1ab1",
+        "1b22"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "1b27",
+    "end": "1c58",
+    "name_guess": "blit_masked_variable_sprite",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e5756c5760aba00a08ec28b5e",
+      "Returns: 1c55: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0192, 1b22, 1b23, 1b26",
+      "Hardware/BIOS: 1b77: out dx, al; 1b94: out dx, al; 1bab: out dx, ax; 1bb4: out dx, ax; 1bbe: out dx, al; 1bd5: out dx, ax; 1bde: out dx, ax; 1bed: out dx, al; 1c04: out dx, ax; 1c0d: out dx, ax; 1c17: out dx, al; 1c2e: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 2
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0192",
+      "1b22",
+      "1b23",
+      "1b26"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "1b27",
+        "1be5"
+      ],
+      [
+        "1be8",
+        "1c58"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "1c58",
+    "end": "1e02",
+    "name_guess": "draw_ellipse_or_curve",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec83ec285657bace03b80500efb4",
+      "Returns: 1dff: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0194",
+      "Hardware/BIOS: 1c66: out dx, ax; 1c6b: out dx, ax; 1c74: out dx, ax; 1c78: out dx, ax; 1df1: out dx, ax; 1df5: out dx, ax; 1df9: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 5
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0194"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "1c58",
+        "1e02"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "low"
+  },
+  {
+    "segment": "29c2",
+    "start": "1e02",
+    "end": "1e73",
+    "name_guess": "curve_symmetric_pixel_helper",
+    "classification": "linked_assembly_probable",
+    "convention": "near register/helper convention; RET; may inherit caller BP frame",
+    "evidence": [
+      "Entry bytes: 505352bace0333db84ed74072e8b1e1c",
+      "Returns: 1e72: c3 ret ",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c",
+      "Hardware/BIOS: 1e37: out dx, ax; 1e62: out dx, ax"
+    ],
+    "argument_accesses": [],
+    "cs_data": [
+      "011c"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "1e02",
+        "1e73"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "1e73",
+    "end": "1e7f",
+    "name_guess": "multiply_partial_products_helper",
+    "classification": "linked_assembly_probable",
+    "convention": "near register/helper convention; RET; may inherit caller BP frame",
+    "evidence": [
+      "Entry bytes: 508bc2f7e1915af7e203d1c3",
+      "Returns: 1e7e: c3 ret ",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings."
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "1e73",
+        "1e7f"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "1e87",
+    "end": "2053",
+    "name_guess": "blit_masked_32x16_clipped",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e5756512ec7067f1e00002ec7",
+      "Returns: 2050: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0192, 1e7f, 1e81, 1e83, 1e85",
+      "Hardware/BIOS: 1f42: out dx, al; 1f4e: out dx, ax; 1f5e: out dx, al; 1f65: out dx, al; 1f6c: out dx, al; 1f73: out dx, al; 1f88: out dx, ax; 1f98: out dx, al; 1f9f: out dx, al; 1fa6: out dx, al; 1fad: out dx, al; 1fc2: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 2
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0192",
+      "1e7f",
+      "1e81",
+      "1e83",
+      "1e85"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "1e87",
+        "1ef7"
+      ],
+      [
+        "1ef8",
+        "1f7a"
+      ],
+      [
+        "1f7b",
+        "1fb4"
+      ],
+      [
+        "1fb5",
+        "1fd2"
+      ],
+      [
+        "1fd6",
+        "1ff4"
+      ],
+      [
+        "1ff5",
+        "202e"
+      ],
+      [
+        "202f",
+        "2053"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "2053",
+    "end": "2173",
+    "name_guess": "blit_masked_16x16_clipped",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e5756512ec7067f1e00002ec7",
+      "Returns: 2170: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0192, 1e7f, 1e81, 1e83, 1e85",
+      "Hardware/BIOS: 20de: out dx, al; 20ea: out dx, ax; 20fa: out dx, al; 2101: out dx, al; 2108: out dx, al; 210f: out dx, al; 2124: out dx, ax; 2134: out dx, al; 213b: out dx, al; 2142: out dx, al; 2149: out dx, al; 2164: out dx, al"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 2
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0192",
+      "1e7f",
+      "1e81",
+      "1e83",
+      "1e85"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "2053",
+        "20a1"
+      ],
+      [
+        "20a2",
+        "2116"
+      ],
+      [
+        "2117",
+        "2150"
+      ],
+      [
+        "2151",
+        "2173"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "2173",
+    "end": "2208",
+    "name_guess": "capture_planar_rectangle_variant",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 12 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e56578b46082b460cb907ff22",
+      "Returns: 2205: ca0c00 retf 0xc",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 0110, 0112, 011c",
+      "Hardware/BIOS: 21c4: out dx, ax; 21c8: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 2
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 2
+      },
+      {
+        "bp_offset": "000e",
+        "bytes": 2,
+        "count": 2
+      }
+    ],
+    "cs_data": [
+      "0110",
+      "0112",
+      "011c"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "2173",
+        "2208"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "low"
+  },
+  {
+    "segment": "29c2",
+    "start": "2208",
+    "end": "233a",
+    "name_guess": "restore_planar_rectangle_variant",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e56578b46068b5e080ee872e7",
+      "Returns: 2337: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 0110, 0112, 0114, 0116, 0118, 011a, 011c",
+      "Hardware/BIOS: 2236: out dx, ax; 223a: out dx, ax; 223e: out dx, ax; 2242: out dx, ax; 2248: out dx, al; 224c: out dx, al; 225d: out dx, ax; 22b4: out dx, ax; 22c8: out dx, ax; 22df: out dx, ax; 22f5: out dx, ax; 22fd: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "0110",
+      "0112",
+      "0114",
+      "0116",
+      "0118",
+      "011a",
+      "011c"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "2208",
+        "233a"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "low"
+  },
+  {
+    "segment": "29c2",
+    "start": "233a",
+    "end": "2463",
+    "name_guess": "blit_opaque_shifted_sprite_variant_a",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e5657c5760aba00a08ec28b5e",
+      "Returns: 2460: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0192, 18c2, 18c3, 18c4, 18c5, 18c6, 18c7, 18c8, 18c9",
+      "Hardware/BIOS: 238d: out dx, al; 2393: out dx, al; 23c0: out dx, ax; 240e: out dx, ax; 245b: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 2
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0192",
+      "18c2",
+      "18c3",
+      "18c4",
+      "18c5",
+      "18c6",
+      "18c7",
+      "18c8",
+      "18c9"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "233a",
+        "23f7"
+      ],
+      [
+        "23fa",
+        "2463"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "low"
+  },
+  {
+    "segment": "29c2",
+    "start": "2463",
+    "end": "259a",
+    "name_guess": "blit_opaque_shifted_16x16",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e56572e8b3e1c014f4fc5760a",
+      "Returns: 2597: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 18c2, 18c3, 18c4, 18c5, 18c6, 18c7, 18c8, 18c9",
+      "Hardware/BIOS: 24ad: out dx, al; 24da: out dx, ax; 24e0: out dx, al; 24f0: out dx, al; 2500: out dx, al; 2510: out dx, al; 2537: out dx, ax; 253d: out dx, al; 254c: out dx, al; 255b: out dx, al; 256a: out dx, al; 258b: out dx, al"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 2
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "18c2",
+      "18c3",
+      "18c4",
+      "18c5",
+      "18c6",
+      "18c7",
+      "18c8",
+      "18c9"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "2463",
+        "2520"
+      ],
+      [
+        "2523",
+        "259a"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "259a",
+    "end": "26cf",
+    "name_guess": "blit_opaque_variable_sprite",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e5756c5760aba00a08ec28b5e",
+      "Returns: 26cc: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0192, 1b22, 1b23, 1b26",
+      "Hardware/BIOS: 25ea: out dx, al; 25f3: out dx, al; 261e: out dx, ax; 262a: out dx, ax; 2649: out dx, ax; 2655: out dx, ax; 2679: out dx, ax; 2685: out dx, ax; 26a4: out dx, ax; 26b0: out dx, ax; 26c7: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 2
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0192",
+      "1b22",
+      "1b23",
+      "1b26"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "259a",
+        "2660"
+      ],
+      [
+        "2663",
+        "26cf"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "26e9",
+    "end": "27e2",
+    "name_guess": "draw_pascal_string",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; PUSH DS before BP shifts arguments to BP+8",
+    "evidence": [
+      "Entry bytes: 1e558bec83ec045756e80000582df526",
+      "Returns: 27df: ca0800 retf 8",
+      "PUSH DS occurs BEFORE PUSH BP; args begin BP+8 (y), BP+0Ah (x), BP+0Ch (string far pointer); saved DS is BP+2. E8 0000 / POP AX is a call-next address calculation, not a separate subroutine.",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 00e6, 00e8, 00ee, 00f0, 00f2, 00f4, 00f6, 00fc, 00fe, 26cf, 26d1, 26d3, 26e7"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 5
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 6
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "00e6",
+      "00e8",
+      "00ee",
+      "00f0",
+      "00f2",
+      "00f4",
+      "00f6",
+      "00fc",
+      "00fe",
+      "26cf",
+      "26d1",
+      "26d3",
+      "26e7"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "26e9",
+        "27e2"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "27e2",
+    "end": "2829",
+    "name_guess": "initialize_rom_fonts",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, no stack arguments; RETF; internal helper inputs may be registers",
+    "evidence": [
+      "Entry bytes: 558bec57561e060e1f55b83011bb0002",
+      "Returns: 2828: cb retf ",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 26d9, 26db, 26dd, 26df, 26e1, 26e3",
+      "Hardware/BIOS: 27f2: int 0x10; 280e: int 0x10"
+    ],
+    "argument_accesses": [],
+    "cs_data": [
+      "26d9",
+      "26db",
+      "26dd",
+      "26df",
+      "26e1",
+      "26e3"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "27e2",
+        "2829"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "2829",
+    "end": "28a7",
+    "name_guess": "draw_font_row_horizontal_helper",
+    "classification": "linked_assembly_probable",
+    "convention": "near register/helper convention; RET; may inherit caller BP frame",
+    "evidence": [
+      "Entry bytes: 2ea1e6002507008bf08bc8d2ca32f62e",
+      "Returns: 28a6: c3 ret ",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 00e6, 00e8, 00ea, 00ec, 00ee, 00f8, 00fa, 0100, 0194, 0196"
+    ],
+    "argument_accesses": [],
+    "cs_data": [
+      "00e6",
+      "00e8",
+      "00ea",
+      "00ec",
+      "00ee",
+      "00f8",
+      "00fa",
+      "0100",
+      "0194",
+      "0196"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "2829",
+        "28a7"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "28a7",
+    "end": "28e8",
+    "name_guess": "draw_font_row_vertical_helper",
+    "classification": "linked_assembly_probable",
+    "convention": "near register/helper convention; RET; may inherit caller BP frame",
+    "evidence": [
+      "Entry bytes: 2ea1e6002ea3ea002ea1e8000508002e",
+      "Returns: 28e7: c3 ret ",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 00e6, 00e8, 00ea, 00ec, 26e7"
+    ],
+    "argument_accesses": [],
+    "cs_data": [
+      "00e6",
+      "00e8",
+      "00ea",
+      "00ec",
+      "26e7"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "28a7",
+        "28e8"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "28e8",
+    "end": "28f1",
+    "name_guess": "set_ega_bit_mask_helper",
+    "classification": "linked_assembly_probable",
+    "convention": "near register/helper convention; RET; may inherit caller BP frame",
+    "evidence": [
+      "Entry bytes: 8ae0b008bace03efc3",
+      "Returns: 28f0: c3 ret ",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "Hardware/BIOS: 28ef: out dx, ax"
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "28e8",
+        "28f1"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "28f1",
+    "end": "28ff",
+    "name_guess": "set_ega_set_reset_helper",
+    "classification": "linked_assembly_probable",
+    "convention": "near register/helper convention; RET; may inherit caller BP frame",
+    "evidence": [
+      "Entry bytes: 8ae0b000bace03ef8ae3b001efc3",
+      "Returns: 28fe: c3 ret ",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "Hardware/BIOS: 28f8: out dx, ax; 28fd: out dx, ax"
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "28f1",
+        "28ff"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "28ff",
+    "end": "2908",
+    "name_guess": "set_ega_data_rotate_helper",
+    "classification": "linked_assembly_probable",
+    "convention": "near register/helper convention; RET; may inherit caller BP frame",
+    "evidence": [
+      "Entry bytes: 8ae0b003bace03efc3",
+      "Returns: 2907: c3 ret ",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "Hardware/BIOS: 2906: out dx, ax"
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "28ff",
+        "2908"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "2908",
+    "end": "2936",
+    "name_guess": "font_pixel_address_helper",
+    "classification": "linked_assembly_probable",
+    "convention": "near register/helper convention; RET; may inherit caller BP frame",
+    "evidence": [
+      "Entry bytes: 2ea1ec002e8b0e1c01f7e12e8b1eea00",
+      "Returns: 2935: c3 ret ",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 00ea, 00ec, 011c, 0192"
+    ],
+    "argument_accesses": [],
+    "cs_data": [
+      "00ea",
+      "00ec",
+      "011c",
+      "0192"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "2908",
+        "2936"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "2936",
+    "end": "2981",
+    "name_guess": "draw_font_pixel_helper",
+    "classification": "linked_assembly_probable",
+    "convention": "near register/helper convention; RET; may inherit caller BP frame",
+    "evidence": [
+      "Entry bytes: e8cfff2ea1ea002507002e8b1eee0003",
+      "Returns: 2980: c3 ret ",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 00ea, 00ee, 0108, 0194, 0196",
+      "Hardware/BIOS: 2951: out dx, ax; 295c: out dx, ax"
+    ],
+    "argument_accesses": [],
+    "cs_data": [
+      "00ea",
+      "00ee",
+      "0108",
+      "0194",
+      "0196"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "2936",
+        "2981"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "2981",
+    "end": "29c3",
+    "name_guess": "select_rom_font",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 2 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec8b46063d0100741b2ea1df262e",
+      "Returns: 29c0: ca0200 retf 2",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 26cf, 26d1, 26d3, 26d9, 26db, 26dd, 26df, 26e1, 26e3"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "26cf",
+      "26d1",
+      "26d3",
+      "26d9",
+      "26db",
+      "26dd",
+      "26df",
+      "26e1",
+      "26e3"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "2981",
+        "29a6"
+      ],
+      [
+        "29a7",
+        "29c3"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "29c3",
+    "end": "2a9f",
+    "name_guess": "blit_opaque_32x16",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e57562e8b3e1c014f4f4f4fc5",
+      "Returns: 2a9c: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0192",
+      "Hardware/BIOS: 2a06: out dx, al; 2a10: out dx, al; 2a17: out dx, al; 2a1e: out dx, al; 2a25: out dx, al; 2a2e: out dx, al; 2a35: out dx, al; 2a3c: out dx, al; 2a43: out dx, al; 2a51: out dx, al; 2a58: out dx, al; 2a5f: out dx, al"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0192"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "29c3",
+        "2a4a"
+      ],
+      [
+        "2a4d",
+        "2a9f"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "2a9f",
+    "end": "2b38",
+    "name_guess": "blit_opaque_16x16",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e57562e8b3e1c014f4fc5760a",
+      "Returns: 2b35: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0192",
+      "Hardware/BIOS: 2ae0: out dx, al; 2aea: out dx, al; 2af1: out dx, al; 2af8: out dx, al; 2aff: out dx, al; 2b08: out dx, al; 2b0f: out dx, al; 2b16: out dx, al; 2b1d: out dx, al; 2b29: out dx, al; 2b30: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0192"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "2a9f",
+        "2b38"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "2b38",
+    "end": "2bb2",
+    "name_guess": "blit_opaque_8x8",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e57562e8b3e1c01c5760aba00",
+      "Returns: 2baf: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0192",
+      "Hardware/BIOS: 2b79: out dx, al; 2b83: out dx, al; 2b8a: out dx, al; 2b91: out dx, al; 2b98: out dx, al; 2ba3: out dx, al; 2baa: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0192"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "2b38",
+        "2bb2"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "2bb2",
+    "end": "2d5d",
+    "name_guess": "blit_opaque_32x16_clipped",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e5756512ec7067f1e00002ec7",
+      "Returns: 2050: ca0800 retf 8, 2d5a: ca0800 retf 8",
+      "Unreferenced entry jumps backward into earlier masked/clipped code at 1F7F and 1FF9; external_code_ranges records this flow outside the entry span.",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0192, 1e7f, 1e81, 1e83, 1e85",
+      "Hardware/BIOS: 1f88: out dx, ax; 1f98: out dx, al; 1f9f: out dx, al; 1fa6: out dx, al; 1fad: out dx, al; 1fc2: out dx, ax; 1fd8: out dx, al; 1fdf: out dx, al; 1fe6: out dx, al; 1fed: out dx, al; 2002: out dx, ax; 2012: out dx, al"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 2
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0192",
+      "1e7f",
+      "1e81",
+      "1e83",
+      "1e85"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "2bb2",
+        "2c22"
+      ],
+      [
+        "2c23",
+        "2ccf"
+      ],
+      [
+        "2cd0",
+        "2ce5"
+      ],
+      [
+        "2ce8",
+        "2d38"
+      ],
+      [
+        "2d39",
+        "2d5d"
+      ]
+    ],
+    "external_code_ranges": [
+      [
+        "1f7f",
+        "1fb4"
+      ],
+      [
+        "1fb5",
+        "1fd2"
+      ],
+      [
+        "1fd6",
+        "1ff4"
+      ],
+      [
+        "1ff5",
+        "202e"
+      ],
+      [
+        "202f",
+        "2053"
+      ]
+    ],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "2d5d",
+    "end": "2e6d",
+    "name_guess": "blit_opaque_16x16_clipped",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec1e5756512ec7067f1e00002ec7",
+      "Returns: 2e6a: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c, 0192, 1e7f, 1e81, 1e83, 1e85",
+      "Hardware/BIOS: 2de8: out dx, al; 2dfc: out dx, al; 2e03: out dx, al; 2e0a: out dx, al; 2e11: out dx, al; 2e2e: out dx, al; 2e35: out dx, al; 2e3c: out dx, al; 2e43: out dx, al; 2e5e: out dx, al; 2e65: out dx, ax"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 2
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c",
+      "0192",
+      "1e7f",
+      "1e81",
+      "1e83",
+      "1e85"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "2d5d",
+        "2dab"
+      ],
+      [
+        "2dac",
+        "2e18"
+      ],
+      [
+        "2e19",
+        "2e4a"
+      ],
+      [
+        "2e4b",
+        "2e6d"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "2e6d",
+    "end": "2ecf",
+    "name_guess": "copy_cached_video_tile_16x16",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 6 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec56571eba00a08ec28eda8b7606",
+      "Returns: 2ecc: ca0600 retf 6",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c",
+      "Hardware/BIOS: 2e9f: out dx, al; 2ea5: out dx, al; 2ea9: out dx, al; 2ec7: out dx, al"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "2e6d",
+        "2ecf"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "2ecf",
+    "end": "2f32",
+    "name_guess": "copy_video_screen_region_320x200",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, callee cleanup 8 bytes; args normally begin BP+6",
+    "evidence": [
+      "Entry bytes: 558bec56571eba00a08ec28eda8b460a",
+      "Returns: 2f2f: ca0800 retf 8",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c",
+      "Hardware/BIOS: 2efb: out dx, al; 2f01: out dx, al; 2f07: out dx, al; 2f0b: out dx, al; 2f2a: out dx, al"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "2ecf",
+        "2f32"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "2f32",
+    "end": "2f7b",
+    "name_guess": "copy_video_band_320x8",
+    "classification": "linked_assembly_probable",
+    "convention": "Pascal far, no stack arguments; RETF; internal helper inputs may be registers",
+    "evidence": [
+      "Entry bytes: 558bec56571eba00a08ec28edabe2800",
+      "Returns: 2f7a: cb retf ",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "Hardware/BIOS: 2f4a: out dx, al; 2f50: out dx, al; 2f56: out dx, al; 2f5a: out dx, al; 2f75: out dx, al"
+    ],
+    "argument_accesses": [],
+    "cs_data": [],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "2f32",
+        "2f7b"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "2f7b",
+    "end": "2fd7",
+    "name_guess": "copy_video_tile_16x16_unused_cdecl",
+    "classification": "linked_assembly_probable",
+    "convention": "far caller cleanup (active RETF); stack words at BP+6 onward; unreachable Pascal RETF n follows",
+    "evidence": [
+      "Entry bytes: 558bec56571eba00a08ec28eda8b460a",
+      "Returns: 2fd3: cb retf ",
+      "Active return is CB at 2FD3 (caller cleanup); CA 08 00 at 2FD4 is unreachable. No observed game call to this entry.",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c",
+      "Hardware/BIOS: 2fa7: out dx, al; 2fad: out dx, al; 2fb3: out dx, al; 2fb7: out dx, al; 2fce: out dx, al"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "2f7b",
+        "2fd4"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  },
+  {
+    "segment": "29c2",
+    "start": "2fd7",
+    "end": "303a",
+    "name_guess": "copy_video_rectangle_unused_cdecl",
+    "classification": "linked_assembly_probable",
+    "convention": "far caller cleanup (active RETF); stack words at BP+6 onward; unreachable Pascal RETF n follows",
+    "evidence": [
+      "Entry bytes: 558bec56571eba00a08ec28eda8b460e",
+      "Returns: 3036: cb retf ",
+      "Active return is CB at 3036 (caller cleanup); CA 0C 00 at 3037 is unreachable. No observed game call to this entry.",
+      "ProGraphx 2.0 CS-resident toolbox, appended after TP initializer at 0070..00E6; MASM-family register encodings.",
+      "CS data references: 011c",
+      "Hardware/BIOS: 3003: out dx, al; 3009: out dx, al; 300f: out dx, al; 3013: out dx, al; 3031: out dx, al"
+    ],
+    "argument_accesses": [
+      {
+        "bp_offset": "0006",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0008",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000a",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000c",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "000e",
+        "bytes": 2,
+        "count": 1
+      },
+      {
+        "bp_offset": "0010",
+        "bytes": 2,
+        "count": 1
+      }
+    ],
+    "cs_data": [
+      "011c"
+    ],
+    "ds_data": [],
+    "code_ranges": [
+      [
+        "2fd7",
+        "3037"
+      ]
+    ],
+    "external_code_ranges": [],
+    "name_confidence": "medium"
+  }
+]
