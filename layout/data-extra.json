@@ -1,6 +1,23 @@
 {
  "description": "Globals whose start offset no code references directly (low array bounds folded into displacements), with their per-episode offsets as proven by accepted routines. tools/harness.extra_offset reads this before inferring from neighbours.",
  "globals": {
-  "d_0296": {"sam1": "0296", "sam2": "02BC", "sam3": "02BC", "evidence": "u1_65d9: 40x25 map of 8-byte cells, displacements 01C6..01CD (sam1) / 01EC.. (sam2, sam3)"}
+  "d_001a": {
+   "evidence": "obj_u5 (Genus PCX toolkit) typed constant; SAM2/3 typed constants start 0Eh later",
+   "sam1": "001A",
+   "sam2": "0028",
+   "sam3": "0028"
+  },
+  "d_008a": {
+   "evidence": "obj_u5 (Genus PCX toolkit) typed constant",
+   "sam1": "008A",
+   "sam2": "0098",
+   "sam3": "0098"
+  },
+  "d_0296": {
+   "evidence": "u1_65d9: 40x25 map of 8-byte cells, displacements 01C6..01CD (sam1) / 01EC.. (sam2, sam3)",
+   "sam1": "0296",
+   "sam2": "02BC",
+   "sam3": "02BC"
+  }
  }
 }
