@@ -126,6 +126,12 @@ FACTS = """- Compiler: Turbo Pascal 5.0 (TPC), profile in layout/profiles.json; 
 - Boolean expressions are short-circuit ($B-).  `push cs; call near X` is a call to a FAR routine of
   the same unit; `call near X` a near one; `9A off:seg` a far call to another unit or the runtime.
 - Strings: string literals used by a routine are emitted just before its entry (context shows them).
+- Frame temporaries come AFTER the declared locals, in statement order: a `for` loop with a
+  non-constant upper bound gets a hidden limit word; a call to a string FUNCTION gets a 256-byte
+  result temporary (`lea di,[bp-N]; push ss; push di` before the call's own arguments, then that
+  temporary is passed on).  A function returning a string receives a far pointer to its result
+  above its parameters and fills it with the System string-assign call.  Do not invent locals or
+  goto loops to imitate these: write the `for` loop / function call.
 - Globals: the harness reproduces the original data segment exactly, so DS offsets must come out
   raw-identical; declare each global you use in {@decls} with its type, named d_<its real SAM1
   start offset>.  An array or record covering several referenced offsets is declared once.  Careful:

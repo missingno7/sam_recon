@@ -171,6 +171,11 @@ def references(im: Image, lin_start: int, lin_end: int, entries: list, seg_unit_
                         out[rel + 1] = ("near", 2, identity(im, bases, seg_unit_self, t))
                     else:
                         todo.append(self_base + t)
+                elif 0xB8 <= b[0] <= 0xBF and im.img[a + n] == 0x0E:
+                    # `mov r,offset ; push cs`: a literal (string, set) in this code segment,
+                    # bound relative to the extent (both sides must point to the same byte of it)
+                    imm = struct.unpack_from("<H", b, 1)[0]
+                    out[rel + 1] = ("cs", 2, f"cs{imm - (lin_start - self_base):+#x}")
                 elif 0xB8 <= b[0] <= 0xBF and a + n + 1 in im.relocs and 0xB8 <= im.img[a + n] <= 0xBF:
                     seg = struct.unpack_from("<H", im.img, a + n + 1)[0]
                     u = im.seg_unit.get(seg)

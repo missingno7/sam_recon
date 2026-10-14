@@ -161,6 +161,7 @@ def unit_of(lid: str) -> str:
     return lid.split("_", 1)[0].lower()
 
 
+@__import__("functools").lru_cache(maxsize=None)
 def is_far(ep: str, lid: str) -> bool | None:
     atlas = load_json(EVIDENCE / "atlas.json")
     r = atlas["routines"].get(lid)
@@ -403,6 +404,74 @@ def _nlines(lines: list) -> int:
     return sum(x.count("\n") + 1 for x in lines)
 
 
+CANONICAL = Path(__file__).resolve().parents[1] / "src" / "decls" / "canonical.pas"
+_CANON_CACHE: dict = {}
+
+
+def canonical() -> dict:
+    """Shared declarations every harness includes: {@types} (types, untyped constants),
+    {@globals} (var/const d_XXXX), {@routines} (one header per known routine)."""
+    if not CANONICAL.exists():
+        return {"decls": Decls(), "routines": []}
+    st = CANONICAL.stat()
+    key = (st.st_size, st.st_mtime_ns)
+    if _CANON_CACHE.get("key") != key:
+        text = CANONICAL.read_text(encoding="latin-1")
+        parts = {"types": "", "globals": "", "routines": ""}
+        cur = None
+        for line in text.splitlines():
+            m = re.match(r"^\s*\{@(types|globals|routines)\}\s*$", line, re.I)
+            if m:
+                cur = m.group(1).lower()
+                continue
+            if cur:
+                parts[cur] += line + "\n"
+        d = parse_decls(parts["types"] + "\n" + parts["globals"])
+        _CANON_CACHE.update(key=key, value={"decls": d, "routines": parse_stubs(parts["routines"])})
+    return _CANON_CACHE["value"]
+
+
+def _decl_name(kind_st: tuple) -> str:
+    return re.split(r"[=:\s]", kind_st[1].strip(), 1)[0].lower()
+
+
+def merge_decls(canon: Decls, own: Decls, ep: str, sizes: dict) -> Decls:
+    """Canonical declarations overridden by the candidate's: types/constants by name,
+    globals by name; a canonical global overlapping a candidate global is dropped
+    (sizes known after the first build pass)."""
+    out = Decls()
+    own_names = {_decl_name(x) for x in own.shared}
+    out.shared = [x for x in canon.shared if _decl_name(x) not in own_names] + list(own.shared)
+    out.globals = dict(canon.globals)
+    out.typed_const = set(canon.typed_const)
+    if sizes:
+        glob = episode_globals(ep)
+
+        def span(n):
+            o = glob.get(n, extra_offset(n, ep))
+            return (o, o + max(1, sizes.get(n, 1))) if o is not None else None
+        mine = [span(n) for n in own.globals]
+        for n in list(out.globals):
+            if n in own.globals:
+                continue
+            s = span(n)
+            if s and any(m and m[0] < s[1] and s[0] < m[1] for m in mine):
+                del out.globals[n]
+                out.typed_const.discard(n)
+    for n, d in own.globals.items():
+        out.globals[n] = d
+        if n in own.typed_const:
+            out.typed_const.add(n)
+        else:
+            out.typed_const.discard(n)
+    return out
+
+
+def merge_stubs(canon: list, own: list) -> list:
+    names = {n for n, _ in own}
+    return [x for x in canon if x[0] not in names] + list(own)
+
+
 def _stub_def(hdr: str) -> str:
     """Short-form definition of a (forward/interface-declared) routine."""
     m = _HEADER.match(hdr)
@@ -415,8 +484,10 @@ def generate(candidate: str, ep: str, function: str | None = None, sizes: dict |
     last one), INIT (body `begin ... end.` of unit `function`'s initialisation) and MAIN
     (body `begin ... end.` of the program, function p_<entry>)."""
     sec = split_sections(candidate)
-    cand = parse_decls(sec["decls"])
-    stubs = parse_stubs(sec["stubs"])
+    own_decls = parse_decls(sec["decls"])
+    canon = canonical()
+    cand = merge_decls(canon["decls"], own_decls, ep, sizes or {})
+    stubs = merge_stubs(canon["routines"], parse_stubs(sec["stubs"]))
     body = sec["body"].strip("\n")
     statement_body = re.match(r"(?is)^\s*begin\b", _strip_comments(body)) is not None
     if statement_body:
@@ -473,6 +544,8 @@ def generate(candidate: str, ep: str, function: str | None = None, sizes: dict |
             own.append((name, hdr))
         elif u in GAME_UNITS:
             other.setdefault(u, []).append((name, hdr))
+        elif u == "p":
+            continue                 # program routines are invisible to units (canonical header)
         else:
             raise HarnessError(f"stub {name} is not a game routine id (u1..u9_XXXX)")
     stub_lines = {}                  # module -> {line of the stub's `begin`: name}
@@ -575,11 +648,12 @@ def build(candidate: str, ep: str, options: list, function: str | None = None,
     m = tpmap.parse(r.map("H"))
     d = m.data().para
     pub = {n: o for n, (s, o) in m.publics.items() if s == d}
-    cand = parse_decls(split_sections(candidate)["decls"])
+    typed = set(merge_decls(canonical()["decls"], parse_decls(split_sections(candidate)["decls"]),
+                            ep, {}).globals)
     sizes = {}
     order = sorted(pub.items(), key=lambda kv: kv[1])
     for i, (n, o) in enumerate(order):
-        if n in cand.globals:
+        if n in typed:
             nxt = next((oo for nn, oo in order[i + 1:] if oo > o), None)
             sizes[n] = (nxt - o) if nxt is not None else 0
     if sizes:

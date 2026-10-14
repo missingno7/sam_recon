@@ -18,3 +18,12 @@
 {"equal": ["sam1", "sam2", "sam3"], "function": "u6_0058", "note": "luna wave 1", "source_sha256": "c71a025ffbc8fa65b6fe76551777e9e30f47ac6fdd6d20d3412979cb2edccf7c", "time": "2026-10-14T15:14:21"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_acdd", "note": "luna wave 1", "source_sha256": "78e9cfa97521caa692c3742237623144b874f3185e110076e4085750b3f65ad9", "time": "2026-10-14T15:14:21"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_0232", "note": "luna wave 1", "source_sha256": "174bd972f0ffb00e4a6551c872aa06cb3bbf84270ba6cd2ce1b34ba4a7db02b5", "time": "2026-10-14T15:14:34"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u1_0000", "note": "luna wave 2", "source_sha256": "ea7001111d755b2079e8cdcd7fd0c77b3de52cacc8d98085301c369098ff2d47", "time": "2026-10-14T15:18:38"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u1_008d", "note": "luna wave 2", "source_sha256": "9a9b916a0bd6d1395ac9d8d82c316509b5ae4e3c2ea4b2e4b72a0b260252e5dc", "time": "2026-10-14T15:18:39"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u3_3cb8", "note": "luna wave 2", "source_sha256": "0210b8d5b47ac74bf6b103626b9b1b0284a82ae687e90a4b33b960904f8dfe13", "time": "2026-10-14T15:18:40"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u4_0349", "note": "luna wave 2", "source_sha256": "d4094dea45e1e8db06ea0a49276f94c762b69b9420a18897645d61a4c8d7ca23", "time": "2026-10-14T15:18:40"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u4_0097", "note": "supervisor: worker blocked on frame temporaries (string function result)", "source_sha256": "fb9de4ef0bef4fba4d13d0ce9133c38a88256107404c4eb30227fdd03a0206a6", "time": "2026-10-14T15:23:00"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u3_3d6b", "note": "luna wave 2 (CS literal binding)", "source_sha256": "81f50a129a6e2f05441e08ece876b50df25f2df4fc98f560a93ec1e5d74f5fcf", "time": "2026-10-14T15:23:54"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u3_9b3e", "note": "luna wave 2 (CS literal binding)", "source_sha256": "4f6ef17cf434b70beb1b58130f07aedd3136b7c75ad70f938d5aac04b3593bf6", "time": "2026-10-14T15:23:55"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u3_9bdf", "note": "luna wave 2 (CS literal binding)", "source_sha256": "fe1956ba145d2ab802b6f378767986343276fd07a9df9993818e2f68605641c6", "time": "2026-10-14T15:23:56"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u3_9de0", "note": "luna wave 2 (CS literal binding)", "source_sha256": "5dd8096b863c03842e1a11d1b9e4b1a7e8f02fe1c51d1fa20178bc4233ff4285", "time": "2026-10-14T15:23:57"}

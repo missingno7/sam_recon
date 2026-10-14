@@ -108,9 +108,15 @@ def annotate(lid: str, ep: str) -> list:
         for off, s in pascal_strings(pre):
             lines.append(f";   +{off:04x} string[{len(s)}] {s!r}")
     seg_routines = {r["entry"] for r in ext["seg"]["routines"]}
-    for ins in _MD.disasm(img[base + ext["start"]:base + ext["end"]], ext["start"]):
-        if ins.address < ext["entry"] and ins.address not in seg_routines:
-            continue        # literal bytes, already shown
+    pieces = sorted((r["entry"], r["code_end"]) for r in ext["seg"]["routines"]
+                    if ext["start"] <= r["entry"] < ext["end"])
+
+    def code():
+        # decode each routine (nested ones first) from its entry; literal pools are skipped
+        for e, end in pieces:
+            yield from _MD.disasm(img[base + e:base + end], e)
+
+    for ins in code():
         note = []
         b = ins.bytes
         lin = base + ins.address

@@ -28,6 +28,24 @@ def norm(s: str) -> str:
     return re.sub(r"\s+", " ", s.strip().rstrip(";")).lower()
 
 
+def signature(header: str) -> str:
+    """Kind, parameter modes/types and result type of a header; parameter names dropped."""
+    h = norm(header)
+    m = re.match(r"(procedure|function)\s+\w+\s*(?:\((.*)\))?\s*(?::\s*(.*))?$", h)
+    if not m:
+        return h
+    params = []
+    for group in filter(None, (g.strip() for g in (m.group(2) or "").split(";"))):
+        mode = ""
+        g = group
+        for kw in ("var ", "const "):
+            if g.startswith(kw):
+                mode, g = kw.strip(), g[len(kw):]
+        names, _, typ = g.partition(":")
+        params += [f"{mode} {typ.strip()}".strip()] * len(names.split(","))
+    return f"{m.group(1)}({', '.join(params)}){': ' + m.group(3).strip() if m.group(3) else ''}"
+
+
 def declarations() -> list:
     """Conflicting global declarations / stub headers among accepted sources."""
     globs, heads, own = {}, {}, {}
@@ -38,14 +56,14 @@ def declarations() -> list:
         for n, decl in d.globals.items():
             globs.setdefault(n, {}).setdefault(norm(decl.split(":", 1)[1].split("=")[0]), []).append(p.stem)
         for n, h in harness.parse_stubs(sec["stubs"]):
-            heads.setdefault(n, {}).setdefault(norm(h), []).append(p.stem)
+            heads.setdefault(n, {}).setdefault(signature(h), []).append(p.stem)
         if re.match(r"(?is)^\s*begin\b", harness._strip_comments(sec["body"]).strip()):
             continue            # INIT/MAIN body: no header of its own
         tgt = harness.target_name(sec["body"])
         m = re.search(r"(?ims)^\s*((?:procedure|function)\s+" + re.escape(tgt) + r"\b[^;]*(?:\([^)]*\))?[^;]*;)",
                       harness._strip_comments(sec["body"]))
         if m:
-            own[tgt] = norm(m.group(1))
+            own[tgt] = signature(m.group(1))
     problems = []
     for n, views in globs.items():
         if len(views) > 1:
