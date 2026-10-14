@@ -17,8 +17,10 @@
 2. Every compile goes through `tools/search.py CAND.pas --function ID --worker NAME`.
    It builds the proof harness (exact original data segment, stub units) per
    episode, compares strictly and logs the attempt. Do not run TPC by hand.
-3. No `inline(...)` machine code, no `{$L}`, no `absolute`, no byte emission,
-   nothing that manufactures equality. Never alter the oracle or the tool pins.
+3. No `{$L}`, no `absolute`, no byte emission, nothing that manufactures
+   equality. `inline()` only for one instruction Pascal cannot express
+   (TP 5.0 has no `asm`: `inline($FA)` is CLI); it is reviewed. Never alter
+   the oracle or the tool pins.
 4. One controlled change per attempt; say what you expect it to change.
 5. Stop at EQUAL; or when three hypotheses of one family give identical
    emission; or when you can name the concrete mechanism and the next

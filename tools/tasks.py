@@ -99,7 +99,8 @@ RULES = """- Write only inside {dir}/.  Never modify src/, recipes/, layout/, ev
 - Every compile goes through `python tools/search.py {dir}/cand.pas --function {fid} --worker {worker}`
   (add `--asm` for a side-by-side listing, `--episodes sam1` to iterate faster on one episode).  Do not
   run TPC by hand.
-- No inline(...) machine code, no {{$L}}, no `absolute`, nothing that manufactures equality.
+- No {{$L}}, no `absolute`, nothing that manufactures equality.  inline() only for a single instruction
+  Pascal cannot express (CLI = inline($FA), STI = inline($FB)); it is reviewed.
 - Name game routines by logical id (u3_6ea9, p_0be5, ...) and globals d_XXXX by their SAM1 offset
   (layout/data.json); give globals their real Pascal types.  Borland names for System/Crt/Dos
   (ExitProc, TextAttr, ClrScr, GetIntVec, Port[], Mem[], ...) are used as is.

@@ -38,8 +38,12 @@ class PromotionError(RuntimeError):
 def lint(text: str) -> list:
     problems = []
     code = harness._strip_comments(text)
-    if re.search(r"(?i)\binline\s*\(", code):
-        problems.append("inline machine code")
+    # TP 5.0 has no asm statement: inline() is the historical way to write CLI/STI and
+    # similar single instructions Pascal cannot express.  Anything longer is byte emission.
+    for m in re.finditer(r"(?i)\binline\s*\(([^)]*)\)", code):
+        items = [x for x in m.group(1).split("/") if x.strip()]
+        if len(items) > 2:
+            problems.append(f"inline machine code longer than a single instruction: {m.group(0)[:40]}")
     if re.search(r"(?i)\{\$L\b", text):
         problems.append("{$L} object linking belongs to unit assembly, not a routine candidate")
     if re.search(r"(?i)\babsolute\b", code):
