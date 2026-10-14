@@ -1,4 +1,11 @@
 {
+ "assembler": {
+  "executable": "C:/tools/tasm-1.00/files/disk04/TASM.EXE",
+  "note": "Working choice for the linked {$L} objects: TASM 1.0-2.01 and MASM 4.0-5.1 emit identical bytes for the probes (build/workers/sol-asm/REPORT.md); the original assembler is not identifiable from the EXE.",
+  "product": "Turbo Assembler 1.0 (WinWorld media; byte-identical to the TASM bundled with Turbo C 2.0)",
+  "runner": "runner (MS-DOS Player)",
+  "sha256": "754b70821e4bac4997f398e3bdcee0f046a42cc3dad89cfbe0138f67d5b6142b"
+ },
  "comparison_only": {
   "tp55": {
    "TPC.EXE": "3155758683fc993653ad7076a0fa2b7d269d8838f4725f424b791f43dc56a909",
