@@ -350,6 +350,9 @@ def _region(globals_at: list, start: int, end: int, cand: Decls, typed: bool, si
                 pos = nxt
             elif not size:
                 pos = off      # unknown until the first map
+                # size marker: a Byte is never word-aligned, so its offset minus the
+                # global's offset is the global's exact size (build() reads it)
+                decls.append(f"szm_{name.lower()}: Byte" + (" = 0;" if typed else ";"))
         else:
             decls.append(_pad_decl(name.lower(), nxt - off, typed, off))
             pos = nxt
@@ -669,8 +672,12 @@ def build(candidate: str, ep: str, options: list, function: str | None = None,
     order = sorted(pub.items(), key=lambda kv: kv[1])
     for i, (n, o) in enumerate(order):
         if n in typed:
-            nxt = next((oo for nn, oo in order[i + 1:] if oo > o), None)
-            sizes[n] = (nxt - o) if nxt is not None else 0
+            marker = pub.get("SZM_" + n)
+            if marker is not None:
+                sizes[n] = marker - o
+            else:
+                nxt = next((oo for nn, oo in order[i + 1:] if oo > o), None)
+                sizes[n] = (nxt - o) if nxt is not None else 0
     if sizes:
         h = generate(candidate, ep, function, sizes)
         r = tpc.compile_program(h.sources, "H.PAS", ["/GD", *defs, *options], fresh=fresh)
