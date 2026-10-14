@@ -51,7 +51,7 @@ def original_extent(ep: str, function: str, nested: int) -> dict | None:
 
 def nested_count(body: str) -> int:
     heads = re.findall(r"(?im)^\s*(?:procedure|function)\s+\w+", harness._strip_comments(body))
-    return len(heads) - 1
+    return max(0, len(heads) - 1)
 
 
 def listing(im, start: int, entry: int, end: int, marks: set) -> list:
@@ -83,16 +83,24 @@ def run_episode(text: str, function: str, ep: str, options: list, fresh: bool) -
     if h.layout_errors:
         return compare.Result("LAYOUT", ep, function, note="; ".join(h.layout_errors[:4])), h
     orig = compare.original(ep)
-    cand = compare.candidate(h.receipt.exe("H"), h.map, ext["unit"])
-    hseg = h.map.segment("H")
-    para, off = h.map.publics[function.upper()]
+    h_unit = {"routine": ext["unit"], "main": "p", "init": "h"}[h.mode]
+    cand = compare.candidate(h.receipt.exe("H"), h.map, h_unit, h.stub_names(), h.init_names)
+    hseg = h.map.segment(h.body_module)
+    if h.mode == "routine":
+        para, off = h.map.publics[function.upper()]
+    elif h.mode == "main":
+        para, off = h.map.entry
+    else:
+        para, off = next(((p, o) for p, o in h.map.inits if p == hseg.para), (None, None))
+        if para is None:
+            return compare.Result("COMPILE", ep, function, note="no init block in the harness unit"), h
     c_entry = para * 16 + off
     c_start = c_entry - (ext["entry"] - ext["start"])
     c_entries = [c_start + (x - ext["start"]) for x in ext["entries"]]
     res = compare.compare(ep, function, orig, ext["start"], ext["entries"], ext["end"], ext["unit"],
                           cand, c_start, c_entries)
     notes = []
-    if c_start != hseg.start:
+    if c_start != hseg.start and h.mode == "routine":
         notes.append(f"candidate extent starts at H+{c_start - hseg.start:#x}, not at the segment start")
     size = ext["end"] - ext["start"]
     later = sorted(p * 16 + o for (p, o) in h.map.publics.values() if p == hseg.para and p * 16 + o > c_entry)

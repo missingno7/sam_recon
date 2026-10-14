@@ -78,7 +78,11 @@ def original(ep: str) -> Image:
     return Image(img, set(mz.linear(relocs)), seg_unit, names)
 
 
-def candidate(exe: bytes, m, target_unit: str) -> Image:
+def candidate(exe: bytes, m, h_unit: str, stub_names: dict | None = None,
+              init_names: dict | None = None) -> Image:
+    """`h_unit`: the unit the harness program H stands for (the target's unit for a
+    routine, `p` for the main body).  `stub_names`: (para, off) -> name for stubs the
+    publics omit; `init_names`: unit -> logical id of that unit's init block."""
     hdr = mz.parse(exe)
     img = hdr.image
     seg_unit = {}
@@ -87,7 +91,7 @@ def candidate(exe: bytes, m, target_unit: str) -> Image:
         if s.cls.upper() == "DATA":
             seg_unit[s.para] = "DATA"
         elif n == "H":
-            seg_unit[s.para] = target_unit
+            seg_unit[s.para] = h_unit
         elif n in MAP_UNITS:
             seg_unit[s.para] = MAP_UNITS[n]
         elif s.cls.upper() == "CODE":
@@ -97,6 +101,12 @@ def candidate(exe: bytes, m, target_unit: str) -> Image:
         u = seg_unit.get(para)
         if u and u != "DATA":
             names[(u, off)] = name.lower()
+    for (para, off), name in (stub_names or {}).items():
+        names[(seg_unit.get(para), off)] = name
+    for para, off in m.inits:
+        u = seg_unit.get(para)
+        if u in (init_names or {}):
+            names[(u, off)] = init_names[u]
     return Image(img, set(mz.linear(hdr.relocs)), seg_unit, names)
 
 

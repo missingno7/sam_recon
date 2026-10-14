@@ -336,44 +336,109 @@ class Harness:
     receipt: tpc.Receipt | None = None
     map: tpmap.Map | None = None
     layout_errors: list = field(default_factory=list)
-    body_h_line: int = 0        # 1-based line of the body's first line in H.PAS
+    body_h_line: int = 0        # 1-based line of the body's first line in its module
     body_c_line: int = 0        # ... and in the candidate file
+    mode: str = "routine"       # routine | init | main
+    unit: str = ""
+    body_module: str = "H"
+    stub_lines: dict = field(default_factory=dict)
+    init_names: dict = field(default_factory=dict)
+
+    def stub_names(self) -> dict:
+        """(segment paragraph, offset) -> stub name, from the map's line records."""
+        out = {}
+        for module, by_line in self.stub_lines.items():
+            for ln, seg, off in (self.map.lines.get(module, []) if self.map else []):
+                if ln in by_line:
+                    out[(seg, off)] = by_line[ln]
+        return out
 
     def candidate_line(self, linear: int) -> int | None:
         """Candidate source line whose code contains linear image offset `linear`."""
         if not self.map:
             return None
-        recs = [(s * 16 + o, ln) for ln, s, o in self.map.lines.get("H", [])]
+        recs = [(s * 16 + o, ln) for ln, s, o in self.map.lines.get(self.body_module, [])]
         best = max(((a, ln) for a, ln in recs if a <= linear), default=None)
         if best is None or best[1] < self.body_h_line:
             return None
         return best[1] - self.body_h_line + self.body_c_line
 
 
+def init_lids(ep: str) -> dict:
+    """unit -> logical id of its initialisation block (units with an init in the original)."""
+    atlas = load_json(EVIDENCE / "atlas.json")
+    cen = load_json(BUILD / "census" / f"{ep}.json")
+    paras = [s["para"] for s in cen["segments"]]
+    out = {}
+    for seg, off in cen["inits"]:
+        unit = atlas["units"][paras.index(seg)]
+        for lid, r in atlas["routines"].items():
+            e = r["episodes"].get(ep)
+            if e and e["unit"] == unit and e["entry"] == off:
+                out[unit] = lid
+    return out
+
+
+def _nlines(lines: list) -> int:
+    return sum(x.count("\n") + 1 for x in lines)
+
+
+def _stub_def(hdr: str) -> str:
+    """Short-form definition of a (forward/interface-declared) routine."""
+    m = _HEADER.match(hdr)
+    return f"{m.group(1)} {m.group(2)};"
+
+
 def generate(candidate: str, ep: str, function: str | None = None, sizes: dict | None = None,
              options: list | None = None) -> Harness:
+    """Modes: a routine ({@body} holds procedure/function definitions; the target is the
+    last one), INIT (body `begin ... end.` of unit `function`'s initialisation) and MAIN
+    (body `begin ... end.` of the program, function p_<entry>)."""
     sec = split_sections(candidate)
     cand = parse_decls(sec["decls"])
     stubs = parse_stubs(sec["stubs"])
-    tgt = target_name(sec["body"])
-    if function and function.lower() != tgt:
-        raise HarnessError(f"body defines {tgt}, expected {function}")
-    tunit = unit_of(tgt)
+    body = sec["body"].strip("\n")
+    statement_body = re.match(r"(?is)^\s*begin\b", _strip_comments(body)) is not None
+    if statement_body:
+        if not function:
+            raise HarnessError("an INIT/MAIN body needs --function")
+        tgt = function.lower()
+        tunit = unit_of(tgt)
+        mode = "main" if tunit == "p" else "init"
+        body = re.sub(r"(?is)end\s*[.;]?\s*$", "end.", body.rstrip())
+    else:
+        tgt = target_name(body)
+        if function and function.lower() != tgt:
+            raise HarnessError(f"body defines {tgt}, expected {function}")
+        tunit = unit_of(tgt)
+        mode = "routine"
     sizes = sizes or {}
     an = anchors(ep)
     glob = episode_globals(ep)
-    missing = [n for n in cand.globals if n not in glob]
-    for n in missing:            # a global this episode does not have: drop the view
-        del cand.globals[n]
+    for n in [n for n in cand.globals if n not in glob]:
+        del cand.globals[n]          # a global this episode does not have: drop the view
     pts = [(o, n) for n, o in glob.items()]
     h_const = _region(pts, 0, an["game_const_end"], cand, True, sizes)
     h_var = _region(pts, an["game_var_start"], an["crt_var_start"], cand, False, sizes)
     u9_var = _region(pts, an["u9_var_start"], an["u9_var_end"], cand, False, sizes)
+    keep = [n for d in h_const + h_var + u9_var for n in re.findall(r"(?m)^\s*(\w+)\s*:", d)]
+    inits = init_lids(ep)
 
     shared = ""
     for kind, st in cand.shared:
         shared += f"{kind}\n  {st};\n"
     sources = {"SAMTYPES.PAS": "unit SAMTYPES;\ninterface\n" + shared + "implementation\nend.\n"}
+    # The program's and units u1..u8's data live in unit GDATA: `uses Dos, U9, Crt,
+    # SAMTYPES, GDATA, U1..U8` links H, U8..U1, GDATA, Crt, U9, Dos, System, and only
+    # GDATA, Crt, U9, Dos and System have data, so GDATA's data starts at DS:0 and
+    # units (an INIT harness) can see the globals too.
+    gdata = ["unit GDATA;", "interface", "uses SAMTYPES;"]
+    if h_const:
+        gdata += ["const"] + ["  " + d for d in h_const]
+    if h_var:
+        gdata += ["var"] + ["  " + d for d in h_var]
+    gdata += ["implementation", "end."]
+    sources["GDATA.PAS"] = "\n".join(gdata) + "\n"
 
     own, other = [], {}
     for name, hdr in stubs:
@@ -386,46 +451,92 @@ def generate(candidate: str, ep: str, function: str | None = None, sizes: dict |
             other.setdefault(u, []).append((name, hdr))
         else:
             raise HarnessError(f"stub {name} is not a game routine id (u1..u9_XXXX)")
+    stub_lines = {}                  # module -> {line of the stub's `begin`: name}
+    # Where the "keep every global" references go: the harness program body, except in
+    # MAIN mode (the body is the candidate), where U1's init block carries them.
+    keep_code = "".join(f"  if @{k} = nil then Halt;\n" for k in keep)
+
     for u in GAME_UNITS:
+        if mode == "init" and u == tunit:
+            continue
         hdrs = other.get(u, [])
-        body = "".join(f"{h}\n" for _, h in hdrs)
-        impl = "".join(f"{h.split('(')[0].split(':')[0].rstrip(';').strip()};\nbegin\nend;\n" for _, h in hdrs)
-        data = ""
+        lines = [f"unit {u.upper()};", "interface",
+                 "uses Dos, SAMTYPES;" if u == "u9" else "uses SAMTYPES, GDATA;"]
         if u == "u9" and u9_var:
-            data = "var\n" + "\n".join("  " + d for d in u9_var) + "\n"
-        uses = "uses Dos, SAMTYPES;\n" if u == "u9" else "uses SAMTYPES;\n"
-        sources[f"{u.upper()}.PAS"] = (f"unit {u.upper()};\ninterface\n{uses}{data}{body}"
-                                       f"implementation\n{impl}end.\n")
+            lines += ["var"] + ["  " + d for d in u9_var]
+        lines += [h for _, h in hdrs]
+        lines.append("implementation")
+        for name, h in hdrs:
+            lines.append(_stub_def(h))
+            stub_lines.setdefault(u.upper(), {})[_nlines(lines) + 1] = name
+            lines += ["begin", "end;"]
+        if mode == "main" and u in inits:
+            lines.append("begin")
+            if u == "u1" and keep_code:
+                lines.append(keep_code.rstrip("\n"))
+            lines.append("end.")
+        else:
+            lines.append("end.")
+        sources[f"{u.upper()}.PAS"] = "\n".join(lines) + "\n"
+
+    body_h_line = 0
+    body_module = "H"
+    if mode == "init":
+        lines = [f"unit {tunit.upper()};", "interface",
+                 "uses Dos, SAMTYPES, GDATA, " + ", ".join(x.upper() for x in GAME_UNITS if x not in (tunit, "u9")) + ";"
+                 if tunit != "u9" else "uses Dos, SAMTYPES;"]
+        if tunit == "u9" and u9_var:
+            lines += ["var"] + ["  " + d for d in u9_var]
+        far_own = [(n, h) for n, h in own if is_far(ep, n)]
+        near_own = [(n, h) for n, h in own if not is_far(ep, n)]
+        lines += [h for _, h in far_own]
+        lines.append("implementation")
+        for name, h in near_own:
+            lines.append(h)
+            stub_lines.setdefault(tunit.upper(), {})[_nlines(lines) + 1] = name
+            lines += ["begin", "end;"]
+        for name, h in far_own:
+            lines.append(_stub_def(h))
+            stub_lines.setdefault(tunit.upper(), {})[_nlines(lines) + 1] = name
+            lines += ["begin", "end;"]
+        body_h_line = _nlines(lines) + 1
+        body_module = tunit.upper()
+        lines.append(body)
+        sources[f"{tunit.upper()}.PAS"] = "\n".join(lines) + "\n"
+
     stub_units = [u.upper() for u in GAME_UNITS if u != "u9"]
-    lines = ["program H;", "uses Dos, U9, Crt, SAMTYPES, " + ", ".join(stub_units) + ";"]
-    if h_const:
-        lines.append("const")
-        lines += ["  " + d for d in h_const]
-    if h_var:
-        lines.append("var")
-        lines += ["  " + d for d in h_var]
-    for name, hdr in own:
-        far = is_far(ep, name)
-        lines.append(("{$F+}\n" if far else "{$F-}\n") + hdr + "\n  forward;")
-    far = is_far(ep, tgt)
-    lines.append("{$F+}" if far else "{$F-}")
-    body_h_line = sum(x.count("\n") + 1 for x in lines) + 1
-    lines.append(sec["body"].strip("\n"))
-    lines.append("{$F-}")
-    for name, hdr in own:
-        far = is_far(ep, name)
-        lines.append(("{$F+}" if far else "{$F-}") + f"\n{hdr.split('(')[0].split(':')[0].rstrip(';').strip()};\nbegin\nend;")
-    lines.append("{$F-}")
-    # The smart linker drops unreferenced data: keep every skeleton global.
-    keep = [n for d in h_const + h_var + u9_var for n in re.findall(r"(?m)^\s*(\w+)\s*:", d)]
-    lines.append("begin\n  if @" + tgt + " = nil then Halt;")
-    lines += [f"  if @{k} = nil then Halt;" for k in keep]
-    lines.append("end.")
+    lines = ["program H;", "uses Dos, U9, Crt, SAMTYPES, GDATA, " + ", ".join(stub_units) + ";"]
+    if mode in ("routine", "main"):
+        for name, hdr in own:
+            lines.append(("{$F+}\n" if is_far(ep, name) else "{$F-}\n") + hdr + "\n  forward;")
+    if mode == "routine":
+        lines.append("{$F+}" if is_far(ep, tgt) else "{$F-}")
+        body_h_line = _nlines(lines) + 1
+        lines.append(body)
+        lines.append("{$F-}")
+    if mode in ("routine", "main"):
+        for name, hdr in own:
+            lines.append(("{$F+}" if is_far(ep, name) else "{$F-}") + "\n" + _stub_def(hdr))
+            stub_lines.setdefault("H", {})[_nlines(lines) + 1] = name
+            lines.append("begin\nend;")
+        lines.append("{$F-}")
+    if mode == "main":
+        body_h_line = _nlines(lines) + 1
+        lines.append(body)
+    else:
+        lines.append("begin")
+        if mode == "routine":
+            lines.append("  if @" + tgt + " = nil then Halt;")
+        if keep_code:
+            lines.append(keep_code.rstrip("\n"))
+        lines.append("end.")
     sources["H.PAS"] = "\n".join(lines) + "\n"
     cl = candidate.splitlines()
     mark = next(i for i, x in enumerate(cl) if re.match(r"^\s*\{@body\}\s*$", x, re.I))
     lead = len(sec["body"]) - len(sec["body"].lstrip("\n"))
-    return Harness(ep, tgt, sources, body_h_line=body_h_line, body_c_line=mark + 2 + lead)
+    h = Harness(ep, tgt, sources, body_h_line=body_h_line, body_c_line=mark + 2 + lead)
+    h.mode, h.unit, h.body_module, h.stub_lines, h.init_names = mode, tunit, body_module, stub_lines, inits
+    return h
 
 
 def build(candidate: str, ep: str, options: list, function: str | None = None,

@@ -36,6 +36,7 @@ class Map:
     publics: dict = field(default_factory=dict)     # name -> (para, off)
     by_addr: dict = field(default_factory=dict)     # (para, off) -> name (first)
     lines: dict = field(default_factory=dict)       # module -> [(line, para, off)]
+    inits: list = field(default_factory=list)       # [(para, off)] of '@' entries
     entry: tuple | None = None
 
     def segment(self, name: str) -> Segment:
@@ -63,6 +64,9 @@ def parse(text: str) -> Map:
     pub = pub.split("Line numbers for", 1)[0].split("Program entry point", 1)[0]
     for seg, off, name in _PUB.findall(pub):
         key = (int(seg, 16), int(off, 16))
+        if name == "@":                 # program body / unit initialisation blocks
+            m.inits.append(key)
+            continue
         m.publics[name.upper()] = key
         m.by_addr.setdefault(key, name.upper())
     parts = _LINEHDR.split(text)
