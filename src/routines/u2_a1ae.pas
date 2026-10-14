@@ -34,13 +34,8 @@ var
   d_6834: Word;
   d_683C: array[0..10] of TStageInfo;
 {@stubs}
-procedure u9_2f32;
 procedure u8_0c14(var Data; Count: Word);
 procedure u2_68a9(RowIndex: Integer; Row: TLevelLine);
-procedure u9_0625(N: Word);
-procedure u9_07ee(A, B, C, D: Word);
-procedure u3_00db(N: Word);
-procedure u7_0000(N: Word);
 {@body}
 procedure u2_a1ae(Level: Integer);
 var

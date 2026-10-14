@@ -36,8 +36,6 @@ procedure u2_2c6e(x, y: Integer; a, b, c: Integer; solid, flag, overlay: Boolean
 procedure u2_2e88(x, y: Integer; var symbol: string);
 procedure u2_3a91(x, y: Integer; var symbol: string; overlay: Boolean);
 procedure u9_19f9(var sprite; x, y: Word);
-procedure u9_01f9(x, y: Word);
-procedure u9_024c(x, y: Word);
 {@body}
 procedure u2_68a9(rowIndex: Integer; row: TLevelRow);
 var

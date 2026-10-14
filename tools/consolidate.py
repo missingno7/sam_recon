@@ -170,6 +170,22 @@ def apply(dry: bool) -> tuple:
                 new = trial
             else:
                 stuck.append(f"{rec['function']}: {n} `{type_of(decl)}` vs canonical `{type_of(canon[n])}`")
+        # stub headers the canonical {@routines} section provides
+        canon_heads = {n for n, _ in harness.canonical()["routines"]}
+        for n, h in harness.parse_stubs(harness.split_sections(new)["stubs"]):
+            if n not in canon_heads:
+                continue
+            sec_start, sec_end = new.index("{@stubs}"), new.index("{@body}")
+            block = new[sec_start:sec_end]
+            pat = re.compile(rf"(?is)\n\s*(procedure|function)\s+{re.escape(n)}\b[^;]*(\([^)]*\))?[^;]*;")
+            trial_block = pat.sub("", block, count=1)
+            if trial_block == block:
+                continue
+            trial = new[:sec_start] + trial_block + new[sec_end:]
+            if proves(rec["function"], trial, rec["equal"]):
+                new = trial
+            else:
+                stuck.append(f"{rec['function']}: stub {n} differs from the canonical header")
         if new != text:
             changed.append(rec["function"])
             if not dry:
