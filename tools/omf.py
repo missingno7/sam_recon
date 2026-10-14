@@ -577,6 +577,7 @@ class OmfReader(ObjectReader):
                 "width": fixup["width"],
                 "loc": fixup["loc_name"],
                 "self_relative": fixup["self_relative"],
+                "iterated": fixup["iterated"],
                 "target_kind": target["kind"],
                 "target": target["name"],
                 "displacement": fixup["target_displacement"],
