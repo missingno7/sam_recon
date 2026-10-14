@@ -1,0 +1,9 @@
+{
+ "default": "sam",
+ "profiles": {
+  "sam": {
+   "note": "PROVISIONAL until evidence/compiler-rules.json: Turbo Pascal 5.0, no stack checking (original prologues have no StackCheck call).",
+   "options": ["/$S-"]
+  }
+ }
+}
