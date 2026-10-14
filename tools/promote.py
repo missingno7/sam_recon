@@ -55,7 +55,8 @@ def canonical_path(function: str) -> Path:
 
 def verify(function: str, text: str) -> dict:
     sec = harness.split_sections(text)
-    if harness.target_name(sec["body"]) != function:
+    statement_body = re.match(r"(?is)^\s*begin\b", harness._strip_comments(sec["body"]).strip()) is not None
+    if not statement_body and harness.target_name(sec["body"]) != function:
         raise PromotionError(f"the body does not define {function} as its last top-level routine")
     problems = lint(text)
     if problems:

@@ -2,3 +2,4 @@
 {"equal": ["sam1", "sam2", "sam3"], "function": "u6_0038", "note": "supervisor pilots", "source_sha256": "a0068db4ca13b3b290e2ec9aed2764b7da8f602b5de421ae3c6267dc0e3d5d5c", "time": "2026-10-14T15:02:19"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "p_0e33", "note": "supervisor pilots", "source_sha256": "843ae0bd492bb0f9ff5da5c611dbff3a89b0610709bf565fac56b989379dbfd2", "time": "2026-10-14T15:02:19"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "p_0e67", "note": "supervisor pilots", "source_sha256": "b8b6d7eb615b3998f97c48ebb89c9a014c4701d0835840895c926981bb87105d", "time": "2026-10-14T15:02:20"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u4_048c", "note": "supervisor pilot: INIT mode", "source_sha256": "7500a8c0263fd15b63502f93afd7a64821091f06bdcc512be47d78b4bd7427f1", "time": "2026-10-14T15:08:39"}

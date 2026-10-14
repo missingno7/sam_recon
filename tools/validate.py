@@ -39,6 +39,8 @@ def declarations() -> list:
             globs.setdefault(n, {}).setdefault(norm(decl.split(":", 1)[1].split("=")[0]), []).append(p.stem)
         for n, h in harness.parse_stubs(sec["stubs"]):
             heads.setdefault(n, {}).setdefault(norm(h), []).append(p.stem)
+        if re.match(r"(?is)^\s*begin\b", harness._strip_comments(sec["body"]).strip()):
+            continue            # INIT/MAIN body: no header of its own
         tgt = harness.target_name(sec["body"])
         m = re.search(r"(?ims)^\s*((?:procedure|function)\s+" + re.escape(tgt) + r"\b[^;]*(?:\([^)]*\))?[^;]*;)",
                       harness._strip_comments(sec["body"]))
