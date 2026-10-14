@@ -13,16 +13,18 @@
    "proposal": "names-b"
   },
   "byte_rect_height": {
-   "confidence": "medium",
-   "evidence": "src/asm/u9.asm CS byte_rect_height is DW 0. Used by u9_07ee: mov word ptr cs:[byte_rect_height],ax.",
-   "name": "PgByteRectHeight",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "PgFillRectangleByteAligned and PgFillRectangleClipped load the requested row count, decrement it once per row, and stop at zero.",
+   "name": "PgByteRectRowsRemaining",
+   "old_name": "PgByteRectHeight",
+   "proposal": "sol-read-asm"
   },
   "circle2_error": {
-   "confidence": "medium",
-   "evidence": "src/asm/u9.asm CS circle2_error is DW ?. Used by u9_1590: mov word ptr cs:[circle2_error],si.",
-   "name": "PgCircle2Error",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "PgDrawCircle initializes this midpoint decision value to 3-2*radius and updates it by 4*x+6 or 4*(x-y)+10.",
+   "name": "PgOutlineCircleDecision",
+   "old_name": "PgCircle2Error",
+   "proposal": "sol-read-asm"
   },
   "circle2_work1": {
    "confidence": "low",
@@ -37,28 +39,32 @@
    "proposal": "names-b"
   },
   "circle2_x": {
-   "confidence": "medium",
-   "evidence": "src/asm/u9.asm CS circle2_x is DW ?. Used by u9_1590: mov word ptr cs:[circle2_x],0.",
-   "name": "PgCircle2X",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "PgDrawCircle starts this relative coordinate at zero and increments it after plotting the eight symmetric octant points.",
+   "name": "PgOutlineCircleOctantX",
+   "old_name": "PgCircle2X",
+   "proposal": "sol-read-asm"
   },
   "circle2_y": {
-   "confidence": "medium",
-   "evidence": "src/asm/u9.asm CS circle2_y is DW ?. Used by u9_1590: mov word ptr cs:[circle2_y],si.",
-   "name": "PgCircle2Y",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "PgDrawCircle initializes this relative coordinate from radius and decreases it on a positive midpoint decision.",
+   "name": "PgOutlineCircleOctantY",
+   "old_name": "PgCircle2Y",
+   "proposal": "sol-read-asm"
   },
   "circle_error": {
-   "confidence": "medium",
-   "evidence": "src/asm/u9.asm CS circle_error is DW ?. Used by u9_12fc: mov word ptr cs:[circle_error],si.",
-   "name": "PgCircleError",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "PgFillCircle initializes this midpoint decision value to 3-2*radius and updates it by 4*x+6 or 4*(x-y)+10.",
+   "name": "PgFillCircleDecision",
+   "old_name": "PgCircleError",
+   "proposal": "sol-read-asm"
   },
   "circle_x": {
-   "confidence": "medium",
-   "evidence": "src/asm/u9.asm CS circle_x is DW ?. Used by u9_12fc: mov word ptr cs:[circle_x],0.",
-   "name": "PgCircleX",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "PgFillCircle starts this relative coordinate at zero, increments it each iteration, and uses its symmetric positive/negative offsets to form spans.",
+   "name": "PgFillCircleOctantX",
+   "old_name": "PgCircleX",
+   "proposal": "sol-read-asm"
   },
   "circle_x_delta": {
    "confidence": "high",
@@ -67,10 +73,11 @@
    "proposal": "names-b"
   },
   "circle_y": {
-   "confidence": "medium",
-   "evidence": "src/asm/u9.asm CS circle_y is DW ?. Used by u9_12fc: mov word ptr cs:[circle_y],si.",
-   "name": "PgCircleY",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "PgFillCircle initializes this relative coordinate from the radius and decreases it when the midpoint decision value is positive.",
+   "name": "PgFillCircleOctantY",
+   "old_name": "PgCircleY",
+   "proposal": "sol-read-asm"
   },
   "circle_y_delta": {
    "confidence": "high",
@@ -1475,10 +1482,11 @@
    "proposal": "names-b"
   },
   "glyph_left": {
-   "confidence": "medium",
-   "evidence": "src/asm/u9.asm CS glyph_left is DW ?. Used by u9_2829: mov word ptr cs:[glyph_left],cx.",
-   "name": "PgGlyphLeft",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "PgDrawFontRowHorizontalHelper intersects the rotated glyph row with PgLeftMasks, then sends this value to PgSetEgaBitMaskHelper for the first destination byte.",
+   "name": "PgGlyphLeftByteMask",
+   "old_name": "PgGlyphLeft",
+   "proposal": "sol-read-asm"
   },
   "glyph_offset": {
    "confidence": "medium",
@@ -1487,10 +1495,11 @@
    "proposal": "names-b"
   },
   "glyph_right": {
-   "confidence": "medium",
-   "evidence": "src/asm/u9.asm CS glyph_right is DW ?. Used by u9_2829: mov word ptr cs:[glyph_right],ax.",
-   "name": "PgGlyphRight",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "PgDrawFontRowHorizontalHelper intersects the rotated glyph row with the complement of PgLeftMasks, then applies this mask to the neighboring destination byte.",
+   "name": "PgGlyphRightByteMask",
+   "old_name": "PgGlyphRight",
+   "proposal": "sol-read-asm"
   },
   "glyph_segment": {
    "confidence": "medium",
@@ -1535,10 +1544,11 @@
    "proposal": "names-b"
   },
   "plane_rect_height": {
-   "confidence": "medium",
-   "evidence": "src/asm/u9.asm CS plane_rect_height is DW 0. Used by u9_05a1: mov word ptr cs:[plane_rect_height],ax.",
-   "name": "PgPlaneRectHeight",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "PgBlitSinglePlaneRectangle loads BP+6 (height), decrements this word after each source row, and loops until zero.",
+   "name": "PgPlaneRectRowsRemaining",
+   "old_name": "PgPlaneRectHeight",
+   "proposal": "sol-read-asm"
   },
   "reserved_02bb": {
    "confidence": "high",
@@ -1913,28 +1923,32 @@
    "proposal": "names-b"
   },
   "sprite_clip_bottom": {
-   "confidence": "medium",
-   "evidence": "u9_1e87/u9_2053 initialize a 0/1 flag while clipping sprite rows below the lower boundary.",
-   "name": "PgSpriteBottomClipped",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "The clipped 32-pixel blitters test this flag before the second horizontal source byte group; it does not clip bottom rows.",
+   "name": "PgSpriteSkipSecondGroup32",
+   "old_name": "PgSpriteBottomClipped",
+   "proposal": "sol-read-asm"
   },
   "sprite_clip_left": {
-   "confidence": "medium",
-   "evidence": "u9_1e87/u9_2053 initialize a 0/1 flag while clipping sprite columns at the left boundary.",
-   "name": "PgSpriteLeftClipped",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "The clipped 32-pixel blitters test this flag before the third horizontal source byte group; it does not represent a left-boundary coordinate.",
+   "name": "PgSpriteSkipThirdGroup32",
+   "old_name": "PgSpriteLeftClipped",
+   "proposal": "sol-read-asm"
   },
   "sprite_clip_right": {
-   "confidence": "medium",
-   "evidence": "u9_1e87/u9_2053 initialize a 0/1 flag while clipping sprite columns at the right boundary.",
-   "name": "PgSpriteRightClipped",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "Clipped 16/32-pixel blitters test this flag before the final horizontal source byte group: second for 16 pixels, fourth for 32 pixels.",
+   "name": "PgSpriteSkipLastGroup",
+   "old_name": "PgSpriteRightClipped",
+   "proposal": "sol-read-asm"
   },
   "sprite_clip_top": {
-   "confidence": "medium",
-   "evidence": "u9_1e87/u9_2053 initialize a 0/1 flag while clipping sprite rows above the upper boundary.",
-   "name": "PgSpriteTopClipped",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "Clipped 16/32-pixel blitters test this flag before the first horizontal source byte group, discarding four plane bytes when it is set.",
+   "name": "PgSpriteSkipFirstGroup",
+   "old_name": "PgSpriteTopClipped",
+   "proposal": "sol-read-asm"
   },
   "sprite_height": {
    "confidence": "high",
@@ -2063,40 +2077,46 @@
    "proposal": "names-b"
   },
   "transfer_height": {
-   "confidence": "medium",
-   "evidence": "src/asm/u9.asm CS transfer_height is DW ?. Used by u9_1795: mov word ptr cs:[transfer_height],ax.",
-   "name": "PgTransferHeight",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "PgCapturePlanarRectangle stores right-left here as the second image-header word; PgCapturePixelRectangle stores (right-left) div 8+1. Inner row loops use it as the byte count.",
+   "name": "PgTransferRowBytes",
+   "old_name": "PgTransferHeight",
+   "proposal": "sol-read-asm"
   },
   "transfer_width": {
-   "confidence": "medium",
-   "evidence": "src/asm/u9.asm CS transfer_width is DW ?. Used by u9_1795: mov word ptr cs:[transfer_width],ax.",
-   "name": "PgTransferWidth",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "PgCapturePlanarRectangle and PgCapturePixelRectangle store bottom-top+1 here as the first image-header word; capture/restore outer row loops decrement it.",
+   "name": "PgTransferRowsRemaining",
+   "old_name": "PgTransferWidth",
+   "proposal": "sol-read-asm"
   },
   "transfer_x_end": {
-   "confidence": "medium",
-   "evidence": "src/asm/u9.asm CS transfer_x_end is DW ?. Used by u9_2208: mov word ptr cs:[transfer_x_end],ax.",
-   "name": "PgTransferXEnd",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "PgRestorePixelRectangle copies the image row count here and decrements it after each shifted output row.",
+   "name": "PgRestoreRowsRemaining",
+   "old_name": "PgTransferXEnd",
+   "proposal": "sol-read-asm"
   },
   "transfer_x_start": {
-   "confidence": "medium",
-   "evidence": "src/asm/u9.asm CS transfer_x_start is DW ?. Used by u9_2208: mov word ptr cs:[transfer_x_start],ax.",
-   "name": "PgTransferXStart",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "PgRestorePixelRectangle stores GC index 8 in AL and the shifted edge mask in AH, then OUT DX,AX applies it near the right edge.",
+   "name": "PgRestoreEdgeMaskPair",
+   "old_name": "PgTransferXStart",
+   "proposal": "sol-read-asm"
   },
   "transfer_y_end": {
-   "confidence": "medium",
-   "evidence": "src/asm/u9.asm CS transfer_y_end is DW ?. Used by u9_2208: mov word ptr cs:[transfer_y_end],ax.",
-   "name": "PgTransferYEnd",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "PgRestorePixelRectangle stores GC index 8 in AL and shifted mask high byte BH in AH, then applies it before the first output byte.",
+   "name": "PgRestoreFirstByteMaskPair",
+   "old_name": "PgTransferYEnd",
+   "proposal": "sol-read-asm"
   },
   "transfer_y_start": {
-   "confidence": "medium",
-   "evidence": "src/asm/u9.asm CS transfer_y_start is DW ?. Used by u9_2208: mov word ptr cs:[transfer_y_start],ax.",
-   "name": "PgTransferYStart",
-   "proposal": "names-b"
+   "confidence": "high",
+   "evidence": "PgRestorePixelRectangle stores GC index 8 in AL and shifted mask low byte BL in AH, then applies it to destination DI+1.",
+   "name": "PgRestoreNextByteMaskPair",
+   "old_name": "PgTransferYStart",
+   "proposal": "sol-read-asm"
   },
   "version": {
    "confidence": "high",
@@ -10990,6 +11010,26 @@
    "proposal": "names-b"
   },
   "u5_000f": {
+   "assembly_labels": {
+    "set_display_type_done_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxSetDisplayType: target set_display_type_done_1 begins with mov ax, word ptr [bp - 2]; pop di. Role: ReturnStatus.",
+     "name": "PcxSetDisplayReturnStatus",
+     "proposal": "sol-read-asm"
+    },
+    "set_display_type_error_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxSetDisplayType: target set_display_type_error_1 begins with mov word ptr [bp - 2], PcxStatusBadDisplay; jmp short set_display_type_done_1. Role: InvalidIndex.",
+     "name": "PcxSetDisplayInvalidIndex",
+     "proposal": "sol-read-asm"
+    },
+    "set_display_type_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxSetDisplayType: target set_display_type_next_1 begins with mov word ptr [PcxSelectedDisplay], ax; mov word ptr [bp - 2], 0. Role: StoreIndex.",
+     "name": "PcxSetDisplayStoreIndex",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u5.asm u5_000f: pcx set display type.",
    "locals": {},
@@ -11004,9 +11044,47 @@
    "params": {
     "N": "DisplayIndex"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_0047": {
+   "assembly_labels": {
+    "set_graphics_or_text_mode_done_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxSetGraphicsOrTextMode: target set_graphics_or_text_mode_done_1 begins with mov ax, word ptr [bp - 2]; pop di. Role: ReturnStatus.",
+     "name": "PcxModeReturnStatus",
+     "proposal": "sol-read-asm"
+    },
+    "set_graphics_or_text_mode_error_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxSetGraphicsOrTextMode: target set_graphics_or_text_mode_error_1 begins with mov word ptr [bp - 2], PcxStatusBadMode. Role: InvalidRequest.",
+     "name": "PcxModeInvalidRequest",
+     "proposal": "sol-read-asm"
+    },
+    "set_graphics_or_text_mode_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxSetGraphicsOrTextMode: target set_graphics_or_text_mode_next_1 begins with mov di, ax; mov ax, dx. Role: UseDescriptor.",
+     "name": "PcxModeUseDescriptor",
+     "proposal": "sol-read-asm"
+    },
+    "set_graphics_or_text_mode_next_2": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxSetGraphicsOrTextMode: target set_graphics_or_text_mode_next_2 begins with mov ax, 2; call far ptr PcxHerculesModeHelper. Role: SetHerculesGraphics.",
+     "name": "PcxModeSetHerculesGraphics",
+     "proposal": "sol-read-asm"
+    },
+    "set_graphics_or_text_mode_next_3": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxSetGraphicsOrTextMode: target set_graphics_or_text_mode_next_3 begins with cmp bx, 0; jne set_graphics_or_text_mode_error_1. Role: CheckTextRequest.",
+     "name": "PcxModeCheckTextRequest",
+     "proposal": "sol-read-asm"
+    },
+    "set_graphics_or_text_mode_next_4": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxSetGraphicsOrTextMode: target set_graphics_or_text_mode_next_4 begins with mov ax, 20h; call far ptr PcxHerculesModeHelper. Role: SetHerculesText.",
+     "name": "PcxModeSetHerculesText",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "medium",
    "evidence": "src/asm/u5.asm u5_0047: pcx set graphics or text mode.",
    "locals": {},
@@ -11021,15 +11099,29 @@
    "params": {
     "N": "GraphicsEnabled"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_00eb": {
+   "assembly_labels": {
+    "get_display_type_done_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxGetDisplayType: target get_display_type_done_1 begins with mov ax, word ptr [bp - 2]; pop di. Role: ReturnStatus.",
+     "name": "PcxGetDisplayReturnStatus",
+     "proposal": "sol-read-asm"
+    },
+    "get_display_type_error_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxGetDisplayType: target get_display_type_error_1 begins with mov word ptr [bp - 2], PcxStatusBadDisplay. Role: InvalidIndex.",
+     "name": "PcxGetDisplayInvalidIndex",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u5.asm u5_00eb: pcx get display type.",
    "locals": {},
    "name": "PcxGetDisplayType",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_011a": {
    "abi_parameters": [
@@ -11062,14 +11154,60 @@
      "name": "WorkBufferBytes"
     }
    ],
+   "assembly_labels": {
+    "set_work_buffer_done_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxSetWorkBuffer: target set_work_buffer_done_1 begins with mov ax, word ptr [bp - 2]; pop di. Role: ReturnStatus.",
+     "name": "PcxWorkBufferReturnStatus",
+     "proposal": "sol-read-asm"
+    },
+    "set_work_buffer_error_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxSetWorkBuffer: target set_work_buffer_error_1 begins with mov word ptr [bp - 2], PcxStatusSmallBuffer; jmp short set_work_buffer_done_1. Role: TooSmall.",
+     "name": "PcxWorkBufferTooSmall",
+     "proposal": "sol-read-asm"
+    },
+    "set_work_buffer_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxSetWorkBuffer: target set_work_buffer_next_1 begins with mov ax, word ptr [bp + 0ah]; mov word ptr [PcxReadState + PcxRsBufferSegment], ax. Role: InstallUserBuffer.",
+     "name": "PcxWorkBufferInstallUserBuffer",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u5.asm u5_0155: pcx set work buffer.",
    "locals": {},
    "name": "PcxSetWorkBuffer",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_01ac": {
+   "assembly_labels": {
+    "get_display_descriptor_done_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxGetDisplayDescriptor: target get_display_descriptor_done_1 begins with mov ax, word ptr [bp - 2]; pop di. Role: ReturnStatus.",
+     "name": "PcxDescriptorReturnStatus",
+     "proposal": "sol-read-asm"
+    },
+    "get_display_descriptor_error_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxGetDisplayDescriptor: target get_display_descriptor_error_1 begins with mov word ptr [bp - 2], PcxStatusBadDisplay; jmp short get_display_descriptor_done_1. Role: InvalidIndex.",
+     "name": "PcxDescriptorInvalidIndex",
+     "proposal": "sol-read-asm"
+    },
+    "get_display_descriptor_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxGetDisplayDescriptor: target get_display_descriptor_next_1 begins with mov di, offset PcxDisplayTable; mov ax, PcxDisplayRecordBytes. Role: ComputeAddress.",
+     "name": "PcxDescriptorComputeAddress",
+     "proposal": "sol-read-asm"
+    },
+    "get_display_descriptor_next_2": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxGetDisplayDescriptor: target get_display_descriptor_next_2 begins with mov word ptr [bp - 2], ax. Role: ReturnAddress.",
+     "name": "PcxDescriptorReturnAddress",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u5.asm u5_01ac: pcx get display descriptor.",
    "locals": {},
@@ -11084,7 +11222,7 @@
    "params": {
     "DisplayType": "DisplayIndex"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_0204": {
    "abi_parameters": [
@@ -11101,12 +11239,26 @@
      "name": "DisplayInfoPointer"
     }
    ],
+   "assembly_labels": {
+    "get_display_information_done_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxGetDisplayInformation: target get_display_information_done_1 begins with mov ax, word ptr [bp - 2]; pop di. Role: ReturnStatus.",
+     "name": "PcxDisplayInfoReturnStatus",
+     "proposal": "sol-read-asm"
+    },
+    "get_display_information_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxGetDisplayInformation: target get_display_information_next_1 begins with mov si, ax; mov ax, dx. Role: CopyDescriptor.",
+     "name": "PcxDisplayInfoCopyDescriptor",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u5.asm u5_0204: pcx get display information.",
    "locals": {},
    "name": "PcxGetDisplayInformation",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_026b": {
    "confidence": "high",
@@ -11125,12 +11277,32 @@
      "name": "HerculesModeControl"
     }
    ],
+   "assembly_labels": {
+    "hercules_mode_helper_loop_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxHerculesModeHelper: target hercules_mode_helper_loop_1 begins with mov al, ah; mov dx, PcxMonoCrtcIndexPort. Role: WriteCrtcRegister.",
+     "name": "PcxHercModeWriteCrtcRegister",
+     "proposal": "sol-read-asm"
+    },
+    "hercules_mode_helper_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxHerculesModeHelper: target hercules_mode_helper_next_1 begins with mov si, offset PcxHerculesGraphicsCrtc; mov bx, 0. Role: UseGraphicsTable.",
+     "name": "PcxHercModeUseGraphicsTable",
+     "proposal": "sol-read-asm"
+    },
+    "hercules_mode_helper_next_2": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxHerculesModeHelper: target hercules_mode_helper_next_2 begins with mov ah, al; mov al, ah. Role: ProgramCrtc.",
+     "name": "PcxHercModeProgramCrtc",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u5.asm u5_0c70: pcx hercules mode helper.",
    "locals": {},
    "name": "PcxHerculesModeHelper",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_0cc4": {
    "abi_parameters": [
@@ -11141,12 +11313,20 @@
      "name": "HerculesControl"
     }
    ],
+   "assembly_labels": {
+    "set_cga_palette_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxSetHerculesControl: target set_cga_palette_next_1 begins with mov dx, PcxHerculesConfigPort; out dx, al. Role: WriteConfigPort.",
+     "name": "PcxHercControlWriteConfigPort",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "Writes a validated control byte (1 or 3) to port 3BFh; no palette register is written.",
    "locals": {},
    "name": "PcxSetHerculesControl",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_0cf9": {
    "abi_parameters": [
@@ -11157,12 +11337,20 @@
      "name": "ModeCheckPolicy"
     }
    ],
+   "assembly_labels": {
+    "set_mode_change_policy_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxSetModeCheckPolicy: target set_mode_change_policy_next_1 begins with mov word ptr [PcxModeCheckPolicy], ax; mov word ptr [bp - 2], 0. Role: StorePolicy.",
+     "name": "PcxModePolicyStorePolicy",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "Stores a validated 0/1 policy; u5_0d2d checks the selected BIOS video mode when the policy is 1.",
    "locals": {},
    "name": "PcxSetModeCheckPolicy",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_0d2d": {
    "abi_locals": [
@@ -11191,6 +11379,44 @@
      "name": "ReadBufferEnd"
     }
    ],
+   "assembly_labels": {
+    "display_buffer_done_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxDisplayBuffer: target display_buffer_done_1 begins with mov ax, word ptr [bp - 2]; pop di. Role: ReturnStatus.",
+     "name": "PcxDisplayReturnStatus",
+     "proposal": "sol-read-asm"
+    },
+    "display_buffer_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxDisplayBuffer: target display_buffer_next_1 begins with mov ax, word ptr [PcxModeCheckPolicy]; mov word ptr [bp - 4], ax. Role: SaveModePolicy.",
+     "name": "PcxDisplaySaveModePolicy",
+     "proposal": "sol-read-asm"
+    },
+    "display_buffer_next_2": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxDisplayBuffer: target display_buffer_next_2 begins with call far ptr PcxGetDisplayType; cmp ax, 0. Role: GetSelectedDisplay.",
+     "name": "PcxDisplayGetSelectedDisplay",
+     "proposal": "sol-read-asm"
+    },
+    "display_buffer_next_3": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxDisplayBuffer: target display_buffer_next_3 begins with push ax; call far ptr PcxGetDisplayDescriptor. Role: GetDescriptor.",
+     "name": "PcxDisplayGetDescriptor",
+     "proposal": "sol-read-asm"
+    },
+    "display_buffer_next_4": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxDisplayBuffer: target display_buffer_next_4 begins with mov di, ax; mov ax, dx. Role: CheckBiosMode.",
+     "name": "PcxDisplayCheckBiosMode",
+     "proposal": "sol-read-asm"
+    },
+    "display_buffer_next_5": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxDisplayBuffer: target display_buffer_next_5 begins with jmp dword ptr es:[di + PcxDiDecodeOffset]. Role: JumpToDecoder.",
+     "name": "PcxDisplayJumpToDecoder",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u5.asm u5_0d2d: pcx display buffer.",
    "locals": {},
@@ -11229,7 +11455,7 @@
     "X": "ImageX",
     "Y": "ImageY"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_0dc7": {
    "confidence": "high",
@@ -11240,67 +11466,579 @@
    "proposal": "names-b"
   },
   "u5_0f9b": {
+   "assembly_labels": {
+    "cga_decode_done_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxCgaDecodeContinuation: target cga_decode_done_1 begins with mov ax, word ptr [bp - 2]; pop di. Role: ReturnStatus.",
+     "name": "PcxCgaReturnStatus",
+     "proposal": "sol-read-asm"
+    },
+    "cga_decode_loop_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxCgaDecodeContinuation: target cga_decode_loop_1 begins with xor ch, ch; mov cl, 1. Role: ReadPacket.",
+     "name": "PcxCgaReadPacket",
+     "proposal": "sol-read-asm"
+    },
+    "cga_decode_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxCgaDecodeContinuation: target cga_decode_next_1 begins with mov bl, byte ptr [si + PcxHdrBitsPerPixel]; xor bh, bh. Role: ComputeRowBytes.",
+     "name": "PcxCgaComputeRowBytes",
+     "proposal": "sol-read-asm"
+    },
+    "cga_decode_next_10": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxCgaDecodeContinuation: target cga_decode_next_10 begins with jmp short cga_decode_loop_1. Role: ReadNextPacket.",
+     "name": "PcxCgaReadNextPacket",
+     "proposal": "sol-read-asm"
+    },
+    "cga_decode_next_11": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxCgaDecodeContinuation: target cga_decode_next_11 begins with mov word ptr [bp - 2], 0. Role: Success.",
+     "name": "PcxCgaSuccess",
+     "proposal": "sol-read-asm"
+    },
+    "cga_decode_next_2": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxCgaDecodeContinuation: target cga_decode_next_2 begins with mov dx, word ptr [bp + 0ah]; mov cl, 4. Role: ComputeVideoAddress.",
+     "name": "PcxCgaComputeVideoAddress",
+     "proposal": "sol-read-asm"
+    },
+    "cga_decode_next_3": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxCgaDecodeContinuation: target cga_decode_next_3 begins with mov ax, word ptr [si + PcxHdrMaxY]; sub ax, word ptr [si + PcxHdrMinY]. Role: ClipHeight.",
+     "name": "PcxCgaClipHeight",
+     "proposal": "sol-read-asm"
+    },
+    "cga_decode_next_4": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxCgaDecodeContinuation: target cga_decode_next_4 begins with mov bh, al; mov bl, 0. Role: SetupOutput.",
+     "name": "PcxCgaSetupOutput",
+     "proposal": "sol-read-asm"
+    },
+    "cga_decode_next_5": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxCgaDecodeContinuation: target cga_decode_next_5 begins with cmp bl, byte ptr [bp - 10h]; jb cga_decode_next_6. Role: EmitRunByte.",
+     "name": "PcxCgaEmitRunByte",
+     "proposal": "sol-read-asm"
+    },
+    "cga_decode_next_6": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxCgaDecodeContinuation: target cga_decode_next_6 begins with mov byte ptr es:[di], al. Role: WriteWholeByte.",
+     "name": "PcxCgaWriteWholeByte",
+     "proposal": "sol-read-asm"
+    },
+    "cga_decode_next_7": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxCgaDecodeContinuation: target cga_decode_next_7 begins with inc di; inc bl. Role: AdvanceByte.",
+     "name": "PcxCgaAdvanceByte",
+     "proposal": "sol-read-asm"
+    },
+    "cga_decode_next_8": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxCgaDecodeContinuation: target cga_decode_next_8 begins with sub di, word ptr 1fb0h; sub di, dx. Role: SelectEvenBank.",
+     "name": "PcxCgaSelectEvenBank",
+     "proposal": "sol-read-asm"
+    },
+    "cga_decode_next_9": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxCgaDecodeContinuation: target cga_decode_next_9 begins with loop cga_decode_next_5; cmp si, word ptr [bp - 0ah]. Role: FinishRun.",
+     "name": "PcxCgaFinishRun",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u5.asm u5_0f9b: pcx cga decode continuation. RLE-decodes a PCX image using the u5_0d2d frame; descriptor dispatch jumps here.",
    "inherits_frame_from": "u5_0d2d",
    "locals": {},
    "name": "PcxCgaDecodeContinuation",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_10d7": {
+   "assembly_labels": {
+    "ega_decode_done_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxEgaDecodeContinuation: target ega_decode_done_1 begins with mov ax, word ptr [bp - 2]; pop di. Role: ReturnStatus.",
+     "name": "PcxEgaReturnStatus",
+     "proposal": "sol-read-asm"
+    },
+    "ega_decode_loop_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxEgaDecodeContinuation: target ega_decode_loop_1 begins with mov cx, 1; lodsb. Role: ReadPacket.",
+     "name": "PcxEgaReadPacket",
+     "proposal": "sol-read-asm"
+    },
+    "ega_decode_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxEgaDecodeContinuation: target ega_decode_next_1 begins with mov bl, byte ptr [si + PcxHdrBitsPerPixel]; xor bh, bh. Role: ComputeRowBytes.",
+     "name": "PcxEgaComputeRowBytes",
+     "proposal": "sol-read-asm"
+    },
+    "ega_decode_next_10": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxEgaDecodeContinuation: target ega_decode_next_10 begins with mov byte ptr es:[bx + di], al. Role: WriteWholeByte.",
+     "name": "PcxEgaWriteWholeByte",
+     "proposal": "sol-read-asm"
+    },
+    "ega_decode_next_11": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxEgaDecodeContinuation: target ega_decode_next_11 begins with inc bx; cmp bx, word ptr [bp - 14h]. Role: AdvanceByte.",
+     "name": "PcxEgaAdvanceByte",
+     "proposal": "sol-read-asm"
+    },
+    "ega_decode_next_12": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxEgaDecodeContinuation: target ega_decode_next_12 begins with push ax; mov al, 2. Role: SelectNextPlane.",
+     "name": "PcxEgaSelectNextPlane",
+     "proposal": "sol-read-asm"
+    },
+    "ega_decode_next_13": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxEgaDecodeContinuation: target ega_decode_next_13 begins with loop ega_decode_next_9; cmp si, word ptr [bp - 0ah]. Role: FinishRun.",
+     "name": "PcxEgaFinishRun",
+     "proposal": "sol-read-asm"
+    },
+    "ega_decode_next_14": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxEgaDecodeContinuation: target ega_decode_next_14 begins with jmp near ptr ega_decode_loop_1. Role: ReadNextPacket.",
+     "name": "PcxEgaReadNextPacket",
+     "proposal": "sol-read-asm"
+    },
+    "ega_decode_next_15": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxEgaDecodeContinuation: target ega_decode_next_15 begins with mov al, 2; mov dx, PcxSeqIndexPort. Role: Success.",
+     "name": "PcxEgaSuccess",
+     "proposal": "sol-read-asm"
+    },
+    "ega_decode_next_2": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxEgaDecodeContinuation: target ega_decode_next_2 begins with mov al, 5; mov dx, PcxGcIndexPort. Role: InitGraphics.",
+     "name": "PcxEgaInitGraphics",
+     "proposal": "sol-read-asm"
+    },
+    "ega_decode_next_3": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxEgaDecodeContinuation: target ega_decode_next_3 begins with cmp byte ptr [si + PcxHdrPlaneCount], 1; jne ega_decode_next_4. Role: CheckSinglePlane.",
+     "name": "PcxEgaCheckSinglePlane",
+     "proposal": "sol-read-asm"
+    },
+    "ega_decode_next_4": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxEgaDecodeContinuation: target ega_decode_next_4 begins with mov ax, word ptr es:[di + PcxDiPageBytes]; mov bx, word ptr [bp + 6]. Role: ComputeVideoAddress.",
+     "name": "PcxEgaComputeVideoAddress",
+     "proposal": "sol-read-asm"
+    },
+    "ega_decode_next_5": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxEgaDecodeContinuation: target ega_decode_next_5 begins with mov cl, 4; shl ax, cl. Role: Stride80.",
+     "name": "PcxEgaStride80",
+     "proposal": "sol-read-asm"
+    },
+    "ega_decode_next_6": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxEgaDecodeContinuation: target ega_decode_next_6 begins with shl ax, 1; shl ax, 1. Role: Stride100.",
+     "name": "PcxEgaStride100",
+     "proposal": "sol-read-asm"
+    },
+    "ega_decode_next_7": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxEgaDecodeContinuation: target ega_decode_next_7 begins with mov ax, word ptr [si + PcxHdrMaxY]; sub ax, word ptr [si + PcxHdrMinY]. Role: ClipHeight.",
+     "name": "PcxEgaClipHeight",
+     "proposal": "sol-read-asm"
+    },
+    "ega_decode_next_8": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxEgaDecodeContinuation: target ega_decode_next_8 begins with mov bx, 0; mov ax, word ptr es:[di + PcxDiVideoSegment]. Role: SetupOutput.",
+     "name": "PcxEgaSetupOutput",
+     "proposal": "sol-read-asm"
+    },
+    "ega_decode_next_9": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxEgaDecodeContinuation: target ega_decode_next_9 begins with cmp bx, word ptr [bp - 10h]; jb ega_decode_next_10. Role: EmitRunByte.",
+     "name": "PcxEgaEmitRunByte",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u5.asm u5_10d7: pcx ega decode continuation. RLE-decodes a PCX image using the u5_0d2d frame; descriptor dispatch jumps here.",
    "inherits_frame_from": "u5_0d2d",
    "locals": {},
    "name": "PcxEgaDecodeContinuation",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_12b6": {
+   "assembly_labels": {
+    "vga_256_decode_done_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxVga256DecodeContinuation: target vga_256_decode_done_1 begins with mov ax, word ptr [bp - 2]; pop di. Role: ReturnStatus.",
+     "name": "PcxVgaReturnStatus",
+     "proposal": "sol-read-asm"
+    },
+    "vga_256_decode_loop_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxVga256DecodeContinuation: target vga_256_decode_loop_1 begins with mov cx, 1; lodsb. Role: ReadPacket.",
+     "name": "PcxVgaReadPacket",
+     "proposal": "sol-read-asm"
+    },
+    "vga_256_decode_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxVga256DecodeContinuation: target vga_256_decode_next_1 begins with dec ax; mov word ptr [bp - 10h], ax. Role: ComputeLastColumn.",
+     "name": "PcxVgaComputeLastColumn",
+     "proposal": "sol-read-asm"
+    },
+    "vga_256_decode_next_2": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxVga256DecodeContinuation: target vga_256_decode_next_2 begins with mov bx, 0; mov ax, word ptr es:[di + PcxDiVideoSegment]. Role: SetupOutput.",
+     "name": "PcxVgaSetupOutput",
+     "proposal": "sol-read-asm"
+    },
+    "vga_256_decode_next_3": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxVga256DecodeContinuation: target vga_256_decode_next_3 begins with cmp bx, word ptr [bp - 10h]; ja vga_256_decode_next_4. Role: EmitRunByte.",
+     "name": "PcxVgaEmitRunByte",
+     "proposal": "sol-read-asm"
+    },
+    "vga_256_decode_next_4": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxVga256DecodeContinuation: target vga_256_decode_next_4 begins with inc bx; cmp bx, word ptr [bp - 14h]. Role: AdvanceByte.",
+     "name": "PcxVgaAdvanceByte",
+     "proposal": "sol-read-asm"
+    },
+    "vga_256_decode_next_5": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxVga256DecodeContinuation: target vga_256_decode_next_5 begins with loop vga_256_decode_next_3; cmp si, word ptr [bp - 0ah]. Role: FinishRun.",
+     "name": "PcxVgaFinishRun",
+     "proposal": "sol-read-asm"
+    },
+    "vga_256_decode_next_6": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxVga256DecodeContinuation: target vga_256_decode_next_6 begins with jmp short vga_256_decode_loop_1. Role: ReadNextPacket.",
+     "name": "PcxVgaReadNextPacket",
+     "proposal": "sol-read-asm"
+    },
+    "vga_256_decode_next_7": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxVga256DecodeContinuation: target vga_256_decode_next_7 begins with mov word ptr [bp - 2], 0. Role: Success.",
+     "name": "PcxVgaSuccess",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u5.asm u5_12b6: pcx vga 256 decode continuation. RLE-decodes a PCX image using the u5_0d2d frame; descriptor dispatch jumps here.",
    "inherits_frame_from": "u5_0d2d",
    "locals": {},
    "name": "PcxVga256DecodeContinuation",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_137a": {
+   "assembly_labels": {
+    "hercules_decode_done_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxHerculesDecodeContinuation: target hercules_decode_done_1 begins with mov ax, word ptr [bp - 2]; pop di. Role: ReturnStatus.",
+     "name": "PcxHercReturnStatus",
+     "proposal": "sol-read-asm"
+    },
+    "hercules_decode_loop_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxHerculesDecodeContinuation: target hercules_decode_loop_1 begins with mov cx, 1; lodsb. Role: ReadPacket.",
+     "name": "PcxHercReadPacket",
+     "proposal": "sol-read-asm"
+    },
+    "hercules_decode_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxHerculesDecodeContinuation: target hercules_decode_next_1 begins with mov bl, 8; div bl. Role: ComputeRowBytes.",
+     "name": "PcxHercComputeRowBytes",
+     "proposal": "sol-read-asm"
+    },
+    "hercules_decode_next_10": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxHerculesDecodeContinuation: target hercules_decode_next_10 begins with mov word ptr [bp - 2], 0. Role: Success.",
+     "name": "PcxHercSuccess",
+     "proposal": "sol-read-asm"
+    },
+    "hercules_decode_next_2": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxHerculesDecodeContinuation: target hercules_decode_next_2 begins with mov ax, word ptr [bp + 8]; xor ah, ah. Role: ComputeVideoAddress.",
+     "name": "PcxHercComputeVideoAddress",
+     "proposal": "sol-read-asm"
+    },
+    "hercules_decode_next_3": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxHerculesDecodeContinuation: target hercules_decode_next_3 begins with mov bx, 0; mov dx, word ptr [bp - 6]. Role: SetupOutput.",
+     "name": "PcxHercSetupOutput",
+     "proposal": "sol-read-asm"
+    },
+    "hercules_decode_next_4": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxHerculesDecodeContinuation: target hercules_decode_next_4 begins with cmp bl, byte ptr [bp - 10h]; jb hercules_decode_next_5. Role: EmitRunByte.",
+     "name": "PcxHercEmitRunByte",
+     "proposal": "sol-read-asm"
+    },
+    "hercules_decode_next_5": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxHerculesDecodeContinuation: target hercules_decode_next_5 begins with mov byte ptr es:[bx + di], al. Role: WriteWholeByte.",
+     "name": "PcxHercWriteWholeByte",
+     "proposal": "sol-read-asm"
+    },
+    "hercules_decode_next_6": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxHerculesDecodeContinuation: target hercules_decode_next_6 begins with inc bx; cmp bx, word ptr [bp - 14h]. Role: AdvanceByte.",
+     "name": "PcxHercAdvanceByte",
+     "proposal": "sol-read-asm"
+    },
+    "hercules_decode_next_7": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxHerculesDecodeContinuation: target hercules_decode_next_7 begins with add di, word ptr 2000h. Role: SelectNextBank.",
+     "name": "PcxHercSelectNextBank",
+     "proposal": "sol-read-asm"
+    },
+    "hercules_decode_next_8": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxHerculesDecodeContinuation: target hercules_decode_next_8 begins with loop hercules_decode_next_4; cmp si, word ptr [bp - 0ah]. Role: FinishRun.",
+     "name": "PcxHercFinishRun",
+     "proposal": "sol-read-asm"
+    },
+    "hercules_decode_next_9": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxHerculesDecodeContinuation: target hercules_decode_next_9 begins with jmp short hercules_decode_loop_1. Role: ReadNextPacket.",
+     "name": "PcxHercReadNextPacket",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u5.asm u5_137a: pcx hercules decode continuation. RLE-decodes a PCX image using the u5_0d2d frame; descriptor dispatch jumps here.",
    "inherits_frame_from": "u5_0d2d",
    "locals": {},
    "name": "PcxHerculesDecodeContinuation",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_14a7": {
+   "assembly_labels": {
+    "paradise_decode_loop_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxParadiseDecodeContinuation: target paradise_decode_loop_1 begins with mov cx, 1; lodsb. Role: ReadPacket.",
+     "name": "PcxParadiseReadPacket",
+     "proposal": "sol-read-asm"
+    },
+    "paradise_decode_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxParadiseDecodeContinuation: target paradise_decode_next_1 begins with dec ax; mov word ptr [bp - 10h], ax. Role: ComputeLastColumn.",
+     "name": "PcxParadiseComputeLastColumn",
+     "proposal": "sol-read-asm"
+    },
+    "paradise_decode_next_2": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxParadiseDecodeContinuation: target paradise_decode_next_2 begins with mov bx, 0; mov ax, word ptr es:[di + PcxDiVideoSegment]. Role: SetupOutput.",
+     "name": "PcxParadiseSetupOutput",
+     "proposal": "sol-read-asm"
+    },
+    "paradise_decode_next_3": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxParadiseDecodeContinuation: target paradise_decode_next_3 begins with cmp bx, word ptr [bp - 10h]; ja paradise_decode_next_4. Role: EmitRunByte.",
+     "name": "PcxParadiseEmitRunByte",
+     "proposal": "sol-read-asm"
+    },
+    "paradise_decode_next_4": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxParadiseDecodeContinuation: target paradise_decode_next_4 begins with inc bx; cmp bx, word ptr [bp - 14h]. Role: AdvanceByte.",
+     "name": "PcxParadiseAdvanceByte",
+     "proposal": "sol-read-asm"
+    },
+    "paradise_decode_next_5": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxParadiseDecodeContinuation: target paradise_decode_next_5 begins with loop paradise_decode_next_3; cmp si, word ptr [bp - 0ah]. Role: FinishRun.",
+     "name": "PcxParadiseFinishRun",
+     "proposal": "sol-read-asm"
+    },
+    "paradise_decode_next_6": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxParadiseDecodeContinuation: target paradise_decode_next_6 begins with jmp short paradise_decode_loop_1. Role: ReadNextPacket.",
+     "name": "PcxParadiseReadNextPacket",
+     "proposal": "sol-read-asm"
+    },
+    "paradise_decode_next_7": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxParadiseDecodeContinuation: target paradise_decode_next_7 begins with mov word ptr [bp - 2], 0. Role: Success.",
+     "name": "PcxParadiseSuccess",
+     "proposal": "sol-read-asm"
+    },
+    "paradise_decode_next_8": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxParadiseDecodeContinuation: target paradise_decode_next_8 begins with mov al, 9; mov dx, PcxGcIndexPort. Role: RestoreBank.",
+     "name": "PcxParadiseRestoreBank",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u5.asm u5_14a7: pcx paradise decode continuation. RLE-decodes a PCX image using the u5_0d2d frame; descriptor dispatch jumps here.",
    "inherits_frame_from": "u5_0d2d",
    "locals": {},
    "name": "PcxParadiseDecodeContinuation",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_15d1": {
+   "assembly_labels": {
+    "tseng_decode_done_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxTsengDecodeContinuation: target tseng_decode_done_1 begins with mov ax, word ptr [bp - 2]; pop di. Role: ReturnStatus.",
+     "name": "PcxTsengReturnStatus",
+     "proposal": "sol-read-asm"
+    },
+    "tseng_decode_loop_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxTsengDecodeContinuation: target tseng_decode_loop_1 begins with mov cx, 1; lodsb. Role: ReadPacket.",
+     "name": "PcxTsengReadPacket",
+     "proposal": "sol-read-asm"
+    },
+    "tseng_decode_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxTsengDecodeContinuation: target tseng_decode_next_1 begins with dec ax; mov word ptr [bp - 10h], ax. Role: ComputeLastColumn.",
+     "name": "PcxTsengComputeLastColumn",
+     "proposal": "sol-read-asm"
+    },
+    "tseng_decode_next_2": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxTsengDecodeContinuation: target tseng_decode_next_2 begins with mov ax, word ptr es:[di + PcxDiVideoSegment]; mov es, ax. Role: SetupOutput.",
+     "name": "PcxTsengSetupOutput",
+     "proposal": "sol-read-asm"
+    },
+    "tseng_decode_next_3": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxTsengDecodeContinuation: target tseng_decode_next_3 begins with cmp bx, word ptr [bp - 10h]; ja tseng_decode_next_4. Role: EmitRunByte.",
+     "name": "PcxTsengEmitRunByte",
+     "proposal": "sol-read-asm"
+    },
+    "tseng_decode_next_4": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxTsengDecodeContinuation: target tseng_decode_next_4 begins with inc di; jne tseng_decode_next_5. Role: AdvanceByte.",
+     "name": "PcxTsengAdvanceByte",
+     "proposal": "sol-read-asm"
+    },
+    "tseng_decode_next_5": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxTsengDecodeContinuation: target tseng_decode_next_5 begins with inc bx; cmp bx, word ptr [bp - 14h]. Role: CheckRowEnd.",
+     "name": "PcxTsengCheckRowEnd",
+     "proposal": "sol-read-asm"
+    },
+    "tseng_decode_next_6": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxTsengDecodeContinuation: target tseng_decode_next_6 begins with dec word ptr [bp - 12h]; je tseng_decode_next_9. Role: FinishRow.",
+     "name": "PcxTsengFinishRow",
+     "proposal": "sol-read-asm"
+    },
+    "tseng_decode_next_7": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxTsengDecodeContinuation: target tseng_decode_next_7 begins with loop tseng_decode_next_3; cmp si, word ptr [bp - 0ah]. Role: FinishRun.",
+     "name": "PcxTsengFinishRun",
+     "proposal": "sol-read-asm"
+    },
+    "tseng_decode_next_8": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxTsengDecodeContinuation: target tseng_decode_next_8 begins with jmp short tseng_decode_loop_1. Role: ReadNextPacket.",
+     "name": "PcxTsengReadNextPacket",
+     "proposal": "sol-read-asm"
+    },
+    "tseng_decode_next_9": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxTsengDecodeContinuation: target tseng_decode_next_9 begins with push ax; mov al, 0. Role: Success.",
+     "name": "PcxTsengSuccess",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u5.asm u5_15d1: pcx tseng decode continuation. RLE-decodes a PCX image using the u5_0d2d frame; descriptor dispatch jumps here.",
    "inherits_frame_from": "u5_0d2d",
    "locals": {},
    "name": "PcxTsengDecodeContinuation",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_16f5": {
+   "assembly_labels": {
+    "video7_decode_done_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxVideo7DecodeContinuation: target video7_decode_done_1 begins with mov ax, word ptr [bp - 2]; pop di. Role: ReturnStatus.",
+     "name": "PcxVideo7ReturnStatus",
+     "proposal": "sol-read-asm"
+    },
+    "video7_decode_loop_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxVideo7DecodeContinuation: target video7_decode_loop_1 begins with mov cx, 1; lodsb. Role: ReadPacket.",
+     "name": "PcxVideo7ReadPacket",
+     "proposal": "sol-read-asm"
+    },
+    "video7_decode_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxVideo7DecodeContinuation: target video7_decode_next_1 begins with dec ax; mov word ptr [bp - 10h], ax. Role: ComputeLastColumn.",
+     "name": "PcxVideo7ComputeLastColumn",
+     "proposal": "sol-read-asm"
+    },
+    "video7_decode_next_10": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxVideo7DecodeContinuation: target video7_decode_next_10 begins with push ax; push bx. Role: Success.",
+     "name": "PcxVideo7Success",
+     "proposal": "sol-read-asm"
+    },
+    "video7_decode_next_2": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxVideo7DecodeContinuation: target video7_decode_next_2 begins with mov ax, word ptr es:[di + PcxDiVideoSegment]; mov es, ax. Role: SetupOutput.",
+     "name": "PcxVideo7SetupOutput",
+     "proposal": "sol-read-asm"
+    },
+    "video7_decode_next_3": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxVideo7DecodeContinuation: target video7_decode_next_3 begins with cmp bx, word ptr [bp - 10h]; ja video7_decode_next_4. Role: EmitRunByte.",
+     "name": "PcxVideo7EmitRunByte",
+     "proposal": "sol-read-asm"
+    },
+    "video7_decode_next_4": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxVideo7DecodeContinuation: target video7_decode_next_4 begins with inc di; jne video7_decode_next_5. Role: AdvanceByte.",
+     "name": "PcxVideo7AdvanceByte",
+     "proposal": "sol-read-asm"
+    },
+    "video7_decode_next_5": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxVideo7DecodeContinuation: target video7_decode_next_5 begins with inc bx; cmp bx, word ptr [bp - 14h]. Role: CheckRowEnd.",
+     "name": "PcxVideo7CheckRowEnd",
+     "proposal": "sol-read-asm"
+    },
+    "video7_decode_next_6": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxVideo7DecodeContinuation: target video7_decode_next_6 begins with dec word ptr [bp - 12h]; je video7_decode_next_10. Role: FinishRow.",
+     "name": "PcxVideo7FinishRow",
+     "proposal": "sol-read-asm"
+    },
+    "video7_decode_next_7": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxVideo7DecodeContinuation: target video7_decode_next_7 begins with dec cx; je video7_decode_next_8. Role: FinishRun.",
+     "name": "PcxVideo7FinishRun",
+     "proposal": "sol-read-asm"
+    },
+    "video7_decode_next_8": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxVideo7DecodeContinuation: target video7_decode_next_8 begins with cmp si, word ptr [bp - 0ah]; jbe video7_decode_next_9. Role: CheckReadBuffer.",
+     "name": "PcxVideo7CheckReadBuffer",
+     "proposal": "sol-read-asm"
+    },
+    "video7_decode_next_9": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxVideo7DecodeContinuation: target video7_decode_next_9 begins with jmp near ptr video7_decode_loop_1. Role: ReadNextPacket.",
+     "name": "PcxVideo7ReadNextPacket",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u5.asm u5_16f5: pcx video7 decode continuation. RLE-decodes a PCX image using the u5_0d2d frame; descriptor dispatch jumps here.",
    "inherits_frame_from": "u5_0d2d",
    "locals": {},
    "name": "PcxVideo7DecodeContinuation",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_1915": {
    "abi_locals": [
@@ -11317,6 +12055,38 @@
      "name": "FileDisplayStatus"
     }
    ],
+   "assembly_labels": {
+    "decode_or_print_buffer_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxDisplayFile: target decode_or_print_buffer_next_1 begins with mov ax, seg PcxSelectedDisplay; mov es, ax. Role: SelectReadBuffer.",
+     "name": "PcxFileSelectReadBuffer",
+     "proposal": "sol-read-asm"
+    },
+    "decode_or_print_buffer_next_2": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxDisplayFile: target decode_or_print_buffer_next_2 begins with mov word ptr [PcxReadState + PcxRsPositionHigh], 0; mov word ptr [PcxReadState + PcxRsPositionLow], 0. Role: ResetFilePosition.",
+     "name": "PcxFileResetFilePosition",
+     "proposal": "sol-read-asm"
+    },
+    "decode_or_print_buffer_next_3": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxDisplayFile: target decode_or_print_buffer_next_3 begins with mov ax, es; push ax. Role: DisplayImage.",
+     "name": "PcxFileDisplayImage",
+     "proposal": "sol-read-asm"
+    },
+    "decode_or_print_buffer_next_4": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxDisplayFile: target decode_or_print_buffer_next_4 begins with mov bx, word ptr [PcxReadState + PcxRsFileHandle]; mov ah, PcxDosCloseFile. Role: CloseHandle.",
+     "name": "PcxFileCloseHandle",
+     "proposal": "sol-read-asm"
+    },
+    "decode_or_print_buffer_next_5": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxDisplayFile: target decode_or_print_buffer_next_5 begins with mov word ptr [PcxReadState + PcxRsFileHandle], 0ffffh; mov ax, word ptr [bp - 2]. Role: ReturnStatus.",
+     "name": "PcxFileReturnStatus",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "Converts a Pascal filename, opens/reads/closes it with DOS INT 21h, then passes the buffer and X/Y/page arguments to u5_0d2d.",
    "locals": {},
@@ -11349,7 +12119,7 @@
     "C": "VideoPage",
     "P": "ImageFileName"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_19e3": {
    "abi_parameters": [
@@ -11360,12 +12130,38 @@
      "name": "ConsumedBufferOffset"
     }
    ],
+   "assembly_labels": {
+    "flush_print_buffer_done_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxRefillReadBuffer: target flush_print_buffer_done_1 begins with pop dx; pop cx. Role: ReturnStatus.",
+     "name": "PcxRefillReturnStatus",
+     "proposal": "sol-read-asm"
+    },
+    "flush_print_buffer_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxRefillReadBuffer: target flush_print_buffer_next_1 begins with mov ax, ds; mov es, ax. Role: SelectReadBuffer.",
+     "name": "PcxRefillSelectReadBuffer",
+     "proposal": "sol-read-asm"
+    },
+    "flush_print_buffer_next_2": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxRefillReadBuffer: target flush_print_buffer_next_2 begins with mov ax, word ptr [bp + 6]; sub ax, di. Role: AdvanceFilePosition.",
+     "name": "PcxRefillAdvanceFilePosition",
+     "proposal": "sol-read-asm"
+    },
+    "flush_print_buffer_next_3": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxRefillReadBuffer: target flush_print_buffer_next_3 begins with mov bx, word ptr [PcxReadState + PcxRsFileHandle]; mov cx, word ptr [PcxReadState + PcxRsPositionHigh]. Role: SeekAndRead.",
+     "name": "PcxRefillSeekAndRead",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "Advances the tracked file position, seeks and reads more bytes with DOS INT 21h AH=42h/3Fh; returns the new buffer offset.",
    "locals": {},
    "name": "PcxRefillReadBuffer",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_1a5f": {
    "abi_parameters": [
@@ -11406,14 +12202,114 @@
      "name": "FormFeedEnabled"
     }
    ],
+   "assembly_labels": {
+    "configure_printer_done_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxConfigurePrinter: target configure_printer_done_1 begins with mov ax, word ptr [bp - 2]; pop di. Role: ReturnStatus.",
+     "name": "PcxPrintCfgReturnStatus",
+     "proposal": "sol-read-asm"
+    },
+    "configure_printer_error_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxConfigurePrinter: target configure_printer_error_1 begins with mov word ptr [bp - 2], 0fff0h; jmp short configure_printer_done_1. Role: InvalidDeviceClass.",
+     "name": "PcxPrintCfgInvalidDeviceClass",
+     "proposal": "sol-read-asm"
+    },
+    "configure_printer_error_2": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxConfigurePrinter: target configure_printer_error_2 begins with mov word ptr [bp - 2], 0ffefh; jmp short configure_printer_done_1. Role: InvalidPort.",
+     "name": "PcxPrintCfgInvalidPort",
+     "proposal": "sol-read-asm"
+    },
+    "configure_printer_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxConfigurePrinter: target configure_printer_next_1 begins with mov word ptr [PcxPrinterDeviceClass], ax; mov ax, word ptr [bp + 10h]. Role: CheckPort.",
+     "name": "PcxPrintCfgCheckPort",
+     "proposal": "sol-read-asm"
+    },
+    "configure_printer_next_2": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxConfigurePrinter: target configure_printer_next_2 begins with mov word ptr [PcxPrinterState], ax; mov ax, word ptr [bp + 0ch]. Role: StorePolicy.",
+     "name": "PcxPrintCfgStorePolicy",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u5.asm u5_1a5f: pcx configure printer.",
    "locals": {},
    "name": "PcxConfigurePrinter",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_1ac6": {
+   "assembly_labels": {
+    "begin_printer_image_done_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxBeginPrinterImage: target begin_printer_image_done_1 begins with mov ax, word ptr [bp - 2]; pop di. Role: ReturnStatus.",
+     "name": "PcxPrintBeginReturnStatus",
+     "proposal": "sol-read-asm"
+    },
+    "begin_printer_image_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxBeginPrinterImage: target begin_printer_image_next_1 begins with cmp cx, 2; jne begin_printer_image_next_2. Role: CheckHalfScale.",
+     "name": "PcxPrintBeginCheckHalfScale",
+     "proposal": "sol-read-asm"
+    },
+    "begin_printer_image_next_10": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxBeginPrinterImage: target begin_printer_image_next_10 begins with mov si, offset PcxPrinterState + PcxPsBeginRasterCmd; call far ptr PcxSendPrinterString. Role: StartRaster.",
+     "name": "PcxPrintBeginStartRaster",
+     "proposal": "sol-read-asm"
+    },
+    "begin_printer_image_next_2": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxBeginPrinterImage: target begin_printer_image_next_2 begins with cmp cx, 3; jne begin_printer_image_next_3. Role: CheckQuarterScale.",
+     "name": "PcxPrintBeginCheckQuarterScale",
+     "proposal": "sol-read-asm"
+    },
+    "begin_printer_image_next_3": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxBeginPrinterImage: target begin_printer_image_next_3 begins with cmp cx, 4; jne begin_printer_image_next_4. Role: CheckDoubleScale.",
+     "name": "PcxPrintBeginCheckDoubleScale",
+     "proposal": "sol-read-asm"
+    },
+    "begin_printer_image_next_4": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxBeginPrinterImage: target begin_printer_image_next_4 begins with mov word ptr [PcxPrinterState + PcxPsScanlineBytes], ax; cmp word ptr [PcxPrinterResolutionClass], 1. Role: StoreRowBytes.",
+     "name": "PcxPrintBeginStoreRowBytes",
+     "proposal": "sol-read-asm"
+    },
+    "begin_printer_image_next_5": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxBeginPrinterImage: target begin_printer_image_next_5 begins with mov bx, 0; push bx. Role: FormatRowBytes.",
+     "name": "PcxPrintBeginFormatRowBytes",
+     "proposal": "sol-read-asm"
+    },
+    "begin_printer_image_next_6": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxBeginPrinterImage: target begin_printer_image_next_6 begins with cmp word ptr [PcxPrinterState + PcxPsResetEnabled], 1; jne begin_printer_image_next_7. Role: CheckReset.",
+     "name": "PcxPrintBeginCheckReset",
+     "proposal": "sol-read-asm"
+    },
+    "begin_printer_image_next_7": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxBeginPrinterImage: target begin_printer_image_next_7 begins with mov si, offset PcxPrinterState + PcxPsOrientationCmd; call far ptr PcxSendPrinterString. Role: SendPosition.",
+     "name": "PcxPrintBeginSendPosition",
+     "proposal": "sol-read-asm"
+    },
+    "begin_printer_image_next_8": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxBeginPrinterImage: target begin_printer_image_next_8 begins with mov si, offset PcxPrinterState + PcxPsResolution100; call far ptr PcxSendPrinterString. Role: Select100Dpi.",
+     "name": "PcxPrintBeginSelect100Dpi",
+     "proposal": "sol-read-asm"
+    },
+    "begin_printer_image_next_9": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxBeginPrinterImage: target begin_printer_image_next_9 begins with mov si, offset PcxPrinterState + PcxPsResolution300; call far ptr PcxSendPrinterString. Role: Select300Dpi.",
+     "name": "PcxPrintBeginSelect300Dpi",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u5.asm u5_1ac6: pcx begin printer image.",
    "locals": {},
@@ -11440,15 +12336,23 @@
     "X": "PrinterX",
     "Y": "PrinterY"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_1bf7": {
+   "assembly_labels": {
+    "end_printer_image_done_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxEndPrinterImage: target end_printer_image_done_1 begins with mov ax, word ptr [bp - 2]; pop di. Role: Return.",
+     "name": "PcxPrinterEndReturn",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u5.asm u5_1bf7: pcx end printer image.",
    "locals": {},
    "name": "PcxEndPrinterImage",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_1c28": {
    "abi_parameters": [
@@ -11477,12 +12381,98 @@
      "name": "PrinterY"
     }
    ],
+   "assembly_labels": {
+    "print_buffer_done_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintBuffer: target print_buffer_done_1 begins with mov ax, word ptr [bp - 2]; pop di. Role: ReturnStatus.",
+     "name": "PcxPrintBufferReturnStatus",
+     "proposal": "sol-read-asm"
+    },
+    "print_buffer_error_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintBuffer: target print_buffer_error_1 begins with mov word ptr [bp - 2], PcxStatusPrintFormat; jmp near ptr print_buffer_done_1. Role: BadFormat.",
+     "name": "PcxPrintBufferBadFormat",
+     "proposal": "sol-read-asm"
+    },
+    "print_buffer_loop_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintBuffer: target print_buffer_loop_1 begins with mov cx, 1; lodsb. Role: ReadPacket.",
+     "name": "PcxPrintBufferReadPacket",
+     "proposal": "sol-read-asm"
+    },
+    "print_buffer_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintBuffer: target print_buffer_next_1 begins with cmp byte ptr [si + PcxHdrPlaneCount], 1; jne print_buffer_error_1. Role: CheckMonochrome.",
+     "name": "PcxPrintBufferCheckMonochrome",
+     "proposal": "sol-read-asm"
+    },
+    "print_buffer_next_10": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintBuffer: target print_buffer_next_10 begins with mov word ptr [bp - 2], 0. Role: Success.",
+     "name": "PcxPrintBufferSuccess",
+     "proposal": "sol-read-asm"
+    },
+    "print_buffer_next_11": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintBuffer: target print_buffer_next_11 begins with call far ptr PcxEndPrinterImage. Role: EndRaster.",
+     "name": "PcxPrintBufferEndRaster",
+     "proposal": "sol-read-asm"
+    },
+    "print_buffer_next_2": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintBuffer: target print_buffer_next_2 begins with mov ax, word ptr [si + PcxHdrMaxX]; sub ax, word ptr [si + PcxHdrMinX]. Role: ComputeRowBytes.",
+     "name": "PcxPrintBufferComputeRowBytes",
+     "proposal": "sol-read-asm"
+    },
+    "print_buffer_next_3": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintBuffer: target print_buffer_next_3 begins with mov bx, word ptr [si + PcxHdrMaxY]; sub bx, word ptr [si + PcxHdrMinY]. Role: SetupRaster.",
+     "name": "PcxPrintBufferSetupRaster",
+     "proposal": "sol-read-asm"
+    },
+    "print_buffer_next_4": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintBuffer: target print_buffer_next_4 begins with cmp bx, word ptr [bp - 8]; jb print_buffer_next_5. Role: EmitRunByte.",
+     "name": "PcxPrintBufferEmitRunByte",
+     "proposal": "sol-read-asm"
+    },
+    "print_buffer_next_5": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintBuffer: target print_buffer_next_5 begins with mov byte ptr es:[bx + di], al. Role: WriteWholeByte.",
+     "name": "PcxPrintBufferWriteWholeByte",
+     "proposal": "sol-read-asm"
+    },
+    "print_buffer_next_6": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintBuffer: target print_buffer_next_6 begins with inc bx; cmp bx, word ptr [bp - 0ah]. Role: AdvanceByte.",
+     "name": "PcxPrintBufferAdvanceByte",
+     "proposal": "sol-read-asm"
+    },
+    "print_buffer_next_7": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintBuffer: target print_buffer_next_7 begins with xor bx, bx; dec word ptr es:[PcxPrintedSourceRow]. Role: NextRow.",
+     "name": "PcxPrintBufferNextRow",
+     "proposal": "sol-read-asm"
+    },
+    "print_buffer_next_8": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintBuffer: target print_buffer_next_8 begins with loop print_buffer_next_4; cmp si, word ptr [bp - 0eh]. Role: FinishRun.",
+     "name": "PcxPrintBufferFinishRun",
+     "proposal": "sol-read-asm"
+    },
+    "print_buffer_next_9": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintBuffer: target print_buffer_next_9 begins with jmp short print_buffer_loop_1. Role: ReadNextPacket.",
+     "name": "PcxPrintBufferReadNextPacket",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u5.asm u5_1c28: pcx print buffer.",
    "locals": {},
    "name": "PcxPrintBuffer",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_1d60": {
    "abi_parameters": [
@@ -11493,20 +12483,162 @@
      "name": "PrinterCommandPointer"
     }
    ],
+   "assembly_labels": {
+    "send_printer_string_loop_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxSendPrinterString: target send_printer_string_loop_1 begins with lodsb; mov ah, 0. Role: SendByte.",
+     "name": "PcxPrinterCmdSendByte",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u5.asm u5_1d60: pcx send printer string.",
    "locals": {},
    "name": "PcxSendPrinterString",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_1d71": {
+   "assembly_labels": {
+    "print_scanline_done_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintScanline: target print_scanline_done_1 begins with mov ax, word ptr [bp - 2]; pop di. Role: ReturnStatus.",
+     "name": "PcxPrintRowReturnStatus",
+     "proposal": "sol-read-asm"
+    },
+    "print_scanline_loop_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintScanline: target print_scanline_loop_1 begins with mov ah, byte ptr [si]; and ah, 0e0h. Role: LoopThreeQuarter.",
+     "name": "PcxPrintRowLoopThreeQuarter",
+     "proposal": "sol-read-asm"
+    },
+    "print_scanline_loop_2": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintScanline: target print_scanline_loop_2 begins with mov ah, byte ptr [si]; and ah, PcxRleRunMarker. Role: PackHalfBytes.",
+     "name": "PcxPrintRowPackHalfBytes",
+     "proposal": "sol-read-asm"
+    },
+    "print_scanline_loop_3": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintScanline: target print_scanline_loop_3 begins with mov ah, byte ptr [si]; and ah, 80h. Role: PackQuarterBytes.",
+     "name": "PcxPrintRowPackQuarterBytes",
+     "proposal": "sol-read-asm"
+    },
+    "print_scanline_loop_4": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintScanline: target print_scanline_loop_4 begins with mov bx, cx; dec bx. Role: ExpandSourceByte.",
+     "name": "PcxPrintRowExpandSourceByte",
+     "proposal": "sol-read-asm"
+    },
+    "print_scanline_loop_5": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintScanline: target print_scanline_loop_5 begins with xor ax, ax; mov dl, dh. Role: ExpandNibble.",
+     "name": "PcxPrintRowExpandNibble",
+     "proposal": "sol-read-asm"
+    },
+    "print_scanline_loop_6": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintScanline: target print_scanline_loop_6 begins with mov ah, byte ptr [si]; and ah, PcxRleRunMarker. Role: PackResolutionBytes.",
+     "name": "PcxPrintRowPackResolutionBytes",
+     "proposal": "sol-read-asm"
+    },
+    "print_scanline_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintScanline: target print_scanline_next_1 begins with cmp word ptr [PcxPrinterState + PcxPsScaleMode], 1; je print_scanline_next_2. Role: CheckScale.",
+     "name": "PcxPrintRowCheckScale",
+     "proposal": "sol-read-asm"
+    },
+    "print_scanline_next_10": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintScanline: target print_scanline_next_10 begins with cmp word ptr [PcxPrinterResolutionClass], 1; je print_scanline_next_12. Role: CheckResolution.",
+     "name": "PcxPrintRowCheckResolution",
+     "proposal": "sol-read-asm"
+    },
+    "print_scanline_next_11": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintScanline: target print_scanline_next_11 begins with mov si, offset PcxPrinterScanline; mov di, si. Role: PackResolution.",
+     "name": "PcxPrintRowPackResolution",
+     "proposal": "sol-read-asm"
+    },
+    "print_scanline_next_12": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintScanline: target print_scanline_next_12 begins with mov si, offset PcxPrinterState + PcxPsScanlineCommand; call far ptr PcxSendPrinterString. Role: SendRaster.",
+     "name": "PcxPrintRowSendRaster",
+     "proposal": "sol-read-asm"
+    },
+    "print_scanline_next_13": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintScanline: target print_scanline_next_13 begins with lodsb; xor al, 0ffh. Role: SendRasterByte.",
+     "name": "PcxPrintRowSendRasterByte",
+     "proposal": "sol-read-asm"
+    },
+    "print_scanline_next_14": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintScanline: target print_scanline_next_14 begins with push bp; mov ah, 1. Role: CheckEscape.",
+     "name": "PcxPrintRowCheckEscape",
+     "proposal": "sol-read-asm"
+    },
+    "print_scanline_next_15": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintScanline: target print_scanline_next_15 begins with clc. Role: ReturnSuccess.",
+     "name": "PcxPrintRowReturnSuccess",
+     "proposal": "sol-read-asm"
+    },
+    "print_scanline_next_2": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintScanline: target print_scanline_next_2 begins with mov ax, word ptr [PcxPrintedSourceRow]; and ax, 3. Role: ThreeQuarterScale.",
+     "name": "PcxPrintRowThreeQuarterScale",
+     "proposal": "sol-read-asm"
+    },
+    "print_scanline_next_3": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintScanline: target print_scanline_next_3 begins with mov cx, word ptr [PcxPrinterState + PcxPsScanlineBytes]. Role: PackThreeQuarter.",
+     "name": "PcxPrintRowPackThreeQuarter",
+     "proposal": "sol-read-asm"
+    },
+    "print_scanline_next_4": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintScanline: target print_scanline_next_4 begins with cmp word ptr [PcxPrinterState + PcxPsScaleMode], 2; jne print_scanline_next_6. Role: CheckHalfScale.",
+     "name": "PcxPrintRowCheckHalfScale",
+     "proposal": "sol-read-asm"
+    },
+    "print_scanline_next_5": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintScanline: target print_scanline_next_5 begins with mov cx, word ptr [PcxPrinterState + PcxPsScanlineBytes]. Role: HalfScale.",
+     "name": "PcxPrintRowHalfScale",
+     "proposal": "sol-read-asm"
+    },
+    "print_scanline_next_6": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintScanline: target print_scanline_next_6 begins with cmp word ptr [PcxPrinterState + PcxPsScaleMode], 3; jne print_scanline_next_8. Role: CheckQuarterScale.",
+     "name": "PcxPrintRowCheckQuarterScale",
+     "proposal": "sol-read-asm"
+    },
+    "print_scanline_next_7": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintScanline: target print_scanline_next_7 begins with mov cx, word ptr [PcxPrinterState + PcxPsScanlineBytes]. Role: QuarterScale.",
+     "name": "PcxPrintRowQuarterScale",
+     "proposal": "sol-read-asm"
+    },
+    "print_scanline_next_8": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintScanline: target print_scanline_next_8 begins with cmp word ptr [PcxPrinterState + PcxPsScaleMode], 4; je print_scanline_next_9. Role: CheckDoubleScale.",
+     "name": "PcxPrintRowCheckDoubleScale",
+     "proposal": "sol-read-asm"
+    },
+    "print_scanline_next_9": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxPrintScanline: target print_scanline_next_9 begins with mov cx, word ptr [PcxPrinterState + PcxPsScanlineBytes]. Role: DoubleScale.",
+     "name": "PcxPrintRowDoubleScale",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u5.asm u5_1d71: pcx print scanline.",
    "locals": {},
    "name": "PcxPrintScanline",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_2020": {
    "abi_locals": [
@@ -11517,6 +12649,56 @@
      "name": "CurrentDigitChar"
     }
    ],
+   "assembly_labels": {
+    "format_unsigned_decimal_loop_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxFormatUnsignedDecimal: target format_unsigned_decimal_loop_1 begins with cmp dx, word ptr [si + PcxPrinterState + PcxPsDivisorHighWord]; je format_unsigned_decimal_next_1. Role: SubtractDivisor.",
+     "name": "PcxDecimalSubtractDivisor",
+     "proposal": "sol-read-asm"
+    },
+    "format_unsigned_decimal_next_1": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxFormatUnsignedDecimal: target format_unsigned_decimal_next_1 begins with cmp ax, word ptr [si + PcxPrinterState + PcxPsDecimalDivisors]; jb format_unsigned_decimal_next_3. Role: CompareLowWord.",
+     "name": "PcxDecimalCompareLowWord",
+     "proposal": "sol-read-asm"
+    },
+    "format_unsigned_decimal_next_2": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxFormatUnsignedDecimal: target format_unsigned_decimal_next_2 begins with sub ax, word ptr [si + PcxPrinterState + PcxPsDecimalDivisors]; sbb dx, word ptr [si + PcxPrinterState + PcxPsDivisorHighWord]. Role: IncrementDigit.",
+     "name": "PcxDecimalIncrementDigit",
+     "proposal": "sol-read-asm"
+    },
+    "format_unsigned_decimal_next_3": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxFormatUnsignedDecimal: target format_unsigned_decimal_next_3 begins with cmp cx, 0; jne format_unsigned_decimal_next_4. Role: FinishDigit.",
+     "name": "PcxDecimalFinishDigit",
+     "proposal": "sol-read-asm"
+    },
+    "format_unsigned_decimal_next_4": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxFormatUnsignedDecimal: target format_unsigned_decimal_next_4 begins with mov bl, byte ptr [bp - 4]; mov byte ptr es:[di], bl. Role: WriteDigit.",
+     "name": "PcxDecimalWriteDigit",
+     "proposal": "sol-read-asm"
+    },
+    "format_unsigned_decimal_next_5": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxFormatUnsignedDecimal: target format_unsigned_decimal_next_5 begins with cmp si, 24h; je format_unsigned_decimal_next_6. Role: NextDivisor.",
+     "name": "PcxDecimalNextDivisor",
+     "proposal": "sol-read-asm"
+    },
+    "format_unsigned_decimal_next_6": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxFormatUnsignedDecimal: target format_unsigned_decimal_next_6 begins with cmp cx, 0; jne format_unsigned_decimal_next_7. Role: EnsureZero.",
+     "name": "PcxDecimalEnsureZero",
+     "proposal": "sol-read-asm"
+    },
+    "format_unsigned_decimal_next_7": {
+     "confidence": "high",
+     "evidence": "GENUS.ASM PcxFormatUnsignedDecimal: target format_unsigned_decimal_next_7 begins with mov byte ptr es:[di], PcxDecimalTerminator; mov word ptr [bp - 2], cx. Role: TerminateString.",
+     "name": "PcxDecimalTerminateString",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u5.asm u5_2020: pcx format unsigned decimal.",
    "locals": {},
@@ -11537,7 +12719,7 @@
     "Digits": "DigitBuffer",
     "Value": "UnsignedValue"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u5_20a2": {
    "confidence": "high",
@@ -11874,6 +13056,14 @@
    "proposal": "names-b"
   },
   "u9_01d3": {
+   "assembly_labels": {
+    "stride_ge_e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgSetScreenStride: target stride_ge_e begins with mov word ptr cs:[PgScreenStrideBytes],bx; push ax. Role: StoreClampedValue.",
+     "name": "PgStrideStoreClampedValue",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_01d3: set screen stride.",
    "locals": {},
@@ -11888,9 +13078,29 @@
    "params": {
     "N": "StrideBytes"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_01f9": {
+   "assembly_labels": {
+    "pan_a_repeat_35": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgPanDisplayAtRetraceStart: target pan_a_repeat_35 begins with in al,dx; test al,8. Role: WaitFinePanRetrace.",
+     "name": "PgPanStartWaitFinePanRetrace",
+     "proposal": "sol-read-asm"
+    },
+    "pan_a_repeat_6": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgPanDisplayAtRetraceStart: target pan_a_repeat_6 begins with in al,dx; test al,8. Role: WaitRetraceStart.",
+     "name": "PgPanStartWaitRetraceStart",
+     "proposal": "sol-read-asm"
+    },
+    "pan_a_repeat_b": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgPanDisplayAtRetraceStart: target pan_a_repeat_b begins with in al,dx; test al,8. Role: WaitRetraceEnd.",
+     "name": "PgPanStartWaitRetraceEnd",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "Programs CRTC start address after retrace, then waits for bit 3 of port 3DAh to become set before horizontal pel panning.",
    "locals": {},
@@ -11911,9 +13121,29 @@
     "A": "PanPixelX",
     "B": "PanPixelY"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_024c": {
+   "assembly_labels": {
+    "pan_b_repeat_35": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgPanDisplayAtRetraceEnd: target pan_b_repeat_35 begins with in al,dx; test al,8. Role: WaitFinePanClear.",
+     "name": "PgPanEndWaitFinePanClear",
+     "proposal": "sol-read-asm"
+    },
+    "pan_b_repeat_6": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgPanDisplayAtRetraceEnd: target pan_b_repeat_6 begins with in al,dx; test al,8. Role: WaitRetraceStart.",
+     "name": "PgPanEndWaitRetraceStart",
+     "proposal": "sol-read-asm"
+    },
+    "pan_b_repeat_b": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgPanDisplayAtRetraceEnd: target pan_b_repeat_b begins with in al,dx; test al,8. Role: WaitRetraceEnd.",
+     "name": "PgPanEndWaitRetraceEnd",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "Programs CRTC start address after retrace, then waits for bit 3 of port 3DAh to become clear before horizontal pel panning.",
    "locals": {},
@@ -11934,9 +13164,23 @@
     "A": "PanPixelX",
     "B": "PanPixelY"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_029f": {
+   "assembly_labels": {
+    "split_repeat_10": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgSetEgaSplitScanline: target split_repeat_10 begins with in al,dx; test al,8. Role: WaitRetraceStart.",
+     "name": "PgEgaSplitWaitRetraceStart",
+     "proposal": "sol-read-asm"
+    },
+    "split_repeat_15": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgSetEgaSplitScanline: target split_repeat_15 begins with in al,dx; test al,8. Role: WaitRetraceEnd.",
+     "name": "PgEgaSplitWaitRetraceEnd",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "Programs line-compare register 18h and overflow bit 8; p_1148 calls this path when the adapter is not VGA.",
    "locals": {},
@@ -11951,17 +13195,57 @@
    "params": {
     "N": "SplitScanline"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_02db": {
+   "assembly_labels": {
+    "retrace_continue_12": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgWaitVerticalRetrace: target retrace_continue_12 begins with test al,8; jne retrace_repeat_f. Role: TestCurrentEnd.",
+     "name": "PgRetraceTestCurrentEnd",
+     "proposal": "sol-read-asm"
+    },
+    "retrace_continue_19": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgWaitVerticalRetrace: target retrace_continue_19 begins with test al,8; je retrace_equal_16. Role: TestNextStart.",
+     "name": "PgRetraceTestNextStart",
+     "proposal": "sol-read-asm"
+    },
+    "retrace_continue_b": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgWaitVerticalRetrace: target retrace_continue_b begins with test al,8; je retrace_equal_16. Role: TestInitialStatus.",
+     "name": "PgRetraceTestInitialStatus",
+     "proposal": "sol-read-asm"
+    },
+    "retrace_equal_16": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgWaitVerticalRetrace: target retrace_equal_16 begins with in al,dx; jmp short retrace_continue_19. Role: WaitNextStart.",
+     "name": "PgRetraceWaitNextStart",
+     "proposal": "sol-read-asm"
+    },
+    "retrace_repeat_f": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgWaitVerticalRetrace: target retrace_repeat_f begins with in al,dx; jmp short retrace_continue_12. Role: WaitCurrentEnd.",
+     "name": "PgRetraceWaitCurrentEnd",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_02db: wait vertical retrace.",
    "locals": {},
    "name": "PgWaitVerticalRetrace",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_02fa": {
+   "assembly_labels": {
+    "splitregs_continue_38": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgSetVgaSplitScanline: target splitregs_continue_38 begins with pop es; pop bp. Role: MergeHighOverflowBit.",
+     "name": "PgVgaSplitMergeHighOverflowBit",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "Programs line-compare and overflow registers including register 9; p_1148 selects this path for VGA.",
    "locals": {},
@@ -11976,7 +13260,7 @@
    "params": {
     "N": "SplitScanline"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_0337": {
    "confidence": "high",
@@ -12063,14 +13347,66 @@
      "name": "PixelRow"
     }
    ],
+   "assembly_labels": {
+    "masked32_continue_94": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16: target masked32_continue_94 begins with mov dx,PgGraphicsIndexPort; inc bx. Role: DrawRightHalf.",
+     "name": "PgMask32DrawRightHalf",
+     "proposal": "sol-read-asm"
+    },
+    "masked32_equal_35": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16: target masked32_equal_35 begins with mov dx,PgSequencerIndexPort; mov al,2. Role: SelectMapMask.",
+     "name": "PgMask32SelectMapMask",
+     "proposal": "sol-read-asm"
+    },
+    "masked32_repeat_3e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16: target masked32_repeat_3e begins with mov dx,PgGraphicsIndexPort; lodsb. Role: DrawRow.",
+     "name": "PgMask32DrawRow",
+     "proposal": "sol-read-asm"
+    },
+    "masked32_row_loop_2f": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16: target masked32_row_loop_2f begins with add bx,PgVideoPageBytes; loop masked32_row_loop_2f. Role: AddPageOffset.",
+     "name": "PgMask32AddPageOffset",
+     "proposal": "sol-read-asm"
+    },
+    "masked32_row_loop_92": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16: target masked32_row_loop_92 begins with jmp short masked32_repeat_3e. Role: RowLoopBridge.",
+     "name": "PgMask32RowLoopBridge",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_0372: blit masked 32x16.",
    "locals": {},
    "name": "PgBlitMasked32x16",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_0475": {
+   "assembly_labels": {
+    "masked16_equal_3b": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked16x16: target masked16_equal_3b begins with mov dx,PgSequencerIndexPort; mov al,2. Role: SelectMapMask.",
+     "name": "PgMask16SelectMapMask",
+     "proposal": "sol-read-asm"
+    },
+    "masked16_row_loop_35": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked16x16: target masked16_row_loop_35 begins with add bx,PgVideoPageBytes; loop masked16_row_loop_35. Role: AddPageOffset.",
+     "name": "PgMask16AddPageOffset",
+     "proposal": "sol-read-asm"
+    },
+    "masked16_row_loop_44": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked16x16: target masked16_row_loop_44 begins with mov dx,PgGraphicsIndexPort; lodsb. Role: DrawRow.",
+     "name": "PgMask16DrawRow",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_0475: blit masked 16x16.",
    "locals": {},
@@ -12101,9 +13437,29 @@
     "X": "ByteColumn",
     "Y": "PixelRow"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_051f": {
+   "assembly_labels": {
+    "masked8_equal_23": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked8x8: target masked8_equal_23 begins with mov dx,word ptr [bp+6]; push di. Role: AddRowOffset.",
+     "name": "PgMask8AddRowOffset",
+     "proposal": "sol-read-asm"
+    },
+    "masked8_row_loop_1d": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked8x8: target masked8_row_loop_1d begins with add bx,PgVideoPageBytes; loop masked8_row_loop_1d. Role: AddPageOffset.",
+     "name": "PgMask8AddPageOffset",
+     "proposal": "sol-read-asm"
+    },
+    "masked8_row_loop_40": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked8x8: target masked8_row_loop_40 begins with mov dx,PgGraphicsIndexPort; lodsb. Role: DrawRow.",
+     "name": "PgMask8DrawRow",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_051f: blit masked 8x8.",
    "locals": {},
@@ -12130,7 +13486,7 @@
     "X": "ByteColumn",
     "Y": "PixelRow"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_05a1": {
    "abi_parameters": [
@@ -12165,12 +13521,44 @@
      "name": "HeightRows"
     }
    ],
+   "assembly_labels": {
+    "plane_rect_equal_23": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitSinglePlaneRectangle: target plane_rect_equal_23 begins with mov ax,word ptr [bp+0ah]; push di. Role: AddRowOffset.",
+     "name": "PgPlaneRectAddRowOffset",
+     "proposal": "sol-read-asm"
+    },
+    "plane_rect_equal_73": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitSinglePlaneRectangle: target plane_rect_equal_73 begins with mov al,0fh; out dx,al. Role: RestorePlaneMask.",
+     "name": "PgPlaneRectRestorePlaneMask",
+     "proposal": "sol-read-asm"
+    },
+    "plane_rect_loop_1d": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitSinglePlaneRectangle: target plane_rect_loop_1d begins with add bx,PgVideoPageBytes; loop plane_rect_loop_1d. Role: AddPageOffset.",
+     "name": "PgPlaneRectAddPageOffset",
+     "proposal": "sol-read-asm"
+    },
+    "plane_rect_loop_4a": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitSinglePlaneRectangle: target plane_rect_loop_4a begins with mov dx,PgSequencerDataPort; mov ax,word ptr cs:[PgDrawColor]. Role: CopyByte.",
+     "name": "PgPlaneRectCopyByte",
+     "proposal": "sol-read-asm"
+    },
+    "plane_rect_repeat_47": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitSinglePlaneRectangle: target plane_rect_repeat_47 begins with mov cx,word ptr [bp+8]. Role: DrawRow.",
+     "name": "PgPlaneRectDrawRow",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_05a1: blit single plane rectangle.",
    "locals": {},
    "name": "PgBlitSinglePlaneRectangle",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_0625": {
    "confidence": "high",
@@ -12220,12 +13608,26 @@
      "name": "PixelY"
     }
    ],
+   "assembly_labels": {
+    "putpixel_equal_17": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgPutPixel: target putpixel_equal_17 begins with mov ds,dx; mov bx,word ptr [bp+6]. Role: ComputeByteAddress.",
+     "name": "PgPixelComputeByteAddress",
+     "proposal": "sol-read-asm"
+    },
+    "putpixel_loop_11": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgPutPixel: target putpixel_loop_11 begins with add dx,2000h; loop putpixel_loop_11. Role: AddPageSegment.",
+     "name": "PgPixelAddPageSegment",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_0641: put pixel.",
    "locals": {},
    "name": "PgPutPixel",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_06c1": {
    "abi_parameters": [
@@ -12242,12 +13644,32 @@
      "name": "PixelY"
     }
    ],
+   "assembly_labels": {
+    "clip_pixel_equal_17": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgPutPixelClipped: target clip_pixel_equal_17 begins with mov ds,dx; mov bx,word ptr [bp+6]. Role: CheckClipBounds.",
+     "name": "PgClipPixelCheckClipBounds",
+     "proposal": "sol-read-asm"
+    },
+    "clip_pixel_less_97": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgPutPixelClipped: target clip_pixel_less_97 begins with pop ds; pop bp. Role: Return.",
+     "name": "PgClipPixelReturn",
+     "proposal": "sol-read-asm"
+    },
+    "clip_pixel_loop_11": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgPutPixelClipped: target clip_pixel_loop_11 begins with add dx,2000h; loop clip_pixel_loop_11. Role: AddPageSegment.",
+     "name": "PgClipPixelAddPageSegment",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_06c1: put pixel clipped.",
    "locals": {},
    "name": "PgPutPixelClipped",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_075d": {
    "abi_parameters": [
@@ -12264,12 +13686,38 @@
      "name": "PixelY"
     }
    ],
+   "assembly_labels": {
+    "getpixel_equal_1d": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgGetPixel: target getpixel_equal_1d begins with mov ds,dx; push di. Role: SelectReadPlane.",
+     "name": "PgReadPixelSelectReadPlane",
+     "proposal": "sol-read-asm"
+    },
+    "getpixel_equal_5b": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgGetPixel: target getpixel_equal_5b begins with dec ah; jge getpixel_repeat_44. Role: NextPlane.",
+     "name": "PgReadPixelNextPlane",
+     "proposal": "sol-read-asm"
+    },
+    "getpixel_loop_17": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgGetPixel: target getpixel_loop_17 begins with add dx,2000h; loop getpixel_loop_17. Role: AddPageSegment.",
+     "name": "PgReadPixelAddPageSegment",
+     "proposal": "sol-read-asm"
+    },
+    "getpixel_repeat_44": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgGetPixel: target getpixel_repeat_44 begins with mov dx,PgGraphicsIndexPort; mov al,4. Role: ReadPlane.",
+     "name": "PgReadPixelReadPlane",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_075d: get pixel.",
    "locals": {},
    "name": "PgGetPixel",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_07c6": {
    "abi_parameters": [
@@ -12316,6 +13764,38 @@
    "proposal": "names-b"
   },
   "u9_07ee": {
+   "assembly_labels": {
+    "rect_bytes_equal_1e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleByteAligned: target rect_bytes_equal_1e begins with mov ax,word ptr [bp+8]; push di. Role: AddRowOffset.",
+     "name": "PgByteFillAddRowOffset",
+     "proposal": "sol-read-asm"
+    },
+    "rect_bytes_equal_81": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleByteAligned: target rect_bytes_equal_81 begins with mov al,0fh; out dx,al. Role: RestorePlaneMask.",
+     "name": "PgByteFillRestorePlaneMask",
+     "proposal": "sol-read-asm"
+    },
+    "rect_bytes_loop_18": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleByteAligned: target rect_bytes_loop_18 begins with add bx,PgVideoPageBytes; loop rect_bytes_loop_18. Role: AddPageOffset.",
+     "name": "PgByteFillAddPageOffset",
+     "proposal": "sol-read-asm"
+    },
+    "rect_bytes_loop_45": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleByteAligned: target rect_bytes_loop_45 begins with mov dx,PgSequencerDataPort; mov ax,word ptr cs:[PgDrawColor]. Role: FillByte.",
+     "name": "PgByteFillFillByte",
+     "proposal": "sol-read-asm"
+    },
+    "rect_bytes_repeat_42": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleByteAligned: target rect_bytes_repeat_42 begins with mov cx,word ptr [bp+0ah]. Role: DrawRow.",
+     "name": "PgByteFillDrawRow",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_07ee: fill rectangle byte aligned.",
    "locals": {},
@@ -12348,7 +13828,7 @@
     "C": "TopPixelRow",
     "D": "HeightRows"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_087e": {
    "abi_parameters": [
@@ -12377,12 +13857,104 @@
      "name": "HeightRows"
     }
    ],
+   "assembly_labels": {
+    "clip_rect_bytes_continue_fa": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClipped: target clip_rect_bytes_continue_fa begins with mov dx,PgSequencerDataPort; mov al,0fh. Role: RestoreRegisters.",
+     "name": "PgClipByteFillRestoreRegisters",
+     "proposal": "sol-read-asm"
+    },
+    "clip_rect_bytes_equal_5c": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClipped: target clip_rect_bytes_equal_5c begins with mov ax,word ptr [bp+8]; cmp ax,word ptr cs:[PgClipBottomRow]. Role: CheckTopEdge.",
+     "name": "PgClipByteFillCheckTopEdge",
+     "proposal": "sol-read-asm"
+    },
+    "clip_rect_bytes_ge_2f": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClipped: target clip_rect_bytes_ge_2f begins with mov cx,word ptr [bp+0ch]; add cx,word ptr [bp+0ah]. Role: CheckRightEdge.",
+     "name": "PgClipByteFillCheckRightEdge",
+     "proposal": "sol-read-asm"
+    },
+    "clip_rect_bytes_ge_7f": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClipped: target clip_rect_bytes_ge_7f begins with mov cx,word ptr [bp+8]; add cx,word ptr [bp+6]. Role: CheckBottomEdge.",
+     "name": "PgClipByteFillCheckBottomEdge",
+     "proposal": "sol-read-asm"
+    },
+    "clip_rect_bytes_le_16": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClipped: target clip_rect_bytes_le_16 begins with cmp bx,word ptr cs:[PgClipLeftByte]; jge clip_rect_bytes_ge_2f. Role: CheckLeftEdge.",
+     "name": "PgClipByteFillCheckLeftEdge",
+     "proposal": "sol-read-asm"
+    },
+    "clip_rect_bytes_le_4a": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClipped: target clip_rect_bytes_le_4a begins with mov dx,word ptr cs:[PgDrawPage]; cmp dl,0. Role: SelectDrawPage.",
+     "name": "PgClipByteFillSelectDrawPage",
+     "proposal": "sol-read-asm"
+    },
+    "clip_rect_bytes_le_9a": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClipped: target clip_rect_bytes_le_9a begins with push di; push ax. Role: ComputeRowAddress.",
+     "name": "PgClipByteFillComputeRowAddress",
+     "proposal": "sol-read-asm"
+    },
+    "clip_rect_bytes_loop_44": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClipped: target clip_rect_bytes_loop_44 begins with dec dx; loop clip_rect_bytes_loop_44. Role: TrimRightColumns.",
+     "name": "PgClipByteFillTrimRightColumns",
+     "proposal": "sol-read-asm"
+    },
+    "clip_rect_bytes_loop_56": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClipped: target clip_rect_bytes_loop_56 begins with add bx,PgVideoPageBytes; loop clip_rect_bytes_loop_56. Role: AddPageOffset.",
+     "name": "PgClipByteFillAddPageOffset",
+     "proposal": "sol-read-asm"
+    },
+    "clip_rect_bytes_loop_94": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClipped: target clip_rect_bytes_loop_94 begins with dec dx; loop clip_rect_bytes_loop_94. Role: TrimBottomRows.",
+     "name": "PgClipByteFillTrimBottomRows",
+     "proposal": "sol-read-asm"
+    },
+    "clip_rect_bytes_loop_be": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClipped: target clip_rect_bytes_loop_be begins with mov dx,PgSequencerDataPort; mov ax,word ptr cs:[PgDrawColor]. Role: FillByte.",
+     "name": "PgClipByteFillFillByte",
+     "proposal": "sol-read-asm"
+    },
+    "clip_rect_bytes_repeat_13": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClipped: target clip_rect_bytes_repeat_13 begins with jmp near ptr clip_rect_bytes_continue_fa. Role: ExitBridge.",
+     "name": "PgClipByteFillExitBridge",
+     "proposal": "sol-read-asm"
+    },
+    "clip_rect_bytes_repeat_20": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClipped: target clip_rect_bytes_repeat_20 begins with inc bx; dec dx. Role: TrimLeftColumns.",
+     "name": "PgClipByteFillTrimLeftColumns",
+     "proposal": "sol-read-asm"
+    },
+    "clip_rect_bytes_repeat_70": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClipped: target clip_rect_bytes_repeat_70 begins with inc ax; dec dx. Role: TrimTopRows.",
+     "name": "PgClipByteFillTrimTopRows",
+     "proposal": "sol-read-asm"
+    },
+    "clip_rect_bytes_repeat_bb": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClipped: target clip_rect_bytes_repeat_bb begins with mov cx,word ptr [bp+0ah]. Role: DrawRow.",
+     "name": "PgClipByteFillDrawRow",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_087e: fill rectangle clipped.",
    "locals": {},
    "name": "PgFillRectangleClipped",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_098a": {
    "abi_parameters": [
@@ -12399,12 +13971,26 @@
      "name": "PixelX"
     }
    ],
+   "assembly_labels": {
+    "pixel_address_equal_30": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgPixelAddressAndBitHelper: target pixel_address_equal_30 begins with mov es,ax; pop cx. Role: ReturnBitShift.",
+     "name": "PgPixelAddrReturnBitShift",
+     "proposal": "sol-read-asm"
+    },
+    "pixel_address_loop_2b": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgPixelAddressAndBitHelper: target pixel_address_loop_2b begins with add ax,2000h; loop pixel_address_loop_2b. Role: AddPageSegment.",
+     "name": "PgPixelAddrAddPageSegment",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_098a: pixel address and bit helper.",
    "locals": {},
    "name": "PgPixelAddressAndBitHelper",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_09ce": {
    "abi_parameters": [
@@ -12433,12 +14019,134 @@
      "name": "EndPixelY"
     }
    ],
+   "assembly_labels": {
+    "line_a_branch_146": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenham: target line_a_branch_146 begins with out dx,ax; or byte ptr es:[di],al. Role: AdvanceXMajorByte.",
+     "name": "PgLineAdvanceXMajorByte",
+     "proposal": "sol-read-asm"
+    },
+    "line_a_continue_114": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenham: target line_a_continue_114 begins with mov ah,bl; out dx,ax. Role: DrawTrailingByte.",
+     "name": "PgLineDrawTrailingByte",
+     "proposal": "sol-read-asm"
+    },
+    "line_a_continue_166": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenham: target line_a_continue_166 begins with mov bx,word ptr cs:[PgLineRowAddressStep]. Role: SetupYMajor.",
+     "name": "PgLineSetupYMajor",
+     "proposal": "sol-read-asm"
+    },
+    "line_a_continue_18a": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenham: target line_a_continue_18a begins with xor ax,ax; out dx,ax. Role: RestoreRegisters.",
+     "name": "PgLineRestoreRegisters",
+     "proposal": "sol-read-asm"
+    },
+    "line_a_different_10a": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenham: target line_a_different_10a begins with mov ah,bh; out dx,ax. Role: DrawLeadingByte.",
+     "name": "PgLineDrawLeadingByte",
+     "proposal": "sol-read-asm"
+    },
+    "line_a_equal_98": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenham: target line_a_equal_98 begins with mov ax,word ptr [bp+0ah]; mov bx,word ptr [bp+6]. Role: VerticalSpecialCase.",
+     "name": "PgLineVerticalSpecialCase",
+     "proposal": "sol-read-asm"
+    },
+    "line_a_equal_c1": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenham: target line_a_equal_c1 begins with push ds; mov ax,word ptr [bp+0ah]. Role: HorizontalSpecialCase.",
+     "name": "PgLineHorizontalSpecialCase",
+     "proposal": "sol-read-asm"
+    },
+    "line_a_ge_a8": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenham: target line_a_ge_a8 begins with inc cx; mov bx,word ptr [bp+0ch]. Role: SetupVertical.",
+     "name": "PgLineSetupVertical",
+     "proposal": "sol-read-asm"
+    },
+    "line_a_greater_95": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenham: target line_a_greater_95 begins with jmp near ptr line_a_continue_166. Role: YMajorBridge.",
+     "name": "PgLineYMajorBridge",
+     "proposal": "sol-read-asm"
+    },
+    "line_a_le_63": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenham: target line_a_le_63 begins with shl bx,1; mov word ptr cs:[PgLineDoubleMinorDelta],bx. Role: InitDecision.",
+     "name": "PgLineInitDecision",
+     "proposal": "sol-read-asm"
+    },
+    "line_a_loop_11b": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenham: target line_a_loop_11b begins with mov ah,bl. Role: StartXMajorByte.",
+     "name": "PgLineStartXMajorByte",
+     "proposal": "sol-read-asm"
+    },
+    "line_a_loop_11d": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenham: target line_a_loop_11d begins with or ah,bl; ror bl,1. Role: AccumulateXMajor.",
+     "name": "PgLineAccumulateXMajor",
+     "proposal": "sol-read-asm"
+    },
+    "line_a_loop_16b": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenham: target line_a_loop_16b begins with out dx,ax; or byte ptr es:[di],al. Role: DrawYMajor.",
+     "name": "PgLineDrawYMajor",
+     "proposal": "sol-read-asm"
+    },
+    "line_a_loop_b7": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenham: target line_a_loop_b7 begins with or byte ptr es:[bx],al; add bx,si. Role: DrawVertical.",
+     "name": "PgLineDrawVertical",
+     "proposal": "sol-read-asm"
+    },
+    "line_a_negative_10f": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenham: target line_a_negative_10f begins with mov ah,0ffh; out dx,ax. Role: DrawWholeBytes.",
+     "name": "PgLineDrawWholeBytes",
+     "proposal": "sol-read-asm"
+    },
+    "line_a_nonnegative_134": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenham: target line_a_nonnegative_134 begins with add si,word ptr cs:[PgLineErrorAdjustment]; out dx,ax. Role: StepXMajorRow.",
+     "name": "PgLineStepXMajorRow",
+     "proposal": "sol-read-asm"
+    },
+    "line_a_nonnegative_158": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenham: target line_a_nonnegative_158 begins with add si,word ptr cs:[PgLineErrorAdjustment]; add di,word ptr cs:[PgLineRowAddressStep]. Role: StepRowAtByteBoundary.",
+     "name": "PgLineStepRowAtByteBoundary",
+     "proposal": "sol-read-asm"
+    },
+    "line_a_nonnegative_17e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenham: target line_a_nonnegative_17e begins with add si,word ptr cs:[PgLineErrorAdjustment]; ror ah,1. Role: StepYMajorColumn.",
+     "name": "PgLineStepYMajorColumn",
+     "proposal": "sol-read-asm"
+    },
+    "line_a_nonnegative_3c": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenham: target line_a_nonnegative_3c begins with mov bx,word ptr [bp+6]; sub bx,word ptr [bp+0ah]. Role: ComputeYDelta.",
+     "name": "PgLineComputeYDelta",
+     "proposal": "sol-read-asm"
+    },
+    "line_a_nonnegative_4a": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenham: target line_a_nonnegative_4a begins with mov word ptr cs:[PgLineRowAddressStep],si; mov word ptr cs:[PgLineMajorAxis],0. Role: StoreRowStep.",
+     "name": "PgLineStoreRowStep",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_09ce: draw line bresenham.",
    "locals": {},
    "name": "PgDrawLineBresenham",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_0b6a": {
    "abi_parameters": [
@@ -12467,12 +14175,134 @@
      "name": "EndPixelY"
     }
    ],
+   "assembly_labels": {
+    "line_b_branch_14a": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenhamVariant: target line_b_branch_14a begins with out dx,ax; xor byte ptr es:[di],al. Role: AdvanceXMajorByte.",
+     "name": "PgLineAltAdvanceXMajorByte",
+     "proposal": "sol-read-asm"
+    },
+    "line_b_continue_118": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenhamVariant: target line_b_continue_118 begins with mov ah,bl; out dx,ax. Role: DrawTrailingByte.",
+     "name": "PgLineAltDrawTrailingByte",
+     "proposal": "sol-read-asm"
+    },
+    "line_b_continue_16a": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenhamVariant: target line_b_continue_16a begins with mov bx,word ptr cs:[PgLineRowAddressStep]. Role: SetupYMajor.",
+     "name": "PgLineAltSetupYMajor",
+     "proposal": "sol-read-asm"
+    },
+    "line_b_continue_18e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenhamVariant: target line_b_continue_18e begins with xor ax,ax; out dx,ax. Role: RestoreRegisters.",
+     "name": "PgLineAltRestoreRegisters",
+     "proposal": "sol-read-asm"
+    },
+    "line_b_different_10e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenhamVariant: target line_b_different_10e begins with mov ah,bh; out dx,ax. Role: DrawLeadingByte.",
+     "name": "PgLineAltDrawLeadingByte",
+     "proposal": "sol-read-asm"
+    },
+    "line_b_equal_9c": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenhamVariant: target line_b_equal_9c begins with mov ax,word ptr [bp+0ah]; mov bx,word ptr [bp+6]. Role: VerticalSpecialCase.",
+     "name": "PgLineAltVerticalSpecialCase",
+     "proposal": "sol-read-asm"
+    },
+    "line_b_equal_c5": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenhamVariant: target line_b_equal_c5 begins with push ds; mov ax,word ptr [bp+0ah]. Role: HorizontalSpecialCase.",
+     "name": "PgLineAltHorizontalSpecialCase",
+     "proposal": "sol-read-asm"
+    },
+    "line_b_ge_ac": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenhamVariant: target line_b_ge_ac begins with inc cx; mov bx,word ptr [bp+0ch]. Role: SetupVertical.",
+     "name": "PgLineAltSetupVertical",
+     "proposal": "sol-read-asm"
+    },
+    "line_b_greater_99": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenhamVariant: target line_b_greater_99 begins with jmp near ptr line_b_continue_16a. Role: YMajorBridge.",
+     "name": "PgLineAltYMajorBridge",
+     "proposal": "sol-read-asm"
+    },
+    "line_b_le_67": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenhamVariant: target line_b_le_67 begins with shl bx,1; mov word ptr cs:[PgLineDoubleMinorDelta],bx. Role: InitDecision.",
+     "name": "PgLineAltInitDecision",
+     "proposal": "sol-read-asm"
+    },
+    "line_b_loop_11f": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenhamVariant: target line_b_loop_11f begins with mov ah,bl. Role: StartXMajorByte.",
+     "name": "PgLineAltStartXMajorByte",
+     "proposal": "sol-read-asm"
+    },
+    "line_b_loop_121": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenhamVariant: target line_b_loop_121 begins with or ah,bl; ror bl,1. Role: AccumulateXMajor.",
+     "name": "PgLineAltAccumulateXMajor",
+     "proposal": "sol-read-asm"
+    },
+    "line_b_loop_16f": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenhamVariant: target line_b_loop_16f begins with out dx,ax; xor byte ptr es:[di],al. Role: DrawYMajor.",
+     "name": "PgLineAltDrawYMajor",
+     "proposal": "sol-read-asm"
+    },
+    "line_b_loop_bb": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenhamVariant: target line_b_loop_bb begins with xor byte ptr es:[bx],al; add bx,si. Role: DrawVertical.",
+     "name": "PgLineAltDrawVertical",
+     "proposal": "sol-read-asm"
+    },
+    "line_b_negative_113": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenhamVariant: target line_b_negative_113 begins with mov ah,0ffh; out dx,ax. Role: DrawWholeBytes.",
+     "name": "PgLineAltDrawWholeBytes",
+     "proposal": "sol-read-asm"
+    },
+    "line_b_nonnegative_138": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenhamVariant: target line_b_nonnegative_138 begins with add si,word ptr cs:[PgLineErrorAdjustment]; out dx,ax. Role: StepXMajorRow.",
+     "name": "PgLineAltStepXMajorRow",
+     "proposal": "sol-read-asm"
+    },
+    "line_b_nonnegative_15c": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenhamVariant: target line_b_nonnegative_15c begins with add si,word ptr cs:[PgLineErrorAdjustment]; add di,word ptr cs:[PgLineRowAddressStep]. Role: StepRowAtByteBoundary.",
+     "name": "PgLineAltStepRowAtByteBoundary",
+     "proposal": "sol-read-asm"
+    },
+    "line_b_nonnegative_182": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenhamVariant: target line_b_nonnegative_182 begins with add si,word ptr cs:[PgLineErrorAdjustment]; ror ah,1. Role: StepYMajorColumn.",
+     "name": "PgLineAltStepYMajorColumn",
+     "proposal": "sol-read-asm"
+    },
+    "line_b_nonnegative_40": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenhamVariant: target line_b_nonnegative_40 begins with mov bx,word ptr [bp+6]; sub bx,word ptr [bp+0ah]. Role: ComputeYDelta.",
+     "name": "PgLineAltComputeYDelta",
+     "proposal": "sol-read-asm"
+    },
+    "line_b_nonnegative_4e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawLineBresenhamVariant: target line_b_nonnegative_4e begins with mov word ptr cs:[PgLineRowAddressStep],si; mov word ptr cs:[PgLineMajorAxis],0. Role: StoreRowStep.",
+     "name": "PgLineAltStoreRowStep",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "medium",
    "evidence": "src/asm/u9.asm u9_0b6a: draw line bresenham variant.",
    "locals": {},
    "name": "PgDrawLineBresenhamVariant",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_0d0a": {
    "abi_parameters": [
@@ -12501,12 +14331,74 @@
      "name": "EndPixelY"
     }
    ],
+   "assembly_labels": {
+    "outline_continue_127": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutline: target outline_continue_127 begins with mov ah,bl; out dx,ax. Role: BottomTrailingByte.",
+     "name": "PgOutlineBottomTrailingByte",
+     "proposal": "sol-read-asm"
+    },
+    "outline_continue_cf": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutline: target outline_continue_cf begins with mov ah,bl; out dx,ax. Role: TopTrailingByte.",
+     "name": "PgOutlineTopTrailingByte",
+     "proposal": "sol-read-asm"
+    },
+    "outline_different_11d": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutline: target outline_different_11d begins with mov ah,bh; out dx,ax. Role: BottomLeadingByte.",
+     "name": "PgOutlineBottomLeadingByte",
+     "proposal": "sol-read-asm"
+    },
+    "outline_different_c5": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutline: target outline_different_c5 begins with mov ah,bh; out dx,ax. Role: TopLeadingByte.",
+     "name": "PgOutlineTopLeadingByte",
+     "proposal": "sol-read-asm"
+    },
+    "outline_ge_40": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutline: target outline_ge_40 begins with inc cx; mov bx,word ptr [bp+0ch]. Role: SetupLeftEdge.",
+     "name": "PgOutlineSetupLeftEdge",
+     "proposal": "sol-read-asm"
+    },
+    "outline_ge_66": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutline: target outline_ge_66 begins with inc cx; mov bx,word ptr [bp+8]. Role: SetupRightEdge.",
+     "name": "PgOutlineSetupRightEdge",
+     "proposal": "sol-read-asm"
+    },
+    "outline_loop_4f": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutline: target outline_loop_4f begins with or byte ptr es:[bx],al; add bx,si. Role: DrawLeftEdge.",
+     "name": "PgOutlineDrawLeftEdge",
+     "proposal": "sol-read-asm"
+    },
+    "outline_loop_75": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutline: target outline_loop_75 begins with or byte ptr es:[bx],al; add bx,si. Role: DrawRightEdge.",
+     "name": "PgOutlineDrawRightEdge",
+     "proposal": "sol-read-asm"
+    },
+    "outline_negative_122": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutline: target outline_negative_122 begins with mov ah,0ffh; out dx,ax. Role: BottomWholeBytes.",
+     "name": "PgOutlineBottomWholeBytes",
+     "proposal": "sol-read-asm"
+    },
+    "outline_negative_ca": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutline: target outline_negative_ca begins with mov ah,0ffh; out dx,ax. Role: TopWholeBytes.",
+     "name": "PgOutlineTopWholeBytes",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_0d0a: draw rectangle outline.",
    "locals": {},
    "name": "PgDrawRectangleOutline",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_0e48": {
    "abi_parameters": [
@@ -12535,12 +14427,200 @@
      "name": "EndPixelY"
     }
    ],
+   "assembly_labels": {
+    "clip_outline_continue_175": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_continue_175 begins with mov ah,bl; out dx,ax. Role: TopTrailingByte.",
+     "name": "PgClipOutlineTopTrailingByte",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_continue_180": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_continue_180 begins with push ds; mov ax,word ptr [bp+6]. Role: SetupBottomEdge.",
+     "name": "PgClipOutlineSetupBottomEdge",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_continue_210": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_continue_210 begins with mov ah,bl; out dx,ax. Role: BottomTrailingByte.",
+     "name": "PgClipOutlineBottomTrailingByte",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_continue_215": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_continue_215 begins with xor ax,ax; out dx,ax. Role: RestoreRegisters.",
+     "name": "PgClipOutlineRestoreRegisters",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_different_16b": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_different_16b begins with mov ah,bh; out dx,ax. Role: TopLeadingByte.",
+     "name": "PgClipOutlineTopLeadingByte",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_different_206": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_different_206 begins with mov ah,bh; out dx,ax. Role: BottomLeadingByte.",
+     "name": "PgClipOutlineBottomLeadingByte",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_ge_106": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_ge_106 begins with push cs; call near ptr PgPixelAddressAndBitHelper. Role: TopStartAddress.",
+     "name": "PgClipOutlineTopStartAddress",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_ge_14a": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_ge_14a begins with mov cl,3; shr ax,cl. Role: TopByteCount.",
+     "name": "PgClipOutlineTopByteCount",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_ge_1a1": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_ge_1a1 begins with push cs; call near ptr PgPixelAddressAndBitHelper. Role: BottomStartAddress.",
+     "name": "PgClipOutlineBottomStartAddress",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_ge_1e5": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_ge_1e5 begins with mov cl,3; shr ax,cl. Role: BottomByteCount.",
+     "name": "PgClipOutlineBottomByteCount",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_ge_54": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_ge_54 begins with mov bx,word ptr [bp+6]; cmp bx,word ptr cs:[PgClipBottomRow]. Role: ClampBottom.",
+     "name": "PgClipOutlineClampBottom",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_ge_6d": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_ge_6d begins with inc cx; mov bx,word ptr [bp+0ch]. Role: SetupLeftEdge.",
+     "name": "PgClipOutlineSetupLeftEdge",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_ge_b8": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_ge_b8 begins with inc cx; mov bx,word ptr [bp+8]. Role: SetupRightEdge.",
+     "name": "PgClipOutlineSetupRightEdge",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_greater_9f": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_greater_9f begins with mov bx,word ptr [bp+6]; cmp bx,word ptr cs:[PgClipBottomRow]. Role: SetupRightBottom.",
+     "name": "PgClipOutlineSetupRightBottom",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_greater_df": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_greater_df begins with jmp near ptr clip_outline_continue_215. Role: ExitBridge.",
+     "name": "PgClipOutlineExitBridge",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_greater_e5": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_greater_e5 begins with push ds; mov ax,word ptr [bp+0ah]. Role: SetupTopEdge.",
+     "name": "PgClipOutlineSetupTopEdge",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_le_123": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_le_123 begins with and cl,7; xor cl,7. Role: TopEndMask.",
+     "name": "PgClipOutlineTopEndMask",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_le_13b": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_le_13b begins with mov bx,word ptr [bp+0ch]; cmp bx,word ptr cs:[PgClipLeftPixel]. Role: TopRightByte.",
+     "name": "PgClipOutlineTopRightByte",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_le_1be": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_le_1be begins with and cl,7; xor cl,7. Role: BottomEndMask.",
+     "name": "PgClipOutlineBottomEndMask",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_le_1d6": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_le_1d6 begins with mov bx,word ptr [bp+0ch]; cmp bx,word ptr cs:[PgClipLeftPixel]. Role: BottomRightByte.",
+     "name": "PgClipOutlineBottomRightByte",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_le_38": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_le_38 begins with mov ax,word ptr [bp+0ah]; mov bx,word ptr [bp+6]. Role: SortY.",
+     "name": "PgClipOutlineSortY",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_le_49": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_le_49 begins with cmp ax,word ptr cs:[PgClipTopRow]; jge clip_outline_ge_54. Role: ClampTop.",
+     "name": "PgClipOutlineClampTop",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_le_63": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_le_63 begins with mov cx,bx; sub cx,ax. Role: SetupLeftHeight.",
+     "name": "PgClipOutlineSetupLeftHeight",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_less_91": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_less_91 begins with mov ax,word ptr [bp+0ah]; cmp ax,word ptr cs:[PgClipTopRow]. Role: SetupRightTop.",
+     "name": "PgClipOutlineSetupRightTop",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_less_ae": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_less_ae begins with mov cx,bx; sub cx,ax. Role: SetupRightHeight.",
+     "name": "PgClipOutlineSetupRightHeight",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_loop_8a": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_loop_8a begins with or byte ptr es:[bx],al; add bx,si. Role: DrawLeftEdge.",
+     "name": "PgClipOutlineDrawLeftEdge",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_loop_d5": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_loop_d5 begins with or byte ptr es:[bx],al; add bx,si. Role: DrawRightEdge.",
+     "name": "PgClipOutlineDrawRightEdge",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_negative_170": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_negative_170 begins with mov ah,0ffh; out dx,ax. Role: TopWholeBytes.",
+     "name": "PgClipOutlineTopWholeBytes",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_negative_20b": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_negative_20b begins with mov ah,0ffh; out dx,ax. Role: BottomWholeBytes.",
+     "name": "PgClipOutlineBottomWholeBytes",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_repeat_17d": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_repeat_17d begins with jmp near ptr clip_outline_continue_215. Role: ExitBottomBridge.",
+     "name": "PgClipOutlineExitBottomBridge",
+     "proposal": "sol-read-asm"
+    },
+    "clip_outline_repeat_e2": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawRectangleOutlineClipped: target clip_outline_repeat_e2 begins with jmp near ptr clip_outline_continue_180. Role: BottomEdgeBridge.",
+     "name": "PgClipOutlineBottomEdgeBridge",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_0e48: draw rectangle outline clipped.",
    "locals": {},
    "name": "PgDrawRectangleOutlineClipped",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_106f": {
    "abi_parameters": [
@@ -12569,12 +14649,38 @@
      "name": "EndPixelY"
     }
    ],
+   "assembly_labels": {
+    "fill_rect_continue_71": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangle: target fill_rect_continue_71 begins with mov ah,bl; out dx,ax. Role: DrawTrailingByte.",
+     "name": "PgFillDrawTrailingByte",
+     "proposal": "sol-read-asm"
+    },
+    "fill_rect_different_67": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangle: target fill_rect_different_67 begins with mov ah,bh; out dx,ax. Role: DrawLeadingByte.",
+     "name": "PgFillDrawLeadingByte",
+     "proposal": "sol-read-asm"
+    },
+    "fill_rect_negative_6c": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangle: target fill_rect_negative_6c begins with mov ah,0ffh; out dx,ax. Role: DrawWholeBytes.",
+     "name": "PgFillDrawWholeBytes",
+     "proposal": "sol-read-asm"
+    },
+    "fill_rect_repeat_19": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangle: target fill_rect_repeat_19 begins with mov si,word ptr cs:[PgScreenStrideBytes]; push ds. Role: DrawRow.",
+     "name": "PgFillDrawRow",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_106f: fill rectangle.",
    "locals": {},
    "name": "PgFillRectangle",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_1105": {
    "abi_parameters": [
@@ -12603,12 +14709,80 @@
      "name": "EndPixelY"
     }
    ],
+   "assembly_labels": {
+    "clip_fill_rect_continue_a": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClippedPixels: target clip_fill_rect_continue_a begins with mov ax,word ptr [bp+0ch]; cmp ax,word ptr cs:[PgClipRightPixel]. Role: CheckLeft.",
+     "name": "PgClipFillCheckLeft",
+     "proposal": "sol-read-asm"
+    },
+    "clip_fill_rect_continue_d7": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClippedPixels: target clip_fill_rect_continue_d7 begins with mov ah,bl; out dx,ax. Role: DrawTrailingByte.",
+     "name": "PgClipFillDrawTrailingByte",
+     "proposal": "sol-read-asm"
+    },
+    "clip_fill_rect_continue_ea": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClippedPixels: target clip_fill_rect_continue_ea begins with mov dx,PgGraphicsIndexPort; xor ax,ax. Role: RestoreRegisters.",
+     "name": "PgClipFillRestoreRegisters",
+     "proposal": "sol-read-asm"
+    },
+    "clip_fill_rect_different_cd": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClippedPixels: target clip_fill_rect_different_cd begins with mov ah,bh; out dx,ax. Role: DrawLeadingByte.",
+     "name": "PgClipFillDrawLeadingByte",
+     "proposal": "sol-read-asm"
+    },
+    "clip_fill_rect_ge_22": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClippedPixels: target clip_fill_rect_ge_22 begins with mov ax,word ptr [bp+8]; cmp ax,word ptr cs:[PgClipLeftPixel]. Role: ClampRight.",
+     "name": "PgClipFillClampRight",
+     "proposal": "sol-read-asm"
+    },
+    "clip_fill_rect_ge_52": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClippedPixels: target clip_fill_rect_ge_52 begins with mov ax,word ptr [bp+6]; cmp ax,word ptr cs:[PgClipTopRow]. Role: ClampBottom.",
+     "name": "PgClipFillClampBottom",
+     "proposal": "sol-read-asm"
+    },
+    "clip_fill_rect_le_3a": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClippedPixels: target clip_fill_rect_le_3a begins with mov ax,word ptr [bp+0ah]; cmp ax,word ptr cs:[PgClipBottomRow]. Role: CheckTop.",
+     "name": "PgClipFillCheckTop",
+     "proposal": "sol-read-asm"
+    },
+    "clip_fill_rect_le_6a": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClippedPixels: target clip_fill_rect_le_6a begins with mov dx,PgGraphicsIndexPort; mov ax,word ptr cs:[PgDrawColor]. Role: InitGraphics.",
+     "name": "PgClipFillInitGraphics",
+     "proposal": "sol-read-asm"
+    },
+    "clip_fill_rect_negative_d2": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClippedPixels: target clip_fill_rect_negative_d2 begins with mov ah,0ffh; out dx,ax. Role: DrawWholeBytes.",
+     "name": "PgClipFillDrawWholeBytes",
+     "proposal": "sol-read-asm"
+    },
+    "clip_fill_rect_repeat_7": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClippedPixels: target clip_fill_rect_repeat_7 begins with jmp near ptr clip_fill_rect_continue_ea. Role: ExitBridge.",
+     "name": "PgClipFillExitBridge",
+     "proposal": "sol-read-asm"
+    },
+    "clip_fill_rect_repeat_7f": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillRectangleClippedPixels: target clip_fill_rect_repeat_7f begins with mov si,word ptr cs:[PgScreenStrideBytes]; push ds. Role: DrawRow.",
+     "name": "PgClipFillDrawRow",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_1105: fill rectangle clipped pixels.",
    "locals": {},
    "name": "PgFillRectangleClippedPixels",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_1204": {
    "abi_parameters": [
@@ -12631,12 +14805,38 @@
      "name": "PixelY"
     }
    ],
+   "assembly_labels": {
+    "hspan_continue_81": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawHorizontalSpan: target hspan_continue_81 begins with mov ah,bl; out dx,ax. Role: DrawTrailingByte.",
+     "name": "PgHSpanDrawTrailingByte",
+     "proposal": "sol-read-asm"
+    },
+    "hspan_different_77": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawHorizontalSpan: target hspan_different_77 begins with mov ah,bh; out dx,ax. Role: DrawLeadingByte.",
+     "name": "PgHSpanDrawLeadingByte",
+     "proposal": "sol-read-asm"
+    },
+    "hspan_less_2e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawHorizontalSpan: target hspan_less_2e begins with push ds; mov ax,word ptr [bp+6]. Role: SetupEndpoints.",
+     "name": "PgHSpanSetupEndpoints",
+     "proposal": "sol-read-asm"
+    },
+    "hspan_negative_7c": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawHorizontalSpan: target hspan_negative_7c begins with mov ah,0ffh; out dx,ax. Role: DrawWholeBytes.",
+     "name": "PgHSpanDrawWholeBytes",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_1204: draw horizontal span.",
    "locals": {},
    "name": "PgDrawHorizontalSpan",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_129c": {
    "abi_parameters": [
@@ -12659,12 +14859,26 @@
      "name": "PixelX"
     }
    ],
+   "assembly_labels": {
+    "vspan_ge_2e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawVerticalSpan: target vspan_ge_2e begins with inc cx; mov bx,word ptr [bp+6]. Role: SetupTopRow.",
+     "name": "PgVSpanSetupTopRow",
+     "proposal": "sol-read-asm"
+    },
+    "vspan_loop_3d": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawVerticalSpan: target vspan_loop_3d begins with or byte ptr es:[bx],al; add bx,si. Role: DrawPixel.",
+     "name": "PgVSpanDrawPixel",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_129c: draw vertical span.",
    "locals": {},
    "name": "PgDrawVerticalSpan",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_12fc": {
    "abi_parameters": [
@@ -12687,12 +14901,110 @@
      "name": "RadiusPixels"
     }
    ],
+   "assembly_labels": {
+    "circle_a_continue_121": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillCircle: target circle_a_continue_121 begins with mov ah,bl; out dx,ax. Role: UpperOuterTrailing.",
+     "name": "PgFillCircleUpperOuterTrailing",
+     "proposal": "sol-read-asm"
+    },
+    "circle_a_continue_198": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillCircle: target circle_a_continue_198 begins with mov ah,bl; out dx,ax. Role: LowerInnerTrailing.",
+     "name": "PgFillCircleLowerInnerTrailing",
+     "proposal": "sol-read-asm"
+    },
+    "circle_a_continue_20f": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillCircle: target circle_a_continue_20f begins with mov ah,bl; out dx,ax. Role: UpperInnerTrailing.",
+     "name": "PgFillCircleUpperInnerTrailing",
+     "proposal": "sol-read-asm"
+    },
+    "circle_a_continue_261": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillCircle: target circle_a_continue_261 begins with mov di,word ptr cs:[PgFillCircleOctantX]; inc di. Role: AdvanceOctantX.",
+     "name": "PgFillCircleAdvanceOctantX",
+     "proposal": "sol-read-asm"
+    },
+    "circle_a_continue_aa": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillCircle: target circle_a_continue_aa begins with mov ah,bl; out dx,ax. Role: LowerOuterTrailing.",
+     "name": "PgFillCircleLowerOuterTrailing",
+     "proposal": "sol-read-asm"
+    },
+    "circle_a_different_117": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillCircle: target circle_a_different_117 begins with mov ah,bh; out dx,ax. Role: UpperOuterLeading.",
+     "name": "PgFillCircleUpperOuterLeading",
+     "proposal": "sol-read-asm"
+    },
+    "circle_a_different_18e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillCircle: target circle_a_different_18e begins with mov ah,bh; out dx,ax. Role: LowerInnerLeading.",
+     "name": "PgFillCircleLowerInnerLeading",
+     "proposal": "sol-read-asm"
+    },
+    "circle_a_different_205": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillCircle: target circle_a_different_205 begins with mov ah,bh; out dx,ax. Role: UpperInnerLeading.",
+     "name": "PgFillCircleUpperInnerLeading",
+     "proposal": "sol-read-asm"
+    },
+    "circle_a_different_a0": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillCircle: target circle_a_different_a0 begins with mov ah,bh; out dx,ax. Role: LowerOuterLeading.",
+     "name": "PgFillCircleLowerOuterLeading",
+     "proposal": "sol-read-asm"
+    },
+    "circle_a_le_249": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillCircle: target circle_a_le_249 begins with mov si,word ptr cs:[PgFillCircleDecision]; add si,6. Role: KeepOctantY.",
+     "name": "PgFillCircleKeepOctantY",
+     "proposal": "sol-read-asm"
+    },
+    "circle_a_less_278": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillCircle: target circle_a_less_278 begins with xor ax,ax; out dx,ax. Role: RestoreRegisters.",
+     "name": "PgFillCircleRestoreRegisters",
+     "proposal": "sol-read-asm"
+    },
+    "circle_a_negative_11c": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillCircle: target circle_a_negative_11c begins with mov ah,0ffh; out dx,ax. Role: UpperOuterWhole.",
+     "name": "PgFillCircleUpperOuterWhole",
+     "proposal": "sol-read-asm"
+    },
+    "circle_a_negative_193": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillCircle: target circle_a_negative_193 begins with mov ah,0ffh; out dx,ax. Role: LowerInnerWhole.",
+     "name": "PgFillCircleLowerInnerWhole",
+     "proposal": "sol-read-asm"
+    },
+    "circle_a_negative_20a": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillCircle: target circle_a_negative_20a begins with mov ah,0ffh; out dx,ax. Role: UpperInnerWhole.",
+     "name": "PgFillCircleUpperInnerWhole",
+     "proposal": "sol-read-asm"
+    },
+    "circle_a_negative_a5": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillCircle: target circle_a_negative_a5 begins with mov ah,0ffh; out dx,ax. Role: LowerOuterWhole.",
+     "name": "PgFillCircleLowerOuterWhole",
+     "proposal": "sol-read-asm"
+    },
+    "circle_a_repeat_36": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFillCircle: target circle_a_repeat_36 begins with mov si,word ptr cs:[PgScreenStrideBytes]; push ds. Role: NextOctant.",
+     "name": "PgFillCircleNextOctant",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "Midpoint-circle error recurrence emits horizontal spans between center X +/- offset at symmetric rows; each span fills its interior.",
    "locals": {},
    "name": "PgFillCircle",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_1590": {
    "abi_parameters": [
@@ -12715,12 +15027,38 @@
      "name": "RadiusPixels"
     }
    ],
+   "assembly_labels": {
+    "circle_b_continue_178": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawCircle: target circle_b_continue_178 begins with mov di,word ptr cs:[PgOutlineCircleOctantX]; inc di. Role: AdvanceOctantX.",
+     "name": "PgOutlineCircleAdvanceOctantX",
+     "proposal": "sol-read-asm"
+    },
+    "circle_b_le_160": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawCircle: target circle_b_le_160 begins with mov si,word ptr cs:[PgOutlineCircleDecision]; add si,6. Role: KeepOctantY.",
+     "name": "PgOutlineCircleKeepOctantY",
+     "proposal": "sol-read-asm"
+    },
+    "circle_b_less_18f": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawCircle: target circle_b_less_18f begins with xor ax,ax; out dx,ax. Role: RestoreRegisters.",
+     "name": "PgOutlineCircleRestoreRegisters",
+     "proposal": "sol-read-asm"
+    },
+    "circle_b_repeat_36": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawCircle: target circle_b_repeat_36 begins with mov si,word ptr cs:[PgScreenStrideBytes]; mov ax,word ptr [bp+8]. Role: NextOctant.",
+     "name": "PgOutlineCircleNextOctant",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "Midpoint-circle recurrence emits symmetric individual perimeter pixels rather than horizontal filled spans.",
    "locals": {},
    "name": "PgDrawCircle",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_1731": {
    "abi_parameters": [
@@ -12839,6 +15177,38 @@
    "proposal": "names-b"
   },
   "u9_1795": {
+   "assembly_labels": {
+    "capture_equal_41": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgCapturePlanarRectangle: target capture_equal_41 begins with push es; pop ds. Role: WriteHeader.",
+     "name": "PgCaptureWriteHeader",
+     "proposal": "sol-read-asm"
+    },
+    "capture_loop_3b": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgCapturePlanarRectangle: target capture_loop_3b begins with add bx,PgVideoPageBytes; loop capture_loop_3b. Role: AddPageOffset.",
+     "name": "PgCaptureAddPageOffset",
+     "proposal": "sol-read-asm"
+    },
+    "capture_repeat_62": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgCapturePlanarRectangle: target capture_repeat_62 begins with out dx,ax; push ax. Role: ReadPlane.",
+     "name": "PgCaptureReadPlane",
+     "proposal": "sol-read-asm"
+    },
+    "capture_repeat_6a": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgCapturePlanarRectangle: target capture_repeat_6a begins with mov bx,word ptr cs:[PgTransferRowBytes]; push si. Role: ReadRow.",
+     "name": "PgCaptureReadRow",
+     "proposal": "sol-read-asm"
+    },
+    "capture_repeat_70": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgCapturePlanarRectangle: target capture_repeat_70 begins with lodsb; stosb. Role: CopyByte.",
+     "name": "PgCaptureCopyByte",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_1795: capture planar rectangle.",
    "locals": {},
@@ -12877,9 +15247,41 @@
     "Y1": "TopPixelRow",
     "Y2": "BottomPixelRow"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_1831": {
+   "assembly_labels": {
+    "restore_equal_40": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgRestorePlanarRectangle: target restore_equal_40 begins with mov di,bx; mov dx,PgSequencerIndexPort. Role: SelectMapMask.",
+     "name": "PgRestoreSelectMapMask",
+     "proposal": "sol-read-asm"
+    },
+    "restore_loop_3a": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgRestorePlanarRectangle: target restore_loop_3a begins with add bx,PgVideoPageBytes; loop restore_loop_3a. Role: AddPageOffset.",
+     "name": "PgRestoreAddPageOffset",
+     "proposal": "sol-read-asm"
+    },
+    "restore_repeat_4e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgRestorePlanarRectangle: target restore_repeat_4e begins with out dx,al; shr ax,1. Role: WritePlane.",
+     "name": "PgRestoreWritePlane",
+     "proposal": "sol-read-asm"
+    },
+    "restore_repeat_58": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgRestorePlanarRectangle: target restore_repeat_58 begins with mov bx,word ptr cs:[PgTransferRowBytes]. Role: WriteRow.",
+     "name": "PgRestoreWriteRow",
+     "proposal": "sol-read-asm"
+    },
+    "restore_repeat_5d": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgRestorePlanarRectangle: target restore_repeat_5d begins with lodsb; xchg byte ptr es:[di],al. Role: CopyByte.",
+     "name": "PgRestoreCopyByte",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_1831: restore planar rectangle.",
    "locals": {},
@@ -12906,7 +15308,7 @@
     "X": "ByteColumn",
     "Y": "PixelRow"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_18ca": {
    "abi_parameters": [
@@ -12929,14 +15331,90 @@
      "name": "PixelY"
     }
    ],
+   "assembly_labels": {
+    "masked_shift_continue_bf": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMaskedShifted32x16: target masked_shift_continue_bf begins with inc bx; mov dx,PgGraphicsIndexPort. Role: WriteHighParts.",
+     "name": "PgShiftMask32WriteHighParts",
+     "proposal": "sol-read-asm"
+    },
+    "masked_shift_equal_4e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMaskedShifted32x16: target masked_shift_equal_4e begins with mov dx,PgSequencerIndexPort; mov al,2. Role: SelectMapMask.",
+     "name": "PgShiftMask32SelectMapMask",
+     "proposal": "sol-read-asm"
+    },
+    "masked_shift_repeat_57": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMaskedShifted32x16: target masked_shift_repeat_57 begins with mov byte ptr cs:[PgSpriteBytesRemaining],4. Role: DrawRow.",
+     "name": "PgShiftMask32DrawRow",
+     "proposal": "sol-read-asm"
+    },
+    "masked_shift_repeat_5d": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMaskedShifted32x16: target masked_shift_repeat_5d begins with mov dl,byte ptr cs:[PgSpriteBytesRemaining]; dec dl. Role: DrawByteGroup.",
+     "name": "PgShiftMask32DrawByteGroup",
+     "proposal": "sol-read-asm"
+    },
+    "masked_shift_repeat_bd": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMaskedShifted32x16: target masked_shift_repeat_bd begins with jmp short masked_shift_repeat_5d. Role: GroupLoopBridge.",
+     "name": "PgShiftMask32GroupLoopBridge",
+     "proposal": "sol-read-asm"
+    },
+    "masked_shift_row_loop_48": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMaskedShifted32x16: target masked_shift_row_loop_48 begins with add bx,PgVideoPageBytes; loop masked_shift_row_loop_48. Role: AddPageOffset.",
+     "name": "PgShiftMask32AddPageOffset",
+     "proposal": "sol-read-asm"
+    },
+    "masked_shift_row_loop_bb": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMaskedShifted32x16: target masked_shift_row_loop_bb begins with jmp short masked_shift_repeat_57. Role: RowLoopBridge.",
+     "name": "PgShiftMask32RowLoopBridge",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "Processes 16 rows of four mask-plus-plane byte groups, shifted by X and 7 and written through individual EGA planes.",
    "locals": {},
    "name": "PgBlitMaskedShifted32x16",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_19f9": {
+   "assembly_labels": {
+    "masked_shift16_continue_ba": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMaskedShifted16x16: target masked_shift16_continue_ba begins with inc bx; mov dx,PgGraphicsIndexPort. Role: WriteHighParts.",
+     "name": "PgShiftMask16WriteHighParts",
+     "proposal": "sol-read-asm"
+    },
+    "masked_shift16_repeat_4e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMaskedShifted16x16: target masked_shift16_repeat_4e begins with mov byte ptr cs:[PgSpriteBytesRemaining],2. Role: DrawRow.",
+     "name": "PgShiftMask16DrawRow",
+     "proposal": "sol-read-asm"
+    },
+    "masked_shift16_repeat_54": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMaskedShifted16x16: target masked_shift16_repeat_54 begins with mov dl,byte ptr cs:[PgSpriteBytesRemaining]; dec dl. Role: DrawByteGroup.",
+     "name": "PgShiftMask16DrawByteGroup",
+     "proposal": "sol-read-asm"
+    },
+    "masked_shift16_repeat_b8": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMaskedShifted16x16: target masked_shift16_repeat_b8 begins with jmp short masked_shift16_repeat_54. Role: GroupLoopBridge.",
+     "name": "PgShiftMask16GroupLoopBridge",
+     "proposal": "sol-read-asm"
+    },
+    "masked_shift16_row_loop_b6": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMaskedShifted16x16: target masked_shift16_row_loop_b6 begins with jmp short masked_shift16_repeat_4e. Role: RowLoopBridge.",
+     "name": "PgShiftMask16RowLoopBridge",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_19f9: blit masked shifted 16x16.",
    "locals": {},
@@ -12963,9 +15441,41 @@
     "X": "PixelX",
     "Y": "PixelY"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_1b27": {
+   "assembly_labels": {
+    "masked_var_continue_c1": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMaskedShifted8x8: target masked_var_continue_c1 begins with mov dx,PgSequencerDataPort; mov al,4. Role: WriteHighParts.",
+     "name": "PgShiftMask8WriteHighParts",
+     "proposal": "sol-read-asm"
+    },
+    "masked_var_equal_4b": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMaskedShifted8x8: target masked_var_equal_4b begins with mov dx,PgSequencerIndexPort; mov al,2. Role: SelectMapMask.",
+     "name": "PgShiftMask8SelectMapMask",
+     "proposal": "sol-read-asm"
+    },
+    "masked_var_repeat_54": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMaskedShifted8x8: target masked_var_repeat_54 begins with push cx; lodsb. Role: DrawRow.",
+     "name": "PgShiftMask8DrawRow",
+     "proposal": "sol-read-asm"
+    },
+    "masked_var_row_loop_45": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMaskedShifted8x8: target masked_var_row_loop_45 begins with add bx,PgVideoPageBytes; loop masked_var_row_loop_45. Role: AddPageOffset.",
+     "name": "PgShiftMask8AddPageOffset",
+     "proposal": "sol-read-asm"
+    },
+    "masked_var_row_loop_bf": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMaskedShifted8x8: target masked_var_row_loop_bf begins with jmp short masked_var_repeat_54. Role: RowLoopBridge.",
+     "name": "PgShiftMask8RowLoopBridge",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "Loops over exactly eight rows, splitting one mask and four plane bytes across two destination bytes according to X and 7.",
    "locals": {},
@@ -12992,7 +15502,7 @@
     "x": "PixelX",
     "y": "PixelY"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_1c58": {
    "abi_parameters": [
@@ -13021,21 +15531,61 @@
      "name": "RadiusY"
     }
    ],
+   "assembly_labels": {
+    "ellipse_negative_fa": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawEllipse: target ellipse_negative_fa begins with mov ax,word ptr [bp-18h]; mov dx,word ptr [bp-16h]. Role: AdvanceFirstX.",
+     "name": "PgEllipseAdvanceFirstX",
+     "proposal": "sol-read-asm"
+    },
+    "ellipse_nonnegative_11a": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawEllipse: target ellipse_nonnegative_11a begins with push bx; push cx. Role: InitSecondRegion.",
+     "name": "PgEllipseInitSecondRegion",
+     "proposal": "sol-read-asm"
+    },
+    "ellipse_nonnegative_172": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawEllipse: target ellipse_nonnegative_172 begins with mov ax,word ptr [bp-1ch]; mov dx,word ptr [bp-1ah]. Role: AdvanceSecondY.",
+     "name": "PgEllipseAdvanceSecondY",
+     "proposal": "sol-read-asm"
+    },
+    "ellipse_repeat_14c": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawEllipse: target ellipse_repeat_14c begins with call near ptr PgPlotEllipseSymmetricPixels; mov cx,100h. Role: SecondRegion.",
+     "name": "PgEllipseSecondRegion",
+     "proposal": "sol-read-asm"
+    },
+    "ellipse_repeat_c5": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawEllipse: target ellipse_repeat_c5 begins with mov ax,word ptr [bp-18h]; mov dx,word ptr [bp-16h]. Role: FirstRegion.",
+     "name": "PgEllipseFirstRegion",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "medium",
    "evidence": "Squares two independent radius operands and emits symmetric pixels around the supplied center; behavior matches a midpoint ellipse.",
    "locals": {},
    "name": "PgDrawEllipse",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_1e02": {
+   "assembly_labels": {
+    "curve_pixels_equal_13": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgPlotEllipseSymmetricPixels: target curve_pixels_equal_13 begins with mov al,8; xor si,si. Role: RotateAndWriteMasks.",
+     "name": "PgEllipsePixRotateAndWriteMasks",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "Private helper inherited from u9_1c58 updates symmetric pixel masks/addresses and writes the four ellipse quadrants.",
    "inherits_frame_from": "u9_1c58",
    "locals": {},
    "name": "PgPlotEllipseSymmetricPixels",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_1e73": {
    "abi_parameters": [
@@ -13080,12 +15630,134 @@
      "name": "PixelRow"
     }
    ],
+   "assembly_labels": {
+    "clip_masked32_continue_14f": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16Clipped: target clip_masked32_continue_14f begins with mov al,1; out dx,al. Role: WriteMiddleGroup.",
+     "name": "PgClipMask32WriteMiddleGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked32_continue_1ac": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16Clipped: target clip_masked32_continue_1ac begins with inc bx; add bx,word ptr cs:[PgScreenStrideBytes]. Role: AdvanceRow.",
+     "name": "PgClipMask32AdvanceRow",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked32_continue_86": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16Clipped: target clip_masked32_continue_86 begins with pop cx; lds si,dword ptr [bp+0ah]. Role: SetupAddress.",
+     "name": "PgClipMask32SetupAddress",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked32_equal_12e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16Clipped: target clip_masked32_equal_12e begins with lodsb; lodsb. Role: DiscardSecondGroup.",
+     "name": "PgClipMask32DiscardSecondGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked32_equal_16e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16Clipped: target clip_masked32_equal_16e begins with lodsb; lodsb. Role: DiscardThirdGroup.",
+     "name": "PgClipMask32DiscardThirdGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked32_equal_1a8": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16Clipped: target clip_masked32_equal_1a8 begins with lodsb; lodsb. Role: DiscardLastGroup.",
+     "name": "PgClipMask32DiscardLastGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked32_equal_59": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16Clipped: target clip_masked32_equal_59 begins with mov word ptr cs:[PgSpriteLeftClipped],1. Role: SkipFirstThree.",
+     "name": "PgClipMask32SkipFirstThree",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked32_equal_60": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16Clipped: target clip_masked32_equal_60 begins with mov word ptr cs:[PgSpriteBottomClipped],1. Role: SkipFirstTwo.",
+     "name": "PgClipMask32SkipFirstTwo",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked32_equal_67": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16Clipped: target clip_masked32_equal_67 begins with mov word ptr cs:[PgSpriteTopClipped],1; jmp short clip_masked32_continue_86. Role: SkipFirstGroup.",
+     "name": "PgClipMask32SkipFirstGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked32_equal_71": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16Clipped: target clip_masked32_equal_71 begins with mov word ptr cs:[PgSpriteBottomClipped],1. Role: SkipLastThree.",
+     "name": "PgClipMask32SkipLastThree",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked32_equal_78": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16Clipped: target clip_masked32_equal_78 begins with mov word ptr cs:[PgSpriteLeftClipped],1. Role: SkipLastTwo.",
+     "name": "PgClipMask32SkipLastTwo",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked32_equal_7f": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16Clipped: target clip_masked32_equal_7f begins with mov word ptr cs:[PgSpriteRightClipped],1. Role: SkipLastGroup.",
+     "name": "PgClipMask32SkipLastGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked32_equal_b6": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16Clipped: target clip_masked32_equal_b6 begins with mov dx,PgSequencerIndexPort; mov al,2. Role: SelectMapMask.",
+     "name": "PgClipMask32SelectMapMask",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked32_equal_f4": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16Clipped: target clip_masked32_equal_f4 begins with lodsb; lodsb. Role: DiscardFirstGroup.",
+     "name": "PgClipMask32DiscardFirstGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked32_le_52": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16Clipped: target clip_masked32_le_52 begins with mov word ptr cs:[PgSpriteRightClipped],1. Role: SkipAllGroups.",
+     "name": "PgClipMask32SkipAllGroups",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked32_repeat_bf": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16Clipped: target clip_masked32_repeat_bf begins with mov dx,PgGraphicsIndexPort; lodsb. Role: DrawRow.",
+     "name": "PgClipMask32DrawRow",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked32_right_half": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16Clipped: target clip_masked32_right_half begins with inc bx; mov dx,PgGraphicsIndexPort. Role: DrawSecondGroup.",
+     "name": "PgClipMask32DrawSecondGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked32_row_loop_14c": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16Clipped: target clip_masked32_row_loop_14c begins with jmp near ptr clip_masked32_repeat_bf. Role: RowLoopBridge.",
+     "name": "PgClipMask32RowLoopBridge",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked32_row_loop_b0": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16Clipped: target clip_masked32_row_loop_b0 begins with add bx,PgVideoPageBytes; loop clip_masked32_row_loop_b0. Role: AddPageOffset.",
+     "name": "PgClipMask32AddPageOffset",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked32_tail": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked32x16Clipped: target clip_masked32_tail begins with inc bx; mov dx,PgGraphicsIndexPort. Role: DrawLastGroup.",
+     "name": "PgClipMask32DrawLastGroup",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_1e87: blit masked 32x16 clipped.",
    "locals": {},
    "name": "PgBlitMasked32x16Clipped",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_2053": {
    "abi_parameters": [
@@ -13108,12 +15780,80 @@
      "name": "PixelRow"
     }
    ],
+   "assembly_labels": {
+    "clip_masked16_continue_102": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked16x16Clipped: target clip_masked16_continue_102 begins with inc bx; add bx,word ptr cs:[PgScreenStrideBytes]. Role: AdvanceRow.",
+     "name": "PgClipMask16AdvanceRow",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked16_continue_56": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked16x16Clipped: target clip_masked16_continue_56 begins with pop cx; lds si,dword ptr [bp+0ah]. Role: SetupAddress.",
+     "name": "PgClipMask16SetupAddress",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked16_continue_c8": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked16x16Clipped: target clip_masked16_continue_c8 begins with inc bx; mov dx,PgGraphicsIndexPort. Role: DrawLastGroup.",
+     "name": "PgClipMask16DrawLastGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked16_equal_45": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked16x16Clipped: target clip_masked16_equal_45 begins with mov word ptr cs:[PgSpriteTopClipped],1; jmp short clip_masked16_continue_56. Role: SkipFirstGroup.",
+     "name": "PgClipMask16SkipFirstGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked16_equal_4f": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked16x16Clipped: target clip_masked16_equal_4f begins with mov word ptr cs:[PgSpriteRightClipped],1. Role: SkipLastGroup.",
+     "name": "PgClipMask16SkipLastGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked16_equal_86": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked16x16Clipped: target clip_masked16_equal_86 begins with mov dx,PgSequencerIndexPort; mov al,2. Role: SelectMapMask.",
+     "name": "PgClipMask16SelectMapMask",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked16_equal_c4": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked16x16Clipped: target clip_masked16_equal_c4 begins with lodsb; lodsb. Role: DiscardFirstGroup.",
+     "name": "PgClipMask16DiscardFirstGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked16_equal_fe": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked16x16Clipped: target clip_masked16_equal_fe begins with lodsb; lodsb. Role: DiscardLastGroup.",
+     "name": "PgClipMask16DiscardLastGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked16_le_3e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked16x16Clipped: target clip_masked16_le_3e begins with mov word ptr cs:[PgSpriteRightClipped],1. Role: SkipBothGroups.",
+     "name": "PgClipMask16SkipBothGroups",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked16_row_loop_80": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked16x16Clipped: target clip_masked16_row_loop_80 begins with add bx,PgVideoPageBytes; loop clip_masked16_row_loop_80. Role: AddPageOffset.",
+     "name": "PgClipMask16AddPageOffset",
+     "proposal": "sol-read-asm"
+    },
+    "clip_masked16_row_loop_8f": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitMasked16x16Clipped: target clip_masked16_row_loop_8f begins with mov dx,PgGraphicsIndexPort; lodsb. Role: DrawRow.",
+     "name": "PgClipMask16DrawRow",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_2053: blit masked 16x16 clipped.",
    "locals": {},
    "name": "PgBlitMasked16x16Clipped",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_2173": {
    "abi_parameters": [
@@ -13148,12 +15888,32 @@
      "name": "BottomPixelY"
     }
    ],
+   "assembly_labels": {
+    "capture_b_repeat_55": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgCapturePixelRectangle: target capture_b_repeat_55 begins with out dx,ax; push ax. Role: ReadPlane.",
+     "name": "PgPixelCaptureReadPlane",
+     "proposal": "sol-read-asm"
+    },
+    "capture_b_repeat_5d": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgCapturePixelRectangle: target capture_b_repeat_5d begins with mov bx,word ptr cs:[PgTransferRowBytes]; push si. Role: ReadRow.",
+     "name": "PgPixelCaptureReadRow",
+     "proposal": "sol-read-asm"
+    },
+    "capture_b_repeat_63": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgCapturePixelRectangle: target capture_b_repeat_63 begins with lodsw; dec si. Role: ShiftByte.",
+     "name": "PgPixelCaptureShiftByte",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "Divides the horizontal width by eight and records edge masks for a rectangle specified in pixel coordinates.",
    "locals": {},
    "name": "PgCapturePixelRectangle",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_2208": {
    "abi_parameters": [
@@ -13176,12 +15936,86 @@
      "name": "PixelY"
     }
    ],
+   "assembly_labels": {
+    "restore_b_continue_113": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgRestorePixelRectangle: target restore_b_continue_113 begins with mov ax,PgMapMaskAllPlanes; out dx,ax. Role: RestoreRegisters.",
+     "name": "PgPxRestoreRestoreRegisters",
+     "proposal": "sol-read-asm"
+    },
+    "restore_b_continue_e7": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgRestorePixelRectangle: target restore_b_continue_e7 begins with mov bx,ax; mov ax,word ptr cs:[PgRestoreEdgeMaskPair]. Role: WriteTrailingParts.",
+     "name": "PgPxRestoreWriteTrailingParts",
+     "proposal": "sol-read-asm"
+    },
+    "restore_b_different_79": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgRestorePixelRectangle: target restore_b_different_79 begins with push ax; mov bx,0ffh. Role: SetupShiftedMasks.",
+     "name": "PgPxRestoreSetupShiftedMasks",
+     "proposal": "sol-read-asm"
+    },
+    "restore_b_different_8e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgRestorePixelRectangle: target restore_b_different_8e begins with shl ax,cl; shl bx,cl. Role: ShiftMasks.",
+     "name": "PgPxRestoreShiftMasks",
+     "proposal": "sol-read-asm"
+    },
+    "restore_b_different_cc": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgRestorePixelRectangle: target restore_b_different_cc begins with rol ax,cl; and byte ptr es:[di],ah. Role: WriteLeadingPart.",
+     "name": "PgPxRestoreWriteLeadingPart",
+     "proposal": "sol-read-asm"
+    },
+    "restore_b_different_d3": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgRestorePixelRectangle: target restore_b_different_d3 begins with push ax; mov ax,PgBitMaskAllPixels. Role: WriteMiddleParts.",
+     "name": "PgPxRestoreWriteMiddleParts",
+     "proposal": "sol-read-asm"
+    },
+    "restore_b_loop_5f": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgRestorePixelRectangle: target restore_b_loop_5f begins with lodsb; and byte ptr es:[di],al. Role: AlignedByte.",
+     "name": "PgPxRestoreAlignedByte",
+     "proposal": "sol-read-asm"
+    },
+    "restore_b_repeat_55": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgRestorePixelRectangle: target restore_b_repeat_55 begins with out dx,ax; push ax. Role: AlignedPlane.",
+     "name": "PgPxRestoreAlignedPlane",
+     "proposal": "sol-read-asm"
+    },
+    "restore_b_repeat_5d": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgRestorePixelRectangle: target restore_b_repeat_5d begins with push di; push cx. Role: AlignedRow.",
+     "name": "PgPxRestoreAlignedRow",
+     "proposal": "sol-read-asm"
+    },
+    "restore_b_repeat_ac": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgRestorePixelRectangle: target restore_b_repeat_ac begins with out dx,ax; push ax. Role: ShiftedPlane.",
+     "name": "PgPxRestoreShiftedPlane",
+     "proposal": "sol-read-asm"
+    },
+    "restore_b_repeat_b9": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgRestorePixelRectangle: target restore_b_repeat_b9 begins with push di; push si. Role: ShiftedRow.",
+     "name": "PgPxRestoreShiftedRow",
+     "proposal": "sol-read-asm"
+    },
+    "restore_b_repeat_dc": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgRestorePixelRectangle: target restore_b_repeat_dc begins with and byte ptr es:[di],al; inc di. Role: ShiftMiddleByte.",
+     "name": "PgPxRestoreShiftMiddleByte",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "Uses the pixel-address helper and saved edge masks to restore a captured rectangle at a pixel X/Y.",
    "locals": {},
    "name": "PgRestorePixelRectangle",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_233a": {
    "abi_parameters": [
@@ -13204,14 +16038,90 @@
      "name": "PixelY"
     }
    ],
+   "assembly_labels": {
+    "opaque_shift_continue_c2": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgOrShifted32x16: target opaque_shift_continue_c2 begins with inc bx; mov dx,PgGraphicsIndexPort. Role: WriteHighParts.",
+     "name": "PgShiftOr32WriteHighParts",
+     "proposal": "sol-read-asm"
+    },
+    "opaque_shift_equal_4e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgOrShifted32x16: target opaque_shift_equal_4e begins with mov dx,PgSequencerIndexPort; mov al,2. Role: SelectMapMask.",
+     "name": "PgShiftOr32SelectMapMask",
+     "proposal": "sol-read-asm"
+    },
+    "opaque_shift_repeat_5d": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgOrShifted32x16: target opaque_shift_repeat_5d begins with mov byte ptr cs:[PgSpriteBytesRemaining],4. Role: DrawRow.",
+     "name": "PgShiftOr32DrawRow",
+     "proposal": "sol-read-asm"
+    },
+    "opaque_shift_repeat_63": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgOrShifted32x16: target opaque_shift_repeat_63 begins with mov dl,byte ptr cs:[PgSpriteBytesRemaining]; dec dl. Role: DrawByteGroup.",
+     "name": "PgShiftOr32DrawByteGroup",
+     "proposal": "sol-read-asm"
+    },
+    "opaque_shift_repeat_c0": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgOrShifted32x16: target opaque_shift_repeat_c0 begins with jmp short opaque_shift_repeat_63. Role: GroupLoopBridge.",
+     "name": "PgShiftOr32GroupLoopBridge",
+     "proposal": "sol-read-asm"
+    },
+    "opaque_shift_row_loop_48": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgOrShifted32x16: target opaque_shift_row_loop_48 begins with add bx,PgVideoPageBytes; loop opaque_shift_row_loop_48. Role: AddPageOffset.",
+     "name": "PgShiftOr32AddPageOffset",
+     "proposal": "sol-read-asm"
+    },
+    "opaque_shift_row_loop_be": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgOrShifted32x16: target opaque_shift_row_loop_be begins with jmp short opaque_shift_repeat_5d. Role: RowLoopBridge.",
+     "name": "PgShiftOr32RowLoopBridge",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "Processes 16 rows of four shifted byte groups using source masks and read-before-OR destination writes with all planes enabled.",
    "locals": {},
    "name": "PgOrShifted32x16",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_2463": {
+   "assembly_labels": {
+    "opaque_shift16_continue_c2": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgOrShifted16x16: target opaque_shift16_continue_c2 begins with inc bx; mov dx,PgGraphicsIndexPort. Role: WriteHighParts.",
+     "name": "PgShiftOr16WriteHighParts",
+     "proposal": "sol-read-asm"
+    },
+    "opaque_shift16_repeat_4e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgOrShifted16x16: target opaque_shift16_repeat_4e begins with mov byte ptr cs:[PgSpriteBytesRemaining],2. Role: DrawRow.",
+     "name": "PgShiftOr16DrawRow",
+     "proposal": "sol-read-asm"
+    },
+    "opaque_shift16_repeat_54": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgOrShifted16x16: target opaque_shift16_repeat_54 begins with mov dl,byte ptr cs:[PgSpriteBytesRemaining]; dec dl. Role: DrawByteGroup.",
+     "name": "PgShiftOr16DrawByteGroup",
+     "proposal": "sol-read-asm"
+    },
+    "opaque_shift16_repeat_c0": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgOrShifted16x16: target opaque_shift16_repeat_c0 begins with jmp short opaque_shift16_repeat_54. Role: GroupLoopBridge.",
+     "name": "PgShiftOr16GroupLoopBridge",
+     "proposal": "sol-read-asm"
+    },
+    "opaque_shift16_row_loop_be": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgOrShifted16x16: target opaque_shift16_row_loop_be begins with jmp short opaque_shift16_repeat_4e. Role: RowLoopBridge.",
+     "name": "PgShiftOr16RowLoopBridge",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "Processes 16 rows of two shifted byte groups using source masks and read-before-OR destination writes with all planes enabled.",
    "locals": {},
@@ -13238,7 +16148,7 @@
     "X": "PixelX",
     "Y": "PixelY"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_259a": {
    "abi_parameters": [
@@ -13261,12 +16171,44 @@
      "name": "PixelY"
     }
    ],
+   "assembly_labels": {
+    "opaque_var_continue_c9": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgOrShifted8x8: target opaque_var_continue_c9 begins with lodsb; mov ah,0. Role: WriteHighParts.",
+     "name": "PgShiftOr8WriteHighParts",
+     "proposal": "sol-read-asm"
+    },
+    "opaque_var_equal_4b": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgOrShifted8x8: target opaque_var_equal_4b begins with mov dx,PgSequencerIndexPort; mov al,2. Role: SelectMapMask.",
+     "name": "PgShiftOr8SelectMapMask",
+     "proposal": "sol-read-asm"
+    },
+    "opaque_var_repeat_5a": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgOrShifted8x8: target opaque_var_repeat_5a begins with push cx; lodsb. Role: DrawRow.",
+     "name": "PgShiftOr8DrawRow",
+     "proposal": "sol-read-asm"
+    },
+    "opaque_var_row_loop_45": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgOrShifted8x8: target opaque_var_row_loop_45 begins with add bx,PgVideoPageBytes; loop opaque_var_row_loop_45. Role: AddPageOffset.",
+     "name": "PgShiftOr8AddPageOffset",
+     "proposal": "sol-read-asm"
+    },
+    "opaque_var_row_loop_c7": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgOrShifted8x8: target opaque_var_row_loop_c7 begins with jmp short opaque_var_repeat_5a. Role: RowLoopBridge.",
+     "name": "PgShiftOr8RowLoopBridge",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "Loops over exactly eight rows, rotates the mask/plane bytes by X alignment and performs read-before-OR writes; dimensions are fixed.",
    "locals": {},
    "name": "PgOrShifted8x8",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_26e9": {
    "abi_parameters": [
@@ -13289,12 +16231,80 @@
      "name": "TextPixelY"
     }
    ],
+   "assembly_labels": {
+    "PgLocateTextCodeBase": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawPascalString: target PgLocateTextCodeBase begins with pop ax; sub ax,offset PgLocateTextCodeBase. Role: LocateCodeBase.",
+     "name": "PgTextLocateCodeBase",
+     "proposal": "sol-read-asm"
+    },
+    "text_branch_32": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawPascalString: target text_branch_32 begins with add bx,word ptr cs:[PgTextCharIndex]; mov al,byte ptr es:[bx]. Role: SetupGlyph.",
+     "name": "PgTextSetupGlyph",
+     "proposal": "sol-read-asm"
+    },
+    "text_branch_bf": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawPascalString: target text_branch_bf begins with mov ax,word ptr cs:[PgTextDirection]; mov bx,8. Role: AdvanceCharacter.",
+     "name": "PgTextAdvanceCharacter",
+     "proposal": "sol-read-asm"
+    },
+    "text_continue_ad": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawPascalString: target text_continue_ad begins with inc word ptr cs:[PgFontRowIndex]; mov ax,word ptr cs:[PgFontRowIndex]. Role: NextGlyphRow.",
+     "name": "PgTextNextGlyphRow",
+     "proposal": "sol-read-asm"
+    },
+    "text_continue_f0": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawPascalString: target text_continue_f0 begins with pop si; pop di. Role: RestoreRegisters.",
+     "name": "PgTextRestoreRegisters",
+     "proposal": "sol-read-asm"
+    },
+    "text_different_99": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawPascalString: target text_different_99 begins with call near ptr PgDrawFontRowVerticalHelper; mov ax,word ptr cs:[PgTextDirection]. Role: DrawVerticalRow.",
+     "name": "PgTextDrawVerticalRow",
+     "proposal": "sol-read-asm"
+    },
+    "text_different_aa": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawPascalString: target text_different_aa begins with dec word ptr [bp+0ah]. Role: StepNegativeX.",
+     "name": "PgTextStepNegativeX",
+     "proposal": "sol-read-asm"
+    },
+    "text_different_d9": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawPascalString: target text_different_d9 begins with cmp ax,1; jne text_different_e7. Role: AdvanceVerticalChar.",
+     "name": "PgTextAdvanceVerticalChar",
+     "proposal": "sol-read-asm"
+    },
+    "text_different_e7": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawPascalString: target text_different_e7 begins with add word ptr [bp+8],bx; add word ptr [bp+0ah],cx. Role: AdvanceOtherVerticalChar.",
+     "name": "PgTextAdvanceOtherVerticalChar",
+     "proposal": "sol-read-asm"
+    },
+    "text_repeat_1b": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawPascalString: target text_repeat_1b begins with inc word ptr cs:[PgTextCharIndex]; les bx,dword ptr [bp+0ch]. Role: NextCharacter.",
+     "name": "PgTextNextCharacter",
+     "proposal": "sol-read-asm"
+    },
+    "text_repeat_6c": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawPascalString: target text_repeat_6c begins with mov ax,word ptr [bp+0ah]; mov word ptr cs:[PgTextX],ax. Role: DrawGlyphRow.",
+     "name": "PgTextDrawGlyphRow",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_26e9: draw pascal string.",
    "locals": {},
    "name": "PgDrawPascalString",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_27e2": {
    "confidence": "high",
@@ -13313,12 +16323,38 @@
    "proposal": "names-b"
   },
   "u9_28a7": {
+   "assembly_labels": {
+    "font_vrow_continue_3e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawFontRowVerticalHelper: target font_vrow_continue_3e begins with loop font_vrow_loop_19; ret. Role: NextGlyphBit.",
+     "name": "PgVerticalFontNextGlyphBit",
+     "proposal": "sol-read-asm"
+    },
+    "font_vrow_different_39": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawFontRowVerticalHelper: target font_vrow_different_39 begins with inc word ptr cs:[PgFontPixelY]. Role: StepPositiveY.",
+     "name": "PgVerticalFontStepPositiveY",
+     "proposal": "sol-read-asm"
+    },
+    "font_vrow_equal_28": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawFontRowVerticalHelper: target font_vrow_equal_28 begins with shr bx,1; cmp word ptr cs:[PgTextDirection],1. Role: StepPixel.",
+     "name": "PgVerticalFontStepPixel",
+     "proposal": "sol-read-asm"
+    },
+    "font_vrow_loop_19": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgDrawFontRowVerticalHelper: target font_vrow_loop_19 begins with mov ax,dx; and ax,bx. Role: TestGlyphBit.",
+     "name": "PgVerticalFontTestGlyphBit",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_28a7: draw font row vertical helper.",
    "locals": {},
    "name": "PgDrawFontRowVerticalHelper",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_28e8": {
    "confidence": "high",
@@ -13345,12 +16381,26 @@
    "proposal": "names-b"
   },
   "u9_2908": {
+   "assembly_labels": {
+    "font_address_equal_2b": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFontPixelAddressHelper: target font_address_equal_2b begins with mov es,ax; ret. Role: ReturnAddress.",
+     "name": "PgFontAddrReturnAddress",
+     "proposal": "sol-read-asm"
+    },
+    "font_address_loop_26": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgFontPixelAddressHelper: target font_address_loop_26 begins with add ax,2000h; loop font_address_loop_26. Role: AddPageSegment.",
+     "name": "PgFontAddrAddPageSegment",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_2908: font pixel address helper.",
    "locals": {},
    "name": "PgFontPixelAddressHelper",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_2936": {
    "confidence": "high",
@@ -13361,6 +16411,20 @@
    "proposal": "names-b"
   },
   "u9_2981": {
+   "assembly_labels": {
+    "selectfont_continue_3e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgSelectRomFont: target selectfont_continue_3e begins with pop bp; retf 2. Role: Return.",
+     "name": "PgFontSelectReturn",
+     "proposal": "sol-read-asm"
+    },
+    "selectfont_equal_26": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgSelectRomFont: target selectfont_equal_26 begins with mov ax,word ptr cs:[PgRom8Offset]; mov word ptr cs:[PgFontOffset],ax. Role: UseEightRowFont.",
+     "name": "PgFontSelectUseEightRowFont",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_2981: select rom font.",
    "locals": {},
@@ -13375,7 +16439,7 @@
    "params": {
     "Mode": "FontIndex"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_29c3": {
    "abi_parameters": [
@@ -13398,14 +16462,66 @@
      "name": "PixelRow"
     }
    ],
+   "assembly_labels": {
+    "opaque32_continue_8a": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16: target opaque32_continue_8a begins with inc bx; lodsb. Role: DrawRightHalf.",
+     "name": "PgOpaque32DrawRightHalf",
+     "proposal": "sol-read-asm"
+    },
+    "opaque32_equal_3e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16: target opaque32_equal_3e begins with mov dx,PgSequencerIndexPort; mov al,2. Role: SelectMapMask.",
+     "name": "PgOpaque32SelectMapMask",
+     "proposal": "sol-read-asm"
+    },
+    "opaque32_repeat_47": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16: target opaque32_repeat_47 begins with lodsb; mov dx,PgSequencerDataPort. Role: DrawRow.",
+     "name": "PgOpaque32DrawRow",
+     "proposal": "sol-read-asm"
+    },
+    "opaque32_row_loop_38": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16: target opaque32_row_loop_38 begins with add bx,PgVideoPageBytes; loop opaque32_row_loop_38. Role: AddPageOffset.",
+     "name": "PgOpaque32AddPageOffset",
+     "proposal": "sol-read-asm"
+    },
+    "opaque32_row_loop_88": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16: target opaque32_row_loop_88 begins with jmp short opaque32_repeat_47. Role: RowLoopBridge.",
+     "name": "PgOpaque32RowLoopBridge",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_29c3: blit opaque 32x16.",
    "locals": {},
    "name": "PgBlitOpaque32x16",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_2a9f": {
+   "assembly_labels": {
+    "opaque16_equal_3c": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque16x16: target opaque16_equal_3c begins with mov dx,PgSequencerIndexPort; mov al,2. Role: SelectMapMask.",
+     "name": "PgOpaque16SelectMapMask",
+     "proposal": "sol-read-asm"
+    },
+    "opaque16_row_loop_36": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque16x16: target opaque16_row_loop_36 begins with add bx,PgVideoPageBytes; loop opaque16_row_loop_36. Role: AddPageOffset.",
+     "name": "PgOpaque16AddPageOffset",
+     "proposal": "sol-read-asm"
+    },
+    "opaque16_row_loop_45": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque16x16: target opaque16_row_loop_45 begins with lodsb; mov dx,PgSequencerDataPort. Role: DrawRow.",
+     "name": "PgOpaque16DrawRow",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_2a9f: blit opaque 16x16.",
    "locals": {},
@@ -13436,9 +16552,29 @@
     "X": "ByteColumn",
     "Y": "PixelRow"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_2b38": {
+   "assembly_labels": {
+    "opaque8_equal_28": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque8x8: target opaque8_equal_28 begins with mov dx,word ptr [bp+6]; push di. Role: SelectMapMask.",
+     "name": "PgOpaque8SelectMapMask",
+     "proposal": "sol-read-asm"
+    },
+    "opaque8_row_loop_22": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque8x8: target opaque8_row_loop_22 begins with add bx,PgVideoPageBytes; loop opaque8_row_loop_22. Role: AddPageOffset.",
+     "name": "PgOpaque8AddPageOffset",
+     "proposal": "sol-read-asm"
+    },
+    "opaque8_row_loop_45": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque8x8: target opaque8_row_loop_45 begins with lodsb; mov dx,PgSequencerDataPort. Role: DrawRow.",
+     "name": "PgOpaque8DrawRow",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_2b38: blit opaque 8x8.",
    "locals": {},
@@ -13465,7 +16601,7 @@
     "X": "ByteColumn",
     "Y": "PixelRow"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_2bb2": {
    "abi_parameters": [
@@ -13488,12 +16624,122 @@
      "name": "PixelRow"
     }
    ],
+   "assembly_labels": {
+    "clip_opaque32_continue_136": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16Clipped: target clip_opaque32_continue_136 begins with mov al,1; out dx,al. Role: WriteMiddleGroup.",
+     "name": "PgClipOp32WriteMiddleGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque32_continue_18b": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16Clipped: target clip_opaque32_continue_18b begins with inc bx; add bx,word ptr cs:[PgScreenStrideBytes]. Role: AdvanceRow.",
+     "name": "PgClipOp32AdvanceRow",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque32_continue_86": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16Clipped: target clip_opaque32_continue_86 begins with pop cx; lds si,dword ptr [bp+0ah]. Role: SetupAddress.",
+     "name": "PgClipOp32SetupAddress",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque32_equal_11e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16Clipped: target clip_opaque32_equal_11e begins with lodsb; lodsb. Role: DiscardSecondGroup.",
+     "name": "PgClipOp32DiscardSecondGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque32_equal_155": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16Clipped: target clip_opaque32_equal_155 begins with lodsb; lodsb. Role: DiscardThirdGroup.",
+     "name": "PgClipOp32DiscardThirdGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque32_equal_187": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16Clipped: target clip_opaque32_equal_187 begins with lodsb; lodsb. Role: DiscardLastGroup.",
+     "name": "PgClipOp32DiscardLastGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque32_equal_59": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16Clipped: target clip_opaque32_equal_59 begins with mov word ptr cs:[PgSpriteLeftClipped],1. Role: SkipFirstThree.",
+     "name": "PgClipOp32SkipFirstThree",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque32_equal_60": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16Clipped: target clip_opaque32_equal_60 begins with mov word ptr cs:[PgSpriteBottomClipped],1. Role: SkipFirstTwo.",
+     "name": "PgClipOp32SkipFirstTwo",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque32_equal_67": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16Clipped: target clip_opaque32_equal_67 begins with mov word ptr cs:[PgSpriteTopClipped],1; jmp short clip_opaque32_continue_86. Role: SkipFirstGroup.",
+     "name": "PgClipOp32SkipFirstGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque32_equal_71": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16Clipped: target clip_opaque32_equal_71 begins with mov word ptr cs:[PgSpriteBottomClipped],1. Role: SkipLastThree.",
+     "name": "PgClipOp32SkipLastThree",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque32_equal_78": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16Clipped: target clip_opaque32_equal_78 begins with mov word ptr cs:[PgSpriteLeftClipped],1. Role: SkipLastTwo.",
+     "name": "PgClipOp32SkipLastTwo",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque32_equal_7f": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16Clipped: target clip_opaque32_equal_7f begins with mov word ptr cs:[PgSpriteRightClipped],1. Role: SkipLastGroup.",
+     "name": "PgClipOp32SkipLastGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque32_equal_b6": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16Clipped: target clip_opaque32_equal_b6 begins with mov dx,PgSequencerIndexPort; mov al,2. Role: SelectMapMask.",
+     "name": "PgClipOp32SelectMapMask",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque32_equal_ec": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16Clipped: target clip_opaque32_equal_ec begins with lodsb; lodsb. Role: DiscardFirstGroup.",
+     "name": "PgClipOp32DiscardFirstGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque32_le_52": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16Clipped: target clip_opaque32_le_52 begins with mov word ptr cs:[PgSpriteRightClipped],1. Role: SkipAllGroups.",
+     "name": "PgClipOp32SkipAllGroups",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque32_repeat_bf": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16Clipped: target clip_opaque32_repeat_bf begins with lodsb; mov dx,word ptr cs:[PgSpriteTopClipped]. Role: DrawRow.",
+     "name": "PgClipOp32DrawRow",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque32_row_loop_134": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16Clipped: target clip_opaque32_row_loop_134 begins with jmp short clip_opaque32_repeat_bf. Role: RowLoopBridge.",
+     "name": "PgClipOp32RowLoopBridge",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque32_row_loop_b0": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque32x16Clipped: target clip_opaque32_row_loop_b0 begins with add bx,PgVideoPageBytes; loop clip_opaque32_row_loop_b0. Role: AddPageOffset.",
+     "name": "PgClipOp32AddPageOffset",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_2bb2: blit opaque 32x16 clipped.",
    "locals": {},
    "name": "PgBlitOpaque32x16Clipped",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_2d5d": {
    "abi_parameters": [
@@ -13516,14 +16762,90 @@
      "name": "PixelRow"
     }
    ],
+   "assembly_labels": {
+    "clip_opaque16_continue_56": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque16x16Clipped: target clip_opaque16_continue_56 begins with pop cx; lds si,dword ptr [bp+0ah]. Role: SetupAddress.",
+     "name": "PgClipOp16SetupAddress",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque16_continue_c0": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque16x16Clipped: target clip_opaque16_continue_c0 begins with inc bx; lodsb. Role: DrawLastGroup.",
+     "name": "PgClipOp16DrawLastGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque16_continue_f2": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque16x16Clipped: target clip_opaque16_continue_f2 begins with inc bx; add bx,word ptr cs:[PgScreenStrideBytes]. Role: AdvanceRow.",
+     "name": "PgClipOp16AdvanceRow",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque16_equal_45": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque16x16Clipped: target clip_opaque16_equal_45 begins with mov word ptr cs:[PgSpriteTopClipped],1; jmp short clip_opaque16_continue_56. Role: SkipFirstGroup.",
+     "name": "PgClipOp16SkipFirstGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque16_equal_4f": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque16x16Clipped: target clip_opaque16_equal_4f begins with mov word ptr cs:[PgSpriteRightClipped],1. Role: SkipLastGroup.",
+     "name": "PgClipOp16SkipLastGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque16_equal_86": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque16x16Clipped: target clip_opaque16_equal_86 begins with mov dx,PgSequencerIndexPort; mov al,2. Role: SelectMapMask.",
+     "name": "PgClipOp16SelectMapMask",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque16_equal_bc": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque16x16Clipped: target clip_opaque16_equal_bc begins with lodsb; lodsb. Role: DiscardFirstGroup.",
+     "name": "PgClipOp16DiscardFirstGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque16_equal_ee": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque16x16Clipped: target clip_opaque16_equal_ee begins with lodsb; lodsb. Role: DiscardLastGroup.",
+     "name": "PgClipOp16DiscardLastGroup",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque16_le_3e": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque16x16Clipped: target clip_opaque16_le_3e begins with mov word ptr cs:[PgSpriteRightClipped],1. Role: SkipBothGroups.",
+     "name": "PgClipOp16SkipBothGroups",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque16_row_loop_80": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque16x16Clipped: target clip_opaque16_row_loop_80 begins with add bx,PgVideoPageBytes; loop clip_opaque16_row_loop_80. Role: AddPageOffset.",
+     "name": "PgClipOp16AddPageOffset",
+     "proposal": "sol-read-asm"
+    },
+    "clip_opaque16_row_loop_8f": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgBlitOpaque16x16Clipped: target clip_opaque16_row_loop_8f begins with lodsb; mov dx,word ptr cs:[PgSpriteTopClipped]. Role: DrawRow.",
+     "name": "PgClipOp16DrawRow",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_2d5d: blit opaque 16x16 clipped.",
    "locals": {},
    "name": "PgBlitOpaque16x16Clipped",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_2e6d": {
+   "assembly_labels": {
+    "cache_copy_repeat_48": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgCopyCachedVideoTile16x16: target cache_copy_repeat_48 begins with movsb; movsb. Role: CopyRow.",
+     "name": "PgCacheTileCopyRow",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_2e6d: copy cached video tile 16x16.",
    "locals": {},
@@ -13550,9 +16872,17 @@
     "X": "ByteColumn",
     "Y": "PixelRow"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_2ecf": {
+   "assembly_labels": {
+    "screen_copy_repeat_47": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgCopyVideoScreenRegion320x200: target screen_copy_repeat_47 begins with mov cx,28h; rep movsb. Role: CopyRow.",
+     "name": "PgScreenCopyCopyRow",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_2ecf: copy video screen region 320x200.",
    "locals": {},
@@ -13585,15 +16915,23 @@
     "C": "DestByteColumn",
     "D": "DestPixelRow"
    },
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_2f32": {
+   "assembly_labels": {
+    "band_copy_repeat_2f": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgCopyStatusBandTemplate: target band_copy_repeat_2f begins with mov cx,28h; rep movsb. Role: CopyRow.",
+     "name": "PgStatusCopyCopyRow",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "Copies eight 40-byte rows from VRAM offset 28h to offset 0; u3_0261 calls it before drawing the status bar.",
    "locals": {},
    "name": "PgCopyStatusBandTemplate",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_2f7b": {
    "abi_parameters": [
@@ -13622,12 +16960,20 @@
      "name": "DestPixelRow"
     }
    ],
+   "assembly_labels": {
+    "tile_copy_row_loop_46": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgCopyVideoTile16x16UnusedCdecl: target tile_copy_row_loop_46 begins with movsb; movsb. Role: CopyRow.",
+     "name": "PgUnusedTileCopyRow",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_2f7b: copy video tile 16x16 unused cdecl.",
    "locals": {},
    "name": "PgCopyVideoTile16x16UnusedCdecl",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   },
   "u9_2fd7": {
    "abi_parameters": [
@@ -13668,12 +17014,20 @@
      "name": "HeightRows"
     }
    ],
+   "assembly_labels": {
+    "rect_copy_row_loop_49": {
+     "confidence": "high",
+     "evidence": "PROGRAPX.ASM PgCopyVideoRectangleUnusedCdecl: target rect_copy_row_loop_49 begins with push cx; mov cx,bx. Role: CopyRow.",
+     "name": "PgUnusedRectCopyRow",
+     "proposal": "sol-read-asm"
+    }
+   },
    "confidence": "high",
    "evidence": "src/asm/u9.asm u9_2fd7: copy video rectangle unused cdecl.",
    "locals": {},
    "name": "PgCopyVideoRectangleUnusedCdecl",
    "params": {},
-   "proposal": "names-b"
+   "proposal": "sol-read-asm"
   }
  },
  "types": {
