@@ -1,9 +1,10 @@
 # Compiler identification: Turbo Pascal 5.0
 
-> Research report written during the matching phase. Scripts, probes and worker paths it cites
-> (`build/workers/...`, `probes/`, `tools/` that no longer exist) are preserved in the git tag
-> `matching-archive`; identifiers are the coordinate names of that phase (see docs/names.json for
-> the mapping to the names used in game/).
+> Research report written during the matching phase. The probes, tools and evidence it cites
+> (`probes/`, `tools/`, `evidence/` that no longer exist) are preserved in the git tag
+> `matching-archive`; `build/workers/...` paths were uncommitted worker scratch (they hold bytes
+> derived from the originals) and are reproduced by rerunning those probes. Identifiers are the
+> coordinate names of that phase (see docs/names.json for the mapping to the names used in game/).
 
 Research completed 2026-10-14. All probe sources, compiler scratch copies, EXEs, maps, disassemblies, and results are in this worker directory. The oracle and repository tools are read as inputs.
 

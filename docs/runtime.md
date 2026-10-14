@@ -243,8 +243,8 @@ to $42. If neither low speaker bit is set, it first sets both and writes
 mode $B6 to $43. Frequencies **0..18 return without changing anything**:
 zero retains the previous speaker state. Silence comes from `NoSound`,
 including the modulus gate. An authentic backend models integer PIT
-divisors and phase/counter updates between events. Disassembly is captured
-in `build/workers/sol-formats/crt-sound-disassembly.txt`.
+divisors and phase/counter updates between events. The disassembly is
+from the original images (research notes, not committed).
 
 When sound is disabled, the timer **does not advance the current effect**
 and that skipped branch does not itself call NoSound. It does not merely
@@ -276,12 +276,11 @@ Random(0) = 0                        # still advances the seed
 
 The integer routine uses unsigned DIV and returns the remainder. This is
 **not** the multiply-and-scale result found in later Pascal implementations.
-Evidence captured at `build/workers/sol-formats/random-disassembly.txt`;
-the original bytes are in `build/oracle/sam1/image.bin`, System frame from
-`build/census/sam1.json`. No new DOS compilation was used to infer this.
+The disassembly was taken from the original SAM1 load image (`python tools/oracle.py`
+materialises it; research notes not committed). No new DOS compilation was used to infer this.
 Executing that original entry in a 16-bit CPU emulator matched the formula
 for 35 cases (five seeds including $FFFFFFFF, seven ranges including zero).
-The cases are in `build/workers/sol-formats/random-execution.json`.
+(Research notes, not committed.)
 
 Calls in `SAMLEVEL.SpawnActorFromMapSymbol` / `DecodeLevelRow` choose initial
 directions, cooldowns and animation phases. `SAMPLAY.UpdateBasicActor`
@@ -304,8 +303,8 @@ text mode 3 if it started in a graphics mode, and calibrates its delay loop
 against the BIOS tick byte at **0040:006C**, before the program speeds up
 the PIT. Later `Delay(ms)` runs that calibrated busy loop; its comparison
 loop reads **0000:0000**, rather than waiting on the now-fast BIOS tick.
-These details come from original SAM1 Crt 2960:0030/029E/02BE; evidence is
-captured in `build/workers/sol-formats/crt-initialization-disassembly.txt`.
+These details come from original SAM1 Crt 2960:0030/029E/02BE; the disassembly
+was taken from the original image (research notes, not committed).
 Native delays should use an application clock while continuing timer/audio
 work, instead of trying to calibrate Android CPU spin loops.
 

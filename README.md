@@ -46,7 +46,12 @@ compared and reported, never filled or patched; consequently the LZEXE-packed fi
 python tools/setup_env.py
 python tools/validate.py            # oracle, build of game/ for all three episodes, tests
 python tools/validate.py --crosscheck --pack
+python tools/validate.py --dos    # run game/BUILD.BAT itself in DOSBox-X
 ```
+
+`game/` is independent of this repository: under DOS, `BUILD 1`, `BUILD 2` or `BUILD 3` with TPC,
+TASM and LZEXE on the PATH produces `SAM.EXE` (the unpacked program compared above) and the
+packed `SAMn.EXE` ([game/README.md](game/README.md)).
 
 ## History
 

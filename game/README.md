@@ -37,11 +37,14 @@ From the host repository root, run:
 ```text
 python tools/verify.py
 python tools/verify.py game --episodes sam2
+python tools/verify.py --dos
 ```
 
 The verifier stages source-only builds for each episode with the pinned
 tools in `config/toolchain.json` and compares against the original unpacked
-executables. The current proof is:
+executables. With `--dos` it runs this directory's `BUILD.BAT` itself in
+DOSBox-X (tools on the DOS PATH, `TURBO.TPL` beside TPC) and also checks that
+the packed `SAMn.EXE` holds exactly the linked program. The current proof is:
 
 | Episode | Equal load-image bytes | Image size | Differences in accepted holes | Differences outside holes |
 |---|---:|---:|---:|---:|
@@ -98,4 +101,4 @@ guard uses structured control flow and retains the original emitted bytes.
 
 The six object filenames and Pascal link directives are retained. This
 directory contains only source and documentation; the host verifier writes
-build products and proof receipts outside it.
+build products outside it.

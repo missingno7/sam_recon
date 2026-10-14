@@ -1,7 +1,7 @@
 {
  "assembler": {
   "executable": "C:/tools/tasm-1.00/files/disk04/TASM.EXE",
-  "note": "Working choice for the linked {$L} objects: TASM 1.0-2.01 and MASM 4.0-5.1 emit identical bytes for the probes (build/workers/sol-asm/REPORT.md); the original assembler is not identifiable from the EXE.",
+  "note": "Working choice for the linked {$L} objects: TASM 1.0-2.01 and MASM 4.0-5.1 emit identical bytes for the probes (docs/assembly.md); the original assembler is not identifiable from the EXE.",
   "product": "Turbo Assembler 1.0 (WinWorld media; byte-identical to the TASM bundled with Turbo C 2.0)",
   "runner": "runner (MS-DOS Player)",
   "sha256": "754b70821e4bac4997f398e3bdcee0f046a42cc3dad89cfbe0138f67d5b6142b"
@@ -65,6 +65,6 @@
   "note": "nmlgc ReC98 MS-DOS Player fork (ia32).",
   "sha256": "f7f6cb0a3e816c5edb13112d327c1bddbf7463fe7bf9a005ca1eb5317751bd02"
  },
- "toolchain_identity_note": "Turbo Pascal 5.0 command-line compiler and standard units from the PCjs TURBO-PASCAL-500-DISK1 image (see C:/tools/borland-turbo-pascal-5.00/provenance.json). Version choice is provisional until evidence/compiler-rules.json records the discriminating proof.",
+ "toolchain_identity_note": "Turbo Pascal 5.0 command-line compiler and standard units from the PCjs TURBO-PASCAL-500-DISK1 image (see C:/tools/borland-turbo-pascal-5.00/provenance.json). Proven by reproducing the linked System, Crt and Dos segments byte for byte in all three episodes (TP 5.5 fails the MemAvail/MaxAvail/Insert/Delete discriminants; docs/compiler.md).",
  "toolchain_root": "C:/tools/borland-turbo-pascal-5.00"
 }

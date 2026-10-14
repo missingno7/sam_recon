@@ -10,12 +10,16 @@
    all six linked objects proven individually in SAM1/2/3 (per-routine harness, OMF-level object
    proofs; preserved in the `matching-archive` tag).
 4. **Whole program** - one declaration per global, Genus typed constants, external headers; the
-   linked program equals the originals in every byte except 89/80/31 bytes of undefined object
+   linked program equals the originals in every byte except 92/80/31 bytes of undefined object
    storage ([object-holes.md](object-holes.md); user decision: documented residue, never filled).
 5. **Standalone, readable tree** - [game/](../game/) with semantic names ([names.json](names.json)
    records the evidence), named constants, comments, readable assembly; `python tools/verify.py`
    rebuilds and compares all three episodes.
-6. **Documentation for what follows** - [formats.md](formats.md), [actors.md](actors.md),
+6. **Independent DOS build** - `game/BUILD.BAT`, run unmodified in DOSBox-X with only the pinned
+   TPC/TURBO.TPL, TASM and LZEXE on the PATH (`python tools/verify.py --dos`), produces the same
+   unpacked programs, and its packed `SAMn.EXE` unpacks to exactly them. Packed files differ from the
+   originals only through the residue bytes.
+7. **Documentation for what follows** - [formats.md](formats.md), [actors.md](actors.md),
    [runtime.md](runtime.md), `tools/assets.py`.
 
 Every change to `game/` must keep `python tools/validate.py` green.

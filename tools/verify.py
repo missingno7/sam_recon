@@ -1,6 +1,6 @@
 """Build the source tree with the pinned historical tools and compare with the original.
 
-    python tools/verify.py [TREE] [--episodes sam1,sam2,sam3] [--pack] [--keep]
+    python tools/verify.py [TREE] [--episodes sam1,sam2,sam3] [--pack | --dos] [--keep]
 
 TREE defaults to game/.  For each episode, in an isolated scratch copy of the tree, the
 steps of BUILD.BAT are run with the pinned tools (config/toolchain.json):
@@ -17,6 +17,9 @@ and the linked load image is compared with the oracle image (tools/oracle.py):
   * the MZ fields that exist in an unpacked image equal: CS:IP, SS:SP, minalloc, maxalloc.
 With --pack the build is also packed with LZEXE 0.91 (DOSBox-X); the packed file can
 only equal the original when the residue bytes happen to match.
+With --dos the tree's own BUILD.BAT is run unmodified in DOSBox-X with the pinned TPC,
+TURBO.TPL, TASM and LZEXE on the DOS PATH; its SAM.EXE is compared as above and its
+packed SAMn.EXE must unpack to exactly that program.
 """
 from __future__ import annotations
 
@@ -83,6 +86,33 @@ def build(tree: Path, ep: str, work: Path) -> Path:
     return exe
 
 
+def dos_build(tree: Path, ep: str, work: Path) -> tuple:
+    """Run the tree's own BUILD.BAT for episode `ep` in DOSBox-X, the pinned tools on PATH.
+
+    Returns (linked SAM.EXE, packed SAMn.EXE)."""
+    if work.exists():
+        shutil.rmtree(work)
+    (work / "BIN").mkdir(parents=True)
+    for p in tree.iterdir():
+        if p.is_file() and p.suffix.upper() in (".PAS", ".ASM", ".INC", ".BAT"):
+            text = p.read_text(encoding="latin-1").replace("\r\n", "\n").replace("\n", "\r\n")
+            (work / p.name.upper()).write_bytes(text.encode("latin-1"))
+    lock = toolchain.lock()
+    for exe, digest in ((lock["assembler"]["executable"], lock["assembler"]["sha256"]),
+                        (lock["packer"]["executable"], lock["packer"]["sha256"])):
+        toolchain._check(Path(exe), digest)
+        shutil.copyfile(exe, work / "BIN" / Path(exe).name.upper())
+    for rel in ("TPC.EXE", "TURBO.TPL"):
+        shutil.copyfile(toolchain.tool(rel), work / "BIN" / rel)
+    n = ep[-1]
+    toolchain.run_dosbox(work, ["set PATH=C:\\BIN", f"BUILD {n}"], timeout=600)
+    exe, packed = work / "SAM.EXE", work / f"SAM{n}.EXE"
+    if not (exe.exists() and packed.exists() and (work / f"SAM{n}.OLD").exists()):
+        made = sorted(p.name for p in work.iterdir() if p.suffix.upper() in (".OBJ", ".TPU", ".EXE"))
+        raise RuntimeError(f"{ep}: BUILD.BAT did not produce SAM.EXE and packed SAM{n}.EXE (made: {made})")
+    return exe, packed
+
+
 def compare(ep: str, exe: Path) -> dict:
     built = mz.parse(exe.read_bytes())
     img, relocs = oracle.load_image(ep)
@@ -115,6 +145,7 @@ def main() -> int:
     ap.add_argument("tree", nargs="?", default=str(ROOT / "game"))
     ap.add_argument("--episodes", default=",".join(EPISODES))
     ap.add_argument("--pack", action="store_true")
+    ap.add_argument("--dos", action="store_true", help="run the tree's BUILD.BAT itself in DOSBox-X")
     ap.add_argument("--keep", action="store_true")
     a = ap.parse_args()
     tree = Path(a.tree)
@@ -123,12 +154,29 @@ def main() -> int:
     for ep in a.episodes.split(","):
         work = SCRATCH / f"{ep}-{uuid.uuid4().hex[:8]}"
         try:
-            r = compare(ep, build(tree, ep, work))
+            if a.dos:
+                exe, packed_exe = dos_build(tree, ep, work)
+            else:
+                exe = build(tree, ep, work)
+            r = compare(ep, exe)
         except RuntimeError as exc:
             print(f"{ep}: BUILD FAILED: {exc}")
             ok = False
             continue
-        if a.pack and r["ok"]:
+        if a.dos:
+            # BUILD.BAT's packed output must hold exactly the linked program, and
+            # equals the original file only if the residue bytes happen to match.
+            import lz91
+            u = lz91.unpack(packed_exe.read_bytes())
+            built = mz.parse(exe.read_bytes())
+            h = built.header
+            r["packed_roundtrip"] = (u.image == built.image
+                                     and sorted(mz.linear(u.relocs)) == sorted(mz.linear(built.relocs))
+                                     and (u.cs, u.ip, u.ss, u.sp, u.min_extra_paras, u.max_extra_paras)
+                                     == (h["cs"], h["ip"], h["ss"], h["sp"], h["minalloc"], h["maxalloc"]))
+            r["packed_equal"] = packed_exe.read_bytes() == oracle.find_asset(oracle.EXE_NAMES[ep]).read_bytes()
+            r["ok"] &= r["packed_roundtrip"]
+        elif a.pack and r["ok"]:
             import repack
             packed = repack.pack((work / "SAM.EXE").read_bytes())
             raw = oracle.find_asset(oracle.EXE_NAMES[ep]).read_bytes()
@@ -142,6 +190,8 @@ def main() -> int:
                   f"{len(r['outside_residue'])} outside residue {r['outside_residue']}; relocations "
                   f"{'equal' if r['relocations_equal'] else 'DIFFER'}; header "
                   f"{'equal' if all(r['header'].values()) else r['header']}"
+                  + (f"; packed {'holds the build' if r['packed_roundtrip'] else 'DOES NOT hold the build'}"
+                     if "packed_roundtrip" in r else "")
                   + (f"; packed {'EQUAL' if r['packed_equal'] else 'differs (residue)'}" if "packed_equal" in r else ""))
         if not a.keep:
             shutil.rmtree(work, ignore_errors=True)

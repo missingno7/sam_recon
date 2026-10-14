@@ -304,8 +304,8 @@ own namespace. Maps use CP437 display glyphs for control codes; JSON hex is
 the authoritative byte representation. It does not claim to simulate the
 symbol expansion, compositing, hardware palette or audio waveform.
 
-Verification output for this task is under
-`build/workers/sol-formats/assets/` (270 generated files). All 34 data files
+`python tools/assets.py` regenerates the decoded output (270 files, never
+committed). All 34 data files
 decoded, 57 bank headers matched, every level yielded 25 base rows, all 108
 effects terminated within the sample area, and all 13 PCX streams ended
 exactly. Synthetic tests cover key reset/NUL, sprite-record overlap, write
