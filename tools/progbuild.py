@@ -87,6 +87,19 @@ def canonical_sections(text: str) -> dict:
     return parts
 
 
+def referenced_types(typ: str, definitions: dict) -> dict:
+    """Expand named dependencies so pointer/array aliases retain their local view."""
+    found, pending = {}, [typ]
+    while pending:
+        text = pending.pop()
+        for token in re.findall(r"\b[A-Za-z_]\w*\b", text):
+            name = token.lower()
+            if name in definitions and name not in found:
+                found[name] = definitions[name]
+                pending.append(definitions[name].split("=", 1)[-1])
+    return found
+
+
 @dataclass
 class Candidate:
     lid: str
@@ -159,7 +172,7 @@ class Project:
                 project.candidates[lid] = Candidate(lid, recipe, blob.decode("latin1"), recipe["source"])
         project.input_hashes.update({p.relative_to(root).as_posix(): sha256_file(p) for p in paths})
         # Include every helper which can affect generation, compilation or comparison.
-        for name in ("progbuild.py", "common.py", "harness.py", "tpc.py", "tpmap.py", "asmproof.py",
+        for name in ("progbuild.py", "common.py", "harness.py", "datalayout.py", "tpc.py", "tpmap.py", "asmproof.py",
                      "omf.py", "mz.py", "oracle.py", "lz91.py", "toolchain.py", "repack.py"):
             p = root / "tools" / name
             if p.exists():
@@ -173,7 +186,7 @@ class Project:
             return None
         if m[1]:
             # Some historical SAM2 names are shared by SAM2/3: explicit data binding wins.
-            row = self.data.get(name) or self.extra.get(name)
+            row = next((v for n, v in self.data.items() if n.lower() == name), None) or self.extra.get(name)
             return int(row[ep], 16) if row and row.get(ep) else (int(m[2], 16) if m[1].lower() == ep else None)
         row = self.extra.get(name) or next((v for n, v in self.data.items() if n.lower() == name), None)
         if row is not None:
@@ -283,18 +296,24 @@ def generate(project: Project, ep: str, sizes: dict, far: dict, anchors: dict) -
 
     shared = shared_declarations(project, active)
     canon = harness.parse_decls("\n".join(canonical_sections(project.canonical)[k] for k in ("types", "globals")))
+    canonical_types = {harness._decl_name(x): x[1] for x in canon.shared if x[0] == "type"}
     global_views, header_views = {}, {}
     selected = {}
     for n, declaration in canon.globals.items():
         selected[n] = (declaration, n in canon.typed_const, "canonical")
+        typ, _, initializer = declaration.split(":", 1)[1].partition("=")
         global_views.setdefault(n, []).append({"source": "canonical", "declaration": declaration,
-                                                "type": norm(declaration.split(":", 1)[1].split("=")[0])})
+            "type": norm(typ), "typed": n in canon.typed_const, "initializer": norm(initializer),
+            "local_types": referenced_types(typ, canonical_types)})
     headers = dict(harness.parse_stubs(canonical_sections(project.canonical)["routines"]))
     for lid, c in active.items():
         for n, d in c.decls.globals.items():
             typ = d.split(":", 1)[1].split("=", 1)[0].strip()
+            definitions = dict(canonical_types)
+            definitions.update({harness._decl_name(x): x[1] for x in c.decls.shared if x[0] == "type"})
             global_views.setdefault(n, []).append({"source": lid, "declaration": d, "type": norm(typ),
-                "local_types": {harness._decl_name(x): x[1] for x in c.decls.shared if x[0] == "type"}})
+                "typed": n in c.decls.typed_const, "initializer": norm(d.partition("=")[2]),
+                "local_types": referenced_types(typ, definitions)})
             selected.setdefault(n, (rename(d, c.names), n in c.decls.typed_const, lid))
         for n, h in harness.parse_stubs(c.sections["stubs"]):
             header_views.setdefault(n, []).append({"source": lid, "header": h, "signature": signature(h)})
@@ -307,8 +326,8 @@ def generate(project: Project, ep: str, sizes: dict, far: dict, anchors: dict) -
     # Report the full local definition in addition to the declaration spelling.
     for n, views in global_views.items():
         applicable = [v for v in views if project.offset(n, ep) is not None]
-        shapes = {(v["type"], tuple(sorted((t, norm(s)) for t, s in v.get("local_types", {}).items()
-                        if re.search(r"\b" + re.escape(t) + r"\b", v["type"])))) for v in applicable}
+        shapes = {(v["type"], v["typed"], v["initializer"],
+                   tuple(sorted((t, norm(s)) for t, s in v.get("local_types", {}).items()))) for v in applicable}
         if len(shapes) > 1:
             problems.append({"kind": "global_conflict", "message": n.lower(), "views": applicable})
     for n, views in header_views.items():
@@ -689,6 +708,32 @@ def compare_image(project: Project, generation: Generation, cen: dict, original:
         report["relocations"][side + "_named"] = named
     report["unexpected_segments"] = [s.name for s in m.segments
         if s.name.upper() not in {*MAP_NAMES.values(), "DATA", "STACK"}]
+    names_by_para = {s.para: next((u for u, name in MAP_NAMES.items() if name == s.name.upper()), s.name)
+                     for s in m.segments if s.cls.upper() == "CODE"}
+    actual_order = [names_by_para[s.para] for s in m.segments if s.cls.upper() == "CODE"]
+    report["link_order"] = {"expected": project.atlas["units"], "actual": actual_order,
+                            "equal": project.atlas["units"] == actual_order}
+    # TP emits the initialisation chain at the MZ entry point as consecutive
+    # far calls. Compare both the unit order and each init's actual offset.
+    at = candidate.header["cs"] * 16 + candidate.header["ip"]
+    actual_chain = []
+    while at + 5 <= len(candidate.image) and candidate.image[at] == 0x9A:
+        off = int.from_bytes(candidate.image[at + 1:at + 3], "little")
+        para = int.from_bytes(candidate.image[at + 3:at + 5], "little")
+        actual_chain.append([names_by_para.get(para, f"{para:04X}"), off])
+        at += 5
+    original_names = {s["para"]: u for u, s in zip(project.atlas["units"], cen["segments"])}
+    expected_chain = [[original_names[p], o] for p, o in cen.get("inits", [])]
+    report["init_chain"] = {"expected": expected_chain, "actual": actual_chain,
+                            "equal": expected_chain == actual_chain}
+    report["routine_entries"] = []
+    for lid, row in project.atlas["routines"].items():
+        e = row["episodes"].get(generation.episode)
+        if e and e["unit"] in GAME and lid.upper() in m.publics:
+            para, off = m.publics[lid.upper()]
+            unit = names_by_para.get(para)
+            report["routine_entries"].append({"name": lid, "expected_unit": e["unit"], "actual_unit": unit,
+                "expected_offset": e["entry"], "actual_offset": off, "equal": unit == e["unit"] and off == e["entry"]})
     report["overlay_size"] = len(candidate.overlay)
     return report
 
@@ -726,7 +771,10 @@ def object_holes(project: Project, ep: str, cen: dict, image: bytes, objects: di
 
 def build_episode(project: Project, ep: str, directory: Path, keep: bool) -> dict:
     directory.mkdir(parents=True, exist_ok=True)
-    report = {"episode": ep, "status": "BLOCKED", "inputs": project.input_hashes, "problems": [],
+    # A failed rerun must not leave a previous successful EXE beside its report.
+    for name in ("SAM.EXE", "SAM.MAP", "SAM-PACKED.EXE"):
+        (directory / name).unlink(missing_ok=True)
+    report = {"episode": ep, "status": "BLOCKED", "inputs": dict(project.input_hashes), "problems": [],
               "comparison": None, "packed": {"status": "SKIPPED", "reason": "no equal load image"}}
     try:
         # Avoid oracle.load_image's materialization fallback: this worker reads oracles only.
@@ -737,6 +785,7 @@ def build_episode(project: Project, ep: str, directory: Path, keep: bool) -> dic
         cen_path = BUILD / "census" / f"{ep}.json"
         cen = load_json(cen_path)
         report["inputs"][f"build/census/{ep}.json"] = sha256_file(cen_path)
+        report["inputs"][f"build/datamap/{ep}.json"] = sha256_file(BUILD / "datamap" / f"{ep}.json")
         unpacked = (oracle.OUT / ep / "unpacked.exe").read_bytes()
         locked = load_json(oracle.LOCK)["episodes"][ep]
         if sha256(unpacked) != locked["unpacked"]["canonical_mz_sha256"]:
@@ -806,7 +855,11 @@ def build_episode(project: Project, ep: str, directory: Path, keep: bool) -> dic
                 report["packed"] = {"status": "EQUAL" if at is None else "DIFF", "first_difference": at,
                     "sha256": sha256(packed), "size": len(packed), "original_size": len(original_packed)}
                 atomic_bytes(directory / "SAM-PACKED.EXE", packed)
-                if at is None and not report["problems"] and comparison["relocations"]["equal"]:
+                layout_equal = (all(r["equal"] for r in comparison["globals"] + comparison["anchors"])
+                                and comparison["data_length"]["equal"] and not comparison["unexpected_segments"]
+                                and comparison["link_order"]["equal"] and comparison["init_chain"]["equal"]
+                                and all(r["equal"] for r in comparison["routine_entries"]))
+                if at is None and not report["problems"] and comparison["relocations"]["equal"] and layout_equal:
                     report["status"] = "EQUAL"
             if keep:
                 for name, blob in receipt.outputs.items():
@@ -843,6 +896,8 @@ def render_report(report: dict) -> str:
             for view in problem["views"]:
                 text = view.get("declaration", view.get("header", ""))
                 lines.append(f"  - {view['source']}: `{norm(text)}`")
+                for name, declaration in view.get("local_types", {}).items():
+                    lines.append(f"    - local type `{name}`: `{norm(declaration)}`")
     lines += ["", "## Object holes (no bytes patched or waived)", "", "| Unit | Original range | Original bytes | Candidate bytes |", "|---|---|---|---|"]
     for hole in report.get("object_holes", []):
         a, b = hole["original_range"]
