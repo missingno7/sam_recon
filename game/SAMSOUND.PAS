@@ -9,37 +9,54 @@ var
   SoundBankTwo: PSpeakerSoundBank;
   SoundBankThree: PSpeakerSoundBank;
   SoundResourceFile: file of TSpeakerSoundBank;
-  CurrentSoundEffect: integer;
-  SoundSampleIndex: integer;
-  SoundPlaying: byte;
-  SoundEnabled: byte;
+  CurrentSoundEffect: Integer;
+  SoundSampleIndex: Integer;
+  SoundPlaying: Byte;
+  SoundEnabled: Byte;
 procedure StartSoundEffect(EffectNumber: Integer);
 implementation
 uses Dos, PROGRPHX, Crt;
+const
+  { One-based effect ranges within the three twelve-effect banks. }
+  SoundBankTwoFirstEffect = 13;
+  SoundBankTwoLastEffect = 24;
+  SoundBankThreeFirstEffect = 25;
+  SoundBankThreeLastEffect = 36;
+  SoundBankTwoIndexBias = 12;
+  SoundBankThreeIndexBias = 24;
 
 { PC-speaker effect selection. }
 {$F+}
-{ Sets active sound number/sample=1/playing flag. }
+{ Selects an effect at sample 1. Original priority bug preserved for exactness:
+  the requested priority is overwritten by the current effect's priority, then
+  compared with an uninitialized local. Do not repair this comparison here. }
 procedure StartSoundEffect(EffectNumber: Integer);
 var
-  SoundPriorityWork: Integer;
+  SoundPriorityScratch: Integer;
   UninitializedPriority: Integer;
 begin
   if SoundPlaying <> 0 then
   begin
     case EffectNumber of
-      1..12: SoundPriorityWork := SoundBankOne^[EffectNumber, 301];
-      13..24: SoundPriorityWork := SoundBankTwo^[EffectNumber - 12, 301];
-      25..36: SoundPriorityWork := SoundBankThree^[EffectNumber - 24, 301];
+      1..GameSoundEffectsPerBank:
+        SoundPriorityScratch := SoundBankOne^[EffectNumber, GameSoundPriorityColumn];
+      SoundBankTwoFirstEffect..SoundBankTwoLastEffect:
+        SoundPriorityScratch := SoundBankTwo^[EffectNumber - SoundBankTwoIndexBias, GameSoundPriorityColumn];
+      SoundBankThreeFirstEffect..SoundBankThreeLastEffect:
+        SoundPriorityScratch := SoundBankThree^[EffectNumber - SoundBankThreeIndexBias,
+          GameSoundPriorityColumn];
     end;
-
     case CurrentSoundEffect of
-      1..12: SoundPriorityWork := SoundBankOne^[CurrentSoundEffect, 301];
-      13..24: SoundPriorityWork := SoundBankTwo^[CurrentSoundEffect - 12, 301];
-      25..36: SoundPriorityWork := SoundBankThree^[CurrentSoundEffect - 24, 301];
+      1..GameSoundEffectsPerBank:
+        SoundPriorityScratch := SoundBankOne^[CurrentSoundEffect, GameSoundPriorityColumn];
+      SoundBankTwoFirstEffect..SoundBankTwoLastEffect:
+        SoundPriorityScratch := SoundBankTwo^[CurrentSoundEffect - SoundBankTwoIndexBias,
+          GameSoundPriorityColumn];
+      SoundBankThreeFirstEffect..SoundBankThreeLastEffect:
+        SoundPriorityScratch := SoundBankThree^[CurrentSoundEffect - SoundBankThreeIndexBias,
+          GameSoundPriorityColumn];
     end;
-
-    if SoundPriorityWork >= UninitializedPriority then
+    if SoundPriorityScratch >= UninitializedPriority then
     begin
       SoundSampleIndex := 1;
       SoundPlaying := 1;

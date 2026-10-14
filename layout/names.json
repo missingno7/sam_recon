@@ -9039,7 +9039,7 @@
     "F": "LevelFile",
     "I": "LoadIndex",
     "Row": "EncodedRow",
-    "Work": "BackdropText"
+    "Work": "LevelBackdropCodeText"
    },
    "name": "LoadLevelMap",
    "param_details": {
@@ -11554,8 +11554,8 @@
     }
    },
    "locals": {
-    "X": "Axis0Time",
-    "Y": "Axis1Time"
+    "X": "JoystickPresenceXTime",
+    "Y": "JoystickPresenceYTime"
    },
    "name": "IsJoystickPresent",
    "params": {},
@@ -11681,7 +11681,7 @@
    },
    "locals": {
     "Uninitialized": "UninitializedPriority",
-    "Value": "SoundPriorityWork"
+    "Value": "SoundPriorityScratch"
    },
    "name": "StartSoundEffect",
    "param_details": {
@@ -11721,7 +11721,7 @@
    },
    "locals": {
     "i": "InitIndex",
-    "value": "RankAsLongInt"
+    "value": "InitialScoreRankLong"
    },
    "name": "InitializeGameDefaults",
    "params": {},
