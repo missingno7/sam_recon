@@ -128,7 +128,7 @@ def main() -> int:
         text = (ROOT / rec["source"]).read_text(encoding="latin-1")
         ok = True
         for ep in rec["equal"]:
-            res, _ = search.run_episode(text, f, ep, rec["options"], a.fresh)
+            res, _ = search.run_episode(text, f, ep, search.profile_options(rec["profile"])[1], a.fresh)
             if res.status != "EQUAL":
                 ok = False
                 failures.append(f"{f} {ep}: {res.short()}")

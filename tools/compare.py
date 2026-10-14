@@ -88,6 +88,8 @@ def candidate(exe: bytes, m, h_unit: str, stub_names: dict | None = None,
     seg_unit = {}
     for s in m.segments:
         n = s.name.upper()
+        if s.length == 0 and s.cls.upper() == "CODE":
+            continue        # an empty unit shares its paragraph with the next segment
         if s.cls.upper() == "DATA":
             seg_unit[s.para] = "DATA"
         elif n == "H":

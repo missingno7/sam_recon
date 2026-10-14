@@ -27,3 +27,7 @@
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_9b3e", "note": "luna wave 2 (CS literal binding)", "source_sha256": "4f6ef17cf434b70beb1b58130f07aedd3136b7c75ad70f938d5aac04b3593bf6", "time": "2026-10-14T15:23:55"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_9bdf", "note": "luna wave 2 (CS literal binding)", "source_sha256": "fe1956ba145d2ab802b6f378767986343276fd07a9df9993818e2f68605641c6", "time": "2026-10-14T15:23:56"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_9de0", "note": "luna wave 2 (CS literal binding)", "source_sha256": "5dd8096b863c03842e1a11d1b9e4b1a7e8f02fe1c51d1fa20178bc4233ff4285", "time": "2026-10-14T15:23:57"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "p_0ef2", "note": "wave 2", "source_sha256": "a4f8d3485645a9c95e0a28a17134f441a06dc1168aa00bd5be4916f804b12f0f", "time": "2026-10-14T15:29:34"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u1_01c4", "note": "wave 2", "source_sha256": "4bfccb5a2c67ade6110f473d79b7d9d370cc73e91116c5e9b676fcb9abe2e33b", "time": "2026-10-14T15:29:35"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u3_344c", "note": "wave 2", "source_sha256": "e5bb9e910419a63d5f5927a271ccd7864d82c942c17f26b3dee51fbacd8a211d", "time": "2026-10-14T15:29:36"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u4_0045", "note": "wave 2", "source_sha256": "d95dffd4033829a9ca998ea859e89b3d1842f19d40030ff69820cea8acd02c1a", "time": "2026-10-14T15:29:37"}

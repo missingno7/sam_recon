@@ -1,0 +1,91 @@
+{
+ "description": "Supervisor-curated routes overriding tools/tasks.py heuristics. ASM: inside a linked {$L} object (build/workers/sol-asm/REPORT.md).",
+ "kinds": {
+  "p_5151": "ASM",
+  "p_516d": "ASM",
+  "p_51df": "ASM",
+  "p_51f3": "ASM",
+  "u4_04a3": "ASM",
+  "u4_04bf": "ASM",
+  "u4_054f": "ASM",
+  "u4_0557": "ASM",
+  "u4_05c3": "ASM",
+  "u5_000f": "ASM",
+  "u5_0047": "ASM",
+  "u5_00eb": "ASM",
+  "u5_01ac": "ASM",
+  "u5_026b": "ASM",
+  "u5_0c70": "ASM",
+  "u5_0d2d": "ASM",
+  "u5_0dc7": "ASM",
+  "u5_0f9b": "ASM",
+  "u5_10d7": "ASM",
+  "u5_12b6": "ASM",
+  "u5_137a": "ASM",
+  "u5_14a7": "ASM",
+  "u5_15d1": "ASM",
+  "u5_16f5": "ASM",
+  "u5_1915": "ASM",
+  "u5_19e3": "ASM",
+  "u5_1ac6": "ASM",
+  "u5_1bf7": "ASM",
+  "u5_1d60": "ASM",
+  "u5_1d71": "ASM",
+  "u5_2020": "ASM",
+  "u5_20a2": "ASM",
+  "u6_00cc": "ASM",
+  "u8_0c14": "ASM",
+  "u9_01a3": "ASM",
+  "u9_01c5": "ASM",
+  "u9_01d3": "ASM",
+  "u9_01f9": "ASM",
+  "u9_024c": "ASM",
+  "u9_029f": "ASM",
+  "u9_02db": "ASM",
+  "u9_02fa": "ASM",
+  "u9_0337": "ASM",
+  "u9_0352": "ASM",
+  "u9_0475": "ASM",
+  "u9_051f": "ASM",
+  "u9_0625": "ASM",
+  "u9_07ee": "ASM",
+  "u9_1795": "ASM",
+  "u9_1831": "ASM",
+  "u9_19f9": "ASM",
+  "u9_1b27": "ASM",
+  "u9_2463": "ASM",
+  "u9_27e2": "ASM",
+  "u9_2981": "ASM",
+  "u9_2a9f": "ASM",
+  "u9_2b38": "ASM",
+  "u9_2e6d": "ASM",
+  "u9_2ecf": "ASM",
+  "u9_2f32": "ASM"
+ },
+ "objects": {
+  "p": {
+   "sam1_end": "5200",
+   "sam1_start": "514a"
+  },
+  "u4": {
+   "sam1_end": "05c7",
+   "sam1_start": "04a3"
+  },
+  "u5": {
+   "sam1_end": "22b8",
+   "sam1_start": "000f"
+  },
+  "u6": {
+   "sam1_end": "00fb",
+   "sam1_start": "007f"
+  },
+  "u8": {
+   "sam1_end": "0cfc",
+   "sam1_start": "0c14"
+  },
+  "u9": {
+   "sam1_end": "303a",
+   "sam1_start": "00e6"
+  }
+ }
+}

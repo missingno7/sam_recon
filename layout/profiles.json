@@ -2,8 +2,8 @@
  "default": "sam",
  "profiles": {
   "sam": {
-   "note": "PROVISIONAL until evidence/compiler-rules.json: Turbo Pascal 5.0, no stack checking (original prologues have no StackCheck call).",
-   "options": ["/$S-"]
+   "note": "Turbo Pascal 5.0 (proven: System/Crt/Dos segments reproduced byte for byte in SAM1/2/3, build/workers/sol-compiler/REPORT.md). $S- $R- $B- proven by matched routines; $I- fits all game I/O (no IOResult check calls); $A+ default (word alignment observed in the data layout). $D/$L/$E/$N/$V/$O have no effect on the compared bytes.",
+   "options": ["/$S-", "/$I-", "/$R-", "/$B-"]
   }
  }
 }
