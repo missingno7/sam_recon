@@ -225,11 +225,13 @@ def intake(dirs: list) -> list:
         if not rp.exists():
             continue
         try:
-            res = json.loads(rp.read_text(encoding="utf-8"))
+            res = json.loads(rp.read_text(encoding="utf-8-sig"))
         except json.JSONDecodeError as exc:
             out.append({"packet": rel(d), "error": f"result.json unreadable: {exc}"})
             continue
         fid = res.get("function")
+        if (RECIPES / f"{fid}.json").exists():
+            continue                # already accepted
         cand = ROOT / res.get("candidate", "") if res.get("candidate") else d / "cand.pas"
         row = {"function": fid, "packet": rel(d), "claimed": res.get("status"), "notes": res.get("notes", "")}
         if cand.exists():

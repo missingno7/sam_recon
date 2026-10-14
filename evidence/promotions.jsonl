@@ -10,3 +10,11 @@
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_3c93", "note": "supervisor examples", "source_sha256": "1c73683a8a72cef21f522b47595f02ca080acbc48fb99594c2257cfe3104aef0", "time": "2026-10-14T15:11:39"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "u1_012d", "note": "luna pilot wave", "source_sha256": "3695a2c67b935f2df28ae2ae09df47880ae323eb4d81336fdbb889cddbc977a0", "time": "2026-10-14T15:12:07"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "u7_0000", "note": "luna pilot wave; original reads an unassigned local (bug kept)", "source_sha256": "295d3173f2abf85c1eb3066b29ebd87fed9ee380cb8a725b92e18742bb1b6a45", "time": "2026-10-14T15:12:32"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u1_011a", "note": "luna wave 1", "source_sha256": "048659ffcab3b632eb7df60dcadc26525a4c5b572b271c0316441ab5d8441362", "time": "2026-10-14T15:14:18"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u3_007c", "note": "luna wave 1", "source_sha256": "6e027d36cf969c9a4e08eb4782fdd6446def56491459992a2723602a82610fe0", "time": "2026-10-14T15:14:19"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u3_00a3", "note": "luna wave 1", "source_sha256": "7841ccae6e9f84bdb2a4cb3249b664eb8320185770317f7b0d2793986a1d59af", "time": "2026-10-14T15:14:19"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u4_0000", "note": "luna wave 1", "source_sha256": "bd7b3e4e7f98c608a4d829c933206630b91d714aa89fc680ee3dedc5ef0149c4", "time": "2026-10-14T15:14:20"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u4_045e", "note": "luna wave 1", "source_sha256": "8c38bd2388b46288d766c33ccbf5cb08bda9413d867d99f6cbe65c4740fc944a", "time": "2026-10-14T15:14:20"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u6_0058", "note": "luna wave 1", "source_sha256": "c71a025ffbc8fa65b6fe76551777e9e30f47ac6fdd6d20d3412979cb2edccf7c", "time": "2026-10-14T15:14:21"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u3_acdd", "note": "luna wave 1", "source_sha256": "78e9cfa97521caa692c3742237623144b874f3185e110076e4085750b3f65ad9", "time": "2026-10-14T15:14:21"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u3_0232", "note": "luna wave 1", "source_sha256": "174bd972f0ffb00e4a6551c872aa06cb3bbf84270ba6cd2ce1b34ba4a7db02b5", "time": "2026-10-14T15:14:34"}
