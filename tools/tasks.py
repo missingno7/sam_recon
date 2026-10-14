@@ -122,8 +122,11 @@ FACTS = """- Compiler: Turbo Pascal 5.0 (TPC), profile in layout/profiles.json; 
   the same unit; `call near X` a near one; `9A off:seg` a far call to another unit or the runtime.
 - Strings: string literals used by a routine are emitted just before its entry (context shows them).
 - Globals: the harness reproduces the original data segment exactly, so DS offsets must come out
-  raw-identical; declare each global you use in {@decls} with its type (one name per SAM1 offset;
-  an array or record covering several referenced offsets is declared once at its first offset).
+  raw-identical; declare each global you use in {@decls} with its type, named d_<its real SAM1
+  start offset>.  An array or record covering several referenced offsets is declared once.  Careful:
+  TP folds the low bound into the displacement, so `a[i]` of `array[1..N] of T` (size s) shows
+  as `[di + start - s]`: a displacement named in the context may lie BEFORE the array's start;
+  name the global by its real start (any d_XXXX is accepted, not only names from layout/data.json).
 """
 
 SCHEMA = """Write {dir}/result.json:

@@ -255,6 +255,26 @@ def anchors(ep: str) -> dict:
     return out
 
 
+def extra_offset(name: str, ep: str) -> int | None:
+    """Offset in `ep` of a candidate global the data map never saw referenced
+    directly (e.g. a 1-based array whose code displacement is base - element size).
+    d_XXXX is SAM1 offset XXXX, moved by the delta of the nearest mapped global
+    below it; d_samN_XXXX exists only in that episode."""
+    m = _GLOBAL.match(name)
+    if not m:
+        return None
+    only, off = m.group(1), int(m.group(2), 16)
+    if only:
+        return off if only.lower() == ep else None
+    g = load_json(LAYOUT / "data.json")["globals"]
+    below = [(int(v["sam1"], 16), int(v[ep], 16)) for v in g.values()
+             if v.get("sam1") and v.get(ep) and int(v["sam1"], 16) <= off]
+    if not below:
+        return off
+    s1, e = max(below)
+    return off + (e - s1)
+
+
 def episode_globals(ep: str) -> dict:
     """name -> DS offset in `ep` for every referenced global."""
     g = load_json(LAYOUT / "data.json")["globals"]
@@ -416,7 +436,11 @@ def generate(candidate: str, ep: str, function: str | None = None, sizes: dict |
     an = anchors(ep)
     glob = episode_globals(ep)
     for n in [n for n in cand.globals if n not in glob]:
-        del cand.globals[n]          # a global this episode does not have: drop the view
+        off = extra_offset(n, ep)
+        if off is None:
+            del cand.globals[n]      # a global this episode does not have: drop the view
+        else:
+            glob[n] = off
     pts = [(o, n) for n, o in glob.items()]
     h_const = _region(pts, 0, an["game_const_end"], cand, True, sizes)
     h_var = _region(pts, an["game_var_start"], an["crt_var_start"], cand, False, sizes)
