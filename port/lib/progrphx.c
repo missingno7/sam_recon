@@ -33,9 +33,71 @@ static uint16_t screen_stride_bytes = default_stride_bytes;
 static uint16_t draw_page;
 static uint16_t draw_color = 1;
 static uint16_t font8_segment, font8_offset, font14_segment, font14_offset;
+static uint16_t font8_height = 8, font14_height = 14;
 static uint16_t selected_font_segment, selected_font_offset;
 static uint16_t selected_font_height = 14;
+static uint16_t transfer_rows_remaining, transfer_row_bytes;
+static uint8_t sprite_bytes_remaining, sprite_right_shift, sprite_left_shift;
+static uint8_t sprite_source_mask, sprite_plane_byte[4];
+static uint8_t glyph_left_shift, glyph_mask_high, glyph_mask_low;
 
+#ifdef SAM_LIBDIFF_TEST
+void libdiff_progrphx_set_state(const uint16_t values[25])
+{
+    screen_stride_bytes = values[0];
+    draw_page = values[1];
+    draw_color = values[2];
+    font8_offset = values[3];
+    font8_segment = values[4];
+    font8_height = values[5];
+    font14_offset = values[6];
+    font14_segment = values[7];
+    font14_height = values[8];
+    selected_font_offset = values[9];
+    selected_font_segment = values[10];
+    selected_font_height = values[11];
+    transfer_rows_remaining = values[12];
+    transfer_row_bytes = values[13];
+    sprite_bytes_remaining = (uint8_t)values[14];
+    sprite_right_shift = (uint8_t)values[15];
+    sprite_left_shift = (uint8_t)values[16];
+    sprite_source_mask = (uint8_t)values[17];
+    for (unsigned plane = 0; plane < 4; ++plane)
+        sprite_plane_byte[plane] = (uint8_t)values[18 + plane];
+    glyph_left_shift = (uint8_t)values[22];
+    glyph_mask_high = (uint8_t)values[23];
+    glyph_mask_low = (uint8_t)values[24];
+}
+
+void libdiff_progrphx_get_state(uint16_t values[25])
+{
+    values[0] = screen_stride_bytes;
+    values[1] = draw_page;
+    values[2] = draw_color;
+    values[3] = font8_offset;
+    values[4] = font8_segment;
+    values[5] = font8_height;
+    values[6] = font14_offset;
+    values[7] = font14_segment;
+    values[8] = font14_height;
+    values[9] = selected_font_offset;
+    values[10] = selected_font_segment;
+    values[11] = selected_font_height;
+    values[12] = transfer_rows_remaining;
+    values[13] = transfer_row_bytes;
+    values[14] = sprite_bytes_remaining;
+    values[15] = sprite_right_shift;
+    values[16] = sprite_left_shift;
+    values[17] = sprite_source_mask;
+    for (unsigned plane = 0; plane < 4; ++plane)
+        values[18 + plane] = sprite_plane_byte[plane];
+    values[22] = glyph_left_shift;
+    values[23] = glyph_mask_high;
+    values[24] = glyph_mask_low;
+}
+#endif
+
+/* Differential-harness twin of the assembly's private PgSelectDrawPage. */
 static void vga_index_data(uint16_t index_port, uint8_t index, uint8_t data)
 {
     (void)vga_port_write(index_port, index);
@@ -81,6 +143,14 @@ static void add_draw_page(uint16_t *offset)
     }
 }
 
+/* The three original entries below load their page LOOP count from entry AX.
+   At every game call site AX is the last Pascal argument pushed by the caller. */
+static void add_entry_ax_page_offset(uint16_t *offset, uint16_t entry_ax)
+{
+    if ((uint8_t)draw_page != 0)
+        *offset = (uint16_t)(*offset + (uint16_t)((uint32_t)entry_ax * video_page_bytes));
+}
+
 static void vga_exchange(uint16_t offset, uint8_t value)
 {
     (void)vga_cpu_read(offset);
@@ -107,12 +177,17 @@ static void restore_common_graphics_state(void)
 
 static void masked_sprite(uint8_t *source, uint16_t xbyte, uint16_t y,
                           unsigned rows, unsigned groups_per_row,
-                          uint16_t row_advance, int page)
+                          uint16_t row_advance, int page,
+                          int entry_ax_page_loop, uint16_t entry_ax)
 {
     unsigned row, group, plane;
     uint16_t offset = screen_offset(xbyte, y);
-    if (page)
-        add_draw_page(&offset);
+    if (page) {
+        if (entry_ax_page_loop)
+            add_entry_ax_page_offset(&offset, entry_ax);
+        else
+            add_draw_page(&offset);
+    }
 
     (void)vga_port_write(sequencer_index_port, seq_map_mask);
     for (row = 0; row < rows; ++row) {
@@ -131,12 +206,17 @@ static void masked_sprite(uint8_t *source, uint16_t xbyte, uint16_t y,
 
 static void opaque_sprite(uint8_t *source, uint16_t xbyte, uint16_t y,
                           unsigned rows, unsigned groups_per_row,
-                          uint16_t row_advance, int page)
+                          uint16_t row_advance, int page,
+                          int entry_ax_page_loop, uint16_t entry_ax)
 {
     unsigned row, group, plane;
     uint16_t offset = screen_offset(xbyte, y);
-    if (page)
-        add_draw_page(&offset);
+    if (page) {
+        if (entry_ax_page_loop)
+            add_entry_ax_page_offset(&offset, entry_ax);
+        else
+            add_draw_page(&offset);
+    }
 
     (void)vga_port_write(sequencer_index_port, seq_map_mask);
     for (row = 0; row < rows; ++row) {
@@ -182,6 +262,7 @@ void PgSetBiosVideoMode(uint16_t bios_mode)
 /* Clamps the planar row stride to at least 40 bytes and programs CRTC offset. */
 int16_t PgSetScreenStride(uint16_t stride_bytes)
 {
+    uint16_t entry_ax = stride_bytes;
     if ((int16_t)stride_bytes < default_stride_bytes)
         stride_bytes = default_stride_bytes;
     screen_stride_bytes = stride_bytes;
@@ -190,10 +271,9 @@ int16_t PgSetScreenStride(uint16_t stride_bytes)
     stride_bytes >>= 1;
     (void)vga_port_write((uint16_t)(crtc_index_port + 1), (uint8_t)stride_bytes);
     pc_outb((uint16_t)(crtc_index_port + 2), (uint8_t)(stride_bytes >> 8));
-    /* The original returns the caller's entry AX, which is not a Pascal
-       argument and cannot be represented by this C signature. Call sites
-       treat the result as unused. */
-    return 0;
+    /* All linked Pascal call sites load this argument through AX before
+       pushing it, so the declared Integer result is the incoming value. */
+    return (int16_t)entry_ax;
 }
 
 /* Sets the display start, then fine pan at the next retrace start. */
@@ -293,17 +373,18 @@ void PgSetPaletteRegister(int16_t palette_index, int16_t palette_color)
 /* Draws 16 rows of mask plus four plane bytes at a byte-aligned position. */
 void PgBlitMasked16x16(farptr image_source_far, int16_t byte_column, int16_t pixel_row)
 {
-    uint8_t *image_source=pc_host_fp(image_source_far);
+    uint8_t *image_source = pc_host_fp(image_source_far);
     masked_sprite(image_source, (uint16_t)byte_column, (uint16_t)pixel_row,
-                  16, 2, (uint16_t)(screen_stride_bytes - 2), 1);
+                  16, 2, (uint16_t)(screen_stride_bytes - 2), 1, 0, 0);
 }
 
 /* Draws eight rows of mask plus four plane bytes at a byte-aligned position. */
 void PgBlitMasked8x8(farptr image_source_far, int16_t byte_column, int16_t pixel_row)
 {
-    uint8_t *image_source=pc_host_fp(image_source_far);
+    uint8_t *image_source = pc_host_fp(image_source_far);
     masked_sprite(image_source, (uint16_t)byte_column, (uint16_t)pixel_row,
-                  8, 1, (uint16_t)(screen_stride_bytes - 1), 1);
+                  8, 1, (uint16_t)(screen_stride_bytes - 1), 1, 1,
+                  (uint16_t)pixel_row);
 }
 
 /* Stores the four-plane fill/pixel color in assembly code-segment state. */
@@ -318,7 +399,7 @@ void PgFillRectangleByteAligned(uint16_t left_byte_column, uint16_t width_bytes,
 {
     uint16_t offset = screen_offset(left_byte_column, top_pixel_row);
     uint16_t row;
-    add_draw_page(&offset);
+    add_entry_ax_page_offset(&offset, height_rows);
     (void)vga_port_write(sequencer_index_port, seq_map_mask);
     for (row = 0; row < height_rows; ++row) {
         uint16_t col;
@@ -338,13 +419,15 @@ void PgCapturePlanarRectangle(farptr captured_image_far, int16_t left_byte_colum
                               int16_t top_pixel_row, int16_t right_byte_limit,
                               int16_t bottom_pixel_row)
 {
-    uint8_t *captured_image=pc_host_fp(captured_image_far);
+    uint8_t *captured_image = pc_host_fp(captured_image_far);
     uint16_t width = (uint16_t)((uint16_t)right_byte_limit - (uint16_t)left_byte_column);
     uint16_t rows = (uint16_t)((uint16_t)bottom_pixel_row - (uint16_t)top_pixel_row + 1);
     uint16_t base = screen_offset((uint16_t)left_byte_column, (uint16_t)top_pixel_row);
     unsigned plane;
 
     add_draw_page(&base);
+    transfer_rows_remaining = rows;
+    transfer_row_bytes = width;
     captured_image[0] = (uint8_t)rows;
     captured_image[1] = (uint8_t)(rows >> 8);
     captured_image[2] = (uint8_t)width;
@@ -369,12 +452,14 @@ void PgCapturePlanarRectangle(farptr captured_image_far, int16_t left_byte_colum
 void PgRestorePlanarRectangle(farptr captured_image_far, int16_t byte_column,
                               int16_t pixel_row)
 {
-    uint8_t *captured_image=pc_host_fp(captured_image_far);
+    uint8_t *captured_image = pc_host_fp(captured_image_far);
     uint16_t rows = (uint16_t)(captured_image[0] | ((uint16_t)captured_image[1] << 8));
     uint16_t width = (uint16_t)(captured_image[2] | ((uint16_t)captured_image[3] << 8));
     uint16_t base = screen_offset((uint16_t)byte_column, (uint16_t)pixel_row);
     unsigned plane;
     captured_image += 5; /* The original consumes, but does not examine, its marker. */
+    transfer_rows_remaining = rows;
+    transfer_row_bytes = width;
     add_draw_page(&base);
 
     (void)vga_port_write(sequencer_index_port, seq_map_mask);
@@ -393,29 +478,34 @@ void PgRestorePlanarRectangle(farptr captured_image_far, int16_t byte_column,
 /* Draws a masked 16x16 sprite at a pixel position, splitting shifted bytes. */
 void PgBlitMaskedShifted16x16(farptr sprite_source_far, int16_t pixel_x, int16_t pixel_y)
 {
-    uint8_t *sprite_source=pc_host_fp(sprite_source_far);
+    uint8_t *sprite_source = pc_host_fp(sprite_source_far);
     unsigned row, group, plane;
     uint8_t shift = (uint8_t)pixel_x & 7;
     uint8_t left_shift = (uint8_t)(8 - shift);
+    sprite_right_shift = shift;
+    sprite_left_shift = left_shift;
     uint16_t row_start = screen_offset((uint16_t)((uint16_t)pixel_x >> 3), (uint16_t)pixel_y);
 
     (void)vga_port_write(sequencer_index_port, seq_map_mask);
     for (row = 0; row < 16; ++row) {
         uint16_t dest = row_start;
+        sprite_bytes_remaining = 2;
         for (group = 0; group < 2; ++group) {
             uint8_t mask = *sprite_source++;
             uint8_t pixels[4];
+            sprite_bytes_remaining = (uint8_t)(sprite_bytes_remaining - 1u);
             uint8_t low_mask = (uint8_t)(mask >> shift);
             uint8_t high_mask = (uint8_t)(mask << left_shift);
-            for (plane = 0; plane < 4; ++plane)
+            for (plane = 0; plane < 4; ++plane) {
                 pixels[plane] = *sprite_source++;
+                sprite_plane_byte[plane] = pixels[plane];
+            }
             planar_blit_byte(dest, low_mask,
                              (uint8_t[4]){(uint8_t)(pixels[0] >> shift),
                                          (uint8_t)(pixels[1] >> shift),
                                          (uint8_t)(pixels[2] >> shift),
                                          (uint8_t)(pixels[3] >> shift)}, 1);
-            ++dest;
-            planar_blit_byte(dest, high_mask,
+            planar_blit_byte((uint16_t)(dest + 1), high_mask,
                              (uint8_t[4]){(uint8_t)(pixels[0] << left_shift),
                                          (uint8_t)(pixels[1] << left_shift),
                                          (uint8_t)(pixels[2] << left_shift),
@@ -430,17 +520,20 @@ void PgBlitMaskedShifted16x16(farptr sprite_source_far, int16_t pixel_x, int16_t
 /* Loops over eight rows, splitting one mask and four plane bytes. */
 void PgBlitMaskedShifted8x8(farptr glyph_source_far, uint16_t pixel_x, uint16_t pixel_y)
 {
-    uint8_t *glyph_source=pc_host_fp(glyph_source_far);
+    uint8_t *glyph_source = pc_host_fp(glyph_source_far);
     unsigned row, plane;
     uint8_t left_shift = (uint8_t)(8 - (pixel_x & 7));
     uint8_t right_shift = (uint8_t)(pixel_x & 7);
     uint16_t row_start = screen_offset((uint16_t)(pixel_x >> 3), pixel_y);
+    glyph_left_shift = left_shift;
     add_draw_page(&row_start);
     (void)vga_port_write(sequencer_index_port, seq_map_mask);
     for (row = 0; row < 8; ++row) {
         uint8_t mask = *glyph_source++;
         uint8_t mask_high = (uint8_t)(mask >> right_shift);
         uint8_t mask_low = (uint8_t)(mask << left_shift);
+        glyph_mask_high = mask_high;
+        glyph_mask_low = mask_low;
         uint16_t dest = row_start;
         for (plane = 0; plane < 4; ++plane) {
             (void)vga_port_write(sequencer_data_port, (uint8_t)(1u << plane));
@@ -460,21 +553,28 @@ void PgBlitMaskedShifted8x8(farptr glyph_source_far, uint16_t pixel_x, uint16_t 
 /* ORs 16 rows of two shifted byte groups into the current video page. */
 void PgOrShifted16x16(farptr sprite_source_far, int16_t pixel_x, int16_t pixel_y)
 {
-    uint8_t *sprite_source=pc_host_fp(sprite_source_far);
+    uint8_t *sprite_source = pc_host_fp(sprite_source_far);
     unsigned row, group, plane;
     uint8_t shift = (uint8_t)pixel_x & 7;
     uint8_t left_shift = (uint8_t)(8 - shift);
+    sprite_right_shift = shift;
+    sprite_left_shift = left_shift;
     uint16_t row_start = screen_offset((uint16_t)((uint16_t)pixel_x >> 3), (uint16_t)pixel_y);
 
     (void)vga_port_write(sequencer_index_port, seq_map_mask);
     for (row = 0; row < 16; ++row) {
         uint16_t dest = row_start;
+        sprite_bytes_remaining = 2;
         for (group = 0; group < 2; ++group) {
             uint8_t mask = *sprite_source++;
             uint8_t pixels[4];
             unsigned half;
-            for (plane = 0; plane < 4; ++plane)
+            sprite_bytes_remaining = (uint8_t)(sprite_bytes_remaining - 1u);
+            sprite_source_mask = mask;
+            for (plane = 0; plane < 4; ++plane) {
                 pixels[plane] = *sprite_source++;
+                sprite_plane_byte[plane] = pixels[plane];
+            }
             for (half = 0; half < 2; ++half) {
                 uint8_t bitmask = half ? (uint8_t)(mask << left_shift) : (uint8_t)(mask >> shift);
                 uint16_t address = (uint16_t)(dest + half);
@@ -489,7 +589,7 @@ void PgOrShifted16x16(farptr sprite_source_far, int16_t pixel_x, int16_t pixel_y
                     vga_cpu_write(address, (uint8_t)(prior | pixel));
                 }
             }
-            dest = (uint16_t)(dest + 2);
+            ++dest;
         }
         row_start = (uint16_t)(row_start + screen_stride_bytes);
     }
@@ -501,16 +601,18 @@ void PgInitializeRomFonts(void)
 {
     pc_regs registers = {0};
     registers.ax = 0x1130;
-    registers.bx = 0x0300;
-    pc_bios_int(bios_video_interrupt, &registers);
-    font8_offset = registers.bp;
-    font8_segment = registers.es;
-
-    registers.ax = 0x1130;
     registers.bx = 0x0200;
     pc_bios_int(bios_video_interrupt, &registers);
     font14_offset = registers.bp;
     font14_segment = registers.es;
+    font14_height = 14;
+
+    registers.ax = 0x1130;
+    registers.bx = 0x0300;
+    pc_bios_int(bios_video_interrupt, &registers);
+    font8_offset = registers.bp;
+    font8_segment = registers.es;
+    font8_height = 8;
 }
 
 /* Selects the 8-row font for index 1; other values select the 14-row font. */
@@ -519,28 +621,29 @@ void PgSelectRomFont(uint16_t font_index)
     if (font_index == 1) {
         selected_font_segment = font8_segment;
         selected_font_offset = font8_offset;
-        selected_font_height = 8;
+        selected_font_height = font8_height;
     } else {
         selected_font_segment = font14_segment;
         selected_font_offset = font14_offset;
-        selected_font_height = 14;
+        selected_font_height = font14_height;
     }
 }
 
 /* Draws 16 rows of four plane byte pairs, overwriting the destination. */
 void PgBlitOpaque16x16(farptr image_source_far, int16_t byte_column, int16_t pixel_row)
 {
-    uint8_t *image_source=pc_host_fp(image_source_far);
+    uint8_t *image_source = pc_host_fp(image_source_far);
     opaque_sprite(image_source, (uint16_t)byte_column, (uint16_t)pixel_row,
-                  16, 2, (uint16_t)(screen_stride_bytes - 2), 1);
+                  16, 2, (uint16_t)(screen_stride_bytes - 2), 1, 0, 0);
 }
 
 /* Draws eight rows of four plane bytes, overwriting the destination. */
 void PgBlitOpaque8x8(farptr image_source_far, int16_t byte_column, int16_t pixel_row)
 {
-    uint8_t *image_source=pc_host_fp(image_source_far);
+    uint8_t *image_source = pc_host_fp(image_source_far);
     opaque_sprite(image_source, (uint16_t)byte_column, (uint16_t)pixel_row,
-                  8, 1, (uint16_t)(screen_stride_bytes - 1), 1);
+                  8, 1, (uint16_t)(screen_stride_bytes - 1), 1, 1,
+                  (uint16_t)pixel_row);
 }
 
 /* Uses EGA latches to copy a 16x16 tile from the VRAM cache at offset FA00h. */

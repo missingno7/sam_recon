@@ -7,7 +7,7 @@ static const uint8_t decode_key[] = "Copyright 1991 Peder Jungck";
 
 void DecryptGameAssetBuffer(farptr asset_buffer_far, uint16_t asset_byte_count)
 {
-    uint8_t *asset_buffer=pc_host_fp(asset_buffer_far);
+    uint8_t *asset_buffer = pc_host_fp(asset_buffer_far);
     uint16_t byte_index;
     size_t key_index = 0;
 

@@ -26,6 +26,28 @@ static uint8_t cmos_day_work;
 static uint8_t cmos_month_work;
 static uint16_t cmos_year_work;
 
+#ifdef SAM_LIBDIFF_TEST
+void libdiff_cmospit_set_state(const uint16_t values[6])
+{
+    cmos_hour_work = (uint8_t)values[0];
+    cmos_minute_work = (uint8_t)values[1];
+    cmos_second_work = (uint8_t)values[2];
+    cmos_month_work = (uint8_t)values[3];
+    cmos_day_work = (uint8_t)values[4];
+    cmos_year_work = values[5];
+}
+
+void libdiff_cmospit_get_state(uint16_t values[6])
+{
+    values[0] = cmos_hour_work;
+    values[1] = cmos_minute_work;
+    values[2] = cmos_second_work;
+    values[3] = cmos_month_work;
+    values[4] = cmos_day_work;
+    values[5] = cmos_year_work;
+}
+#endif
+
 static uint16_t read_cmos_decimal(uint8_t register_index)
 {
     uint8_t packed_bcd;

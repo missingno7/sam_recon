@@ -101,6 +101,14 @@ static const pcx_display_setup display_setups[22] = {
     {0x1d, 8, 800, 600, 1, 1, 0xa000, 0x0000, 5}
 };
 
+/* CRTC defaults initialized by the original video-descriptor entry point. */
+static const uint8_t pcx_hercules_graphics_crtc_values[12] = {
+    0x35, 0x2d, 0x2e, 0x07, 0x5b, 0x02, 0x57, 0x57, 0x02, 0x03, 0x00, 0x00
+};
+static const uint8_t pcx_hercules_text_crtc_values[12] = {
+    0x61, 0x50, 0x52, 0x0f, 0x19, 0x06, 0x19, 0x19, 0x02, 0x0d, 0x0b, 0x0c
+};
+
 static const samlib_data_offsets *data_offsets(const char *routine)
 {
     return samlib_require_data_offsets(routine);
@@ -269,6 +277,12 @@ void PcxInitializeVideoDescriptors(void)
         descriptor_write_word(base, display_decode_segment, 0);
         for (uint16_t field = 0x28; field < display_record_bytes; field += 2)
             descriptor_write_word(base, field, 0);
+    }
+    for (uint16_t i = 0; i < 12; ++i) {
+        pc_wr8(data_segment(), (uint16_t)(offsets->PcxHerculesGraphicsCrtc + i),
+               pcx_hercules_graphics_crtc_values[i]);
+        pc_wr8(data_segment(), (uint16_t)(offsets->PcxHerculesTextCrtc + i),
+               pcx_hercules_text_crtc_values[i]);
     }
 }
 
@@ -586,15 +600,22 @@ int16_t PcxDisplayBuffer(farptr pcx_image_buffer, uint16_t available_buffer_byte
     return active_ega_decode.result;
 }
 
-static uint16_t copy_filename_to_default_buffer(farptr filename)
+static farptr copy_filename_to_display_stack(farptr filename)
 {
-    const samlib_data_offsets *offsets = data_offsets("PcxDisplayFile");
+    const pc_program *program = pc_current_program();
     uint8_t length = read_far8(filename, 0);
-    uint16_t target = offsets->PcxDefaultReadBuffer;
+    uint16_t segment = program != NULL ? program->ss_seg : 0;
+    uint16_t entry_sp = program != NULL ? program->sp : 0;
+    /* PcxDisplayFile's BP is entry SP-2 and its filename local is BP-84h. */
+    uint16_t target = (uint16_t)(entry_sp - 0x86u);
     for (uint16_t i = 0; i < length; ++i)
-        ds_wr8((uint16_t)(target + i), read_far8(filename, (uint16_t)(i + 1u)));
-    ds_wr8((uint16_t)(target + length), 0);
-    return target;
+        pc_wr8(segment, (uint16_t)(target + i),
+               read_far8(filename, (uint16_t)(i + 1u)));
+    pc_wr8(segment, (uint16_t)(target + length), 0);
+    /* The assembly rewrites its by-reference filename argument to this local. */
+    pc_wr16(segment, (uint16_t)(entry_sp + 10u), target);
+    pc_wr16(segment, (uint16_t)(entry_sp + 12u), segment);
+    return FP(segment, target);
 }
 
 /* Opens and reads a DOS PCX file into the configured read buffer, then decodes it. */
@@ -603,7 +624,7 @@ int16_t PcxDisplayFile(farptr image_file_name, uint16_t image_x,
 {
     const samlib_data_offsets *offsets = data_offsets("PcxDisplayFile");
     uint16_t state = offsets->PcxReadState;
-    uint16_t path_offset = copy_filename_to_default_buffer(image_file_name);
+    farptr path = copy_filename_to_display_stack(image_file_name);
     uint16_t target_segment = ds_rd16((uint16_t)(state + read_state_buffer_segment));
     uint16_t target_offset = ds_rd16((uint16_t)(state + read_state_buffer_offset));
     uint16_t buffer_bytes = ds_rd16((uint16_t)(state + read_state_buffer_bytes));
@@ -615,8 +636,8 @@ int16_t PcxDisplayFile(farptr image_file_name, uint16_t image_x,
         target_offset = offsets->PcxDefaultReadBuffer;
     }
     registers.ax = 0x3d00;
-    registers.ds = data_segment();
-    registers.dx = path_offset;
+    registers.ds = FP_SEG(path);
+    registers.dx = FP_OFF(path);
     pc_bios_int(dos_interrupt, &registers);
     ds_wr16((uint16_t)(state + read_state_file_handle), registers.ax);
     if (!dos_call_succeeded(&registers)) {

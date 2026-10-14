@@ -48,6 +48,14 @@ and record sizes against the originals, generated C for all three episodes, the 
 (`tests/port/semantics/`) against the real TP 5.0, platform CTest, and SAM1-3 booted headless to
 their title screens at -O0 and -O2.
 
+`lib/` against the assembled originals (needs the DOS reference builds,
+`python tools/verify.py --episodes sam1,sam2,sam3 --keep`): `python -B tools/libdiff.py --matrix`
+runs every routine the game calls (200 random + 16 realistic cases each; memory, EGA state,
+ports, BIOS/DOS calls compared under the rules documented at the top of `tools/libdiff.py`),
+`--screens` decodes all screen files through both
+display paths, `tools/callsite_report.py` lists the call sites whose AX the C routines derive from
+arguments.
+
 ## Status
 
 * Milestone 2 reached: all three episodes boot to their title screens.
