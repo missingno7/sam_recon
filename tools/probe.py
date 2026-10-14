@@ -8,6 +8,8 @@ sys.dont_write_bytecode=True
 sys.path.insert(0, str(ROOT / 'tools'))
 import toolchain
 import verify
+# Restore staging-module priority after importing the canonical check helpers.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 def execute(executable: Path, work: Path, runner='dosbox'):
     work=work.resolve()

@@ -8,6 +8,8 @@ from pas2c import Compiler
 sys.dont_write_bytecode=True
 sys.path.insert(0,str(ROOT/'tools'))
 import oracle
+# Restore staging-module priority after importing the canonical check helpers.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 oracle.OUT=WORK/'build/oracle'
 results={}

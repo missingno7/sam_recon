@@ -24,10 +24,6 @@ sam = generated episodes (s1_/s2_/s3_) + tp/ (System, Crt, Dos) + lib/ (the six 
 MinGW-w64 gcc 12 (`C:/msys64/mingw64`), CMake 3.20+, SDL3 3.4.16 (`SDL3_ROOT` in CMakeLists.txt).
 
 ```bash
-python -B tools/prepare_reference.py
-```
-
-```bash
 cmake -S port -B build/port -G "MinGW Makefiles" -DSAM_OPTIMIZATION=2
 ```
 
@@ -40,9 +36,10 @@ beside the executable or on PATH). Options: `--headless`, `--no-audio`, `--scrip
 (`<ms> key|keydown|keyup NAME`, `<ms> shot FILE.png`, `<ms> quit`), `--realtime-script`,
 `--wav FILE`, `--ega`/`--vga`, `--physical-shots`.
 
-`prepare_reference.py` currently builds the DOS reference program once to read its segment
-placement (PSP/DS/SS/heap) from the map; DATA offsets are always computed by the translator.
-Replacing that step with committed placement metadata is on the list below.
+No DOS tools are needed: each episode's memory placement (PSP, DS, SS, heap) comes from
+[../config/port.json](../config/port.json); DATA offsets are computed by the translator. With the DOS
+toolchain present, `tools/pas2c_placement_check.py` recomputes the placement from the reference
+build and requires equality.
 
 ## Checks
 
@@ -55,5 +52,4 @@ their title screens at -O0 and -O2.
 
 * Milestone 2 reached: all three episodes boot to their title screens.
 * Open: gameplay verification, the full differential gate of `lib/` against the assembled
-  routines, original-vs-port frame and speaker comparisons, readability of the generated C and of
-  the runtime sources, placement metadata instead of the reference build, Android.
+  routines, original-vs-port frame and speaker comparisons, Android.

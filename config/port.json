@@ -1,0 +1,16 @@
+{
+  "schema_version": 1,
+  "comments": {
+    "psp_seg": "The port's fixed PSP paragraph (PC_PSP_SEG = 0x0800 in port/pc/pc.h).",
+    "ds_seg": "PSP + 0x10 MZ load paragraphs + DATA start/16 from the pinned TP 5.0 SAM.MAP.",
+    "ss_seg": "PSP + 0x10 MZ load paragraphs + STACK start/16 from SAM.MAP; agrees with MZ SS.",
+    "sp": "STACK length from SAM.MAP (16384 bytes from SAM.PAS $M); agrees with MZ SP.",
+    "heap_org_seg": "PSP + 0x10 MZ load paragraphs + HEAP start/16 from SAM.MAP.",
+    "mem_top_seg": "The existing port's conventional-memory ceiling, 0xA000; this is a platform policy, not inferred DATA."
+  },
+  "episodes": {
+    "sam1": {"psp_seg": 2048, "ds_seg": 13818, "ss_seg": 15672, "sp": 16384, "heap_org_seg": 16696, "mem_top_seg": 40960},
+    "sam2": {"psp_seg": 2048, "ds_seg": 13880, "ss_seg": 15736, "sp": 16384, "heap_org_seg": 16760, "mem_top_seg": 40960},
+    "sam3": {"psp_seg": 2048, "ds_seg": 13883, "ss_seg": 15739, "sp": 16384, "heap_org_seg": 16763, "mem_top_seg": 40960}
+  }
+}

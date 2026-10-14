@@ -11,7 +11,14 @@ typedef struct { uint8_t b[256]; } tp_string;
 typedef struct { uint8_t b[32]; } tp_set;
 typedef struct { uint8_t bytes[128]; } tp_file;
 typedef struct { uint8_t bytes[256]; } tp_text;
-typedef struct { uint8_t bytes[20]; } tp_registers;
+#pragma pack(push, 1)
+typedef union {
+    uint8_t bytes[20];
+    struct { uint16_t AX, BX, CX, DX, BP, SI, DI, DS, ES, Flags; };
+    struct { uint8_t AL, AH, BL, BH, CL, CH, DL, DH; };
+} tp_registers;
+#pragma pack(pop)
+_Static_assert(sizeof(tp_registers) == 20, "TP Registers variant");
 _Static_assert(sizeof(tp_file)==128, "TP FileRec");
 _Static_assert(sizeof(tp_text)==256, "TP TextRec");
 

@@ -40,8 +40,8 @@ target_link_libraries(sam_lib PUBLIC sam_platform)
 file(GLOB PASCAL_SOURCE CONFIGURE_DEPENDS "${REPO_ROOT}/game/*.PAS")
 file(GLOB TRANSLATOR_SOURCE CONFIGURE_DEPENDS "${SNAPSHOT_ROOT}/tools/pas2c*.py")
 set(GENERATED)
+set(SAM_PLACEMENT "${SNAPSHOT_ROOT}/config/port.json" CACHE FILEPATH "Committed episode placement; no DOS toolchain needed")
 foreach(episode sam1 sam2 sam3)
-  set(SAM_PROGRAM_MAP_${episode} "${SNAPSHOT_ROOT}/build/reference/${episode}/SAM.MAP" CACHE FILEPATH "Original ${episode} segment placement; never used for DATA offsets")
   set(GEN "${CMAKE_BINARY_DIR}/port-gen/${episode}")
   set(EPISODE_SOURCES)
   foreach(module SAM PROGRPHX SAMDATA SAMSOUND GAMEJOY PCXGENUS TEXT80 SAMUI SAMLEVEL SAMPLAY loader)
@@ -49,8 +49,8 @@ foreach(episode sam1 sam2 sam3)
   endforeach()
   add_custom_command(OUTPUT ${EPISODE_SOURCES} "${GEN}/generated.h" "${GEN}/layout.json" "${GEN}/ds.bin"
     COMMAND "${Python3_EXECUTABLE}" "${SNAPSHOT_ROOT}/tools/pas2c.py" --episode ${episode}
-            --source-dir "${REPO_ROOT}/game" --map "${SAM_PROGRAM_MAP_${episode}}" --output-dir "${GEN}"
-    DEPENDS ${PASCAL_SOURCE} ${TRANSLATOR_SOURCE} "${SAM_PROGRAM_MAP_${episode}}"
+            --source-dir "${REPO_ROOT}/game" --placement "${SAM_PLACEMENT}" --output-dir "${GEN}"
+    DEPENDS ${PASCAL_SOURCE} ${TRANSLATOR_SOURCE} "${SAM_PLACEMENT}"
     VERBATIM)
   list(APPEND GENERATED ${EPISODE_SOURCES})
 endforeach()

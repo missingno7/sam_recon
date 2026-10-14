@@ -4,14 +4,14 @@ import argparse
 import subprocess
 import sys
 sys.path.insert(0,str(Path(__file__).resolve().parent))
-from pas2c import Compiler, memory_layout
+from pas2c import Compiler, placement_layout
 from pas2c_emit import Emitter
 
 from pas2c_paths import WORK, ROOT, CODE_ROOT
 GCC=Path('C:/msys64/mingw64/bin/gcc.exe')
-def build(source,program,episode,out,map_path=None,optimization='O0'):
+def build(source,program,episode,out,placement_path=None,optimization='O0'):
     c=Compiler(source,episode); c.load(program); c.bind(); out.mkdir(parents=True,exist_ok=True)
-    if map_path: c.program_layout=memory_layout(map_path)
+    if program.upper()=='SAM': c.program_layout=placement_layout(placement_path or CODE_ROOT/'config/port.json',episode)
     Emitter(c).write(out)
     sources=list(out.glob('*.c'))
     external=[]
@@ -44,5 +44,5 @@ def build(source,program,episode,out,map_path=None,optimization='O0'):
 if __name__=='__main__':
     p=argparse.ArgumentParser(); p.add_argument('--source-dir',type=Path,default=ROOT/'game'); p.add_argument('--program',default='SAM')
     p.add_argument('--episode',default='sam1'); p.add_argument('--out',type=Path,required=True)
-    p.add_argument('--map',type=Path); p.add_argument('--optimization',choices=('O0','O2'),default='O0'); a=p.parse_args()
-    sys.exit(build(a.source_dir,a.program,a.episode,a.out,a.map,a.optimization))
+    p.add_argument('--placement',type=Path); p.add_argument('--optimization',choices=('O0','O2'),default='O0'); a=p.parse_args()
+    sys.exit(build(a.source_dir,a.program,a.episode,a.out,a.placement,a.optimization))

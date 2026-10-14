@@ -1,6 +1,7 @@
-"""Prepare/verify the test-only TP5 episode builds used for program placement.
+"""Prepare/verify TP5 episode builds for differential checks only.
 
-DATA offsets still come from the translator, never this MAP. All build output
+The normal port build reads committed placement metadata and never calls this
+tool. DATA offsets still come from the translator, never a MAP. All build output
 stays inside this snapshot, including when the canonical verifier is imported.
 """
 import json
@@ -11,6 +12,8 @@ from pas2c_paths import ROOT, WORK
 sys.dont_write_bytecode = True
 sys.path.insert(0, str(ROOT / 'tools'))
 import verify
+# Restore staging-module priority after importing the canonical check helpers.
+sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 # Canonical compare may populate an oracle cache on a clean checkout. Keep that
 # optional materialization here too, never in the canonical build directory.

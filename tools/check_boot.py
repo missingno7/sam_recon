@@ -10,6 +10,13 @@ from pas2c_paths import ROOT,WORK
 EXPECTED={'apo':'5e511fd5f7f243bb64f442f2ddf18ccebb1cfaed55e1ddeac78efcda1acdb3db',
           'title':'9791f8eab772c946c04be938ed116115e74369abcb85764ad0cbe24276f87d27',
           'wav':'4ccd2215819c141b41e1ceb99b0f429fe9640548c65c9cbc88039afa83d0b48a'}
+EPISODE_EXPECTED={
+    1: EXPECTED,
+    2: {**EXPECTED, 'title':'6339aeda3a880f6c5d208ea390847d46bec66d8e9604b44e3d53be38bf462ef5',
+        'wav':'0319d9d80e1b9a066a7522d34307029ba1455ed1918ff467f6f5b17ec9f87a79'},
+    3: {**EXPECTED, 'title':'333184c0e48c25ab035177f095031a00049ece259432919f2dd144976b7497b8',
+        'wav':'0319d9d80e1b9a066a7522d34307029ba1455ed1918ff467f6f5b17ec9f87a79'}
+}
 
 def check(builds):
     captures=WORK/'build/captures';captures.mkdir(exist_ok=True)
@@ -30,7 +37,7 @@ def check(builds):
             hashes={kind:hashlib.sha256(path.read_bytes()).hexdigest() for kind,path in paths.items()}
             output=process.stdout.decode(errors='replace').strip()
             ok=process.returncode==0 and output==f'SAM{episode} exit=0 time_us=2400000 irq0=336 irq1=2'
-            if episode==1:ok &= hashes==EXPECTED
+            ok &= hashes==EPISODE_EXPECTED[episode]
             variants[opt]={'ok':ok,'exit_code':process.returncode,'output':output,'sha256':hashes,'command':args}
             print(stem,'PASS' if ok else 'FAIL',output,flush=True)
         receipts['sam'+str(episode)]={'ok':all(v['ok'] for v in variants.values()) and variants['o0']['sha256']==variants['o2']['sha256'],
