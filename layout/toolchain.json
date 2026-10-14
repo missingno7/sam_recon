@@ -1,0 +1,63 @@
+{
+ "comparison_only": {
+  "tp55": {
+   "TPC.EXE": "3155758683fc993653ad7076a0fa2b7d269d8838f4725f424b791f43dc56a909",
+   "TURBO.TPL": "98d24b53817139cb83b7f4ed2723de103772af93a43c9e1e9d8d6d01298b6949",
+   "root": "C:/tools/tp55"
+  },
+  "tp6": {
+   "TPC.EXE": "2feaeb1bb125eccc44470755440098500fae8239fc74291da71b233f9445473d",
+   "TURBO.TPL": "65079b04179d219cc7ef02ba6c4c344f43c8ab3e741b61eb1e992f4dc3156b33",
+   "root": "C:/tools/tp6"
+  },
+  "tp7": {
+   "TPC.EXE": "970fa7aca0b85e773a9cabaca521b3790170297e797117d1312c00a30f2dd3e8",
+   "TURBO.TPL": "656ba42e0220e911277089e1f239d89f84abb8a06bdcf94a8a2c55340b53678d",
+   "root": "C:/tools/tp7"
+  }
+ },
+ "description": "Pinned historical toolchain. Binaries live outside the repository and are never committed or redistributed.",
+ "files": {
+  "BINOBJ.EXE": {
+   "sha256": "cbda427986335e339d7cde61e7d8f369008499564907cbd85edb504ebcdbba73",
+   "size": 11088
+  },
+  "TPC.EXE": {
+   "sha256": "095e26ddb83386eb8d90509faf1e9a3d63a2f81fffb43fb2ff7968b228936c34",
+   "size": 56925
+  },
+  "TPUMOVER.EXE": {
+   "sha256": "6e5ae63d37194aee710f1f6375406696de80848b2820fbbcbb3c18b4f4674c0a",
+   "size": 32784
+  },
+  "TURBO.TPL": {
+   "sha256": "b3b699c6736c00b4075f8fc39871a9eab5a8b933b1696dff3e1572cf7ca3b5ae",
+   "size": 43024
+  }
+ },
+ "independent_runner": {
+  "backend": "dosbox-x",
+  "executable": "C:/tools/dosbox-x/dosbox-x.exe",
+  "note": "Second, independent DOS execution host (headless). Runs LZEXE 0.91.",
+  "sha256": "b028a4d328302ea270722dec69f3ec3a10ebf76beba72a51970db33a88df2bf6"
+ },
+ "packer": {
+  "executable": "C:/tools/lzexe-0.91/files/LZEXE.EXE",
+  "note": "Hangs under MS-DOS Player; runs headless in DOSBox-X. Sorts relocations itself.",
+  "product": "LZEXE 0.91 (bellard.org/lzexe/lzexe91.zip)",
+  "runner": "independent_runner (DOSBox-X)",
+  "sha256": "dd953e9d5634327202d18a262767240a67c7cffabd358af364f34a51551af20e"
+ },
+ "runner": {
+  "args": [
+   "-e",
+   "-v5.00"
+  ],
+  "backend": "msdos-player",
+  "executable": "C:/tools/nmlgcdos/msdos.exe",
+  "note": "nmlgc ReC98 MS-DOS Player fork (ia32).",
+  "sha256": "f7f6cb0a3e816c5edb13112d327c1bddbf7463fe7bf9a005ca1eb5317751bd02"
+ },
+ "toolchain_identity_note": "Turbo Pascal 5.0 command-line compiler and standard units from the PCjs TURBO-PASCAL-500-DISK1 image (see C:/tools/borland-turbo-pascal-5.00/provenance.json). Version choice is provisional until evidence/compiler-rules.json records the discriminating proof.",
+ "toolchain_root": "C:/tools/borland-turbo-pascal-5.00"
+}

@@ -1,0 +1,18 @@
+# Original game files and any derived binaries are never committed.
+/assets/
+/build/
+/state/
+*.exe
+*.EXE
+*.obj
+*.OBJ
+*.lib
+*.LIB
+*.com
+*.COM
+*.sqlite
+*.sqlite-wal
+*.sqlite-shm
+__pycache__/
+*.pyc
+local.json

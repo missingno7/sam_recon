@@ -1,0 +1,301 @@
+{
+ "episodes": {
+  "sam1": {
+   "packed": {
+    "file": "SAM1.EXE",
+    "lz91": {
+     "checksum": 3590,
+     "comp_paras": 3779,
+     "decompressor_size": 3073,
+     "hdr_paras": 2,
+     "inc_paras": 8034,
+     "loader_cs": 3779,
+     "maxalloc": 52032,
+     "minalloc": 11072
+    },
+    "mz": {
+     "checksum": 0,
+     "cs": 3779,
+     "header_paras": 2,
+     "ip": 14,
+     "last_page_bytes": 81,
+     "maxalloc": 52032,
+     "minalloc": 11072,
+     "overlay_number": 0,
+     "pages": 125,
+     "reloc_count": 0,
+     "reloc_offset": 28,
+     "signature": 23117,
+     "sp": 128,
+     "ss": 12006
+    },
+    "sha256": "742f6c83d51befc16cc27a260270ced56dc3c10ee63493ef5bdc4a0244c63aa9",
+    "size": 63569
+   },
+   "unpacked": {
+    "canonical_mz_sha256": "3d37200ba8717a7d697afa2fbddf577617480eae26dd307b4e56bbe70320a0d1",
+    "canonical_mz_size": 199488,
+    "cs": 0,
+    "image_sha256": "820c0db3c845f7a437ee0e991d8339932f95476525859c7c342484bbe1ac0135",
+    "image_size": 188736,
+    "ip": 4424,
+    "max_extra_paras": 43796,
+    "min_extra_paras": 2836,
+    "reloc_count": 2556,
+    "relocs_ordered_key": "3eb6e4ea6f8d7f3d56ff66258896ad83352ed3085b6cd996baa685768495c00b",
+    "relocs_sorted_key": "3eb6e4ea6f8d7f3d56ff66258896ad83352ed3085b6cd996baa685768495c00b",
+    "sp": 16384,
+    "ss": 13608
+   }
+  },
+  "sam2": {
+   "packed": {
+    "file": "SAM2.EXE",
+    "lz91": {
+     "checksum": 3590,
+     "comp_paras": 3802,
+     "decompressor_size": 3086,
+     "hdr_paras": 2,
+     "inc_paras": 8075,
+     "loader_cs": 3802,
+     "maxalloc": 52074,
+     "minalloc": 11114
+    },
+    "mz": {
+     "checksum": 0,
+     "cs": 3802,
+     "header_paras": 2,
+     "ip": 14,
+     "last_page_bytes": 462,
+     "maxalloc": 52074,
+     "minalloc": 11114,
+     "overlay_number": 0,
+     "pages": 125,
+     "reloc_count": 0,
+     "reloc_offset": 28,
+     "signature": 23117,
+     "sp": 128,
+     "ss": 12070
+    },
+    "sha256": "8bf20a9f1dd25f7d1d185c1a3bdacabcffb0fb042f2b0eaaef4399582dabdb73",
+    "size": 63950
+   },
+   "unpacked": {
+    "canonical_mz_sha256": "cbdbe452d0ea9b4dd1350fd91f6ca9ad96c12d5426d4a97d4623c54d6081e852",
+    "canonical_mz_size": 200496,
+    "cs": 0,
+    "image_sha256": "65a970a566f542dda274f150d2c051b048f50ed90faa7a640970f035680b393b",
+    "image_size": 189744,
+    "ip": 4547,
+    "max_extra_paras": 43797,
+    "min_extra_paras": 2837,
+    "reloc_count": 2571,
+    "relocs_ordered_key": "d336f736378c6d1c634e69ca9961ea4addf64ea22bb67d4d41a71db4adac31f6",
+    "relocs_sorted_key": "d336f736378c6d1c634e69ca9961ea4addf64ea22bb67d4d41a71db4adac31f6",
+    "sp": 16384,
+    "ss": 13672
+   }
+  },
+  "sam3": {
+   "packed": {
+    "file": "SAM3.EXE",
+    "lz91": {
+     "checksum": 3590,
+     "comp_paras": 3798,
+     "decompressor_size": 3088,
+     "hdr_paras": 2,
+     "inc_paras": 8081,
+     "loader_cs": 3798,
+     "maxalloc": 52080,
+     "minalloc": 11120
+    },
+    "mz": {
+     "checksum": 0,
+     "cs": 3798,
+     "header_paras": 2,
+     "ip": 14,
+     "last_page_bytes": 400,
+     "maxalloc": 52080,
+     "minalloc": 11120,
+     "overlay_number": 0,
+     "pages": 125,
+     "reloc_count": 0,
+     "reloc_offset": 28,
+     "signature": 23117,
+     "sp": 128,
+     "ss": 12072
+    },
+    "sha256": "ce98f1a9d846c0da3b53662d634c468e50b36c0b2aa1040853a2c4c8f3336922",
+    "size": 63888
+   },
+   "unpacked": {
+    "canonical_mz_sha256": "f0f56c188ff5b6e05330d1becede22a4e3802c40ccd30d4fa9479005246b9630",
+    "canonical_mz_size": 200544,
+    "cs": 0,
+    "image_sha256": "a4bf74fe230be9370ebaf9c31d8d844857a6ced30bf01366a87fea5d04e242a1",
+    "image_size": 189792,
+    "ip": 4547,
+    "max_extra_paras": 43797,
+    "min_extra_paras": 2837,
+    "reloc_count": 2573,
+    "relocs_ordered_key": "197abe68bc44e0dfa1899e53c3f29a04b8c4d770c6ace04efc91fa400464828f",
+    "relocs_sorted_key": "197abe68bc44e0dfa1899e53c3f29a04b8c4d770c6ace04efc91fa400464828f",
+    "sp": 16384,
+    "ss": 13675
+   }
+  }
+ },
+ "fixture": "Secret Agent (Apogee, 1992), episodes 1-3, as supplied in assets/",
+ "fixture_files": {
+  "SAM1.APO": {
+   "sha256": "efd1a553c58bbc73e6268e5b1026c83eb560b3f311bb01946bfc67110c03f3eb",
+   "size": 16304
+  },
+  "SAM1.CFG": {
+   "sha256": "9164fd782d38b192f8c3e5c1407e2f30cc5ac7c50b027c81a3659dff61eb1f9e",
+   "size": 467
+  },
+  "SAM1.CRD": {
+   "sha256": "8461761f8843717c9719ce1430153621a4ba1091e0fd935d364ba778ac5b09b7",
+   "size": 17420
+  },
+  "SAM1.END": {
+   "sha256": "8669544e6ef90b67c9758b098b831b751b01a1640b41f44179e75d29102d0f6d",
+   "size": 11091
+  },
+  "SAM1.EXE": {
+   "sha256": "742f6c83d51befc16cc27a260270ced56dc3c10ee63493ef5bdc4a0244c63aa9",
+   "size": 63569
+  },
+  "SAM1.TTL": {
+   "sha256": "99851c9f78d1a4366c9447565dd9c79f59cba3aec71ec5085a0633c1e8105667",
+   "size": 22885
+  },
+  "SAM101.GFX": {
+   "sha256": "29bb004b391249fdbcf8bc10aec0de8bff7cebcae28e3f6d20fec4fd4b9c154f",
+   "size": 129024
+  },
+  "SAM101E.SND": {
+   "sha256": "f5eb73629735720886652317dad156f4a4fe373b5f1027758b57e662b622e6dd",
+   "size": 7320
+  },
+  "SAM102.GFX": {
+   "sha256": "97fbd8e6e30c8a8f89d39462150424ebd8f0d3bfd81f60473c7e0e651d26c666",
+   "size": 6144
+  },
+  "SAM102E.SND": {
+   "sha256": "afb01791fff461b9dc9d50e08b3cb56a719a9a2114ef55f20438a2ff1324bfa9",
+   "size": 7320
+  },
+  "SAM103.GFX": {
+   "sha256": "370d16b74af997eee38d31b6f671128fd952028703e111020087f7d9b5ea1ae8",
+   "size": 34272
+  },
+  "SAM103E.SND": {
+   "sha256": "6d6dda0799c2f7f648966c243f1c6ae366de0d883fbfdb6ff463859a2376a36f",
+   "size": 7320
+  },
+  "SAM2.APO": {
+   "sha256": "efd1a553c58bbc73e6268e5b1026c83eb560b3f311bb01946bfc67110c03f3eb",
+   "size": 16304
+  },
+  "SAM2.CFG": {
+   "sha256": "391bba3b927cc7e960b7e0abc27c585d1f2e53a494a5926bbf66c06262c9fdc7",
+   "size": 467
+  },
+  "SAM2.CRD": {
+   "sha256": "8461761f8843717c9719ce1430153621a4ba1091e0fd935d364ba778ac5b09b7",
+   "size": 17420
+  },
+  "SAM2.END": {
+   "sha256": "364d7ddbc672a8af6e9f8d84318f44a89fef8b8d3da6696f289adcad97c6731a",
+   "size": 20869
+  },
+  "SAM2.EXE": {
+   "sha256": "8bf20a9f1dd25f7d1d185c1a3bdacabcffb0fb042f2b0eaaef4399582dabdb73",
+   "size": 63950
+  },
+  "SAM2.TTL": {
+   "sha256": "01fc7d92169e70ceca0b64c6f2fe3fe6aab1f00cf4935160435e5713e2f44e1f",
+   "size": 22450
+  },
+  "SAM201.GFX": {
+   "sha256": "c8404723783919094374f020ba25af6e838e4c5d4df0c0d82f76877920c2b8f8",
+   "size": 129024
+  },
+  "SAM201E.SND": {
+   "sha256": "f5eb73629735720886652317dad156f4a4fe373b5f1027758b57e662b622e6dd",
+   "size": 7320
+  },
+  "SAM202.GFX": {
+   "sha256": "8ad6a5a5e78aaf66b3f55df9cc00cebc46897ce6309eb6c7354f6d9cd414608f",
+   "size": 6144
+  },
+  "SAM202E.SND": {
+   "sha256": "ab4849ccd7f77e2d3a42434be75c950989eb3f15ccec2c47806e95eed297ee8a",
+   "size": 7320
+  },
+  "SAM203.GFX": {
+   "sha256": "413f82e4850b0654c4784dfa8f3b2c8f2042f51cf12b370e356241d6087747a2",
+   "size": 34272
+  },
+  "SAM203E.SND": {
+   "sha256": "6d6dda0799c2f7f648966c243f1c6ae366de0d883fbfdb6ff463859a2376a36f",
+   "size": 7320
+  },
+  "SAM3.APO": {
+   "sha256": "efd1a553c58bbc73e6268e5b1026c83eb560b3f311bb01946bfc67110c03f3eb",
+   "size": 16304
+  },
+  "SAM3.CFG": {
+   "sha256": "6229f22834e611eaf031a6030e01c3e567d80da5f63f251d8f642c3bc7798a07",
+   "size": 467
+  },
+  "SAM3.CRD": {
+   "sha256": "8461761f8843717c9719ce1430153621a4ba1091e0fd935d364ba778ac5b09b7",
+   "size": 17420
+  },
+  "SAM3.EXE": {
+   "sha256": "ce98f1a9d846c0da3b53662d634c468e50b36c0b2aa1040853a2c4c8f3336922",
+   "size": 63888
+  },
+  "SAM3.TTL": {
+   "sha256": "f86dee628b95fbb5c832a9d36fda009019aac80620ee2ce189cec6033504b087",
+   "size": 22211
+  },
+  "SAM301.GFX": {
+   "sha256": "723f5c3506067fb99d161db234a3b2bdfa93b065b3101209aae647d18a9eccbb",
+   "size": 129024
+  },
+  "SAM301E.SND": {
+   "sha256": "f5eb73629735720886652317dad156f4a4fe373b5f1027758b57e662b622e6dd",
+   "size": 7320
+  },
+  "SAM302.GFX": {
+   "sha256": "8ad6a5a5e78aaf66b3f55df9cc00cebc46897ce6309eb6c7354f6d9cd414608f",
+   "size": 6144
+  },
+  "SAM302E.SND": {
+   "sha256": "ab4849ccd7f77e2d3a42434be75c950989eb3f15ccec2c47806e95eed297ee8a",
+   "size": 7320
+  },
+  "SAM303.GFX": {
+   "sha256": "abfa29db1bc760947d151715dcb4a9752e06ae03e70ad702eb212cac2b983b8f",
+   "size": 34272
+  },
+  "SAM303E.SND": {
+   "sha256": "6d6dda0799c2f7f648966c243f1c6ae366de0d883fbfdb6ff463859a2376a36f",
+   "size": 7320
+  },
+  "SAM3A.END": {
+   "sha256": "e6ae6a2de5533ee0e7dbc02ee90ad58441fd966a706c2694e1e860a9125fa45c",
+   "size": 28902
+  },
+  "SAM3B.END": {
+   "sha256": "41970ee79f9cbb06a356e09f1dec3cadb148cd3439a2cee1292a5815631833d4",
+   "size": 21658
+  }
+ },
+ "policy": "Originals and derived binaries are never committed or redistributed.",
+ "unpacker": "tools/lz91.py (LZEXE 0.91 decoder); canonical_mz = UNLZEXE-compatible header layout"
+}

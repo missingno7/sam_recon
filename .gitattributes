@@ -1,0 +1,2 @@
+# Hashes in layout/ and recipes/ are computed over exact bytes; never let git rewrite line endings.
+* -text
