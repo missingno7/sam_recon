@@ -96,8 +96,42 @@ def release():
         pass
 
 
+def promote_asm(function: str, cand: Path, note: str, verify_only: bool) -> dict:
+    """A linked {$L} object, id obj_<unit>: proven at OMF level by tools/asmproof.py."""
+    import asmproof
+    unit = function[4:]
+    text = cand.read_text(encoding="latin-1")
+    if re.search(r"(?i)\b(include|incbin)\b", text):
+        raise PromotionError("assembly candidates must be self-contained")
+    proofs = asmproof.prove_source(text, unit)
+    for p in proofs:
+        print("  " + p.short())
+    equal = sorted(p.episode for p in proofs if p.status == "EQUAL")
+    if not equal:
+        raise PromotionError(f"{function}: no episode EQUAL")
+    rp = RECIPES / f"{function}.json"
+    if rp.exists() and not set(load_json(rp)["equal"]) <= set(equal):
+        raise PromotionError(f"{function}: proven episodes would shrink")
+    if verify_only:
+        return {}
+    path = SRC / "asm" / f"{unit}.asm"
+    atomic_bytes(path, text.encode("latin-1"))
+    recipe = {"function": function, "kind": "asm", "unit": unit, "source": rel(path),
+              "source_sha256": sha256(text.encode("latin-1")), "profile": "tasm10", "equal": equal,
+              "episodes": {p.episode: {"status": p.status, "defined": p.defined, "size": p.size,
+                                       "holes": p.holes} for p in proofs}}
+    atomic_json(rp, recipe)
+    with LOGF.open("a", encoding="utf-8") as f:
+        f.write(json.dumps({"time": time.strftime("%Y-%m-%dT%H:%M:%S"), "function": function,
+                            "equal": equal, "source_sha256": recipe["source_sha256"], "note": note},
+                           sort_keys=True) + "\n")
+    return recipe
+
+
 def promote(function: str, cand: Path, note: str = "", verify_only: bool = False) -> dict:
     function = function.lower()
+    if function.startswith("obj_"):
+        return promote_asm(function, cand, note, verify_only)
     text = cand.read_text(encoding="latin-1")
     out = verify(function, text)
     equal = sorted(e for e, v in out["results"].items() if v["status"] == "EQUAL")

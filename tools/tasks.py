@@ -129,6 +129,12 @@ FACTS = """- Compiler: Turbo Pascal 5.0 (TPC), profile in layout/profiles.json; 
   The same pool holds SET constants (32 bytes, e.g. `x in [1..80]` passes `mov di,offset; push cs`
   to the System set-membership helper).  The pool is NOT a nested routine; nested routines have
   their own `push bp; mov bp,sp` entry before the target's.
+- Nested procedures: a call preceded by `push bp` passes the caller's frame (static link) to a
+  procedure NESTED in the caller; the nested one reads the parent's locals as
+  `mov di,[bp+4 or +6]; ... ss:[di-N]` and pops the link with `ret 2`/`retf 2`.  Nested procedures
+  are emitted just before their parent: write them inside the parent ({@body} then holds the parent
+  with its nested routines; the census lists them as separate ids, which the parent's proof covers).
+  Under {$F+} nested procedures are far (`push bp; push cs; call near`).
 - Interrupt procedures: `procedure X; interrupt;` (TP saves all registers and loads DS itself);
   CLI/STI inside one are `inline($FA)` / `inline($FB)`.
 - Frame temporaries come AFTER the declared locals, in statement order: a `for` loop with a

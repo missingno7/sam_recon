@@ -380,6 +380,22 @@ def prove(obj: ObjectModule, ctx: Context) -> Proof:
     return result
 
 
+def prove_source(text: str, unit: str, episodes=EPISODES, name: str = "CAND.ASM") -> list:
+    """Assemble `text` and prove it against object `unit` in each episode."""
+    assembled = assemble(text)
+    if not assembled.ok:
+        return [Proof(ep, status="DIFF", reason="assembly failed: " + assembled.log.strip()[-200:])
+                for ep in episodes]
+    obj = OmfReader().read(assembled.obj(), name)
+    out = []
+    for ep in episodes:
+        try:
+            out.append(prove(obj, original_context(unit, ep)))
+        except (MatchError, OSError, ValueError, KeyError) as exc:
+            out.append(Proof(ep, status="DIFF", reason=str(exc)))
+    return out
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("source", type=Path)

@@ -1,0 +1,48 @@
+{
+ "episodes": {
+  "sam1": {
+   "defined": 175,
+   "holes": [
+    [
+     0,
+     7
+    ]
+   ],
+   "size": 182,
+   "status": "EQUAL"
+  },
+  "sam2": {
+   "defined": 175,
+   "holes": [
+    [
+     0,
+     7
+    ]
+   ],
+   "size": 182,
+   "status": "EQUAL"
+  },
+  "sam3": {
+   "defined": 175,
+   "holes": [
+    [
+     0,
+     7
+    ]
+   ],
+   "size": 182,
+   "status": "EQUAL"
+  }
+ },
+ "equal": [
+  "sam1",
+  "sam2",
+  "sam3"
+ ],
+ "function": "obj_p",
+ "kind": "asm",
+ "profile": "tasm10",
+ "source": "src/asm/p.asm",
+ "source_sha256": "d69382ccce50141ca77465c8bedced4df120f9c4479ecf5ede4f5b85cddad769",
+ "unit": "p"
+}

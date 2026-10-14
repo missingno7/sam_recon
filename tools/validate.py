@@ -127,6 +127,15 @@ def main() -> int:
             continue
         text = (ROOT / rec["source"]).read_text(encoding="latin-1")
         ok = True
+        if rec.get("kind") == "asm":
+            import asmproof
+            for p in asmproof.prove_source(text, rec["unit"], rec["equal"]):
+                if p.status != "EQUAL":
+                    ok = False
+                    failures.append(f"{f} {p.episode}: {p.short()}")
+            results[f] = {"ok": ok}
+            print(f"{f}: {'OK' if ok else 'REGRESSED'} ({','.join(rec['equal'])}, assembly)")
+            continue
         for ep in rec["equal"]:
             res, _ = search.run_episode(text, f, ep, search.profile_options(rec["profile"])[1], a.fresh)
             if res.status != "EQUAL":
