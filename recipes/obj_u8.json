@@ -1,0 +1,36 @@
+{
+ "covers": [
+  "u8_0c14"
+ ],
+ "episodes": {
+  "sam1": {
+   "defined": 232,
+   "holes": [],
+   "size": 232,
+   "status": "EQUAL"
+  },
+  "sam2": {
+   "defined": 232,
+   "holes": [],
+   "size": 232,
+   "status": "EQUAL"
+  },
+  "sam3": {
+   "defined": 232,
+   "holes": [],
+   "size": 232,
+   "status": "EQUAL"
+  }
+ },
+ "equal": [
+  "sam1",
+  "sam2",
+  "sam3"
+ ],
+ "function": "obj_u8",
+ "kind": "asm",
+ "profile": "tasm10",
+ "source": "src/asm/u8.asm",
+ "source_sha256": "09047f94d80c4278bf2d5232ae0bf57cea022d08fefc454f3ffb4a6e3cb2122d",
+ "unit": "u8"
+}

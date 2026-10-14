@@ -23,7 +23,7 @@ import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from common import BUILD, EPISODES, EVIDENCE, RECIPES, SRC, atomic_bytes, atomic_json, load_json, rel, sha256  # noqa: E402
+from common import BUILD, EPISODES, EVIDENCE, LAYOUT, RECIPES, SRC, atomic_bytes, atomic_json, load_json, rel, sha256  # noqa: E402
 import harness  # noqa: E402
 import search  # noqa: E402
 
@@ -112,7 +112,9 @@ def promote_asm(function: str, cand: Path, note: str, verify_only: bool) -> dict
         return {}
     path = SRC / "asm" / f"{unit}.asm"
     atomic_bytes(path, text.encode("latin-1"))
-    recipe = {"function": function, "kind": "asm", "unit": unit, "source": rel(path),
+    kinds = load_json(LAYOUT / "routine-kinds.json")["kinds"]
+    covers = sorted(lid for lid, k in kinds.items() if k == "ASM" and lid.split("_")[0] == unit)
+    recipe = {"function": function, "kind": "asm", "unit": unit, "source": rel(path), "covers": covers,
               "source_sha256": sha256(text.encode("latin-1")), "profile": "tasm10", "equal": equal,
               "episodes": {p.episode: {"status": p.status, "defined": p.defined, "size": p.size,
                                        "holes": p.holes} for p in proofs}}

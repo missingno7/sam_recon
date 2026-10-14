@@ -1,0 +1,29 @@
+{
+ "episodes": {
+  "sam1": {
+   "extent": {
+    "end": 124,
+    "entry": 0,
+    "start": 0,
+    "unit": "u3"
+   },
+   "raw": "773a5d90ff55bef0",
+   "size": 124,
+   "status": "EQUAL"
+  }
+ },
+ "equal": [
+  "sam1"
+ ],
+ "function": "u3_0000",
+ "options": [
+  "/$S-",
+  "/$I-",
+  "/$R-",
+  "/$B-"
+ ],
+ "profile": "sam",
+ "source": "src/routines/u3_0000.pas",
+ "source_sha256": "9577da957abb4af0234cb18498dcb011942e72e48c0a954c6ff7177ac6b9929f",
+ "unit": "u3"
+}
