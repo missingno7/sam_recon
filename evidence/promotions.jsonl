@@ -210,3 +210,4 @@
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_079e", "note": "canonical d_3812/d_67FA", "source_sha256": "4402bd48143c204848071857f7d9ff19eb5067aec208aa7ef8b9a9d340fd8509", "time": "2026-10-14T16:35:57"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_1601", "note": "luna; supervisor: gotos -> if block / nested repeat, canonical d_3812, callee header", "source_sha256": "bb00c2bd0b9a1b1e261aef378b13b8ee6938f8774de82712f4f9cd92117baa3c", "time": "2026-10-14T16:40:49"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_1e2a", "note": "luna; supervisor: goto loop -> for loop", "source_sha256": "1c9524eb0e11109f6e9b9f8326429643dc12c3e3a758ddc4ae7f7bd620cf2085", "time": "2026-10-14T16:45:44"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u3_892b", "note": "record covers", "source_sha256": "219923e84ca8158864ab0194a8f6e882fbba4e65762c666dae635d9e673e522d", "time": "2026-10-14T16:46:37"}

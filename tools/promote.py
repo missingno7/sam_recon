@@ -49,6 +49,21 @@ def lint(text: str) -> list:
     return problems
 
 
+def nested_ids(function: str, text: str) -> list:
+    """Logical ids of the routines nested in `function` (they precede it in its segment)."""
+    n = search.nested_count(harness.split_sections(text)["body"])
+    if not n:
+        return []
+    atlas = load_json(EVIDENCE / "atlas.json")["routines"]
+    me = atlas[function]
+    ep = next(iter(sorted(me["episodes"])))
+    unit, entry = me["episodes"][ep]["unit"], me["episodes"][ep]["entry"]
+    before = sorted((r["episodes"][ep]["entry"], lid) for lid, r in atlas.items()
+                    if ep in r["episodes"] and r["episodes"][ep]["unit"] == unit
+                    and r["episodes"][ep]["entry"] < entry)
+    return [lid for _, lid in before[-n:]]
+
+
 def canonical_path(function: str) -> Path:
     return SRC / "routines" / f"{function}.pas"
 
@@ -155,6 +170,9 @@ def promote(function: str, cand: Path, note: str = "", verify_only: bool = False
                                 "extent": {k: atlas["episodes"][ep][k] for k in ("unit", "start", "entry", "end")},
                                 "raw": atlas["episodes"][ep]["raw"]}
                            for ep, v in out["results"].items()}}
+    covers = nested_ids(function, text)
+    if covers:
+        recipe["covers"] = covers
     atomic_json(rp, recipe)
     LOGF.parent.mkdir(parents=True, exist_ok=True)
     with LOGF.open("a", encoding="utf-8") as f:
