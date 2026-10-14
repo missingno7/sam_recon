@@ -1,16 +1,6 @@
 {@decls}
 var
-  d_34EE: Integer;
-  d_34F0: Integer;
-  d_34F2: Integer;
-  d_34F4: Integer;
   d_6820: Integer;
-  d_6838: Integer;
-  d_683A: Integer;
-  d_6EC3: Byte;
-  d_6EC4: Byte;
-  d_6ECA: Byte;
-  d_6ECB: Byte;
 {@stubs}
 procedure u1_012d;
 function u1_65d9(x, y: Integer): Boolean;

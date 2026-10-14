@@ -1,9 +1,7 @@
 {@decls}
 var
-  d_681E: Word;
   d_6820: Word;
   d_69A4: Word;
-  d_69B0: Byte;
 {@stubs}
 {@body}
 procedure u1_012d;

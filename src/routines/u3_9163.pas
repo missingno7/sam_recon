@@ -17,8 +17,6 @@ var d_6803: Byte;
 var d_6804: Byte;
 var d_6805: Byte;
 var d_6814: Integer;
-var d_6816: Byte;
-var d_6EC5: Byte;
 {@stubs}
 procedure u3_079e;
 function u3_1601(value: Byte): Byte;

@@ -32,9 +32,6 @@ type
       1: (low: Byte; values: array[0..20] of Byte);
   end;
 var
-  d_34EE: Integer;
-  d_34F0: Integer;
-  d_6843: Byte;
   d_6844: array[1..20] of Byte;
   d_6858: Integer;
   d_699A: Pointer;
@@ -43,14 +40,10 @@ var
   d_69A4: Integer;
   d_69A6: Integer;
   d_69AA: Integer;
-  d_69AC: Byte;
-  d_69AD: Byte;
   d_69AE: Integer;
-  d_69B0: Byte;
   d_69B2: Integer;
   d_69B6: Integer;
   d_69B8: TOverlappedWordAndBytes;
-  d_69DC: Byte;
   d_6D18: TSaveData;
 {@stubs}
 {@body}

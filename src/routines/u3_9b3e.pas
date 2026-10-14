@@ -11,8 +11,6 @@ type
 var d_3812: array[1..299] of TStr40;
 var d_67FA: Byte;
 var d_6814: Word;
-var d_6816: Byte;
-var d_6EC5: Byte;
 {@stubs}
 procedure u3_079e;
 function u3_1601(value: Byte): Byte;

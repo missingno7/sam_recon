@@ -41,10 +41,13 @@
  ],
  "function": "p_0e67",
  "options": [
-  "/$S-"
+  "/$S-",
+  "/$I-",
+  "/$R-",
+  "/$B-"
  ],
  "profile": "sam",
  "source": "src/routines/p_0e67.pas",
- "source_sha256": "b8b6d7eb615b3998f97c48ebb89c9a014c4701d0835840895c926981bb87105d",
+ "source_sha256": "c3a2a38db327f420d61b5ba47378642d93522fcab110e28d7752f5aa9172c1a7",
  "unit": "p"
 }

@@ -130,6 +130,9 @@ def drop_global(text: str, name: str) -> str:
     sec_start = text.index("{@decls}")
     sec_end = text.index("{@stubs}")
     decls = text[sec_start:sec_end]
+    # `a, NAME, b: T;` -> `a, b: T;`
+    decls = re.sub(rf"(?im)^(\s*(?:var\s+)?)((?:\w+\s*,\s*)*){re.escape(name)}\s*,\s*", r"\1\2", decls)
+    decls = re.sub(rf"(?im)^(\s*(?:var\s+)?(?:\w+\s*,\s*)*\w+)\s*,\s*{re.escape(name)}\s*:", r"\1:", decls)
     new = re.sub(rf"(?im)^\s*{re.escape(name)}\s*:[^;]*;[ \t]*(\{{[^}}]*\}})?[ \t]*\n", "", decls)
     new = re.sub(rf"(?im)^\s*var\s+{re.escape(name)}\s*:[^;]*;[ \t]*\n", "", new)
     new = re.sub(r"(?im)^\s*var\s*\n(?=\s*(\{@|type\b|const\b|var\b))", "", new)
@@ -163,7 +166,7 @@ def apply(dry: bool) -> tuple:
             if trial == new:
                 stuck.append(f"{rec['function']}: could not remove {n} (multi-name declaration?)")
                 continue
-            if type_of(decl) == type_of(canon[n]) or proves(rec["function"], trial, rec["equal"]):
+            if proves(rec["function"], trial, rec["equal"]):
                 new = trial
             else:
                 stuck.append(f"{rec['function']}: {n} `{type_of(decl)}` vs canonical `{type_of(canon[n])}`")

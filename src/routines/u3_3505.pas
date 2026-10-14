@@ -2,16 +2,8 @@
 var
   d_6824: Integer;
   d_682C: Integer;
-  d_6838: Word;
-  d_683A: Word;
   d_683C: Word;
   d_6840: Word;
-  d_6EC3: Byte;
-  d_6EC4: Byte;
-  d_6EC5: Byte;
-  d_6ECA: Byte;
-  d_6ECB: Byte;
-  d_70C6: Word;
 {@stubs}
 procedure u3_00db(N: Word);
 procedure u3_0232(N: Word);

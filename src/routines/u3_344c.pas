@@ -2,8 +2,6 @@
 {@decls}
 var
   d_682C: Integer;
-  d_6838: Word;
-  d_683A: Word;
   d_683C: Word;
   d_6840: Word;
 {@stubs}

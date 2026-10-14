@@ -41,10 +41,13 @@
  ],
  "function": "u4_045e",
  "options": [
-  "/$S-"
+  "/$S-",
+  "/$I-",
+  "/$R-",
+  "/$B-"
  ],
  "profile": "sam",
  "source": "src/routines/u4_045e.pas",
- "source_sha256": "8c38bd2388b46288d766c33ccbf5cb08bda9413d867d99f6cbe65c4740fc944a",
+ "source_sha256": "af0722c8556b573e76731d4dcdce2599ac36e20a3845560825b525f1840529b8",
  "unit": "u4"
 }

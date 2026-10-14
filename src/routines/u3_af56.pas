@@ -1,7 +1,5 @@
 {@decls}
 var
-  d_3812: array[1..299] of string[40];
-  d_6EC5: Byte;
 {@stubs}
 procedure u3_079e;
 function u3_1601(Mode: Byte): Byte;

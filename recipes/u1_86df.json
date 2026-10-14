@@ -41,10 +41,13 @@
  ],
  "function": "u1_86df",
  "options": [
-  "/$S-"
+  "/$S-",
+  "/$I-",
+  "/$R-",
+  "/$B-"
  ],
  "profile": "sam",
  "source": "src/routines/u1_86df.pas",
- "source_sha256": "07d4339b5069d09c4d93ab4ca639dfeffbb85e1291e8829cf3236b067eaba3e0",
+ "source_sha256": "414dd9cfe8c97ae7d895811b1234baf7f7973a344ffbc1f60328fc9a49d4985a",
  "unit": "u1"
 }

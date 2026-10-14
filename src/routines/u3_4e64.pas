@@ -3,11 +3,8 @@
 type
   THelpLine = string[40];
 var
-  d_3812: array[1..299] of THelpLine;
   d_67FA: Byte;
   d_6814: Word;
-  d_6816: Byte;
-  d_6EC5: Byte;
 {@stubs}
 procedure u3_079e;
 function u3_26cf(Mode: Byte): Byte;

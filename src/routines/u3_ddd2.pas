@@ -1,7 +1,6 @@
 {@decls}
 var
-  d_6838, d_683A, d_683C, d_6840: Word;
-  d_6EC7, d_6D66, d_6EC6: Byte;
+  d_683C, d_6840: Word;
 {@stubs}
 procedure u3_00db(Ticks: Word);
 procedure u3_0232(Ticks: Word);

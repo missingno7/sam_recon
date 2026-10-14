@@ -41,10 +41,13 @@
  ],
  "function": "u3_3d6b",
  "options": [
-  "/$S-"
+  "/$S-",
+  "/$I-",
+  "/$R-",
+  "/$B-"
  ],
  "profile": "sam",
  "source": "src/routines/u3_3d6b.pas",
- "source_sha256": "81f50a129a6e2f05441e08ece876b50df25f2df4fc98f560a93ec1e5d74f5fcf",
+ "source_sha256": "570e0929f011f265dd9f70b1d1a7c044e5f35224261e1e5b030e88caf6c8d989",
  "unit": "u3"
 }

@@ -41,10 +41,13 @@
  ],
  "function": "u1_008d",
  "options": [
-  "/$S-"
+  "/$S-",
+  "/$I-",
+  "/$R-",
+  "/$B-"
  ],
  "profile": "sam",
  "source": "src/routines/u1_008d.pas",
- "source_sha256": "9a9b916a0bd6d1395ac9d8d82c316509b5ae4e3c2ea4b2e4b72a0b260252e5dc",
+ "source_sha256": "776d35646dac4791db7a77a154e6cb677faf567d0242615b32dccdf9693fb4b8",
  "unit": "u1"
 }

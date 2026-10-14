@@ -1,6 +1,5 @@
 {@decls}
 var
-  d_7140: String[80];
 {@stubs}
 procedure u9_01a3(Mode: Word);
 procedure u9_01c5(Mode: Word);

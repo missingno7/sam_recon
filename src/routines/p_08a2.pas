@@ -20,31 +20,14 @@ type
     Tail: array[0..1] of Byte;
   end;
 var
-  d_34EE: Integer;
-  d_34F0: Integer;
-  d_34F2: Integer;
-  d_34F4: Integer;
   d_3500: Integer;
   d_681C: Integer;
   d_6832: Integer;
   d_685C: array[1..10] of TEntry;
   d_6858: Integer;
   d_69A2: Integer;
-  d_69F5: Byte;
   d_6D68: Integer;
   d_6D6A: Integer;
-  d_6D6C: Integer;
-  d_6D6E: Integer;
-  d_6D70: Byte;
-  d_6D71: Byte;
-  d_6EBF: Byte;
-  d_6EC0: Byte;
-  d_6EC1: Byte;
-  d_6EC2: Byte;
-  d_6EC3: Byte;
-  d_6EC4: Byte;
-  d_6ECA: Byte;
-  d_6ECB: Byte;
 {@stubs}
 function u6_0058: Boolean;
 function u6_00cc(value: Integer): Integer;

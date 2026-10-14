@@ -2,13 +2,10 @@
 type
   TMenuText = array[1..6] of String[40];
 var
-  d_3812: TMenuText;
   d_67FA: Byte;
   d_67FB: Byte;
   d_67FC: Byte;
-  d_6816: Byte;
   d_6824: Word;
-  d_6EC5: Byte;
 {@stubs}
 procedure u3_079e;
 function u3_1601(Value: Byte): Byte;

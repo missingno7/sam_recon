@@ -15,8 +15,6 @@ type
     F4B: TByte20;
   end;
 var
-  d_34EE: Word;
-  d_34F0: Word;
   d_6844: TByte20;
   d_6858: Word;
   d_699A: Pointer;
@@ -25,21 +23,13 @@ var
   d_69A4: Word;
   d_69A6: Word;
   d_69AA: Word;
-  d_69AC: Byte;
-  d_69AD: Byte;
   d_69AE: Word;
-  d_69B0: Byte;
   d_69B2: Word;
   d_69B6: Word;
   d_69B8: Word;
   d_69BA: TByte20;
-  d_69DC: Byte;
   d_6D18: Word;
   d_6D1A: Word;
-  d_6D1C: Pointer;
-  d_6D20: Word;
-  d_6D22: Word;
-  d_6D24: Word;
   d_6D26: TByte20;
   d_6D3A: TSnapshotTail;
   d_6D5F: Byte;

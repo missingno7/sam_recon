@@ -2,15 +2,9 @@
 var
   d_341C: Byte;
   d_6814: Word;
-  d_6816: Byte;
   d_6824: Word;
   d_6D68: Word;
   d_6D6A: Word;
-  d_6EC3: Byte;
-  d_6EC4: Byte;
-  d_6EC5: Byte;
-  d_6ECA: Byte;
-  d_6ECB: Byte;
 {@stubs}
 {@body}
 procedure u3_a3b6;

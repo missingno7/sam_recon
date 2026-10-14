@@ -2,7 +2,6 @@
 type
   TMenuLine = String[40];
 var
-  d_3812: array[1..299] of TMenuLine;
   d_6824: Word;
 {@stubs}
 procedure u3_079e;

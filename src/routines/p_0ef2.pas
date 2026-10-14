@@ -15,15 +15,6 @@ type
   TConfigFile = file of TConfig;
 var
   d_6B44: TConfig;
-  d_34AF: Byte;
-  d_70BA: Word;
-  d_70BC: Word;
-  d_70BE: Word;
-  d_70C0: Word;
-  d_70C2: Word;
-  d_70C4: Word;
-  d_70C6: Word;
-  d_70C8: Word;
 {@stubs}
 {@body}
 procedure p_0ef2;

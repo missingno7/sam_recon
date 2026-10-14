@@ -29,7 +29,6 @@ type
   end;
 var
   d_34EC: array[1..25] of TActor;
-  d_681A: Word;
   d_682E: Word;
   d_6832: Integer;
   d_6834: Word;

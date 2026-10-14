@@ -1,21 +1,8 @@
 {@decls}
 var
-  d_3812: array[1..299] of String[40];
   d_67FA: Byte;
   d_67FB: Byte;
   d_6814: Word;
-  d_7068: String[80];
-  d_6FC4: String[80];
-  d_6ECE: String[80];
-  d_6F20: String[80];
-  d_7016: String[80];
-  d_6F72: String[80];
-  d_70BA: Word;
-  d_70BC: Word;
-  d_70BE: Word;
-  d_70C0: Word;
-  d_70C2: Word;
-  d_70C4: Word;
 {@stubs}
 procedure u3_079e;
 function u3_1601(Mode: Byte): Byte;

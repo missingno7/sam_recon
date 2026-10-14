@@ -15,32 +15,19 @@ var
   d_341C: Boolean;
   d_341E, d_3422, d_3426: PSound;
   d_342A: file of TSound;
-  d_34AE, d_34AF: Byte;
   d_34EC: array[1..25] of TObject;
-  d_380C, d_380E, d_3810: Integer;
-  d_6816: Byte;
-  d_681C, d_6822, d_6826, d_6828, d_682C, d_6832: Integer;
-  d_6838, d_683A, d_683C: Integer;
+  d_681C, d_682C, d_6832: Integer;
+  d_683C: Integer;
   d_683E, d_6840: Integer;
-  d_6842: Byte;
   d_6858: Integer;
   d_685A: array[1..10] of TObject;
   d_69A2: Integer;
-  d_69AC, d_69D3, d_69D7, d_69F3, d_69F5: Byte;
   d_69B8: Integer;
   d_69BA: array[1..20] of Byte;
-  d_69B4, d_69D8, d_69E0: Byte;
   d_69E2, d_69E4, d_69E6: Integer;
-  d_69F6: Byte;
-  d_69F8: array[1..35] of Integer;
-  d_6A3E, d_6A3F, d_6A41, d_6A42: Byte;
   d_6D72, d_6D76, d_6D7A, d_6D7E, d_6D82, d_6D86, d_6D8A,
   d_6D8E, d_6D92, d_6D96, d_6D9E, d_6DA2, d_6DA6, d_6DAA, d_6DAE: PBuffer;
   d_6D60, d_6D68, d_6D6A: Integer;
-  d_6D66, d_6D70: Byte;
-  d_6EBE, d_6EC2, d_6EC3, d_6EC4, d_6EC6, d_6EC7, d_6EC8,
-  d_6ECA, d_6ECB: Byte;
-  d_70C6: Word;
 {@stubs}
 procedure p_sam2_107a;
 procedure p_08a2;

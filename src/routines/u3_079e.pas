@@ -3,7 +3,6 @@ type
   TRec41 = array[1..41] of Byte;
 var
   d_3812: array[1..299] of TRec41;
-  d_67FA: array[1..20] of Byte;
 {@stubs}
 {@body}
 procedure u3_079e;

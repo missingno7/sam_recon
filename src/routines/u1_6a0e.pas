@@ -3,15 +3,8 @@ type
   TStepBytes = array[1..19] of Byte;
 var
   d_341C: Byte;
-  d_34AF: Byte;
   d_34B0: TStepBytes;
-  d_34EA: Byte;
   d_3500: Word;
-  d_69B4: Byte;
-  d_6EC0: Byte;
-  d_6EC1: Byte;
-  d_6EC2: Byte;
-  d_6ECD: Byte;
 {@stubs}
 function u1_65d9(YOffset, XOffset: Integer): Boolean;
 procedure u1_66b3;

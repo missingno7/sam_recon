@@ -14,16 +14,9 @@ type
   PGlyphArray = ^TGlyphArray;
 var
   d_6832: Word;
-  d_6838: Word;
   d_6858: Integer;
   d_699A: TFarPtr;
   d_69A4: Integer;
-  d_69E9: Byte;
-  d_69EA: Byte;
-  d_69EB: Byte;
-  d_69EC: Byte;
-  d_69F4: Byte;
-  d_6A40: Byte;
   d_6E32: PGlyphArray;
 {@stubs}
 

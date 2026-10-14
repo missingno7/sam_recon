@@ -1,7 +1,5 @@
 {@decls}
 var
-  d_34EE: Integer;
-  d_34F0: Integer;
 {@stubs}
 procedure u1_6d0e(X, Y: Integer);
 {@body}

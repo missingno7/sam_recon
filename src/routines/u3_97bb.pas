@@ -2,7 +2,6 @@
 type
   TString40 = string[40];
 var
-  d_3812: array[1..299] of TString40;
   d_67FA: Byte;
   d_67FB: Byte;
   d_67FC: Byte;
@@ -14,11 +13,7 @@ var
   d_6802: Byte;
   d_6803: Byte;
   d_6814: Word;
-  d_6816: Byte;
   d_681C: Word;
-  d_6EC5: Byte;
-  d_6EC6: Byte;
-  d_6EC8: Byte;
 {@stubs}
 procedure u3_079e; { far, ret [0] }
 function u3_1601(Mode: Byte): Byte; { far, ret [2] }

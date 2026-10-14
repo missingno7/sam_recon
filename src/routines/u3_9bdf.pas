@@ -10,14 +10,7 @@ var
   d_67FB: Byte;
   d_67FC: Byte;
   d_6814: Word;
-  d_6816: Byte;
   d_6824: Word;
-  d_6EC3: Byte;
-  d_6EC4: Byte;
-  d_6EC5: Byte;
-  d_6EC6: Byte;
-  d_6ECA: Byte;
-  d_6ECB: Byte;
 {@stubs}
 procedure u3_079e;
 function u3_1601(value: Byte): Byte;

@@ -41,10 +41,13 @@
  ],
  "function": "u1_011a",
  "options": [
-  "/$S-"
+  "/$S-",
+  "/$I-",
+  "/$R-",
+  "/$B-"
  ],
  "profile": "sam",
  "source": "src/routines/u1_011a.pas",
- "source_sha256": "048659ffcab3b632eb7df60dcadc26525a4c5b572b271c0316441ab5d8441362",
+ "source_sha256": "2db244307dd4da3d8c87674ac60b6537519316e0dfe0a9268a8f21ec58a8bb9a",
  "unit": "u1"
 }

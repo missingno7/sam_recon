@@ -1,6 +1,5 @@
 {@decls}
 var
-  d_21DA: LongInt;
 {@stubs}
 procedure u4_045e;
 {@body}

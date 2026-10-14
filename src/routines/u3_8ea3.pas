@@ -2,9 +2,7 @@
 type
   TStr40 = string[40];
 var
-  d_3812: array[1..299] of TStr40;
   d_6A44: string;
-  d_6EC5, d_6816: Byte;
 {@stubs}
 procedure u3_079e;
 function u3_1e2a(mode: Word): string;

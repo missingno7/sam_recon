@@ -6,8 +6,6 @@ type
     padding: array[0..27] of Byte;
   end;
 var
-  d_6838: Integer;
-  d_683A: Integer;
   d_683C: array[0..25] of TEntity;
 {@stubs}
 {@body}

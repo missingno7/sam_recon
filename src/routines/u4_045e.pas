@@ -1,7 +1,5 @@
 {@decls}
 var
-  d_21D6: Word;
-  d_21D8: Byte;
 {@stubs}
 function u4_05c3: Byte;
 function u4_0557: Byte;

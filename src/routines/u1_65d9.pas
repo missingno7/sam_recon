@@ -5,11 +5,9 @@ type
     D, E: Byte;
   end;
 var
-  d_0296: array[1..40, 1..25] of TCell;
   d_34EE: Word;
   d_34F0: Word;
   d_681C: Integer;
-  d_681E: Word;
 {@stubs}
 {@body}
 function u1_65d9(xOffset, yOffset: Word): Boolean;

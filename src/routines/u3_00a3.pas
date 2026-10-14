@@ -1,10 +1,8 @@
 {@decls}
 var
-  d_6838: Word;
   d_683A: Word;
   d_683C: Word;
   d_6840: Word;
-  d_70C6: Word;
 {@stubs}
 procedure u9_01f9(A, B: Word);
 procedure u9_024c(A, B: Word);

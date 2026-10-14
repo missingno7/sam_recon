@@ -1,12 +1,7 @@
 {@decls}
 var
   d_34B0: array[1..58] of Byte;
-  d_34EA: Byte;
   d_3500: Integer;
-  d_6818: Integer;
-  d_6EC0: Byte;
-  d_6ECA: Byte;
-  d_6ECB: Byte;
 {@stubs}
 {@body}
 procedure u1_66b3;

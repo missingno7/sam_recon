@@ -41,10 +41,13 @@
  ],
  "function": "p_0ec2",
  "options": [
-  "/$S-"
+  "/$S-",
+  "/$I-",
+  "/$R-",
+  "/$B-"
  ],
  "profile": "sam",
  "source": "src/routines/p_0ec2.pas",
- "source_sha256": "27fa3680504277f5365b75d8c028b28c3235905827fac8dbf67f49e75fb4fce6",
+ "source_sha256": "09a12e69f8a0983cf246432b7c3fb557b8abc1dc9446b1ab6597b104a7f05487",
  "unit": "p"
 }

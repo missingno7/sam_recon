@@ -24,8 +24,6 @@ type
   TSaveFile = file of TSaveData;
 var
   d_6D18: TSaveData;
-  d_34EE: Word;
-  d_34F0: Word;
   d_6844: array[1..20] of Byte;
   d_6858: Word;
   d_699A: Pointer;
@@ -34,15 +32,11 @@ var
   d_69A4: Word;
   d_69A6: Word;
   d_69AA: Word;
-  d_69AC: Byte;
-  d_69AD: Byte;
   d_69AE: Word;
-  d_69B0: Byte;
   d_69B2: Word;
   d_69B6: Word;
   d_69B8: Word;
   d_69BA: array[1..20] of Byte;
-  d_69DC: Byte;
 {@stubs}
 procedure u3_9b3e(input: string);
 {@body}

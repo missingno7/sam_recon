@@ -3,23 +3,15 @@ type
   TMusicTable = array[1..12, 1..305] of Integer;
   PMusicTable = ^TMusicTable;
 var
-  d_0294: array[0..1] of Byte;
   d_341E: PMusicTable;
   d_3422: PMusicTable;
   d_3426: PMusicTable;
-  d_34AA: Integer;
-  d_34AC: Integer;
-  d_34AE: Byte;
-  d_34AF: Byte;
   d_682C: Integer;
   d_6832: Integer;
   d_69A4: Integer;
   d_69A6: Integer;
   d_69AA: Integer;
-  d_69AC: Byte;
-  d_69AD: Byte;
   d_69AE: Integer;
-  d_69B0: Byte;
 {@stubs}
 {@body}
 procedure p_0be5; interrupt;

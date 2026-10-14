@@ -11,9 +11,6 @@ var
   d_341E: PScoreTable;
   d_3422: PScoreTable;
   d_3426: PScoreTable;
-  d_34AA: Integer;
-  d_34AC: Integer;
-  d_34AE: Byte;
 {@stubs}
 {@body}
 procedure u7_0000(N: Integer);

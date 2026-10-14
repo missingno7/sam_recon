@@ -19,18 +19,12 @@ type
   PSpriteBytes = ^TSpriteBytes;
 var
   d_0296: array[1..40, 1..25] of TTile;
-  d_34AE: Byte;
   d_34EC: array[1..25] of TObjectRecord;
   d_6832: Word;
   d_6840: Integer;
   d_685C: array[1..9] of TProjectile;
   d_699A: LongInt;
   d_69A2: Integer;
-  d_69CE: Byte;
-  d_69EF: Byte;
-  d_69F3: Byte;
-  d_69F5: Byte;
-  d_69F6: Byte;
   d_6D96: PSpriteBytes;
 {@stubs}
 function u1_0000(Distance, Item: Integer): Boolean;

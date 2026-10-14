@@ -7,7 +7,6 @@ type
   end;
 var
   d_37E8: TOrderTable;
-  d_6EC5: Byte;
 {@stubs}
 procedure u3_079e;
 function u3_1601(Flag: Byte): Byte;

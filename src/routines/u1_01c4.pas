@@ -1,15 +1,7 @@
 {@decls}
 var
   d_34EC: Word;
-  d_34EE: Integer;
-  d_34F0: Integer;
   d_6832: Word;
-  d_69F3: Byte;
-  d_69F5: Byte;
-  d_69F6: Byte;
-  d_6A40: Byte;
-  d_6A41: Byte;
-  d_6A42: Byte;
 {@stubs}
 procedure u7_0000(mode: Integer);
 {@body}

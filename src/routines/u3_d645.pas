@@ -7,9 +7,7 @@ var d_3812: array[1..299] of TMessageSlot;
 var d_67FA: Byte;
 var d_67FB: Byte;
 var d_67FC: Byte;
-var d_6816: Byte;
 var d_6824: Word;
-var d_6EC5: Byte;
 {@stubs}
 procedure u3_079e;
 function u3_1601(value: Byte): Byte;

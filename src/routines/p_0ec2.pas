@@ -1,7 +1,5 @@
 {@decls}
 var
-  d_70CE: Pointer;
-  d_70D2: Pointer;
 {@stubs}
 {@body}
 procedure p_0ec2;

@@ -1,7 +1,6 @@
 { Foreign-customer dealer screens. Transcribed from context-sam1.txt. }
 {@decls}
 var
-  d_3812: array[1..299] of String[40];
   d_6824: Integer;
 {@stubs}
 procedure u3_079e;

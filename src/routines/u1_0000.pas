@@ -7,8 +7,6 @@ type
   end;
 var
   d_34CE: array[0..64] of TObjectRecord;
-  d_6838: Integer;
-  d_683A: Integer;
 {@stubs}
 {@body}
 function u1_0000(Distance, Item: Integer): Boolean;

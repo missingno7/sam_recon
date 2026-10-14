@@ -12,15 +12,11 @@ type
   TSpriteBytes = array[0..32767] of Byte;
   PSpriteBytes = ^TSpriteBytes;
 var
-  d_0296: array[1..40, 1..25] of TCell;
   d_34CC: array[0..64] of TItem;
   d_6832: Word;
-  d_6838: Integer;
   d_683C, d_6840: Integer;
   d_699A: LongInt;
-  d_69F3, d_69F5, d_69F6, d_6A40, d_6A41, d_6A42: Byte;
   d_6D96, d_6DAE: PSpriteBytes;
-  d_6EC0, d_6EC1, d_6EC2: Byte;
 {@stubs}
 procedure u1_01c4(X, Y: Integer);
 function u1_027c(X, Y: Integer): Boolean;

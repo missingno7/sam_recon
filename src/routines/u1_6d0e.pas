@@ -13,34 +13,21 @@ type
   TSpriteData = array[0..32767] of Byte;
   PSpriteData = ^TSpriteData;
 var
-  d_0296: array[1..40,1..25] of TCell;
-  d_34AE: Byte;
   d_34EC: array[1..25] of TItem;
-  d_3812: array[1..299] of String[40];
   d_67FA: Byte;
   d_6814: Word;
-  d_6816: Byte;
   d_681C, d_6832: Integer;
-  d_6836: Byte;
   d_6840: Integer;
   d_6844: array[1..20] of Byte;
   d_6858: Integer;
   d_699A: LongInt;
   d_699E, d_69A0, d_69A2, d_69A4, d_69A6, d_69A8, d_69AA: Integer;
-  d_69AD: Byte;
   d_69AE: Integer;
-  d_69B0, d_69B4: Byte;
   d_69B6, d_69B8: Integer;
   d_69BA: array[1..20] of Byte;
-  d_69CE, d_69E0: Byte;
   d_69E2, d_69E4, d_69E6: Integer;
-  d_69E9, d_69EA, d_69EB, d_69EC, d_69ED, d_69EE: Byte;
-  d_69F0, d_69F1, d_69F2, d_69F3, d_69F4, d_69F5, d_69F6: Byte;
-  d_6A3E, d_6A40: Byte;
-  d_6D18, d_6D1A, d_6D62, d_6D64: Integer;
-  d_6D66: Byte;
+  d_6D18, d_6D1A: Integer;
   d_6D86: PSpriteData;
-  d_6EC0, d_6EC1, d_6EC3, d_6EC4, d_6EC5, d_6EC6, d_6ECA, d_6ECB: Byte;
 {@stubs}
 procedure u1_03f0(X, Y: Integer; Image: Word);
 procedure u2_0000(X, Y: Integer);

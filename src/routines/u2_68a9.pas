@@ -21,13 +21,9 @@ type
   end;
   PSpriteBank = ^TSpriteBank;
 var
-  d_0296: array[1..40, 1..25] of TCell;
   d_34EC: array[1..25] of TActor;
-  d_681A: Word;
   d_681C: Integer;
   d_682E: Word;
-  d_6838: Integer;
-  d_683A: Integer;
   d_6D18: Word;
   d_6D1A: Word;
   d_6D7A: PSpriteBank;
@@ -35,7 +31,6 @@ var
   d_6D82: PSpriteBank;
   d_6D8A: PSpriteBank;
   d_6DAE: PSpriteBank;
-  d_70C6: Word;
 {@stubs}
 procedure u2_2c6e(x, y: Integer; a, b, c: Integer; solid, flag, overlay: Boolean);
 procedure u2_2e88(x, y: Integer; var symbol: string);

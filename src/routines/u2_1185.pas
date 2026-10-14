@@ -12,7 +12,6 @@ type
   PSpriteBank = ^TSpriteBank;
 var
   d_0296: array[1..40, 1..25] of TMapCell;
-  d_681A: Word;
   d_6840: Integer;
   d_6D72, d_6D76, d_6D7E, d_6D82, d_6D86, d_6D8A, d_6D8E,
   d_6D92, d_6D96, d_6D9A, d_6DA2, d_6DAA, d_6DAE: PSpriteBank;

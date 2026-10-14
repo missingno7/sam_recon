@@ -41,10 +41,13 @@
  ],
  "function": "u7_0000",
  "options": [
-  "/$S-"
+  "/$S-",
+  "/$I-",
+  "/$R-",
+  "/$B-"
  ],
  "profile": "sam",
  "source": "src/routines/u7_0000.pas",
- "source_sha256": "295d3173f2abf85c1eb3066b29ebd87fed9ee380cb8a725b92e18742bb1b6a45",
+ "source_sha256": "1615a94a24b5e1a47223c9371a602f1ec2faf9eb3429d7c126e7424176207db3",
  "unit": "u7"
 }
