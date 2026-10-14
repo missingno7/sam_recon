@@ -56,6 +56,8 @@ def assemble(source: str, *, listing: bool = False, cache_root: Path | None = No
     program, host = Path(asm["executable"]), Path(runner["executable"])
     toolchain._check(program, asm["sha256"])
     toolchain._check(host, runner["sha256"])
+    if re.search(r"(?im)^\s*(?:include|incbin)\b", source):
+        raise MatchError("Standalone source required: INCLUDE/INCBIN inputs are not staged or hashed")
     staged = source.replace("\r\n", "\n").replace("\n", "\r\n").encode("latin1")
     args = ["CAND.ASM,CAND.OBJ," + ("CAND.LST" if listing else "") + ";"]
     request = {"kind": "tasm", "source": sha256(staged), "argv": args,
@@ -286,12 +288,12 @@ class Proof:
             (f" | {self.disassembly}" if self.disassembly else "")
 
 
-def _disassembly(original: bytes, candidate: bytes, offset: int, base: int, publics: list) -> str:
+def _disassembly(original: bytes, candidate: bytes, offset: int, base: int, entries: list) -> str:
     import capstone
     md = capstone.Cs(capstone.CS_ARCH_X86, capstone.CS_MODE_16)
     # Start from the nearest public entry, avoiding decoding a fixup operand as
     # an instruction. CS data before the first public falls back to raw bytes.
-    entry = max((p["offset"] for p in publics if p["offset"] <= offset), default=offset)
+    entry = max((e for e in entries if e <= offset), default=0)
     def describe(blob):
         for ins in md.disasm(blob[entry:], base + entry):
             if ins.address <= base + offset < ins.address + ins.size:
@@ -364,8 +366,11 @@ def prove(obj: ObjectModule, ctx: Context) -> Proof:
         if failures:
             result.first_diff, result.reason = min(failures, key=lambda f: f[0])
             result.status = "DIFF"
+            entries = [p["offset"] for p in obj.publics_in(code)] + [
+                off - ctx.start for unit, off in ctx.routines.values()
+                if unit == ctx.unit and ctx.start <= off < ctx.start + length]
             result.disassembly = _disassembly(ctx.original, bytes(linked), result.first_diff,
-                                               ctx.start, obj.publics_in(code))
+                                               ctx.start, entries)
     except MatchError as exc:
         result.status, result.reason = "DIFF", str(exc)
     return result

@@ -237,7 +237,7 @@ class OmfReader(ObjectReader):
         fixups: list = []
         comments: list = []
         module_name = label
-        last_segment, last_offset = None, 0
+        last_segment, last_offset, last_length = None, 0, 0
         frame_threads: dict = {}
         target_threads: dict = {}
         ended = False
@@ -403,6 +403,7 @@ class OmfReader(ObjectReader):
                 payload = body[at + 2:]
                 write_data(segment_index, offset, payload)
                 last_segment, last_offset = segment_index, offset
+                last_length = len(payload)
                 iterated = None
             elif kind == self.LIDATA16:
                 # An Iterated Data record: one or more Iterated Data Blocks,
@@ -429,6 +430,7 @@ class OmfReader(ObjectReader):
                 iterated = (data_start, positions)
                 write_data(segment_index, offset, payload)
                 last_segment, last_offset = segment_index, offset
+                last_length = len(payload)
             elif kind == self.FIXUPP16:
                 at = 0
                 while at < len(body):
@@ -479,6 +481,8 @@ class OmfReader(ObjectReader):
                             raise MatchError(f"Unsupported FIXUPP location {loc}")
                         width = self.LOC_WIDTH[loc]
                         if iterated is None:
+                            if offset + width > last_length:
+                                raise MatchError("FIXUPP exceeds its preceding LEDATA record")
                             offsets = [last_offset + offset]
                         else:
                             # integ37: a FIXUPP after LIDATA addresses the
