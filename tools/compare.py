@@ -209,6 +209,8 @@ def compare(ep: str, function: str, orig: Image, o_start: int, o_entries: list, 
     size = o_end - o_start
     res = Result("EQUAL", ep, function, size)
     c_end = c_start + size
+    if c_end > len(cand.img):           # candidate image ends early: compare against padding
+        cand.img = cand.img + bytes(c_end - len(cand.img) + 16)
     ro = references(orig, o_start, o_end, o_entries, o_unit)
     rc = references(cand, c_start, c_end, c_entries, o_unit)
     masked = set()

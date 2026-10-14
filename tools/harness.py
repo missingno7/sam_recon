@@ -569,7 +569,8 @@ def generate(candidate: str, ep: str, function: str | None = None, sizes: dict |
             continue
         hdrs = other.get(u, [])
         lines = [f"unit {u.upper()};", "interface",
-                 "uses Dos, SAMTYPES;" if u == "u9" else "uses SAMTYPES, GDATA;"]
+                 "uses Dos, SAMTYPES;" if u == "u9" else
+                 "uses SAMTYPES, GDATA, U9;" if (mode == "main" and u == "u1") else "uses SAMTYPES, GDATA;"]
         if u == "u9" and u9_var:
             lines += ["var"] + ["  " + d for d in u9_var]
         lines += [h for _, h in hdrs]
@@ -612,7 +613,8 @@ def generate(candidate: str, ep: str, function: str | None = None, sizes: dict |
         lines.append(body)
         sources[f"{tunit.upper()}.PAS"] = "\n".join(lines) + "\n"
 
-    stub_units = [u.upper() for u in GAME_UNITS if u != "u9"]
+    # u8..u1: initialisation order u9, Crt, u8 ... u1 as in the original chain
+    stub_units = [u.upper() for u in reversed(GAME_UNITS) if u != "u9"]
     lines = ["program H;", "uses Dos, U9, Crt, SAMTYPES, GDATA, " + ", ".join(stub_units) + ";"]
     if mode in ("routine", "main"):
         for name, hdr in own:
