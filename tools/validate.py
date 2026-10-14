@@ -117,6 +117,7 @@ def main() -> int:
     ap.add_argument("--write-progress", action="store_true")
     ap.add_argument("--only", nargs="*")
     ap.add_argument("--program", action="store_true", help="also run the whole-program proof (tools/finalcheck.py)")
+    ap.add_argument("--standalone", action="store_true", help="also build game/ standalone and compare (tools/standalone.py)")
     a = ap.parse_args()
     failures = regen_check() if not a.only else []
     results = {}
@@ -152,6 +153,10 @@ def main() -> int:
         r = subprocess.run([sys.executable, str(ROOT / "tools" / "finalcheck.py")], cwd=ROOT)
         if r.returncode != 0:
             failures.append("whole-program proof (tools/finalcheck.py) failed")
+    if a.standalone:
+        r = subprocess.run([sys.executable, str(ROOT / "tools" / "standalone.py"), str(ROOT / "game")], cwd=ROOT)
+        if r.returncode != 0:
+            failures.append("standalone build of game/ (tools/standalone.py) failed")
     decl = declarations()
     for p in decl:
         print("DECLARATION " + p)

@@ -55,6 +55,11 @@ python tools/oracle.py --crosscheck
 python tools/repack.py --oracle
 ```
 
+**Phase 4 (standalone tree):** [game/](game/) holds the program as one source per translation unit
+(SAM.PAS, U1..U9.PAS with `{$IFDEF SAMn}` for episode differences, six .ASM objects, BUILD.BAT).
+`python tools/standalone.py game` (or `tools/validate.py --standalone`) builds it with the pinned
+TASM 1.0 / TPC 5.0 / LZEXE 0.91 and gives the same result as above for SAM1/2/3.
+
 ## Findings (2026-10-14)
 
 * **Compiler: Turbo Pascal 5.0** — a probe reproduces the complete System, Crt and Dos segments
