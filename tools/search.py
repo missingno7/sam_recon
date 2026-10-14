@@ -102,6 +102,10 @@ def run_episode(text: str, function: str, ep: str, options: list, fresh: bool) -
             res.status = "DIFF"
             res.diffs.append(f"+{size:#06x} candidate is longer (next routine at +{later[0] - c_start:#x})")
             res.first_diff = size
+    if res.first_diff is not None:
+        ln = h.candidate_line(c_start + res.first_diff)
+        if ln:
+            notes.append(f"first difference in candidate line {ln}")
     res.note = "; ".join(notes)
     res._views = (orig, ext, cand, c_start)
     return res, h

@@ -296,7 +296,14 @@ def _region(globals_at: list, start: int, end: int, cand: Decls, typed: bool, si
     [(offset, NAME)]; candidate-declared names use their own declaration (size from
     `sizes` once known), the rest are byte arrays up to the next global."""
     decls = []
-    pts = sorted((o, n) for o, n in globals_at if start <= o < end)
+    pts = []
+    covered = -1
+    for o, n in sorted((o, n) for o, n in globals_at if start <= o < end):
+        if o < covered and n not in cand.globals:
+            continue            # interior of a candidate-typed global (e.g. a pointer's segment word)
+        pts.append((o, n))
+        if n in cand.globals and sizes.get(n):
+            covered = max(covered, o + sizes[n])
     pos = start
     for i, (off, name) in enumerate(pts):
         nxt = pts[i + 1][0] if i + 1 < len(pts) else end
@@ -329,6 +336,18 @@ class Harness:
     receipt: tpc.Receipt | None = None
     map: tpmap.Map | None = None
     layout_errors: list = field(default_factory=list)
+    body_h_line: int = 0        # 1-based line of the body's first line in H.PAS
+    body_c_line: int = 0        # ... and in the candidate file
+
+    def candidate_line(self, linear: int) -> int | None:
+        """Candidate source line whose code contains linear image offset `linear`."""
+        if not self.map:
+            return None
+        recs = [(s * 16 + o, ln) for ln, s, o in self.map.lines.get("H", [])]
+        best = max(((a, ln) for a, ln in recs if a <= linear), default=None)
+        if best is None or best[1] < self.body_h_line:
+            return None
+        return best[1] - self.body_h_line + self.body_c_line
 
 
 def generate(candidate: str, ep: str, function: str | None = None, sizes: dict | None = None,
@@ -390,6 +409,7 @@ def generate(candidate: str, ep: str, function: str | None = None, sizes: dict |
         lines.append(("{$F+}\n" if far else "{$F-}\n") + hdr + "\n  forward;")
     far = is_far(ep, tgt)
     lines.append("{$F+}" if far else "{$F-}")
+    body_h_line = sum(x.count("\n") + 1 for x in lines) + 1
     lines.append(sec["body"].strip("\n"))
     lines.append("{$F-}")
     for name, hdr in own:
@@ -402,7 +422,10 @@ def generate(candidate: str, ep: str, function: str | None = None, sizes: dict |
     lines += [f"  if @{k} = nil then Halt;" for k in keep]
     lines.append("end.")
     sources["H.PAS"] = "\n".join(lines) + "\n"
-    return Harness(ep, tgt, sources)
+    cl = candidate.splitlines()
+    mark = next(i for i, x in enumerate(cl) if re.match(r"^\s*\{@body\}\s*$", x, re.I))
+    lead = len(sec["body"]) - len(sec["body"].lstrip("\n"))
+    return Harness(ep, tgt, sources, body_h_line=body_h_line, body_c_line=mark + 2 + lead)
 
 
 def build(candidate: str, ep: str, options: list, function: str | None = None,
