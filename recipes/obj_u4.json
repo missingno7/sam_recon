@@ -1,0 +1,40 @@
+{
+ "covers": [
+  "u4_04a3",
+  "u4_04bf",
+  "u4_054f",
+  "u4_0557",
+  "u4_05c3"
+ ],
+ "episodes": {
+  "sam1": {
+   "defined": 292,
+   "holes": [],
+   "size": 292,
+   "status": "EQUAL"
+  },
+  "sam2": {
+   "defined": 292,
+   "holes": [],
+   "size": 292,
+   "status": "EQUAL"
+  },
+  "sam3": {
+   "defined": 292,
+   "holes": [],
+   "size": 292,
+   "status": "EQUAL"
+  }
+ },
+ "equal": [
+  "sam1",
+  "sam2",
+  "sam3"
+ ],
+ "function": "obj_u4",
+ "kind": "asm",
+ "profile": "tasm10",
+ "source": "src/asm/u4.asm",
+ "source_sha256": "e717c2291ced9a533fa3c01f3ab8c3fc899f562acdceab985542d20b5ed4151f",
+ "unit": "u4"
+}
