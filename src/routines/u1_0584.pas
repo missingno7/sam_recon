@@ -1,28 +1,7 @@
 {@decls}
-type
-  TEntry = record
-    Field0: Integer;
-    X: Integer;
-    Y: Integer;
-    Field6: Integer;
-    Field8: Integer;
-    State: Integer;
-    Field12: Integer;
-    Field14: Integer;
-    Field16: Integer;
-    EntryId: Integer;
-    Value: Integer;
-    Field22: Integer;
-    Field24: Integer;
-    Field26: Integer;
-    TypeCode: Integer;
-    Active: Byte;
-    Used: Byte;
-  end;
-var
-  d_34CC: array[0..64] of TEntry;
+
 {@stubs}
-procedure u7_0000(Value: Integer);
+
 {@body}
 procedure u1_0584(X, Y, TypeCode, Value, EntryId: Integer);
 var
@@ -33,75 +12,73 @@ begin
   Found := False;
   repeat
     Inc(I);
-    if d_34CC[I].Active = 1 then
+    if d_34EC[I].Inactive = 1 then
     begin
       u7_0000(3);
-      d_34CC[I].Field22 := TypeCode;
-      if d_34CC[I].Field22 = -1 then
-        d_34CC[I].State := $15
+      d_34EC[I].DX := TypeCode;
+      if d_34EC[I].DX = -1 then
+        d_34EC[I].Frame := $15
       else
-        d_34CC[I].State := 1;
-      d_34CC[I].Field24 := 0;
-      d_34CC[I].Field0 := 0;
+        d_34EC[I].Frame := 1;
+      d_34EC[I].DY := 0;
+      d_34EC[I].State := 0;
       if EntryId <> $89 then
-        d_34CC[I].X := X and $FFF8
+        d_34EC[I].X := X and $FFF8
       else
-        d_34CC[I].X := X;
-      d_34CC[I].Y := Y;
-      d_34CC[I].Field6 := X;
-      d_34CC[I].Field8 := Y;
-      d_34CC[I].Field26 := Value;
-      d_34CC[I].Field12 := 0;
-      d_34CC[I].Field14 := 0;
-      d_34CC[I].Active := 0;
-      d_34CC[I].Used := 0;
+        d_34EC[I].X := X;
+      d_34EC[I].Y := Y;
+      d_34EC[I].OldX := X;
+      d_34EC[I].OldY := Y;
+      d_34EC[I].Speed := Value;
+      d_34EC[I].Tick := 0;
+      d_34EC[I].Limit := 0;
+      d_34EC[I].Inactive := 0;
+      d_34EC[I].Marked := 0;
       if EntryId = 0 then
       begin
-        d_34CC[I].Value := $27;
-        d_34CC[I].TypeCode := 7;
-        d_34CC[I].State := 1;
+        d_34EC[I].Sprite := $27;
+        d_34EC[I].Kind := 7;
+        d_34EC[I].Frame := 1;
       end
       else
       begin
-        d_34CC[I].Value := EntryId;
-        if (d_34CC[I].Value = $1D6) or
-           (d_34CC[I].Value = $7D) or
-           (d_34CC[I].Value = $7E) then
+        d_34EC[I].Sprite := EntryId;
+        if (d_34EC[I].Sprite = $1D6) or
+           (d_34EC[I].Sprite = $7D) or
+           (d_34EC[I].Sprite = $7E) then
         begin
-          d_34CC[I].TypeCode := 7;
-          d_34CC[I].State := 1;
+          d_34EC[I].Kind := 7;
+          d_34EC[I].Frame := 1;
         end
-        else if (d_34CC[I].Value = $339) or
-                (d_34CC[I].Value = $33B) then
+        else if (d_34EC[I].Sprite = $339) or
+                (d_34EC[I].Sprite = $33B) then
         begin
-          d_34CC[I].TypeCode := $13;
-          d_34CC[I].State := 1;
+          d_34EC[I].Kind := $13;
+          d_34EC[I].Frame := 1;
         end
-        else if d_34CC[I].Value = $72 then
+        else if d_34EC[I].Sprite = $72 then
         begin
-          d_34CC[I].TypeCode := $25;
-          d_34CC[I].State := 1;
-          d_34CC[I].Field24 := TypeCode;
+          d_34EC[I].Kind := $25;
+          d_34EC[I].Frame := 1;
+          d_34EC[I].DY := TypeCode;
         end
-        else if d_34CC[I].Value = $C7 then
+        else if d_34EC[I].Sprite = $C7 then
         begin
-          d_34CC[I].Value := $72;
-          d_34CC[I].TypeCode := $89;
-          d_34CC[I].State := 1;
-          d_34CC[I].Field24 := TypeCode;
+          d_34EC[I].Sprite := $72;
+          d_34EC[I].Kind := $89;
+          d_34EC[I].Frame := 1;
+          d_34EC[I].DY := TypeCode;
         end
-        else if d_34CC[I].Value = $89 then
+        else if d_34EC[I].Sprite = $89 then
         begin
-          d_34CC[I].TypeCode := $28;
-          d_34CC[I].State := 1;
-          d_34CC[I].Field14 := $1E;
+          d_34EC[I].Kind := $28;
+          d_34EC[I].Frame := 1;
+          d_34EC[I].Limit := $1E;
         end
         else
-          d_34CC[I].TypeCode := $0E;
+          d_34EC[I].Kind := $0E;
       end;
       Found := True;
     end;
   until Found or (I = 25);
 end;
-
-

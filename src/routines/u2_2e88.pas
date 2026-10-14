@@ -1,10 +1,7 @@
 {@decls}
-var
-  d_681C: Integer;
-  d_6834: Integer;
-  d_69BA: array[1..20] of Byte;
+
 {@stubs}
-procedure u2_2c6e(X, Y, Tile, A, B: Integer; C, D, Foreground: Byte);
+
 {@body}
 procedure u2_2e88(X, Y: Integer; Symbol: String);
 var

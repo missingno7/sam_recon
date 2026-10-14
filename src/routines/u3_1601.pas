@@ -1,41 +1,31 @@
 {@decls}
 type
   TName = String[40];
+type
   TNameRecord = packed record
     Name: TName;
   end;
-  TByteArray = array[0..32767] of Byte;
-  PByteArray = ^TByteArray;
+type
   TByteArray38 = array[37..32767] of Byte;
+type
   PByteArray38 = ^TByteArray38;
-  TSprite = array[0..39] of Byte;
-  TSpriteArray = array[1..1000] of TSprite;
-  PSpriteArray = ^TSpriteArray;
 var
-  d_67F6: ^Byte;
   d_67FA: array[1..20] of Byte;
-  d_6824: Integer;
   d_6826: Integer;
   d_6828: Integer;
   d_682A: Integer;
-  d_682C: Integer;
   d_6838: Integer;
   d_683A: Integer;
-  d_683C: Integer;
-  d_6E36: PByteArray;
-  d_6E3A: PByteArray;
   d_6EC3: Byte;
   d_6EC4: Byte;
   d_6ECA: Byte;
   d_6ECB: Byte;
   d_6ECC: Byte;
 {@stubs}
-procedure u3_0892(X, Y: Integer; Text: string);
-procedure u7_0000(value: Word);
-procedure u9_051f(var source: Byte; x, y: Word);
-procedure u9_1795(var source: Byte; x1, y1, x2, y2: Word);
-procedure u9_1831(var source: Byte; x, y: Word);
-procedure u9_2b38(var source: Byte; x, y: Word);
+procedure u9_051f(var Data; X, Y: Integer);
+procedure u9_1795(var Data; X1, Y1, X2, Y2: Integer);
+procedure u9_1831(var Data; X, Y: Integer);
+procedure u9_2b38(var Data; X, Y: Integer);
 {@body}
 function u3_1601(mode: Byte): Byte;
 var
@@ -96,29 +86,29 @@ begin
 
   for d_682A := 1 to yLimit - yOrigin do
     for d_6828 := xOrigin + 1 to xLimit - 1 do
-      u9_2b38(d_6E36^[323], d_6828,
+      u9_2b38(PByteArray(d_6E36)^[323], d_6828,
         ((yOrigin + d_682A) shl 3) + d_683C);
-  u9_051f(d_6E36^[3], xOrigin, (yOrigin shl 3) + d_683C);
+  u9_051f(PByteArray(d_6E36)^[3], xOrigin, (yOrigin shl 3) + d_683C);
   for d_6828 := xOrigin + 1 to xLimit - 1 do
-    u9_051f(d_6E36^[43], d_6828, (yOrigin shl 3) + d_683C);
-  u9_051f(d_6E36^[83], xLimit, (yOrigin shl 3) + d_683C);
+    u9_051f(PByteArray(d_6E36)^[43], d_6828, (yOrigin shl 3) + d_683C);
+  u9_051f(PByteArray(d_6E36)^[83], xLimit, (yOrigin shl 3) + d_683C);
   for d_6828 := 1 to yLimit - yOrigin do
   begin
-    u9_051f(d_6E36^[203], xOrigin,
+    u9_051f(PByteArray(d_6E36)^[203], xOrigin,
       ((yOrigin + d_6828) shl 3) + d_683C);
-    u9_051f(d_6E36^[283], xLimit,
+    u9_051f(PByteArray(d_6E36)^[283], xLimit,
       ((yOrigin + d_6828) shl 3) + d_683C);
-    u9_051f(d_6E36^[363], xLimit + 1,
+    u9_051f(PByteArray(d_6E36)^[363], xLimit + 1,
       ((yOrigin + d_6828) shl 3) + d_683C);
   end;
-  u9_051f(d_6E36^[363], xLimit + 1,
+  u9_051f(PByteArray(d_6E36)^[363], xLimit + 1,
     ((yLimit - yOrigin + yOrigin + 1) shl 3) + d_683C);
-  u9_051f(d_6E36^[163], xOrigin, (yLimit shl 3) + d_683C);
+  u9_051f(PByteArray(d_6E36)^[163], xOrigin, (yLimit shl 3) + d_683C);
   for d_6828 := xOrigin + 1 to xLimit - 1 do
-    u9_051f(d_6E36^[243], d_6828, (yLimit shl 3) + d_683C);
-  u9_051f(d_6E36^[123], xLimit, (yLimit shl 3) + d_683C);
+    u9_051f(PByteArray(d_6E36)^[243], d_6828, (yLimit shl 3) + d_683C);
+  u9_051f(PByteArray(d_6E36)^[123], xLimit, (yLimit shl 3) + d_683C);
   for d_6828 := xOrigin + 1 to xLimit + 1 do
-    u9_051f(d_6E36^[363], d_6828, ((yLimit + 1) shl 3) + d_683C);
+    u9_051f(PByteArray(d_6E36)^[363], d_6828, ((yLimit + 1) shl 3) + d_683C);
 
   for d_6828 := 1 to endRow do
     if d_3812[d_6828] <> 'END OF WINDOW' then
@@ -159,8 +149,8 @@ begin
     if (xPos <> 0) and (d_682C > $14) then
     begin
       d_682C := 0;
-      u9_2b38(d_6E36^[323], xPos, (yPos shl 3) + d_683C);
-      u9_051f(PSpriteArray(d_6E3A)^[phase + 45][3], xPos,
+      u9_2b38(PByteArray(d_6E36)^[323], xPos, (yPos shl 3) + d_683C);
+      u9_051f(d_6E3A^.Glyphs[phase + 45].Pixels[1], xPos,
         (yPos shl 3) + d_683C);
       Inc(phase);
       if phase > 5 then
@@ -172,17 +162,17 @@ begin
         begin
           selected := 0;
           if moveVertical <> 0 then
-            u9_051f(d_6E36^[43], moveX, moveY + d_683C)
+            u9_051f(PByteArray(d_6E36)^[43], moveX, moveY + d_683C)
           else
-            u9_051f(d_6E36^[203], moveX, moveY + d_683C);
+            u9_051f(PByteArray(d_6E36)^[203], moveX, moveY + d_683C);
         end
         else
         begin
           if moveVertical <> 0 then
-            u9_051f(d_6E36^[43], moveX, moveY + d_683C)
+            u9_051f(PByteArray(d_6E36)^[43], moveX, moveY + d_683C)
           else
-            u9_051f(d_6E36^[203], moveX, moveY + d_683C);
-          u9_051f(PSpriteArray(d_6E36)^[moveCount + 37][3], moveX,
+            u9_051f(PByteArray(d_6E36)^[203], moveX, moveY + d_683C);
+          u9_051f(d_6E36^.Glyphs[moveCount + 37].Pixels[1], moveX,
             moveY + d_683C);
         end;
       end;
@@ -220,7 +210,7 @@ begin
         found := 1;
       end;
   until found <> 0;
-  u9_1831(d_67F6^, xOrigin,
+  u9_1831(d_67F6^[0], xOrigin,
     (yOrigin shl 3) + d_683C);
   FreeMem(d_67F6, 30000);
   MemW[0:$041C] := MemW[0:$041A];

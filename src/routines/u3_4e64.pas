@@ -1,12 +1,8 @@
-{ Help text and scrolling-window entry. }
 {@decls}
 type
   THelpLine = string[40];
-var
-  d_6814: Word;
 {@stubs}
-procedure u3_079e;
-function u3_26cf(Mode: Byte): Byte;
+
 {@body}
 procedure u3_4e64;
 var

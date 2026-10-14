@@ -1,44 +1,7 @@
 {@decls}
-type
-  TObjectRecord = record
-    State, X, Y, OldX, OldY, Frame, Tick, Limit,
-    Aux1, Aux2, Sprite, DX, DY, Speed, Kind: Integer;
-    Inactive, Marked: Byte;
-  end;
-  TProjectile = record
-    X, Y, OldX, OldY, Unused8, Unused10, Frame, Unused14,
-    Unused16, Sprite, DX, DY, Speed, Kind: Integer;
-    Inactive, Marked: Byte;
-    Tail: array[1..2] of Byte;
-  end;
-  TTile = record
-    Tile, Overlay, Aux: Integer;
-    Solid, Special: Byte;
-  end;
-  TSpriteBytes = array[0..32767] of Byte;
-  PSpriteBytes = ^TSpriteBytes;
-var
-  d_0296: array[1..40, 1..25] of TTile;
-  d_34EC: array[1..25] of TObjectRecord;
-  d_6832: Word;
-  d_6840: Integer;
-  d_685C: array[1..9] of TProjectile;
-  d_699A: LongInt;
-  d_69A2: Integer;
-  d_6D96: PSpriteBytes;
+
 {@stubs}
-function u1_0000(Distance, Item: Integer): Boolean;
-procedure u1_01c4(X, Y: Integer);
-function u1_027c(X, Y: Integer): Boolean;
-procedure u1_03f0(X, Y, Kind: Integer);
-procedure u1_0584(X, Y, DX, Speed, Kind: Integer);
-procedure u1_0837(X, Y, I, A, B: Integer);
-procedure u2_0000(X, Y: Integer);
-procedure u2_2530(X, Y: Integer);
-procedure u3_00db(ticks: Word);
-procedure u7_0000(mode: Integer);
-procedure u9_0352(register, value: Word);
-procedure u9_19f9(var sprite; X, Y: Integer);
+procedure u9_0352(X, Y: Integer);
 {@body}
 procedure u1_2f6b;
 var
@@ -93,14 +56,14 @@ begin
               begin
                 {3110} u7_0000(20);
                 {3121} d_699A := (d_699A + 100);
-                {3128} d_6832 := 65535;
+                {3128} d_6832 := -1;
                 {3135} d_34EC[I].Kind := 5001;
                 {3142} d_34EC[I].Limit := 16;
                 {314f} d_34EC[I].Sprite := 167;
                 {315c} d_34EC[I].Frame := 1;
                 {316b} d_34EC[I].Speed := 0;
-                {3193} u9_19f9(d_6D96^[2563], d_34EC[I].X, (d_34EC[I].Y + 16));
-                {31bc} u9_19f9(d_6D96^[2563], d_34EC[I].X, (d_34EC[I].Y + 416));
+                {3193} u9_19f9(PByteArray(d_6D96)^[2563], d_34EC[I].X, (d_34EC[I].Y + 16));
+                {31bc} u9_19f9(PByteArray(d_6D96)^[2563], d_34EC[I].X, (d_34EC[I].Y + 416));
               end
               else
               begin
@@ -112,14 +75,14 @@ begin
                 begin
                   {328e} u7_0000(4);
                   {329f} d_699A := (d_699A + 1000);
-                  {32a6} d_6832 := 65535;
+                  {32a6} d_6832 := -1;
                   {32b3} d_34EC[I].Kind := 5001;
                   {32c0} d_34EC[I].Limit := 16;
                   {32cd} d_34EC[I].Sprite := 170;
                   {32da} d_34EC[I].Frame := 1;
                   {32e9} d_34EC[I].Speed := 0;
-                  {3311} u9_19f9(d_6D96^[3203], d_34EC[I].X, (d_34EC[I].Y + 16));
-                  {333a} u9_19f9(d_6D96^[3203], d_34EC[I].X, (d_34EC[I].Y + 416));
+                  {3311} u9_19f9(PByteArray(d_6D96)^[3203], d_34EC[I].X, (d_34EC[I].Y + 16));
+                  {333a} u9_19f9(PByteArray(d_6D96)^[3203], d_34EC[I].X, (d_34EC[I].Y + 416));
                 end;
               end;
             end;
@@ -233,7 +196,7 @@ begin
                   {3829} u2_0000((d_34EC[I].X + 32), d_34EC[I].Y);
                   {385b} u1_03f0((LongInt(d_34EC[I].X) and 65520), (LongInt(d_34EC[I].Y) and 65520), 19);
                   {386a} d_699A := (d_699A + 500);
-                  {3871} d_6832 := 65535;
+                  {3871} d_6832 := -1;
                 end;
                 {3886} if d_34EC[I].X < d_34EC[1].X then
                 begin
@@ -339,7 +302,7 @@ begin
                 begin
                   {3cf4} u7_0000(19);
                   {3d05} d_699A := (d_699A + 1000);
-                  {3d0c} d_6832 := 65535;
+                  {3d0c} d_6832 := -1;
                   {3d19} d_34EC[I].Marked := 1;
                   {3d34} u2_0000(d_34EC[I].X, d_34EC[I].Y);
                   {3d53} u2_0000((d_34EC[I].X - 16), d_34EC[I].Y);
@@ -506,7 +469,7 @@ begin
                   begin
                     {4457} u7_0000(19);
                     {4468} d_699A := (d_699A + 1000);
-                    {446f} d_6832 := 65535;
+                    {446f} d_6832 := -1;
                     {447c} d_34EC[I].Marked := 1;
                     {4497} u2_0000(d_34EC[I].X, d_34EC[I].Y);
                     {44b6} u2_0000((d_34EC[I].X - 16), d_34EC[I].Y);
@@ -541,13 +504,13 @@ begin
                   {461a} u7_0000(10);
                   {461f} d_69CE := 1;
                   {4630} d_699A := (d_699A + 5000);
-                  {4637} d_6832 := 65535;
+                  {4637} d_6832 := -1;
                   {4644} d_34EC[I].Kind := 5001;
                   {4651} d_34EC[I].Limit := 16;
                   {465e} d_34EC[I].Sprite := 172;
                   {466b} d_34EC[I].Frame := 1;
-                  {4695} u9_19f9(d_6D96^[3363], d_34EC[I].X, (d_34EC[I].Y + 16));
-                  {46be} u9_19f9(d_6D96^[3363], d_34EC[I].X, (d_34EC[I].Y + 416));
+                  {4695} u9_19f9(PByteArray(d_6D96)^[3363], d_34EC[I].X, (d_34EC[I].Y + 16));
+                  {46be} u9_19f9(PByteArray(d_6D96)^[3363], d_34EC[I].X, (d_34EC[I].Y + 416));
                   {46c6} u3_00db(0);
                 end
                 else
@@ -610,7 +573,7 @@ begin
                 begin
                   {492c} u7_0000(19);
                   {493d} d_699A := (d_699A + 500);
-                  {4944} d_6832 := 65535;
+                  {4944} d_6832 := -1;
                   {4960} u2_0000(d_34EC[I].X, d_34EC[I].Y);
                   {497f} u2_0000((d_34EC[I].X - 16), d_34EC[I].Y);
                   {499e} u2_0000((d_34EC[I].X + 16), d_34EC[I].Y);
@@ -619,8 +582,8 @@ begin
                   {49c4} d_34EC[I].Sprite := 169;
                   {49d1} d_34EC[I].Frame := 1;
                   {49f4} d_34EC[I].X := (LongInt((d_34EC[I].X + 8)) and 65520);
-                  {4a1c} u9_19f9(d_6D96^[2883], d_34EC[I].X, (d_34EC[I].Y + 16));
-                  {4a45} u9_19f9(d_6D96^[2883], d_34EC[I].X, (d_34EC[I].Y + 416));
+                  {4a1c} u9_19f9(PByteArray(d_6D96)^[2883], d_34EC[I].X, (d_34EC[I].Y + 16));
+                  {4a45} u9_19f9(PByteArray(d_6D96)^[2883], d_34EC[I].X, (d_34EC[I].Y + 416));
                 end
                 else
                 begin
@@ -687,7 +650,7 @@ begin
                 begin
                   {4c6d} u7_0000(19);
                   {4c7e} d_699A := (d_699A + 1000);
-                  {4c85} d_6832 := 65535;
+                  {4c85} d_6832 := -1;
                   {4ca1} u2_0000(d_34EC[I].X, d_34EC[I].Y);
                   {4cc0} u2_0000((d_34EC[I].X - 16), d_34EC[I].Y);
                   {4cdf} u2_0000((d_34EC[I].X + 16), d_34EC[I].Y);
@@ -696,8 +659,8 @@ begin
                   {4d05} d_34EC[I].Sprite := 170;
                   {4d12} d_34EC[I].Frame := 1;
                   {4d35} d_34EC[I].X := (LongInt((d_34EC[I].X + 8)) and 65520);
-                  {4d5d} u9_19f9(d_6D96^[3043], d_34EC[I].X, (d_34EC[I].Y + 16));
-                  {4d86} u9_19f9(d_6D96^[3043], d_34EC[I].X, (d_34EC[I].Y + 416));
+                  {4d5d} u9_19f9(PByteArray(d_6D96)^[3043], d_34EC[I].X, (d_34EC[I].Y + 16));
+                  {4d86} u9_19f9(PByteArray(d_6D96)^[3043], d_34EC[I].X, (d_34EC[I].Y + 416));
                   {4dae} u1_0584(d_34EC[I].X, d_34EC[I].Y, -1, 4, 125);
                   {4dd4} u1_0584(d_34EC[I].X, d_34EC[I].Y, 1, 4, 126);
                 end
@@ -723,14 +686,14 @@ begin
                 begin
                   {4e89} u7_0000(19);
                   {4e9a} d_699A := (d_699A + 1000);
-                  {4ea1} d_6832 := 65535;
+                  {4ea1} d_6832 := -1;
                   {4eae} d_34EC[I].Kind := 5001;
                   {4ebb} d_34EC[I].Limit := 16;
                   {4ec8} d_34EC[I].Sprite := 170;
                   {4ed5} d_34EC[I].Frame := 1;
                   {4ef8} d_34EC[I].X := (LongInt((d_34EC[I].X + 8)) and 65520);
-                  {4f20} u9_19f9(d_6D96^[3043], d_34EC[I].X, (d_34EC[I].Y + 16));
-                  {4f49} u9_19f9(d_6D96^[3043], d_34EC[I].X, (d_34EC[I].Y + 416));
+                  {4f20} u9_19f9(PByteArray(d_6D96)^[3043], d_34EC[I].X, (d_34EC[I].Y + 16));
+                  {4f49} u9_19f9(PByteArray(d_6D96)^[3043], d_34EC[I].X, (d_34EC[I].Y + 416));
                   {4f4e} d_69EF := 1;
                 end
                 else
@@ -1022,7 +985,7 @@ begin
                   begin
                     {5c9c} u7_0000(19);
                     {5cad} d_699A := (d_699A + 1000);
-                    {5cb4} d_6832 := 65535;
+                    {5cb4} d_6832 := -1;
                     {5cc1} d_34EC[I].Marked := 1;
                     {5cdc} u2_0000(d_34EC[I].X, d_34EC[I].Y);
                     {5cfb} u2_0000((d_34EC[I].X - 16), d_34EC[I].Y);
@@ -1134,14 +1097,14 @@ begin
                 {62ca} if (J < 10) and ((J > -10) and ((K < 10) and (K > -10))) then
                 begin
                   {62f6} d_699A := (d_699A + 5000);
-                  {62fd} d_6832 := 65535;
+                  {62fd} d_6832 := -1;
                   {630a} d_34EC[I].Kind := 5001;
                   {6317} d_34EC[I].Limit := 16;
                   {6324} d_34EC[I].Sprite := 172;
                   {6331} d_34EC[I].Frame := 1;
                   {6340} d_34EC[I].Speed := 0;
-                  {6368} u9_19f9(d_6D96^[3203], d_34EC[I].X, (d_34EC[I].Y + 16));
-                  {6391} u9_19f9(d_6D96^[3203], d_34EC[I].X, (d_34EC[I].Y + 416));
+                  {6368} u9_19f9(PByteArray(d_6D96)^[3203], d_34EC[I].X, (d_34EC[I].Y + 16));
+                  {6391} u9_19f9(PByteArray(d_6D96)^[3203], d_34EC[I].X, (d_34EC[I].Y + 416));
                 end;
               end;
             end;
@@ -1174,34 +1137,34 @@ begin
       end;
   for I := 1 to d_69A2 do
   begin
-    {648b} if (d_685C[I].Inactive = 0) and (d_685C[I].Sprite <> 626) then
+    {648b} if (d_685A[I].Inactive = 0) and (d_685A[I].Sprite <> 626) then
     begin
-      {64b4} d_685C[I].OldX := d_685C[I].X;
-      {64ca} d_685C[I].OldY := d_685C[I].Y;
-      {64da} if d_685C[I].DX = 1 then
+      {64b4} d_685A[I].OldX := d_685A[I].X;
+      {64ca} d_685A[I].OldY := d_685A[I].Y;
+      {64da} if d_685A[I].DX = 1 then
       begin
-        {64f2} X := (d_685C[I].X + d_685C[I].Speed);
+        {64f2} X := (d_685A[I].X + d_685A[I].Speed);
       end
       else
       begin
-        {6503} if d_685C[I].DX = -1 then
+        {6503} if d_685A[I].DX = -1 then
         begin
-          {651b} X := (d_685C[I].X - d_685C[I].Speed);
+          {651b} X := (d_685A[I].X - d_685A[I].Speed);
         end
         else
         begin
-          {652b} X := d_685C[I].X;
+          {652b} X := d_685A[I].X;
         end;
       end;
-      {6542} Y := (((d_685C[I].Y + 8) shr 4) + 1);
+      {6542} Y := (((d_685A[I].Y + 8) shr 4) + 1);
       {6565} if (d_0296[((X shr 4) + 1), Y].Solid <> 0) or (d_0296[(((X + 8) shr 4) + 1), Y].Solid <> 0) then
       begin
         {6590} u7_0000(7);
-        {659c} d_685C[I].Sprite := 626;
-        {65ab} d_685C[I].Speed := 0;
-        {65b6} d_685C[I].Frame := 7;
+        {659c} d_685A[I].Sprite := 626;
+        {65ab} d_685A[I].Speed := 0;
+        {65b6} d_685A[I].Limit := 7;
       end;
-      {65c6} d_685C[I].X := X;
+      {65c6} d_685A[I].X := X;
     end;
   end;
 end;

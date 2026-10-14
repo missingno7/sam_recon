@@ -1,17 +1,7 @@
-{ u3_344c: far, frame 8 bytes, parameters [0] bytes }
 {@decls}
-var
-  d_682C: Integer;
-  d_683C: Word;
-  d_6840: Word;
+
 {@stubs}
-procedure u3_00db(N: Word);
-procedure u3_0232(N: Word);
-function u5_000f(N: Word): Integer;
-function u5_0047(N: Word): Integer;
-function u5_1915(P: String; A, B, C: Word): Integer;
-procedure u7_0000(N: Word);
-function u9_01d3(N: Word): Integer;
+
 {@body}
 procedure u3_344c;
 var

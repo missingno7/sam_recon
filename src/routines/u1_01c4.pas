@@ -1,17 +1,15 @@
 {@decls}
-var
-  d_34EC: Word;
-  d_6832: Word;
+
 {@stubs}
-procedure u7_0000(mode: Integer);
+
 {@body}
 procedure u1_01c4(x, y: Integer);
 begin
-  if ((d_34EE >= x) and (x + 9 >= d_34EE)) or
-     ((d_34EE + 9 >= x) and (d_34EE <= x)) then
+  if ((d_34EC[1].X >= x) and (x + 9 >= d_34EC[1].X)) or
+     ((d_34EC[1].X + 9 >= x) and (d_34EC[1].X <= x)) then
   begin
-    if ((d_34F0 >= y) and (y + 15 >= d_34F0)) or
-       ((d_34F0 + 15 >= y) and (d_34F0 <= y)) then
+    if ((d_34EC[1].Y >= y) and (y + 15 >= d_34EC[1].Y)) or
+       ((d_34EC[1].Y + 15 >= y) and (d_34EC[1].Y <= y)) then
     begin
       if d_69F5 = 0 then
       begin
@@ -24,8 +22,8 @@ begin
               d_6A41 := 1;
               d_6A42 := 30;
               Dec(d_6A40);
-              d_6832 := $FFFF;
-              d_34EC := 5;
+              d_6832 := -1;
+              d_34EC[1].State := 5;
               u7_0000(7);
             end;
           end
@@ -43,10 +41,3 @@ begin
     end;
   end;
 end;
-
-
-
-
-
-
-

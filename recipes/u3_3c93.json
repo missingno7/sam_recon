@@ -41,10 +41,13 @@
  ],
  "function": "u3_3c93",
  "options": [
-  "/$S-"
+  "/$S-",
+  "/$I-",
+  "/$R-",
+  "/$B-"
  ],
  "profile": "sam",
  "source": "src/routines/u3_3c93.pas",
- "source_sha256": "1c73683a8a72cef21f522b47595f02ca080acbc48fb99594c2257cfe3104aef0",
+ "source_sha256": "265b7fd1f6b4fe95e013df3d9664356f8c32e5883c6c604f26d0b0b682d0a733",
  "unit": "u3"
 }

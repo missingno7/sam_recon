@@ -1,19 +1,7 @@
 {@decls}
-var
-  d_6832: Word;
-  d_6820: Word;
-  d_69A4: Word;
-  d_69A6: Word;
-  d_69A8: Word;
-  d_69AA: Word;
-  d_69AE: Word;
-  d_69E2: Word;
-  d_69E4: Word;
-  d_69E6: Word;
+
 {@stubs}
-procedure u9_0625(Value: Word);
-procedure u9_07ee(A, B, C, D: Word);
-procedure u9_2f32;
+
 {@body}
 procedure u8_0a89;
 var
@@ -23,7 +11,7 @@ begin
   u9_0625(0);
   u9_07ee(0, 80, 0, 8);
   u9_2f32;
-  d_6832 := $FFFF;
+  d_6832 := -1;
   d_6EBF := 0;
   d_6ECA := 0;
   d_6ECB := 0;

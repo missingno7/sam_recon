@@ -41,10 +41,13 @@
  ],
  "function": "u4_0097",
  "options": [
-  "/$S-"
+  "/$S-",
+  "/$I-",
+  "/$R-",
+  "/$B-"
  ],
  "profile": "sam",
  "source": "src/routines/u4_0097.pas",
- "source_sha256": "fb9de4ef0bef4fba4d13d0ce9133c38a88256107404c4eb30227fdd03a0206a6",
+ "source_sha256": "2a83667d6a74b2b5a6045b18a5513c6b30ca24ecd51a2e8deffcfeacaea78730",
  "unit": "u4"
 }

@@ -1,8 +1,7 @@
 {@decls}
-var
-  d_683E: Word;
-  d_6840: Word;
+
 {@stubs}
+
 {@body}
 procedure u3_007c;
 begin

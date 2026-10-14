@@ -1,10 +1,7 @@
 {@decls}
-var
-  d_6814: Word;
+
 {@stubs}
-procedure u3_079e;
-function u3_1601(Mode: Byte): Byte;
-function u3_a6f6(KeyCode: Word): String;
+
 {@body}
 procedure u3_892b;
 var

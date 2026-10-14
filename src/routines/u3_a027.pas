@@ -1,10 +1,7 @@
 {@decls}
-var
-  d_6814: Word;
-  d_6824: Word;
+
 {@stubs}
-procedure u3_079e;
-function u3_1601(Value: Byte): Byte;
+
 {@body}
 procedure u3_a027;
 begin

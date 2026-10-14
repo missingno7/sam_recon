@@ -1,15 +1,13 @@
-{ Mission-success text and ordering pages in the scrolling help window. }
 {@decls}
 type
-  TLevelRow = array[1..42] of Char; { Required by a shared harness stub. }
+  TLevelRow = array[1..42] of Char;
 var
   d_3812: array[1..299] of string[40];
   d_67FA: array[1..20] of Byte;
-  d_6814: Word;
-  d_6816, d_6EC5: Byte;
+  d_6816: Byte;
+  d_6EC5: Byte;
 {@stubs}
-procedure u3_079e;
-function u3_26cf(Mode: Byte): Byte;
+
 {@body}
 procedure u3_7c17;
 var

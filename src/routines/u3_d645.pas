@@ -3,11 +3,8 @@ type
   TMessageSlot = packed record
     S: String[40];
   end;
-var d_6824: Word;
 {@stubs}
-procedure u3_079e;
-function u3_1601(value: Byte): Byte;
-procedure u3_acdd;
+
 {@body}
 procedure u3_d645;
 var

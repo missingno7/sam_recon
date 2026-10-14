@@ -1,16 +1,7 @@
 {@decls}
-var
-  d_683C, d_6840: Word;
+
 {@stubs}
-procedure u3_00db(Ticks: Word);
-procedure u3_0232(Ticks: Word);
-procedure u3_3712;
-procedure u3_7c17;
-function u5_000f(N: Word): Integer;
-function u5_0047(N: Word): Integer;
-function u5_1915(P: String; A, B, C: Word): Integer;
 procedure u9_01a3(N: Word);
-function u9_01d3(N: Word): Integer;
 {@body}
 procedure u3_ddd2;
 var

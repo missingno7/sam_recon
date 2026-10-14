@@ -1,24 +1,19 @@
-{ Scrolling help window with an animated border and key selection. }
 {@decls}
 type
   THelpLine = string[40];
-  TGlyph = packed record
-    Header: array[1..3] of Byte;
-    Pixels: array[1..37] of Byte;
-  end;
-  TGlyphArray = array[1..1638] of TGlyph;
-  PGlyphArray = ^TGlyphArray;
-  TWindowBuffer = array[0..29999] of Byte;
-  PWindowBuffer = ^TWindowBuffer;
 var
-  d_67F6: PWindowBuffer;
   d_67FA: array[1..20] of Byte;
-  d_6824, d_6826, d_6828, d_682A, d_682C: Integer;
-  d_6838, d_683A, d_683C: Integer;
-  d_6E36: PGlyphArray;
-  d_6EC3, d_6EC4, d_6ECA, d_6ECB, d_6ECC: Byte;
+  d_6826: Integer;
+  d_6828: Integer;
+  d_682A: Integer;
+  d_6838: Integer;
+  d_683A: Integer;
+  d_6EC3: Byte;
+  d_6EC4: Byte;
+  d_6ECA: Byte;
+  d_6ECB: Byte;
+  d_6ECC: Byte;
 {@stubs}
-procedure u3_0892(X, Y: Integer; Text: string);
 procedure u9_051f(var Data; X, Y: Integer);
 procedure u9_1795(var Data; X1, Y1, X2, Y2: Integer);
 procedure u9_1831(var Data; X, Y: Integer);
@@ -68,29 +63,29 @@ begin
   Bottom := Top + Height + 1;
   for d_682A := 1 to Bottom - Top do
     for d_6828 := Left + 1 to Right - 1 do
-      u9_2b38(d_6E36^[9].Pixels[1], d_6828,
+      u9_2b38(d_6E36^.Glyphs[9].Pixels[1], d_6828,
         ((Top + d_682A) shl 3) + d_683C);
-  u9_051f(d_6E36^[1].Pixels[1], Left, (Top shl 3) + d_683C);
+  u9_051f(d_6E36^.Glyphs[1].Pixels[1], Left, (Top shl 3) + d_683C);
   for d_6828 := Left + 1 to Right - 1 do
-    u9_051f(d_6E36^[2].Pixels[1], d_6828, (Top shl 3) + d_683C);
-  u9_051f(d_6E36^[3].Pixels[1], Right, (Top shl 3) + d_683C);
+    u9_051f(d_6E36^.Glyphs[2].Pixels[1], d_6828, (Top shl 3) + d_683C);
+  u9_051f(d_6E36^.Glyphs[3].Pixels[1], Right, (Top shl 3) + d_683C);
   for d_6828 := 1 to Bottom - Top do
   begin
-    u9_051f(d_6E36^[6].Pixels[1], Left,
+    u9_051f(d_6E36^.Glyphs[6].Pixels[1], Left,
       ((Top + d_6828) shl 3) + d_683C);
-    u9_051f(d_6E36^[8].Pixels[1], Right,
+    u9_051f(d_6E36^.Glyphs[8].Pixels[1], Right,
       ((Top + d_6828) shl 3) + d_683C);
-    u9_051f(d_6E36^[10].Pixels[1], Right + 1,
+    u9_051f(d_6E36^.Glyphs[10].Pixels[1], Right + 1,
       ((Top + d_6828) shl 3) + d_683C);
   end;
-  u9_051f(d_6E36^[10].Pixels[1], Right + 1,
+  u9_051f(d_6E36^.Glyphs[10].Pixels[1], Right + 1,
     ((Bottom - Top + Top + 1) shl 3) + d_683C);
-  u9_051f(d_6E36^[5].Pixels[1], Left, (Bottom shl 3) + d_683C);
+  u9_051f(d_6E36^.Glyphs[5].Pixels[1], Left, (Bottom shl 3) + d_683C);
   for d_6828 := Left + 1 to Right - 1 do
-    u9_051f(d_6E36^[7].Pixels[1], d_6828, (Bottom shl 3) + d_683C);
-  u9_051f(d_6E36^[4].Pixels[1], Right, (Bottom shl 3) + d_683C);
+    u9_051f(d_6E36^.Glyphs[7].Pixels[1], d_6828, (Bottom shl 3) + d_683C);
+  u9_051f(d_6E36^.Glyphs[4].Pixels[1], Right, (Bottom shl 3) + d_683C);
   for d_6828 := Left + 1 to Right + 1 do
-    u9_051f(d_6E36^[10].Pixels[1], d_6828,
+    u9_051f(d_6E36^.Glyphs[10].Pixels[1], d_6828,
       ((Bottom + 1) shl 3) + d_683C);
   for d_6828 := 1 to Height - 2 do
     if d_3812[d_6828] <> 'END OF WINDOW' then
@@ -133,17 +128,17 @@ begin
           begin
             SparkActive := False;
             if Horizontal then
-              u9_051f(d_6E36^[2].Pixels[1], SparkX, SparkY + d_683C)
+              u9_051f(d_6E36^.Glyphs[2].Pixels[1], SparkX, SparkY + d_683C)
             else
-              u9_051f(d_6E36^[6].Pixels[1], SparkX, SparkY + d_683C);
+              u9_051f(d_6E36^.Glyphs[6].Pixels[1], SparkX, SparkY + d_683C);
           end
           else
           begin
             if Horizontal then
-              u9_051f(d_6E36^[2].Pixels[1], SparkX, SparkY + d_683C)
+              u9_051f(d_6E36^.Glyphs[2].Pixels[1], SparkX, SparkY + d_683C)
             else
-              u9_051f(d_6E36^[6].Pixels[1], SparkX, SparkY + d_683C);
-            u9_051f(d_6E36^[SparkFrame + 37].Pixels[1],
+              u9_051f(d_6E36^.Glyphs[6].Pixels[1], SparkX, SparkY + d_683C);
+            u9_051f(d_6E36^.Glyphs[SparkFrame + 37].Pixels[1],
               SparkX, SparkY + d_683C);
           end;
         end;
@@ -169,29 +164,29 @@ begin
       if LineCount - 16 < Scroll then Scroll := LineCount - 16;
       for d_682A := 1 to Bottom - Top - 1 do
         for d_6828 := Left + 1 to Right - 1 do
-          u9_2b38(d_6E36^[9].Pixels[1], d_6828,
+          u9_2b38(d_6E36^.Glyphs[9].Pixels[1], d_6828,
             ((Top + d_682A) shl 3) + d_683C);
-      u9_051f(d_6E36^[1].Pixels[1], Left, (Top shl 3) + d_683C);
+      u9_051f(d_6E36^.Glyphs[1].Pixels[1], Left, (Top shl 3) + d_683C);
       for d_6828 := Left + 1 to Right - 1 do
-        u9_051f(d_6E36^[2].Pixels[1], d_6828, (Top shl 3) + d_683C);
-      u9_051f(d_6E36^[3].Pixels[1], Right, (Top shl 3) + d_683C);
+        u9_051f(d_6E36^.Glyphs[2].Pixels[1], d_6828, (Top shl 3) + d_683C);
+      u9_051f(d_6E36^.Glyphs[3].Pixels[1], Right, (Top shl 3) + d_683C);
       for d_6828 := 1 to Bottom - Top do
       begin
-        u9_051f(d_6E36^[6].Pixels[1], Left,
+        u9_051f(d_6E36^.Glyphs[6].Pixels[1], Left,
           ((Top + d_6828) shl 3) + d_683C);
-        u9_051f(d_6E36^[8].Pixels[1], Right,
+        u9_051f(d_6E36^.Glyphs[8].Pixels[1], Right,
           ((Top + d_6828) shl 3) + d_683C);
-        u9_051f(d_6E36^[10].Pixels[1], Right + 1,
+        u9_051f(d_6E36^.Glyphs[10].Pixels[1], Right + 1,
           ((Top + d_6828) shl 3) + d_683C);
       end;
-      u9_051f(d_6E36^[10].Pixels[1], Right + 1,
+      u9_051f(d_6E36^.Glyphs[10].Pixels[1], Right + 1,
         ((Bottom - Top + Top + 1) shl 3) + d_683C);
-      u9_051f(d_6E36^[5].Pixels[1], Left, (Bottom shl 3) + d_683C);
+      u9_051f(d_6E36^.Glyphs[5].Pixels[1], Left, (Bottom shl 3) + d_683C);
       for d_6828 := Left + 1 to Right - 1 do
-        u9_051f(d_6E36^[7].Pixels[1], d_6828, (Bottom shl 3) + d_683C);
-      u9_051f(d_6E36^[4].Pixels[1], Right, (Bottom shl 3) + d_683C);
+        u9_051f(d_6E36^.Glyphs[7].Pixels[1], d_6828, (Bottom shl 3) + d_683C);
+      u9_051f(d_6E36^.Glyphs[4].Pixels[1], Right, (Bottom shl 3) + d_683C);
       for d_6828 := Left + 1 to Right + 1 do
-        u9_051f(d_6E36^[10].Pixels[1], d_6828,
+        u9_051f(d_6E36^.Glyphs[10].Pixels[1], d_6828,
           ((Bottom + 1) shl 3) + d_683C);
       for d_6828 := 1 to Height - 2 do
         if d_3812[d_6828] <> 'END OF WINDOW' then
@@ -203,29 +198,29 @@ begin
       if Scroll < 0 then Scroll := 0;
       for d_682A := 1 to Bottom - Top - 1 do
         for d_6828 := Left + 1 to Right - 1 do
-          u9_2b38(d_6E36^[9].Pixels[1], d_6828,
+          u9_2b38(d_6E36^.Glyphs[9].Pixels[1], d_6828,
             ((Top + d_682A) shl 3) + d_683C);
-      u9_051f(d_6E36^[1].Pixels[1], Left, (Top shl 3) + d_683C);
+      u9_051f(d_6E36^.Glyphs[1].Pixels[1], Left, (Top shl 3) + d_683C);
       for d_6828 := Left + 1 to Right - 1 do
-        u9_051f(d_6E36^[2].Pixels[1], d_6828, (Top shl 3) + d_683C);
-      u9_051f(d_6E36^[3].Pixels[1], Right, (Top shl 3) + d_683C);
+        u9_051f(d_6E36^.Glyphs[2].Pixels[1], d_6828, (Top shl 3) + d_683C);
+      u9_051f(d_6E36^.Glyphs[3].Pixels[1], Right, (Top shl 3) + d_683C);
       for d_6828 := 1 to Bottom - Top do
       begin
-        u9_051f(d_6E36^[6].Pixels[1], Left,
+        u9_051f(d_6E36^.Glyphs[6].Pixels[1], Left,
           ((Top + d_6828) shl 3) + d_683C);
-        u9_051f(d_6E36^[8].Pixels[1], Right,
+        u9_051f(d_6E36^.Glyphs[8].Pixels[1], Right,
           ((Top + d_6828) shl 3) + d_683C);
-        u9_051f(d_6E36^[10].Pixels[1], Right + 1,
+        u9_051f(d_6E36^.Glyphs[10].Pixels[1], Right + 1,
           ((Top + d_6828) shl 3) + d_683C);
       end;
-      u9_051f(d_6E36^[10].Pixels[1], Right + 1,
+      u9_051f(d_6E36^.Glyphs[10].Pixels[1], Right + 1,
         ((Bottom - Top + Top + 1) shl 3) + d_683C);
-      u9_051f(d_6E36^[5].Pixels[1], Left, (Bottom shl 3) + d_683C);
+      u9_051f(d_6E36^.Glyphs[5].Pixels[1], Left, (Bottom shl 3) + d_683C);
       for d_6828 := Left + 1 to Right - 1 do
-        u9_051f(d_6E36^[7].Pixels[1], d_6828, (Bottom shl 3) + d_683C);
-      u9_051f(d_6E36^[4].Pixels[1], Right, (Bottom shl 3) + d_683C);
+        u9_051f(d_6E36^.Glyphs[7].Pixels[1], d_6828, (Bottom shl 3) + d_683C);
+      u9_051f(d_6E36^.Glyphs[4].Pixels[1], Right, (Bottom shl 3) + d_683C);
       for d_6828 := Left + 1 to Right + 1 do
-        u9_051f(d_6E36^[10].Pixels[1], d_6828,
+        u9_051f(d_6E36^.Glyphs[10].Pixels[1], d_6828,
           ((Bottom + 1) shl 3) + d_683C);
       for d_6828 := 1 to Height - 2 do
         if d_3812[d_6828] <> 'END OF WINDOW' then

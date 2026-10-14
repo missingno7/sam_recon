@@ -2,7 +2,8 @@
 ; Seven bytes of CS scratch are undefined in the object, not claimed equal.
 CODE segment byte public
 assume cs:CODE
-public p_5151,p_516d,p_51df,p_51f3
+; p_5151 is private: CMOS index in AL, result in AX.
+public p_516d,p_51df,p_51f3
 
 cmos_hour   db ?
 cmos_minute db ?

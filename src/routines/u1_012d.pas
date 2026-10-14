@@ -1,8 +1,7 @@
 {@decls}
-var
-  d_6820: Word;
-  d_69A4: Word;
+
 {@stubs}
+
 {@body}
 procedure u1_012d;
 begin
@@ -25,4 +24,3 @@ begin
     end;
   end;
 end;
-

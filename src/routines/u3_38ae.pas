@@ -1,25 +1,21 @@
 {@decls}
 type
-  TBigChunk = array[0..$1F7F] of Byte;
-  PBigChunk = ^TBigChunk;
-  TSmallChunk = array[0..$07FF] of Byte;
-  PSmallChunk = ^TSmallChunk;
-  TBigFile = file of TBigChunk;
-  TSmallFile = file of TSmallChunk;
+  TBigFile = file of TSpriteBank;
+type
+  TSmallFile = file of TGlyphBank;
+type
   TBigFileViews = record
     case Byte of
       0: (Raw: File);
       1: (Typed: TBigFile);
   end;
+type
   TSmallFileViews = record
     case Byte of
       0: (Raw: File);
       1: (Typed: TSmallFile);
   end;
 var
-  d_6D72, d_6D76, d_6D7A, d_6D7E, d_6D82, d_6D86, d_6D8A, d_6D8E,
-  d_6D92, d_6D96, d_6D9A, d_6D9E, d_6DA2, d_6DA6, d_6DAA, d_6DAE: PBigChunk;
-  d_6E32, d_6E36, d_6E3A: PSmallChunk;
   d_6DB2: TBigFileViews;
   d_6E3E: TSmallFileViews;
 {@stubs}

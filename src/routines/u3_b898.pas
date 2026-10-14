@@ -1,11 +1,7 @@
 {@decls}
-var
+
 {@stubs}
-procedure u3_079e;
-function u3_1601(Mode: Byte): Byte;
-procedure u3_acdd;
-procedure u3_af56;
-procedure u3_b4d6;
+
 {@body}
 procedure u3_b898;
 var
@@ -39,5 +35,3 @@ begin
   u3_b4d6;
   u3_af56;
 end;
-
-

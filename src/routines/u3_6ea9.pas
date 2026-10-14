@@ -1,16 +1,14 @@
-{ Mission briefing text, followed by the scrolling help window. }
 {@decls}
 type
   THelpLine = string[40];
-  { Required by the canonical u2_68a9 stub header. }
+type
   TLevelRow = array[1..42] of Char;
 var
   d_67FA: array[1..20] of Byte;
-  d_6814: Integer;
-  d_6816, d_6EC5: Byte;
+  d_6816: Byte;
+  d_6EC5: Byte;
 {@stubs}
-procedure u3_079e;
-function u3_26cf(Mode: Byte): Byte;
+
 {@body}
 procedure u3_6ea9;
 var

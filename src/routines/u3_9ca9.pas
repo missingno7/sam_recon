@@ -1,14 +1,8 @@
 {@decls}
 type
   TMenuText = array[1..6] of String[40];
-var
-  d_6814: Word;
-  d_6824: Word;
 {@stubs}
-procedure u3_079e;
-function u3_1601(Value: Byte): Byte;
-procedure u3_3712;
-procedure u7_0000(Value: Word);
+
 {@body}
 procedure u3_9ca9;
 begin
@@ -52,4 +46,3 @@ begin
   MemW[$0000:$041C] := MemW[$0000:$041A];
   d_6824 := 0;
 end;
-

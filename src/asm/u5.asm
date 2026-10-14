@@ -1,8 +1,10 @@
+; Episode-specific Genus identity symbol; its +1Ah field is 3.56.
+; Private register/flag helpers and decode continuations are not PUBLIC.
 ; Genus PCX Toolkit 3.56 linked object, SAM1 u5:000F..22B8.
 ; Original register preservation, Pascal cleanup and hardware paths retained.
 ; Address words are OMF fixups; no instruction-byte emission or offset steering.
 DATA segment byte public
-extrn d_001A:byte
+extrn d_0000:byte
 extrn d_008A:byte
 extrn d_21E0:byte
 extrn d_21E2:byte
@@ -10,16 +12,6 @@ extrn d_21E4:byte
 extrn d_21E6:byte
 extrn d_2280:byte
 extrn d_2A8A:byte
-extrn d_2A8C:byte
-extrn d_2A8E:byte
-extrn d_2A90:byte
-extrn d_2A92:byte
-extrn d_2A94:byte
-extrn d_2A96:byte
-extrn d_2A97:byte
-extrn d_2A98:byte
-extrn d_2A99:byte
-extrn d_2A9A:byte
 extrn d_2A9C:byte
 extrn d_2E9C:byte
 extrn d_2E9E:byte
@@ -28,27 +20,6 @@ extrn d_2EA2:byte
 extrn d_3372:byte
 extrn d_337E:byte
 extrn d_338A:byte
-extrn d_338C:byte
-extrn d_338E:byte
-extrn d_3390:byte
-extrn d_3392:byte
-extrn d_3394:byte
-extrn d_3395:byte
-extrn d_3398:byte
-extrn d_339E:byte
-extrn d_33A4:byte
-extrn d_33AC:byte
-extrn d_33B2:byte
-extrn d_33B6:byte
-extrn d_33C0:byte
-extrn d_33C8:byte
-extrn d_33D0:byte
-extrn d_33D8:byte
-extrn d_33DE:byte
-extrn d_33E3:byte
-extrn d_33E7:byte
-extrn d_33F3:byte
-extrn d_33F5:byte
 DATA ends
 
 CODE segment byte public
@@ -58,22 +29,11 @@ public u5_0047
 public u5_00eb
 public u5_01ac
 public u5_026b
-public u5_0c70
 public u5_0d2d
 public u5_0dc7
-public u5_0f9b
-public u5_10d7
-public u5_12b6
-public u5_137a
-public u5_14a7
-public u5_15d1
-public u5_16f5
 public u5_1915
-public u5_19e3
 public u5_1ac6
 public u5_1bf7
-public u5_1d60
-public u5_1d71
 public u5_2020
 public u5_20a2
 
@@ -235,7 +195,7 @@ u5_011a proc far
     mov di, word ptr [bp + 6]
     mov ax, seg d_21E0
     mov ds, ax
-    mov si, offset d_001A
+    mov si, offset d_0000 + 01Ah
     mov cx, 4
     cld
     mov byte ptr es:[di], cl
@@ -268,7 +228,7 @@ u5_0155 proc far
     jae set_work_buffer_next_1
     cmp ax, 0
     jne set_work_buffer_error_1
-    mov word ptr [d_2A8C], 0ffffh
+    mov word ptr [d_2A8A + 02h], 0ffffh
     mov word ptr [bp - 2], 0
     jmp short set_work_buffer_done_1
 set_work_buffer_error_1:
@@ -276,9 +236,9 @@ set_work_buffer_error_1:
     jmp short set_work_buffer_done_1
 set_work_buffer_next_1:
     mov ax, word ptr [bp + 0ah]
-    mov word ptr [d_2A8C], ax
+    mov word ptr [d_2A8A + 02h], ax
     mov ax, word ptr [bp + 8]
-    mov word ptr [d_2A8E], ax
+    mov word ptr [d_2A8A + 04h], ax
     mov ax, word ptr [bp + 6]
     sub ax, 0ah
     mov word ptr [d_2A8A], ax
@@ -408,15 +368,15 @@ u5_026b proc far
     mov word ptr [d_21E2], 0ffffh
     mov word ptr [d_21E4], 0ffffh
     mov word ptr [d_21E6], 1
-    mov word ptr [d_2A90], 0ffffh
-    mov word ptr [d_2A8C], 0ffffh
-    mov word ptr [d_2A8E], 0ffffh
+    mov word ptr [d_2A8A + 06h], 0ffffh
+    mov word ptr [d_2A8A + 02h], 0ffffh
+    mov word ptr [d_2A8A + 04h], 0ffffh
     mov word ptr [d_2A8A], 800h
-    mov byte ptr [d_2A96], 0
-    mov byte ptr [d_2A97], 0
-    mov byte ptr [d_2A98], 0
-    mov byte ptr [d_2A99], 0
-    mov byte ptr [d_2A9A], 0
+    mov byte ptr [d_2A8A + 0Ch], 0
+    mov byte ptr [d_2A8A + 0Dh], 0
+    mov byte ptr [d_2A8A + 0Eh], 0
+    mov byte ptr [d_2A8A + 0Fh], 0
+    mov byte ptr [d_2A8A + 010h], 0
     mov ax, seg d_21E0
     mov es, ax
     mov bx, offset d_2EA2
@@ -1151,7 +1111,7 @@ u5_0d2d proc far
     push di
     mov ax, seg d_21E0
     mov ds, ax
-    cmp byte ptr [d_2A96], 1
+    cmp byte ptr [d_2A8A + 0Ch], 1
     je display_buffer_next_1
     call far ptr u5_0dc7
 display_buffer_next_1:
@@ -1346,7 +1306,7 @@ u5_0dc7 proc far
     mov bx, ax
     mov word ptr [bx + 24h], offset u5_16f5
     mov word ptr [bx + 26h], seg CODE
-    mov byte ptr [d_2A96], 1
+    mov byte ptr [d_2A8A + 0Ch], 1
     retf
 u5_0dc7 endp
 
@@ -2559,7 +2519,7 @@ u5_1915 proc far
     mov ah, 3dh
     int 21h
     pop ds
-    mov word ptr [d_2A90], ax
+    mov word ptr [d_2A8A + 06h], ax
     jae decode_or_print_buffer_next_1
     mov word ptr [bp - 2], 0ffffh
     jmp short decode_or_print_buffer_next_5
@@ -2567,16 +2527,16 @@ decode_or_print_buffer_next_1:
     mov ax, seg d_21E0
     mov es, ax
     mov di, offset d_2280
-    cmp word ptr [d_2A8C], -1
+    cmp word ptr [d_2A8A + 02h], -1
     je decode_or_print_buffer_next_2
-    mov ax, word ptr [d_2A8C]
+    mov ax, word ptr [d_2A8A + 02h]
     mov es, ax
-    mov di, word ptr [d_2A8E]
+    mov di, word ptr [d_2A8A + 04h]
 decode_or_print_buffer_next_2:
-    mov word ptr [d_2A92], 0
-    mov word ptr [d_2A94], 0
+    mov word ptr [d_2A8A + 08h], 0
+    mov word ptr [d_2A8A + 0Ah], 0
     push ds
-    mov bx, word ptr [d_2A90]
+    mov bx, word ptr [d_2A8A + 06h]
     mov cx, word ptr [d_2A8A]
     mov dx, di
     mov ax, es
@@ -2603,11 +2563,11 @@ decode_or_print_buffer_next_3:
     call far ptr u5_0d2d
     mov word ptr [bp - 2], ax
 decode_or_print_buffer_next_4:
-    mov bx, word ptr [d_2A90]
+    mov bx, word ptr [d_2A8A + 06h]
     mov ah, 3eh
     int 21h
 decode_or_print_buffer_next_5:
-    mov word ptr [d_2A90], 0ffffh
+    mov word ptr [d_2A8A + 06h], 0ffffh
     mov ax, word ptr [bp - 2]
     pop di
     pop si
@@ -2632,7 +2592,7 @@ u5_19e3 proc far
     push bx
     push cx
     push dx
-    cmp word ptr [d_2A90], -1
+    cmp word ptr [d_2A8A + 06h], -1
     jne flush_print_buffer_next_1
     stc
     jmp short flush_print_buffer_done_1
@@ -2640,26 +2600,26 @@ flush_print_buffer_next_1:
     mov ax, ds
     mov es, ax
     mov di, offset d_2280
-    cmp word ptr [d_2A8C], -1
+    cmp word ptr [d_2A8A + 02h], -1
     je flush_print_buffer_next_2
-    mov ax, word ptr [d_2A8C]
+    mov ax, word ptr [d_2A8A + 02h]
     mov es, ax
-    mov di, word ptr [d_2A8E]
+    mov di, word ptr [d_2A8A + 04h]
 flush_print_buffer_next_2:
     mov ax, word ptr [bp + 6]
     sub ax, di
-    add word ptr [d_2A94], ax
+    add word ptr [d_2A8A + 0Ah], ax
     jae flush_print_buffer_next_3
-    add word ptr [d_2A92], 1
+    add word ptr [d_2A8A + 08h], 1
 flush_print_buffer_next_3:
-    mov bx, word ptr [d_2A90]
-    mov cx, word ptr [d_2A92]
-    mov dx, word ptr [d_2A94]
+    mov bx, word ptr [d_2A8A + 06h]
+    mov cx, word ptr [d_2A8A + 08h]
+    mov dx, word ptr [d_2A8A + 0Ah]
     mov al, 0
     mov ah, 42h
     int 21h
     push ds
-    mov bx, word ptr [d_2A90]
+    mov bx, word ptr [d_2A8A + 06h]
     mov cx, word ptr [d_2A8A]
     mov dx, di
     mov ax, es
@@ -2716,11 +2676,11 @@ configure_printer_next_2:
     mov ax, word ptr [bp + 0ch]
     mov word ptr [d_2EA0], ax
     mov ax, word ptr [bp + 0ah]
-    mov word ptr [d_338C], ax
+    mov word ptr [d_338A + 02h], ax
     mov ax, word ptr [bp + 6]
-    mov word ptr [d_338E], ax
+    mov word ptr [d_338A + 04h], ax
     mov ax, word ptr [bp + 8]
-    mov word ptr [d_3390], ax
+    mov word ptr [d_338A + 06h], ax
     mov word ptr [bp - 2], 0
 configure_printer_done_1:
     mov ax, word ptr [bp - 2]
@@ -2746,9 +2706,9 @@ u5_1ac6 proc far
     mov ds, ax
     mov ax, seg d_21E0
     mov es, ax
-    mov byte ptr [d_3394], 1
+    mov byte ptr [d_338A + 0Ah], 1
     mov ax, word ptr [bp + 0ah]
-    mov cx, word ptr [d_338C]
+    mov cx, word ptr [d_338A + 02h]
     cmp cx, 0
     je begin_printer_image_next_4
     cmp cx, 1
@@ -2775,7 +2735,7 @@ begin_printer_image_next_3:
     jne begin_printer_image_next_4
     shl ax, 1
 begin_printer_image_next_4:
-    mov word ptr [d_3392], ax
+    mov word ptr [d_338A + 08h], ax
     cmp word ptr [d_2EA0], 1
     je begin_printer_image_next_5
     cmp word ptr [d_2EA0], 2
@@ -2786,10 +2746,10 @@ begin_printer_image_next_5:
     push bx
     push ax
     push es
-    mov di, offset d_33E7
+    mov di, offset d_338A + 05Dh
     push di
     call far ptr u5_2020
-    mov di, offset d_33E3
+    mov di, offset d_338A + 059h
     add al, 3
     mov byte ptr es:[di], al
     mov ax, 0
@@ -2797,7 +2757,7 @@ begin_printer_image_next_5:
     mov ax, word ptr [bp + 8]
     push ax
     push es
-    mov di, offset d_33B6
+    mov di, offset d_338A + 02Ch
     push di
     call far ptr u5_2020
     add di, ax
@@ -2817,7 +2777,7 @@ begin_printer_image_next_5:
     mov byte ptr es:[di], 59h
     inc ax
     add ax, bx
-    mov di, offset d_33B2
+    mov di, offset d_338A + 028h
     add al, 3
     mov byte ptr es:[di], al
     mov dx, word ptr [d_338A]
@@ -2828,33 +2788,33 @@ begin_printer_image_next_5:
     mov word ptr [bp - 2], 0ffeeh
     jmp short begin_printer_image_done_1
 begin_printer_image_next_6:
-    cmp word ptr [d_3390], 1
+    cmp word ptr [d_338A + 06h], 1
     jne begin_printer_image_next_7
-    mov si, offset d_3395
+    mov si, offset d_338A + 0Bh
     call far ptr u5_1d60
-    mov si, offset d_3398
+    mov si, offset d_338A + 0Eh
     call far ptr u5_1d60
 begin_printer_image_next_7:
-    mov si, offset d_339E
+    mov si, offset d_338A + 014h
     call far ptr u5_1d60
-    mov si, offset d_33B2
+    mov si, offset d_338A + 028h
     call far ptr u5_1d60
     cmp word ptr [d_2EA0], 1
     je begin_printer_image_next_9
     cmp word ptr [d_2EA0], 2
     je begin_printer_image_next_8
-    mov si, offset d_33C8
+    mov si, offset d_338A + 03Eh
     call far ptr u5_1d60
     jmp short begin_printer_image_next_10
 begin_printer_image_next_8:
-    mov si, offset d_33C0
+    mov si, offset d_338A + 036h
     call far ptr u5_1d60
     jmp short begin_printer_image_next_10
 begin_printer_image_next_9:
-    mov si, offset d_33D0
+    mov si, offset d_338A + 046h
     call far ptr u5_1d60
 begin_printer_image_next_10:
-    mov si, offset d_33D8
+    mov si, offset d_338A + 04Eh
     call far ptr u5_1d60
 begin_printer_image_done_1:
     mov ax, word ptr [bp - 2]
@@ -2878,11 +2838,11 @@ u5_1bf7 proc far
     push di
     mov ax, seg d_21E0
     mov ds, ax
-    mov si, offset d_33DE
+    mov si, offset d_338A + 054h
     call far ptr u5_1d60
-    cmp word ptr [d_338E], 1
+    cmp word ptr [d_338A + 04h], 1
     jne end_printer_image_done_1
-    mov si, offset d_33AC
+    mov si, offset d_338A + 022h
     call far ptr u5_1d60
 end_printer_image_done_1:
     mov ax, word ptr [bp - 2]
@@ -3069,11 +3029,11 @@ u5_1d71 proc far
     mov es, ax
     mov si, offset d_2A9C
     mov di, si
-    cmp word ptr [d_338C], 0
+    cmp word ptr [d_338A + 02h], 0
     jne print_scanline_next_1
     jmp near ptr print_scanline_next_10
 print_scanline_next_1:
-    cmp word ptr [d_338C], 1
+    cmp word ptr [d_338A + 02h], 1
     je print_scanline_next_2
     jmp near ptr print_scanline_next_4
 print_scanline_next_2:
@@ -3083,7 +3043,7 @@ print_scanline_next_2:
     jne print_scanline_next_3
     jmp near ptr print_scanline_next_15
 print_scanline_next_3:
-    mov cx, word ptr [d_3392]
+    mov cx, word ptr [d_338A + 08h]
 print_scanline_loop_1:
     mov ah, byte ptr [si]
     and ah, 0e0h
@@ -3141,7 +3101,7 @@ print_scanline_loop_1:
     jg print_scanline_loop_1
     jmp near ptr print_scanline_next_10
 print_scanline_next_4:
-    cmp word ptr [d_338C], 2
+    cmp word ptr [d_338A + 02h], 2
     jne print_scanline_next_6
     mov ax, word ptr [d_2E9C]
     and ax, 1
@@ -3149,7 +3109,7 @@ print_scanline_next_4:
     je print_scanline_next_5
     jmp near ptr print_scanline_next_15
 print_scanline_next_5:
-    mov cx, word ptr [d_3392]
+    mov cx, word ptr [d_338A + 08h]
 print_scanline_loop_2:
     mov ah, byte ptr [si]
     and ah, 0c0h
@@ -3176,7 +3136,7 @@ print_scanline_loop_2:
     loop print_scanline_loop_2
     jmp near ptr print_scanline_next_10
 print_scanline_next_6:
-    cmp word ptr [d_338C], 3
+    cmp word ptr [d_338A + 02h], 3
     jne print_scanline_next_8
     mov ax, word ptr [d_2E9C]
     and ax, 3
@@ -3184,7 +3144,7 @@ print_scanline_next_6:
     je print_scanline_next_7
     jmp near ptr print_scanline_next_15
 print_scanline_next_7:
-    mov cx, word ptr [d_3392]
+    mov cx, word ptr [d_338A + 08h]
 print_scanline_loop_3:
     mov ah, byte ptr [si]
     and ah, 80h
@@ -3231,11 +3191,11 @@ print_scanline_loop_3:
     loop print_scanline_loop_3
     jmp short print_scanline_next_10
 print_scanline_next_8:
-    cmp word ptr [d_338C], 4
+    cmp word ptr [d_338A + 02h], 4
     je print_scanline_next_9
     jmp short print_scanline_next_10
 print_scanline_next_9:
-    mov cx, word ptr [d_3392]
+    mov cx, word ptr [d_338A + 08h]
 print_scanline_loop_4:
     mov bx, cx
     dec bx
@@ -3286,14 +3246,14 @@ print_scanline_next_10:
     je print_scanline_next_12
     cmp word ptr [d_2EA0], 2
     je print_scanline_next_12
-    xor byte ptr [d_3394], 1
-    cmp byte ptr [d_3394], 1
+    xor byte ptr [d_338A + 0Ah], 1
+    cmp byte ptr [d_338A + 0Ah], 1
     jne print_scanline_next_11
     jmp near ptr print_scanline_next_15
 print_scanline_next_11:
     mov si, offset d_2A9C
     mov di, si
-    mov cx, word ptr [d_3392]
+    mov cx, word ptr [d_338A + 08h]
     shr cx, 1
 print_scanline_loop_6:
     mov ah, byte ptr [si]
@@ -3320,7 +3280,7 @@ print_scanline_loop_6:
     inc di
     loop print_scanline_loop_6
 print_scanline_next_12:
-    mov si, offset d_33E3
+    mov si, offset d_338A + 059h
     call far ptr u5_1d60
     mov al, 57h
     mov dx, word ptr [d_338A]
@@ -3328,7 +3288,7 @@ print_scanline_next_12:
     int 17h
     mov si, offset d_2A9C
     mov dx, word ptr [d_338A]
-    mov cx, word ptr [d_3392]
+    mov cx, word ptr [d_338A + 08h]
     cmp word ptr [d_2EA0], 1
     je print_scanline_next_13
     cmp word ptr [d_2EA0], 2
@@ -3340,7 +3300,7 @@ print_scanline_next_13:
     mov ah, 0
     int 17h
     loop print_scanline_next_13
-    cmp word ptr [d_338C], 4
+    cmp word ptr [d_338A + 02h], 4
     jne print_scanline_next_14
     inc word ptr [bp - 4]
     cmp word ptr [bp - 4], 2
@@ -3394,16 +3354,16 @@ u5_2020 proc far
     xor si, si
     mov byte ptr [bp - 4], 30h
 format_unsigned_decimal_loop_1:
-    cmp dx, word ptr [si + d_33F5]
+    cmp dx, word ptr [si + d_338A + 06Bh]
     je format_unsigned_decimal_next_1
     jb format_unsigned_decimal_next_3
     jmp short format_unsigned_decimal_next_2
 format_unsigned_decimal_next_1:
-    cmp ax, word ptr [si + d_33F3]
+    cmp ax, word ptr [si + d_338A + 069h]
     jb format_unsigned_decimal_next_3
 format_unsigned_decimal_next_2:
-    sub ax, word ptr [si + d_33F3]
-    sbb dx, word ptr [si + d_33F5]
+    sub ax, word ptr [si + d_338A + 069h]
+    sbb dx, word ptr [si + d_338A + 06Bh]
     inc byte ptr [bp - 4]
     jmp short format_unsigned_decimal_loop_1
 format_unsigned_decimal_next_3:
@@ -3456,17 +3416,17 @@ u5_20a2 proc far
     mov word ptr [d_2E9E], 0
     mov word ptr [d_2EA0], 1
     mov word ptr [d_338A], 0
-    mov word ptr [d_338C], 0
-    mov word ptr [d_338E], 1
-    mov word ptr [d_3390], 1
-    mov si, offset d_3395
+    mov word ptr [d_338A + 02h], 0
+    mov word ptr [d_338A + 04h], 1
+    mov word ptr [d_338A + 06h], 1
+    mov si, offset d_338A + 0Bh
     mov byte ptr [si], 2
     inc si
     mov byte ptr [si], 1bh
     inc si
     mov byte ptr [si], 45h
     inc si
-    mov si, offset d_3398
+    mov si, offset d_338A + 0Eh
     mov byte ptr [si], 5
     inc si
     mov byte ptr [si], 1bh
@@ -3479,7 +3439,7 @@ u5_20a2 proc far
     inc si
     mov byte ptr [si], 58h
     inc si
-    mov si, offset d_339E
+    mov si, offset d_338A + 014h
     mov byte ptr [si], 5
     inc si
     mov byte ptr [si], 1bh
@@ -3492,7 +3452,7 @@ u5_20a2 proc far
     inc si
     mov byte ptr [si], 4fh
     inc si
-    mov si, offset d_33A4
+    mov si, offset d_338A + 01Ah
     mov byte ptr [si], 7
     inc si
     mov byte ptr [si], 1bh
@@ -3509,7 +3469,7 @@ u5_20a2 proc far
     inc si
     mov byte ptr [si], 39h
     inc si
-    mov si, offset d_33AC
+    mov si, offset d_338A + 022h
     mov byte ptr [si], 5
     inc si
     mov byte ptr [si], 1bh
@@ -3522,7 +3482,7 @@ u5_20a2 proc far
     inc si
     mov byte ptr [si], 48h
     inc si
-    mov si, offset d_33B2
+    mov si, offset d_338A + 028h
     mov byte ptr [si], 3
     inc si
     mov byte ptr [si], 1bh
@@ -3531,7 +3491,7 @@ u5_20a2 proc far
     inc si
     mov byte ptr [si], 70h
     inc si
-    mov si, offset d_33C0
+    mov si, offset d_338A + 036h
     mov byte ptr [si], 7
     inc si
     mov byte ptr [si], 1bh
@@ -3548,7 +3508,7 @@ u5_20a2 proc far
     inc si
     mov byte ptr [si], 52h
     inc si
-    mov si, offset d_33C8
+    mov si, offset d_338A + 03Eh
     mov byte ptr [si], 7
     inc si
     mov byte ptr [si], 1bh
@@ -3565,7 +3525,7 @@ u5_20a2 proc far
     inc si
     mov byte ptr [si], 52h
     inc si
-    mov si, offset d_33D0
+    mov si, offset d_338A + 046h
     mov byte ptr [si], 7
     inc si
     mov byte ptr [si], 1bh
@@ -3582,7 +3542,7 @@ u5_20a2 proc far
     inc si
     mov byte ptr [si], 52h
     inc si
-    mov si, offset d_33D8
+    mov si, offset d_338A + 04Eh
     mov byte ptr [si], 5
     inc si
     mov byte ptr [si], 1bh
@@ -3595,7 +3555,7 @@ u5_20a2 proc far
     inc si
     mov byte ptr [si], 41h
     inc si
-    mov si, offset d_33DE
+    mov si, offset d_338A + 054h
     mov byte ptr [si], 4
     inc si
     mov byte ptr [si], 1bh
@@ -3606,7 +3566,7 @@ u5_20a2 proc far
     inc si
     mov byte ptr [si], 42h
     inc si
-    mov si, offset d_33E3
+    mov si, offset d_338A + 059h
     mov byte ptr [si], 3
     inc si
     mov byte ptr [si], 1bh
@@ -3615,7 +3575,7 @@ u5_20a2 proc far
     inc si
     mov byte ptr [si], 62h
     inc si
-    mov si, offset d_33F3
+    mov si, offset d_338A + 069h
     mov word ptr [si], 0ca00h
     add si, 2
     mov word ptr [si], 3b9ah

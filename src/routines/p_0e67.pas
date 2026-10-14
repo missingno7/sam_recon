@@ -1,9 +1,7 @@
 {@decls}
-var
+
 {@stubs}
-procedure p_0000;
-procedure p_0be5;
-procedure p_0e33;
+
 {@body}
 procedure p_0e67;
 begin

@@ -1,18 +1,11 @@
-{ u3_a1d8: far, frame 0 bytes, parameters [0] bytes }
 {@decls}
 type
   TTextPair = packed record
     first: string[40];
     second: string[40];
   end;
-var
-  d_341C: Byte;
-  d_6814: Word;
-  d_6824: Word;
 {@stubs}
-procedure u3_079e;
-function u3_1601(Value: Byte): Byte;
-function u6_0000: Boolean;
+
 {@body}
 procedure u3_a1d8;
 begin
@@ -25,12 +18,12 @@ begin
   d_6814 := u3_1601(1);
   if d_6814 = $15 then
   begin
-    d_341C := Ord(u6_0000);
+    d_341C := u6_0000;
     d_70C8 := 1;
   end
   else if d_6814 = $31 then
   begin
-    d_341C := 0;
+    d_341C := False;
     d_70C8 := 0;
   end;
   d_6EC5 := 0;

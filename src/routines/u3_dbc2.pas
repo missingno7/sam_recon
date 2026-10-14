@@ -2,10 +2,7 @@
 const
   Border = #176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176#176;
 {@stubs}
-procedure u4_0101(A, B, C, D, E, F, G: Word);
-procedure u4_0309(A, B, C, D, E, F, G: Word);
-procedure u4_0349(A, B, C: Word; S: string);
-procedure u4_0399(A, B, C, D: Word; S: string);
+
 {@body}
 procedure u3_dbc2;
 var
@@ -55,4 +52,3 @@ begin
   TextBackground(0);
   GotoXY(1, 24);
 end;
-

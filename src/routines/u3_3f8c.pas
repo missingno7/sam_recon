@@ -1,44 +1,8 @@
 {@decls}
 type
-  TSaveData = packed record
-    MapX: Word;
-    MapY: Word;
-    MapAddress: Pointer;
-    MapSize: Word;
-    CurrentLevel: Word;
-    PlayerInfo: Word;
-    ObjectsA: array[1..20] of Byte;
-    Score: Word;
-    Lives: Word;
-    PlayerMode: Byte;
-    PlayerX: Word;
-    PlayerState: Byte;
-    PlayerDirection: Byte;
-    PlayerY: Word;
-    Energy: Word;
-    Ammo: Word;
-    Items: Word;
-    ObjectsB: array[1..20] of Byte;
-    LastValue: Byte;
-  end;
   TSaveFile = file of TSaveData;
-var
-  d_6D18: TSaveData;
-  d_6844: array[1..20] of Byte;
-  d_6858: Word;
-  d_699A: Pointer;
-  d_699E: Word;
-  d_69A2: Word;
-  d_69A4: Word;
-  d_69A6: Word;
-  d_69AA: Word;
-  d_69AE: Word;
-  d_69B2: Word;
-  d_69B6: Word;
-  d_69B8: Word;
-  d_69BA: array[1..20] of Byte;
 {@stubs}
-procedure u3_9b3e(input: string);
+
 {@body}
 function u3_3f8c(Slot: Integer): Boolean;
 var
@@ -67,27 +31,27 @@ begin
   begin
     Read(F, d_6D18);
     Close(F);
-    d_34EE := d_6D18.MapX;
-    d_34F0 := d_6D18.MapY;
-    d_699A := d_6D18.MapAddress;
-    d_699E := d_6D18.MapSize;
-    d_6858 := d_6D18.CurrentLevel;
-    d_69A2 := d_6D18.PlayerInfo;
+    d_34EC[1].X := d_6D18.X;
+    d_34EC[1].Y := d_6D18.Y;
+    d_699A := d_6D18.Score;
+    d_699E := d_6D18.Count;
+    d_6858 := d_6D18.Ammo;
+    d_69A2 := d_6D18.ProjectileCount;
     for I := 1 to 20 do
-      d_6844[I] := d_6D18.ObjectsA[I];
-    d_69A4 := d_6D18.Score;
-    d_69A6 := d_6D18.Lives;
-    d_69AD := d_6D18.PlayerMode;
-    d_69AA := d_6D18.PlayerX;
-    d_69AC := d_6D18.PlayerState;
-    d_69B0 := d_6D18.PlayerDirection;
-    d_69AE := d_6D18.PlayerY;
-    d_69B2 := d_6D18.Energy;
-    d_69B6 := d_6D18.Ammo;
-    d_69B8 := d_6D18.Items;
+      d_6844[I] := d_6D18.FlagsA[I];
+    d_69A4 := d_6D18.TimerA;
+    d_69A6 := d_6D18.TimerB;
+    d_69AD := d_6D18.Mode;
+    d_69AA := d_6D18.TimerC;
+    d_69AC := d_6D18.FlagA;
+    d_69B0 := d_6D18.FlagB;
+    d_69AE := d_6D18.TimerD;
+    d_69B2 := d_6D18.ValueA;
+    d_69B6 := d_6D18.ValueB;
+    d_69B8 := d_6D18.ValueC;
     for I := 1 to 20 do
-      d_69BA[I] := d_6D18.ObjectsB[I];
-    d_69DC := d_6D18.LastValue;
+      d_69BA[I] := d_6D18.FlagsB[I];
+    d_69DC := d_6D18.FlagC;
     u3_3f8c := True;
   end
   else

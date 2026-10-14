@@ -1,89 +1,18 @@
 {@decls}
-type
-  TObject = record
-    Kind, X, Y, OldX, OldY, VX, W0C, W0E, W10, W12, Sprite,
-    Direction, W18, W1A, W1C: Integer;
-    Hidden, Special: Byte;
-  end;
-  TLine = array[0..159] of Byte;
-  TBuffer = array[1..200] of TLine;
-  PBuffer = ^TBuffer;
-  TSound = array[1..7320] of Byte;
-  PSound = ^TSound;
 var
   d_sam2_02BA: Byte;
-  d_341C: Boolean;
-  d_341E, d_3422, d_3426: PSound;
-  d_342A: file of TSound;
-  d_34EC: array[1..25] of TObject;
-  d_681C, d_682C, d_6832: Integer;
-  d_683C: Integer;
-  d_683E, d_6840: Integer;
-  d_6858: Integer;
-  d_685A: array[1..10] of TObject;
-  d_69A2: Integer;
-  d_69B8: Integer;
-  d_69BA: array[1..20] of Byte;
-  d_69E2, d_69E4, d_69E6: Integer;
-  d_6D72, d_6D76, d_6D7A, d_6D7E, d_6D82, d_6D86, d_6D8A,
-  d_6D8E, d_6D92, d_6D96, d_6D9E, d_6DA2, d_6DA6, d_6DAA, d_6DAE: PBuffer;
-  d_6D60, d_6D68, d_6D6A: Integer;
+  d_342A: file of TMusicTable;
 {@stubs}
-procedure p_sam2_107a;
-procedure p_08a2;
-procedure p_0e67;
-procedure p_0ec2;
-procedure p_0ef2;
-procedure p_0f75;
 procedure p_516d;
 procedure p_51df;
 procedure p_51f3;
-function u1_0000(Distance, Item: Integer): Boolean;
-function u1_008d(Distance, Item: Integer): Boolean;
-procedure u1_011a;
-procedure u1_2f6b;
-procedure u1_68f5;
-procedure u1_6a0e;
-procedure u1_86df;
-procedure u2_0000(X,Y: Integer);
-procedure u2_2530(X,Y: Integer);
-procedure u2_a1ae(Level: Integer);
-function u3_0000: Char;
-procedure u3_007c;
-procedure u3_00a3;
-procedure u3_00db(Ticks: Word);
-procedure u3_0232(Ticks: Word);
-procedure u3_0261;
-procedure u3_344c;
-procedure u3_3505;
-procedure u3_38ae;
-procedure u3_3c93;
-procedure u3_3cb8;
-procedure u3_3d6b;
-function u3_3f8c(Slot: Integer): Boolean;
-function u3_8ea3: Word;
-function u3_97bb: Char;
-procedure u3_9b3e(S: string);
-procedure u3_d645;
-procedure u3_dbc2;
-procedure u3_ddd2;
-function u6_0000: Boolean;
-function u6_00cc(Axis: Word): Word;
-procedure u7_0000(N: Integer);
-procedure u8_0136;
-procedure u8_07d5;
-procedure u8_0a89;
 procedure u8_0c14(var Data; Count: Word);
 procedure u9_01a3(N: Word);
 procedure u9_01c5(N: Word);
-function u9_01d3(N: Integer): Word;
-procedure u9_01f9(A,B: Word);
-procedure u9_024c(A,B: Word);
 procedure u9_029f(N: Word);
 procedure u9_02fa(N: Word);
 procedure u9_0337(N: Word);
 procedure u9_0475(var Data; X,Y: Integer);
-procedure u9_19f9(var Data; X,Y: Integer);
 procedure u9_2463(var Data; X,Y: Integer);
 {@body}
 begin
@@ -218,10 +147,10 @@ begin
             u2_0000(d_34EC[1].OldX+16,d_34EC[1].OldY+16);
             {1554}
             for d_6826 := 2 to 25 do
-              if d_34EC[d_6826].Hidden = 0 then
-                if d_34EC[d_6826].Special <> 0 then
+              if d_34EC[d_6826].Inactive = 0 then
+                if d_34EC[d_6826].Marked <> 0 then
                 begin
-                  d_34EC[d_6826].Hidden := 1;
+                  d_34EC[d_6826].Inactive := 1;
                   u2_0000(d_34EC[d_6826].OldX,d_34EC[d_6826].OldY);
                   u2_0000(d_34EC[d_6826].OldX-16,d_34EC[d_6826].OldY);
                   u2_0000(d_34EC[d_6826].OldX+16,d_34EC[d_6826].OldY);
@@ -233,9 +162,9 @@ begin
                   u2_0000(d_34EC[d_6826].OldX,d_34EC[d_6826].OldY-16);
                   u2_0000(d_34EC[d_6826].OldX,d_34EC[d_6826].OldY+16);
                 end
-                else if u1_0000(40,d_6826) or (d_34EC[d_6826].W1C=28)
-                  or (d_34EC[d_6826].W1C=21) or (d_34EC[d_6828].W1C=14)
-                  or (d_34EC[d_6828].Special<>0) then
+                else if u1_0000(40,d_6826) or (d_34EC[d_6826].Kind=28)
+                  or (d_34EC[d_6826].Kind=21) or (d_34EC[d_6828].Kind=14)
+                  or (d_34EC[d_6828].Marked<>0) then
                 begin
                   u2_0000(d_34EC[d_6826].OldX,d_34EC[d_6826].OldY);
                   if d_34EC[d_6826].OldX and 15 > 0 then
@@ -316,15 +245,15 @@ begin
                 if d_6842<>0 then u3_d645;
               end
               else if d_6A3F>0 then
-                if d_34EC[1].Direction=-1 then Dec(d_34EC[1].X,2)
+                if d_34EC[1].DX=-1 then Dec(d_34EC[1].X,2)
                 else Inc(d_34EC[1].X,2);
             end;
             u1_2f6b;
             {1b62}
             for d_6826 := 1 to d_69A2 do
-              if d_685A[d_6826].Hidden=0 then
+              if d_685A[d_6826].Inactive=0 then
               begin
-                if d_685A[d_6826].Special<>0 then
+                if d_685A[d_6826].Marked<>0 then
                 begin
                   u2_0000(d_685A[d_6826].X,d_685A[d_6826].Y);
                   u2_0000(d_685A[d_6826].X+16,d_685A[d_6826].Y);
@@ -334,17 +263,19 @@ begin
                   u2_0000(d_685A[d_6826].X+16,d_685A[d_6826].Y+16);
                   u2_2530(d_685A[d_6826].X,d_685A[d_6826].Y+16);
                   u2_2530(d_685A[d_6826].X+16,d_685A[d_6826].Y+16);
-                  d_685A[d_6826].Hidden := 1;
+                  d_685A[d_6826].Inactive := 1;
                 end
                 else
                 begin
                   if d_685A[d_6826].Sprite=626 then
                   begin
-                    u9_19f9(d_6D86^[(d_685A[d_6826].W0E shr 1)+25][3],d_685A[d_6826].X,d_685A[d_6826].Y+d_6840);
-                    Dec(d_685A[d_6826].W0E);
-                    if d_685A[d_6826].W0E<=0 then
+                    u9_19f9(d_6D86^.Images[(d_685A[d_6826].Limit shr 1)+25].Pixels[1],
+    d_685A[d_6826].X,
+    d_685A[d_6826].Y+d_6840);
+                    Dec(d_685A[d_6826].Limit);
+                    if d_685A[d_6826].Limit<=0 then
                     begin
-                      d_685A[d_6826].Special := 1;
+                      d_685A[d_6826].Marked := 1;
                   u2_0000(d_685A[d_6826].X,d_685A[d_6826].Y);
                   u2_0000(d_685A[d_6826].X-16,d_685A[d_6826].Y);
                   u2_0000(d_685A[d_6826].X+16,d_685A[d_6826].Y);
@@ -359,7 +290,7 @@ begin
                   u2_0000(d_685A[d_6826].X+16,d_685A[d_6826].Y);
                   u2_0000(d_685A[d_6826].X,d_685A[d_6826].Y+16);
                   u2_0000(d_685A[d_6826].X+16,d_685A[d_6826].Y+16);
-                    d_685A[d_6826].Special := 1;
+                    d_685A[d_6826].Marked := 1;
                   end
                   else
                   begin
@@ -367,7 +298,9 @@ begin
                   u2_0000(d_685A[d_6826].X+16,d_685A[d_6826].Y);
                   u2_0000(d_685A[d_6826].X,d_685A[d_6826].Y+16);
                   u2_0000(d_685A[d_6826].X+16,d_685A[d_6826].Y+16);
-                    u9_0475(d_6D72^[d_685A[d_6826].Sprite-1+d_685A[d_6826].VX][3],d_685A[d_6826].X shr 3,
+                    u9_0475(d_6D72^.Images[d_685A[d_6826].Sprite-1+d_685A[d_6826].Frame].Pixels[1],
+    d_685A[d_6826].X shr 3,
+    
                   d_685A[d_6826].Y+d_6840);
                   end;
                   u2_2530(d_685A[d_6826].X,d_685A[d_6826].Y);
@@ -404,313 +337,473 @@ begin
             d_6826 := 1;
             if (d_34EC[1].Sprite=1) or (d_34EC[1].Sprite=5) then
             begin
-              Inc(d_34EC[1].VX,d_34EC[1].W1A);
-              if d_34EC[1].VX>19 then d_34EC[1].VX := 1;
+              Inc(d_34EC[1].Frame,d_34EC[1].Speed);
+              if d_34EC[1].Frame>19 then d_34EC[1].Frame := 1;
             end
-            else d_34EC[1].VX := 1;
+            else d_34EC[1].Frame := 1;
             if d_6A41<>0 then
             begin
               Dec(d_6A42);
               case d_6A42 of
                 0: d_6A41 := 0;
-                10: d_34EC[1].Kind := 5;
-                20: d_34EC[1].Kind := 5;
-                30: d_34EC[1].Kind := 5;
+                10: d_34EC[1].State := 5;
+                20: d_34EC[1].State := 5;
+                30: d_34EC[1].State := 5;
               end;
             end;
             {2139}
-            if d_34EC[1].Kind>0 then
+            if d_34EC[1].State>0 then
             begin
-              u9_2463(d_6D7A^[d_34EC[1].VX div 5+d_34EC[1].Sprite][3],d_34EC[1].X,d_34EC[1].Y+d_6840);
-              Dec(d_34EC[1].Kind);
+              u9_2463(d_6D7A^.Images[d_34EC[1].Frame div 5+d_34EC[1].Sprite].Pixels[1],
+    d_34EC[1].X,
+    d_34EC[1].Y+d_6840);
+              Dec(d_34EC[1].State);
             end
             else if d_34EC[1].X and 7 = 0 then
-              u9_0475(d_6D7A^[d_34EC[1].VX div 5+d_34EC[1].Sprite][3],d_34EC[1].X shr 3,d_34EC[1].Y+d_6840)
+              u9_0475(d_6D7A^.Images[d_34EC[1].Frame div 5+d_34EC[1].Sprite].Pixels[1],
+    d_34EC[1].X shr 3,
+    d_34EC[1].Y+d_6840)
             else
-              u9_19f9(d_6D7A^[d_34EC[1].VX div 5+d_34EC[1].Sprite][3],d_34EC[1].X,d_34EC[1].Y+d_6840);
+              u9_19f9(d_6D7A^.Images[d_34EC[1].Frame div 5+d_34EC[1].Sprite].Pixels[1],
+    d_34EC[1].X,
+    d_34EC[1].Y+d_6840);
             if d_69E0<>0 then
               if d_69E2<0 then
-                u9_19f9(d_6D96^[d_69E2 div 5+40][3],d_34EC[1].X,d_34EC[1].Y+d_6840)
+                u9_19f9(d_6D96^.Images[d_69E2 div 5+40].Pixels[1],d_34EC[1].X,d_34EC[1].Y+d_6840)
               else
-                u9_19f9(d_6D96^[40-d_69E2 div 5][3],d_34EC[1].X,d_34EC[1].Y+d_6840);
+                u9_19f9(d_6D96^.Images[40-d_69E2 div 5].Pixels[1],d_34EC[1].X,d_34EC[1].Y+d_6840);
             if (d_6ECA<>0) and (d_34EC[1].Sprite=12) then
               d_34EC[1].Sprite := 5
             else if (d_6ECB<>0) and (d_34EC[1].Sprite=11) then
               d_34EC[1].Sprite := 1;
             {227e}
             for d_6826 := 2 to 25 do
-              if d_34EC[d_6826].Hidden=0 then
-                if d_34EC[d_6826].Special=0 then
-                  if u1_0000(32,d_6826) or (d_34EC[d_6826].W1C=28)
-                    or (d_34EC[d_6826].W1C=21) or (d_34EC[d_6828].W1C=14) then
-                    if d_34EC[d_6826].Kind>0 then
+              if d_34EC[d_6826].Inactive=0 then
+                if d_34EC[d_6826].Marked=0 then
+                  if u1_0000(32,d_6826) or (d_34EC[d_6826].Kind=28)
+                    or (d_34EC[d_6826].Kind=21) or (d_34EC[d_6828].Kind=14) then
+                    if d_34EC[d_6826].State>0 then
                     begin
 case d_34EC[d_6826].Sprite of
-1..50: u9_2463(d_6D72^[d_34EC[d_6826].Sprite+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
+1..50: u9_2463(d_6D72^.Images[d_34EC[d_6826].Sprite+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    d_34EC[d_6826].Y+d_6840);
 101: begin
-    if d_34EC[d_6826].W12=0 then
+    if d_34EC[d_6826].Aux2=0 then
     begin
-      u9_2463(d_6D76^[d_34EC[d_6826].Sprite-100+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+      u9_2463(d_6D76^.Images[d_34EC[d_6826].Sprite-100+d_34EC[d_6826].Frame div 5].Pixels[1],d_34EC[d_6826].X,
       d_34EC[d_6826].Y+d_6840-16);
-      if d_34EC[d_6826].Direction<0 then
-        u9_2463(d_6D76^[5][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840)
+      if d_34EC[d_6826].DX<0 then
+        u9_2463(d_6D76^.Images[5].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840)
       else
-        u9_2463(d_6D76^[45][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
+        u9_2463(d_6D76^.Images[45].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
     end
     else
     begin
-      if d_34EC[d_6826].Direction<0 then
-        u9_2463(d_6D76^[1][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16)
+      if d_34EC[d_6826].DX<0 then
+        u9_2463(d_6D76^.Images[1].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16)
       else
-        u9_2463(d_6D76^[41][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16);
-      u9_2463(d_6D76^[d_34EC[d_6826].Sprite-96+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
+        u9_2463(d_6D76^.Images[41].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16);
+      u9_2463(d_6D76^.Images[d_34EC[d_6826].Sprite-96+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    d_34EC[d_6826].Y+d_6840);
     end;
   end;
-102..150: u9_2463(d_6D76^[d_34EC[d_6826].Sprite-100+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+102..150: u9_2463(d_6D76^.Images[d_34EC[d_6826].Sprite-100+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-151..200: u9_2463(d_6D96^[d_34EC[d_6826].Sprite-150+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+151..200: u9_2463(d_6D96^.Images[d_34EC[d_6826].Sprite-150+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-251..300: u9_2463(d_6DAA^[d_34EC[d_6826].Sprite-250+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+251..300: u9_2463(d_6DAA^.Images[d_34EC[d_6826].Sprite-250+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-301..350: u9_2463(d_6DA2^[d_34EC[d_6826].Sprite-300+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+301..350: u9_2463(d_6DA2^.Images[d_34EC[d_6826].Sprite-300+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-351..400: u9_2463(d_6DAE^[d_34EC[d_6826].Sprite-350+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+351..400: u9_2463(d_6DAE^.Images[d_34EC[d_6826].Sprite-350+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-401..450: u9_2463(d_6D7E^[d_34EC[d_6826].Sprite-400+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+401..450: u9_2463(d_6D7E^.Images[d_34EC[d_6826].Sprite-400+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-451..487: u9_2463(d_6D82^[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+451..487: u9_2463(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-488..490: u9_2463(d_6D82^[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].VX shr 3][3],d_34EC[d_6826].X,
+488..490: u9_2463(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame shr 3].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-491: u9_2463(d_6D82^[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
-492..494: u9_2463(d_6D82^[d_34EC[d_6826].Sprite-450+(d_34EC[d_6826].VX-21) shr 3][3],d_34EC[d_6826].X,
+491: u9_2463(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    d_34EC[d_6826].Y+d_6840);
+492..494: u9_2463(d_6D82^.Images[d_34EC[d_6826].Sprite-450+(d_34EC[d_6826].Frame-21) shr 3].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-495..500: u9_2463(d_6D82^[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+495..500: u9_2463(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-501..550: u9_2463(d_6D72^[d_34EC[d_6826].Sprite-500+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+501..550: u9_2463(d_6D72^.Images[d_34EC[d_6826].Sprite-500+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-601..650: u9_2463(d_6D86^[d_34EC[d_6826].Sprite-600+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+601..650: u9_2463(d_6D86^.Images[d_34EC[d_6826].Sprite-600+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-651..700: u9_2463(d_6D8A^[d_34EC[d_6826].Sprite-650+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+651..700: u9_2463(d_6D8A^.Images[d_34EC[d_6826].Sprite-650+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-701..750: u9_2463(d_6D8E^[d_34EC[d_6826].Sprite-700+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+701..750: u9_2463(d_6D8E^.Images[d_34EC[d_6826].Sprite-700+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-751..800: u9_2463(d_6D92^[d_34EC[d_6826].Sprite-750+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+751..800: u9_2463(d_6D92^.Images[d_34EC[d_6826].Sprite-750+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
 801: begin
-u9_2463(d_6D9E^[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16);
-u9_2463(d_6D9E^[d_34EC[d_6826].Sprite-796+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
+u9_2463(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    d_34EC[d_6826].Y+d_6840-16);
+u9_2463(d_6D9E^.Images[d_34EC[d_6826].Sprite-796+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    d_34EC[d_6826].Y+d_6840);
 end;
 817: begin
-    if d_34EC[d_6826].W12=0 then
+    if d_34EC[d_6826].Aux2=0 then
     begin
-      u9_2463(d_6D9E^[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+      u9_2463(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],d_34EC[d_6826].X,
       d_34EC[d_6826].Y+d_6840-16);
-      if d_34EC[d_6826].Direction<0 then
-        u9_2463(d_6D9E^[21][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840)
+      if d_34EC[d_6826].DX<0 then
+        u9_2463(d_6D9E^.Images[21].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840)
       else
-        u9_2463(d_6D9E^[33][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
+        u9_2463(d_6D9E^.Images[33].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
     end
     else
     begin
-      if d_34EC[d_6826].Direction<0 then
-        u9_2463(d_6D9E^[17][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16)
+      if d_34EC[d_6826].DX<0 then
+        u9_2463(d_6D9E^.Images[17].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16)
       else
-        u9_2463(d_6D9E^[29][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16);
-      u9_2463(d_6D9E^[d_34EC[d_6826].Sprite-796+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
+        u9_2463(d_6D9E^.Images[29].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16);
+      u9_2463(d_6D9E^.Images[d_34EC[d_6826].Sprite-796+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    d_34EC[d_6826].Y+d_6840);
     end;
   end;
-825..828: u9_2463(d_6D9E^[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+825..828: u9_2463(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-837..850: u9_2463(d_6D9E^[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+837..850: u9_2463(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
 851: begin
-u9_2463(d_6DA6^[d_34EC[d_6826].Sprite-850+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
-u9_2463(d_6DA6^[d_34EC[d_6826].Sprite-846+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X+16,d_34EC[d_6826].Y+d_6840);
+u9_2463(d_6DA6^.Images[d_34EC[d_6826].Sprite-850+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    d_34EC[d_6826].Y+d_6840);
+u9_2463(d_6DA6^.Images[d_34EC[d_6826].Sprite-846+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X+16,
+    d_34EC[d_6826].Y+d_6840);
 end;
 end;
-                      Dec(d_34EC[d_6826].Kind);
+                      Dec(d_34EC[d_6826].State);
                     end
                     else if d_34EC[d_6826].X and 7 = 0 then
                     begin
 case d_34EC[d_6826].Sprite of
-1..50: u9_0475(d_6D72^[d_34EC[d_6826].Sprite+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+1..50: u9_0475(d_6D72^.Images[d_34EC[d_6826].Sprite+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
 101: begin
-    if d_34EC[d_6826].W12=0 then
+    if d_34EC[d_6826].Aux2=0 then
     begin
-      u9_0475(d_6D76^[d_34EC[d_6826].Sprite-100+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+      u9_0475(d_6D76^.Images[d_34EC[d_6826].Sprite-100+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840-16);
-      if d_34EC[d_6826].Direction<0 then
-        u9_0475(d_6D76^[5][3],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840)
+      if d_34EC[d_6826].DX<0 then
+        u9_0475(d_6D76^.Images[5].Pixels[1],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840)
       else
-        u9_0475(d_6D76^[45][3],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840);
+        u9_0475(d_6D76^.Images[45].Pixels[1],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840);
     end
     else
     begin
-      if d_34EC[d_6826].Direction<0 then
-        u9_0475(d_6D76^[1][3],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840-16)
+      if d_34EC[d_6826].DX<0 then
+        u9_0475(d_6D76^.Images[1].Pixels[1],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840-16)
       else
-        u9_0475(d_6D76^[41][3],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840-16);
-      u9_0475(d_6D76^[d_34EC[d_6826].Sprite-96+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+        u9_0475(d_6D76^.Images[41].Pixels[1],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840-16);
+      u9_0475(d_6D76^.Images[d_34EC[d_6826].Sprite-96+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
     end;
   end;
-102..150: u9_0475(d_6D76^[d_34EC[d_6826].Sprite-100+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+102..150: u9_0475(d_6D76^.Images[d_34EC[d_6826].Sprite-100+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
-151..200: u9_0475(d_6D96^[d_34EC[d_6826].Sprite-150+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+151..200: u9_0475(d_6D96^.Images[d_34EC[d_6826].Sprite-150+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
-251..300: u9_0475(d_6DAA^[d_34EC[d_6826].Sprite-250+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+251..300: u9_0475(d_6DAA^.Images[d_34EC[d_6826].Sprite-250+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
-301..350: u9_0475(d_6DA2^[d_34EC[d_6826].Sprite-300+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+301..350: u9_0475(d_6DA2^.Images[d_34EC[d_6826].Sprite-300+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
-351..400: u9_0475(d_6DAE^[d_34EC[d_6826].Sprite-350+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+351..400: u9_0475(d_6DAE^.Images[d_34EC[d_6826].Sprite-350+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
-401..450: u9_0475(d_6D7E^[d_34EC[d_6826].Sprite-400+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+401..450: u9_0475(d_6D7E^.Images[d_34EC[d_6826].Sprite-400+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
-451..487: u9_0475(d_6D82^[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+451..487: u9_0475(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
-488..490: u9_0475(d_6D82^[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].VX shr 3][3],d_34EC[d_6826].X shr 3,
+488..490: u9_0475(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame shr 3].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
-491: u9_0475(d_6D82^[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+491: u9_0475(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
-492..494: u9_0475(d_6D82^[d_34EC[d_6826].Sprite-450+(d_34EC[d_6826].VX-21) shr 3][3],d_34EC[d_6826].X shr 3,
+492..494: u9_0475(d_6D82^.Images[d_34EC[d_6826].Sprite-450+(d_34EC[d_6826].Frame-21) shr 3].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
-495..500: u9_0475(d_6D82^[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+495..500: u9_0475(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
-501..550: u9_0475(d_6D72^[d_34EC[d_6826].Sprite-500+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+501..550: u9_0475(d_6D72^.Images[d_34EC[d_6826].Sprite-500+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
-601..624: u9_0475(d_6D86^[d_34EC[d_6826].Sprite-600+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+601..624: u9_0475(d_6D86^.Images[d_34EC[d_6826].Sprite-600+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
-625: u9_0475(d_6D86^[d_34EC[d_6826].Sprite-600+d_34EC[d_6826].VX div 3][3],d_34EC[d_6826].X shr 3,
+625: u9_0475(d_6D86^.Images[d_34EC[d_6826].Sprite-600+d_34EC[d_6826].Frame div 3].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
-626..650: u9_0475(d_6D86^[d_34EC[d_6826].Sprite-600+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+626..650: u9_0475(d_6D86^.Images[d_34EC[d_6826].Sprite-600+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
-651..700: u9_0475(d_6D8A^[d_34EC[d_6826].Sprite-650+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+651..700: u9_0475(d_6D8A^.Images[d_34EC[d_6826].Sprite-650+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
-701..750: u9_0475(d_6D8E^[d_34EC[d_6826].Sprite-700+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+701..750: u9_0475(d_6D8E^.Images[d_34EC[d_6826].Sprite-700+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
-751..800: u9_0475(d_6D92^[d_34EC[d_6826].Sprite-750+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+751..800: u9_0475(d_6D92^.Images[d_34EC[d_6826].Sprite-750+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
 801: begin
-u9_0475(d_6D9E^[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+u9_0475(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],d_34EC[d_6826].X shr 3,
       d_34EC[d_6826].Y+d_6840-16);
-u9_0475(d_6D9E^[d_34EC[d_6826].Sprite-796+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840);
+u9_0475(d_6D9E^.Images[d_34EC[d_6826].Sprite-796+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    d_34EC[d_6826].Y+d_6840);
 end;
 817: begin
-    if d_34EC[d_6826].W12=0 then
+    if d_34EC[d_6826].Aux2=0 then
     begin
-      u9_0475(d_6D9E^[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+      u9_0475(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840-16);
-      if d_34EC[d_6826].Direction<0 then
-        u9_0475(d_6D9E^[21][3],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840)
+      if d_34EC[d_6826].DX<0 then
+        u9_0475(d_6D9E^.Images[21].Pixels[1],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840)
       else
-        u9_0475(d_6D9E^[33][3],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840);
+        u9_0475(d_6D9E^.Images[33].Pixels[1],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840);
     end
     else
     begin
-      if d_34EC[d_6826].Direction<0 then
-        u9_0475(d_6D9E^[17][3],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840-16)
+      if d_34EC[d_6826].DX<0 then
+        u9_0475(d_6D9E^.Images[17].Pixels[1],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840-16)
       else
-        u9_0475(d_6D9E^[29][3],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840-16);
-      u9_0475(d_6D9E^[d_34EC[d_6826].Sprite-796+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+        u9_0475(d_6D9E^.Images[29].Pixels[1],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840-16);
+      u9_0475(d_6D9E^.Images[d_34EC[d_6826].Sprite-796+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
     end;
   end;
-825..828: u9_0475(d_6D9E^[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+825..828: u9_0475(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
-837..850: u9_0475(d_6D9E^[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,
+837..850: u9_0475(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    
       d_34EC[d_6826].Y+d_6840);
 851: begin
-u9_0475(d_6DA6^[d_34EC[d_6826].Sprite-850+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3,d_34EC[d_6826].Y+d_6840);
-u9_0475(d_6DA6^[d_34EC[d_6826].Sprite-846+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X shr 3+2,d_34EC[d_6826].Y+d_6840);
+u9_0475(d_6DA6^.Images[d_34EC[d_6826].Sprite-850+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3,
+    d_34EC[d_6826].Y+d_6840);
+u9_0475(d_6DA6^.Images[d_34EC[d_6826].Sprite-846+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X shr 3+2,
+    d_34EC[d_6826].Y+d_6840);
 end;
 end;
                     end
                     else
                     begin
 case d_34EC[d_6826].Sprite of
-1..50: u9_19f9(d_6D72^[d_34EC[d_6826].Sprite+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
+1..50: u9_19f9(d_6D72^.Images[d_34EC[d_6826].Sprite+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    d_34EC[d_6826].Y+d_6840);
 101: begin
-    if d_34EC[d_6826].W12=0 then
+    if d_34EC[d_6826].Aux2=0 then
     begin
-      u9_19f9(d_6D76^[d_34EC[d_6826].Sprite-100+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+      u9_19f9(d_6D76^.Images[d_34EC[d_6826].Sprite-100+d_34EC[d_6826].Frame div 5].Pixels[1],d_34EC[d_6826].X,
       d_34EC[d_6826].Y+d_6840-16);
-      if d_34EC[d_6826].Direction<0 then
-        u9_19f9(d_6D76^[5][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840)
+      if d_34EC[d_6826].DX<0 then
+        u9_19f9(d_6D76^.Images[5].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840)
       else
-        u9_19f9(d_6D76^[45][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
+        u9_19f9(d_6D76^.Images[45].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
     end
     else
     begin
-      if d_34EC[d_6826].Direction<0 then
-        u9_19f9(d_6D76^[1][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16)
+      if d_34EC[d_6826].DX<0 then
+        u9_19f9(d_6D76^.Images[1].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16)
       else
-        u9_19f9(d_6D76^[41][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16);
-      u9_19f9(d_6D76^[d_34EC[d_6826].Sprite-96+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
+        u9_19f9(d_6D76^.Images[41].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16);
+      u9_19f9(d_6D76^.Images[d_34EC[d_6826].Sprite-96+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    d_34EC[d_6826].Y+d_6840);
     end;
   end;
-102..150: u9_19f9(d_6D76^[d_34EC[d_6826].Sprite-100+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+102..150: u9_19f9(d_6D76^.Images[d_34EC[d_6826].Sprite-100+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-151..200: u9_19f9(d_6D96^[d_34EC[d_6826].Sprite-150+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+151..200: u9_19f9(d_6D96^.Images[d_34EC[d_6826].Sprite-150+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-251..300: u9_19f9(d_6DAA^[d_34EC[d_6826].Sprite-250+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+251..300: u9_19f9(d_6DAA^.Images[d_34EC[d_6826].Sprite-250+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-301..350: u9_19f9(d_6DA2^[d_34EC[d_6826].Sprite-300+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+301..350: u9_19f9(d_6DA2^.Images[d_34EC[d_6826].Sprite-300+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-351..400: u9_19f9(d_6DAE^[d_34EC[d_6826].Sprite-350+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+351..400: u9_19f9(d_6DAE^.Images[d_34EC[d_6826].Sprite-350+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-401..450: u9_19f9(d_6D7E^[d_34EC[d_6826].Sprite-400+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+401..450: u9_19f9(d_6D7E^.Images[d_34EC[d_6826].Sprite-400+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-451..487: u9_19f9(d_6D82^[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+451..487: u9_19f9(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-488..490: u9_19f9(d_6D82^[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].VX shr 3][3],d_34EC[d_6826].X,
+488..490: u9_19f9(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame shr 3].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-491: u9_19f9(d_6D82^[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
-492..494: u9_19f9(d_6D82^[d_34EC[d_6826].Sprite-450+(d_34EC[d_6826].VX-21) shr 3][3],d_34EC[d_6826].X,
+491: u9_19f9(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    d_34EC[d_6826].Y+d_6840);
+492..494: u9_19f9(d_6D82^.Images[d_34EC[d_6826].Sprite-450+(d_34EC[d_6826].Frame-21) shr 3].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-495..500: u9_19f9(d_6D82^[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+495..500: u9_19f9(d_6D82^.Images[d_34EC[d_6826].Sprite-450+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-501..550: u9_19f9(d_6D72^[d_34EC[d_6826].Sprite-500+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+501..550: u9_19f9(d_6D72^.Images[d_34EC[d_6826].Sprite-500+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-601..650: u9_19f9(d_6D86^[d_34EC[d_6826].Sprite-600+d_34EC[d_6826].VX div 5][3],
+601..650: u9_19f9(d_6D86^.Images[d_34EC[d_6826].Sprite-600+d_34EC[d_6826].Frame div 5].Pixels[1],
       d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
-651..700: u9_19f9(d_6D8A^[d_34EC[d_6826].Sprite-650+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+651..700: u9_19f9(d_6D8A^.Images[d_34EC[d_6826].Sprite-650+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-701..750: u9_19f9(d_6D8E^[d_34EC[d_6826].Sprite-700+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+701..750: u9_19f9(d_6D8E^.Images[d_34EC[d_6826].Sprite-700+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-751..800: u9_19f9(d_6D92^[d_34EC[d_6826].Sprite-750+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+751..800: u9_19f9(d_6D92^.Images[d_34EC[d_6826].Sprite-750+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
 801: begin
-u9_19f9(d_6D9E^[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16);
-u9_19f9(d_6D9E^[d_34EC[d_6826].Sprite-796+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
+u9_19f9(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    d_34EC[d_6826].Y+d_6840-16);
+u9_19f9(d_6D9E^.Images[d_34EC[d_6826].Sprite-796+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    d_34EC[d_6826].Y+d_6840);
 end;
 817: begin
-    if d_34EC[d_6826].W12=0 then
+    if d_34EC[d_6826].Aux2=0 then
     begin
-      u9_19f9(d_6D9E^[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+      u9_19f9(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],d_34EC[d_6826].X,
       d_34EC[d_6826].Y+d_6840-16);
-      if d_34EC[d_6826].Direction<0 then
-        u9_19f9(d_6D9E^[21][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840)
+      if d_34EC[d_6826].DX<0 then
+        u9_19f9(d_6D9E^.Images[21].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840)
       else
-        u9_19f9(d_6D9E^[33][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
+        u9_19f9(d_6D9E^.Images[33].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
     end
     else
     begin
-      if d_34EC[d_6826].Direction<0 then
-        u9_19f9(d_6D9E^[17][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16)
+      if d_34EC[d_6826].DX<0 then
+        u9_19f9(d_6D9E^.Images[17].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16)
       else
-        u9_19f9(d_6D9E^[29][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16);
-      u9_19f9(d_6D9E^[d_34EC[d_6826].Sprite-796+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
+        u9_19f9(d_6D9E^.Images[29].Pixels[1],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840-16);
+      u9_19f9(d_6D9E^.Images[d_34EC[d_6826].Sprite-796+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    d_34EC[d_6826].Y+d_6840);
     end;
   end;
-825..828: u9_19f9(d_6D9E^[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+825..828: u9_19f9(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
-837..850: u9_19f9(d_6D9E^[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,
+837..850: u9_19f9(d_6D9E^.Images[d_34EC[d_6826].Sprite-800+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    
       d_34EC[d_6826].Y+d_6840);
 851: begin
-u9_19f9(d_6DA6^[d_34EC[d_6826].Sprite-850+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X,d_34EC[d_6826].Y+d_6840);
-u9_19f9(d_6DA6^[d_34EC[d_6826].Sprite-846+d_34EC[d_6826].VX div 5][3],d_34EC[d_6826].X+16,d_34EC[d_6826].Y+d_6840);
+u9_19f9(d_6DA6^.Images[d_34EC[d_6826].Sprite-850+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X,
+    d_34EC[d_6826].Y+d_6840);
+u9_19f9(d_6DA6^.Images[d_34EC[d_6826].Sprite-846+d_34EC[d_6826].Frame div 5].Pixels[1],
+    d_34EC[d_6826].X+16,
+    d_34EC[d_6826].Y+d_6840);
 end;
 end;
                     end;
@@ -725,8 +818,8 @@ end;
   u2_2530(d_34EC[1].OldX+16,d_34EC[1].OldY);
   u2_2530(d_34EC[1].OldX+16,d_34EC[1].OldY+16);
 for d_6826 := 2 to 25 do
-  if d_34EC[d_6826].Hidden=0 then
-    if d_34EC[d_6826].Special<>0 then
+  if d_34EC[d_6826].Inactive=0 then
+    if d_34EC[d_6826].Marked<>0 then
     begin
   u2_2530(d_34EC[d_6826].OldX,d_34EC[d_6826].OldY);
   u2_2530(d_34EC[d_6826].OldX-16,d_34EC[d_6826].OldY);
@@ -738,13 +831,13 @@ for d_6826 := 2 to 25 do
   u2_2530(d_34EC[d_6826].OldX,d_34EC[d_6826].OldY-16);
   u2_2530(d_34EC[d_6826].OldX,d_34EC[d_6826].OldY+16);
     end
-    else if u1_0000(32,d_6826) or (d_34EC[d_6826].W1C=28) or (d_34EC[d_6826].W1C=27)
-      or (d_34EC[d_6826].W1C=21) or (d_34EC[d_6828].W1C=14) then
+    else if u1_0000(32,d_6826) or (d_34EC[d_6826].Kind=28) or (d_34EC[d_6826].Kind=27)
+      or (d_34EC[d_6826].Kind=21) or (d_34EC[d_6828].Kind=14) then
     begin
   u2_2530(d_34EC[d_6826].X,d_34EC[d_6826].Y);
       if d_34EC[d_6826].X and 15>0 then
   u2_2530(d_34EC[d_6826].X+15,d_34EC[d_6826].Y);
-      if d_34EC[d_6826].W1C=27 then
+      if d_34EC[d_6826].Kind=27 then
       begin
   u2_2530(d_34EC[d_6826].X,d_34EC[d_6826].Y-16);
   u2_2530(d_34EC[d_6826].X+16,d_34EC[d_6826].Y-16);
@@ -779,10 +872,10 @@ for d_6826 := 2 to 25 do
           end;
         end;
     end
-    else if (d_34EC[d_6826].W1C=7) or (d_34EC[d_6826].W1C=14) or (d_34EC[d_6826].W1C=19)
-      or (d_34EC[d_6826].W1C=5000) then
+    else if (d_34EC[d_6826].Kind=7) or (d_34EC[d_6826].Kind=14) or (d_34EC[d_6826].Kind=19)
+      or (d_34EC[d_6826].Kind=5000) then
     begin
-      d_34EC[d_6826].Special := 1;
+      d_34EC[d_6826].Marked := 1;
   u2_2530(d_34EC[d_6826].X,d_34EC[d_6826].Y);
       if d_34EC[d_6826].X and 15>0 then
       begin
@@ -791,7 +884,7 @@ for d_6826 := 2 to 25 do
       end;
     end;
 if d_69F5<>0 then
-  u9_19f9(d_6D7A^[d_34EC[1].VX div 5+d_34EC[1].Sprite][3],
+  u9_19f9(d_6D7A^.Images[d_34EC[1].Frame div 5+d_34EC[1].Sprite].Pixels[1],
     d_34EC[1].X,d_34EC[1].Y+d_6840);
             {4fd4}
             u3_00a3;
@@ -864,6 +957,3 @@ if d_69F5<>0 then
     NoSound;
   end;
 end.
-
-
-

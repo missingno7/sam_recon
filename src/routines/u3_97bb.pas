@@ -1,21 +1,8 @@
 {@decls}
 type
   TString40 = string[40];
-var
-  d_6814: Word;
-  d_681C: Word;
 {@stubs}
-procedure u3_079e; { far, ret [0] }
-function u3_1601(Mode: Byte): Byte; { far, ret [2] }
-procedure u3_4e64; { far, ret [0] }
-procedure u3_892b; { far, ret [0] }
-procedure u3_8fb6; { far, ret [0] }
-function u3_9163: Integer; { far, ret [0] }
-procedure u3_9ca9; { far, ret [0] }
-procedure u3_9de0; { far, ret [0] }
-procedure u3_a027; { far, ret [0] }
-procedure u3_a1d8; { far, ret [0] }
-procedure u3_a3b6; { far, ret [0] }
+
 {@body}
 function u3_97bb: Char;
 var

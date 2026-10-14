@@ -1,8 +1,7 @@
 {@decls}
+
 {@stubs}
-function u4_0000(Foreground, Background: Byte): Byte;
-function u4_0045(Count: Byte; Ch: Char): string;
-procedure u4_04bf(X, Y, Attr: Byte; S: string);
+
 {@body}
 procedure u4_0101(A, B, C, D, E, F, G: Integer);
 var

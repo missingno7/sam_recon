@@ -53,6 +53,6 @@
  "kind": "asm",
  "profile": "tasm10",
  "source": "src/asm/u5.asm",
- "source_sha256": "7c270c72300b5e145c9ff76b4881af371d222e9e9c981ce87d8b8a195e692ce9",
+ "source_sha256": "b9f11a0d48cfc36c88b89fcd4d11d5fa8cd96d9a5792cd9b72c88efa29e39dc2",
  "unit": "u5"
 }

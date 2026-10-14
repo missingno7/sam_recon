@@ -1,20 +1,6 @@
 {@decls}
-var
-  d_6824: Integer;
-  d_682C: Integer;
-  d_683C: Word;
-  d_6840: Word;
+
 {@stubs}
-procedure u3_00db(N: Word);
-procedure u3_0232(N: Word);
-function u3_9340: Char;
-function u5_000f(N: Word): Integer;
-function u5_0047(N: Word): Integer;
-function u5_1915(P: String; A, B, C: Word): Integer;
-procedure u7_0000(N: Word);
-procedure u9_01f9(A, B: Word);
-procedure u9_024c(A, B: Word);
-function u9_01d3(N: Word): Integer;
 procedure u9_2ecf(A, B, C, D: Word);
 {@body}
 procedure u3_3505;

@@ -1,9 +1,8 @@
 {@decls}
-var
+
 {@stubs}
 procedure u9_01a3(Mode: Word);
 procedure u9_01c5(Mode: Word);
-procedure u9_0625(Mode: Word);
 procedure u9_27e2;
 procedure u9_2981(Mode: Word);
 {@body}

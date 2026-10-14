@@ -1,7 +1,7 @@
 {@decls}
-var
+
 {@stubs}
-procedure u4_045e;
+
 {@body}
 begin
   u4_045e;

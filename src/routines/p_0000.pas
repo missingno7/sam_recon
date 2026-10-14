@@ -1,41 +1,7 @@
 {@decls}
-type
-  TEntry = packed record
-    SourceX: Integer;
-    SourceY: Integer;
-    VelocityX: Integer;
-    VelocityY: Integer;
-    Field8: Integer;
-    Field10: Integer;
-    Field12: Integer;
-    Field14: Integer;
-    Field16: Integer;
-    Field18: Integer;
-    Field20: Integer;
-    Field22: Integer;
-    Field24: Integer;
-    Field26: Integer;
-    Active: Byte;
-    Flag: Byte;
-    Tail: array[0..1] of Byte;
-  end;
-var
-  d_3500: Integer;
-  d_681C: Integer;
-  d_6824: Integer;
-  d_6832: Integer;
-  d_6858: Integer;
-  d_685C: array[1..10] of TEntry;
-  d_69A2: Integer;
-  d_70BA: Integer;
-  d_70BC: Integer;
-  d_70BE: Integer;
-  d_70C0: Integer;
-  d_70C2: Integer;
-  d_70C4: Integer;
-  d_70D4: Word;
+
 {@stubs}
-procedure u7_0000(value: Integer);
+
 {@body}
 procedure p_0000; interrupt;
 label
@@ -47,68 +13,68 @@ begin
   d_6824 := Port[$60];
   if d_69AD = 1 then
   begin
-    if d_6824 = d_70BE then
-      d_6824 := d_70C0
-    else if d_70BE + 128 = d_6824 then
-      d_6824 := d_70C0 + 128
-    else if d_6824 = d_70C0 then
-      d_6824 := d_70BE
-    else if d_70C0 + 128 = d_6824 then
-      d_6824 := d_70BE + 128;
+    if d_6824 = Integer(d_70BE) then
+      d_6824 := Integer(d_70C0)
+    else if Integer(d_70BE) + 128 = d_6824 then
+      d_6824 := Integer(d_70C0) + 128
+    else if d_6824 = Integer(d_70C0) then
+      d_6824 := Integer(d_70BE)
+    else if Integer(d_70C0) + 128 = d_6824 then
+      d_6824 := Integer(d_70BE) + 128;
   end;
 
   if d_69B4 <> 0 then
     goto done;
 
-  if d_6824 = d_70BE then
+  if d_6824 = Integer(d_70BE) then
   begin
     d_6ECA := 1;
     d_6ECB := 0;
     d_6EC2 := 0;
-    d_3500 := 5;
+    d_34EC[1].Sprite := 5;
     if d_6EC1 <> 0 then
-      d_3500 := 14;
+      d_34EC[1].Sprite := 14;
   end
-  else if d_70BE + 128 = d_6824 then
+  else if Integer(d_70BE) + 128 = d_6824 then
   begin
     d_6ECA := 0;
     if d_6EC1 = 0 then
     begin
       if d_6ECB = 0 then
-        d_3500 := 10
+        d_34EC[1].Sprite := 10
       else
-        d_3500 := 1;
+        d_34EC[1].Sprite := 1;
     end
     else if d_6ECB = 1 then
-      d_3500 := 13
+      d_34EC[1].Sprite := 13
     else
-      d_3500 := 14;
+      d_34EC[1].Sprite := 14;
   end
-  else if d_6824 = d_70C0 then
+  else if d_6824 = Integer(d_70C0) then
   begin
     d_6ECB := 1;
     d_6ECA := 0;
     d_6EC2 := 0;
-    d_3500 := 1;
+    d_34EC[1].Sprite := 1;
     if d_6EC1 <> 0 then
-      d_3500 := 13;
+      d_34EC[1].Sprite := 13;
   end
-  else if d_70C0 + 128 = d_6824 then
+  else if Integer(d_70C0) + 128 = d_6824 then
   begin
     d_6ECB := 0;
     if d_6EC1 = 0 then
     begin
       if d_6ECA = 0 then
-        d_3500 := 9
+        d_34EC[1].Sprite := 9
       else
-        d_3500 := 5;
+        d_34EC[1].Sprite := 5;
     end
     else if d_6ECA = 1 then
-      d_3500 := 14
+      d_34EC[1].Sprite := 14
     else
-      d_3500 := 13;
+      d_34EC[1].Sprite := 13;
   end
-  else if d_6824 = d_70C2 then
+  else if d_6824 = Integer(d_70C2) then
   begin
     if d_6858 = 0 then
       u7_0000(20)
@@ -122,103 +88,103 @@ begin
           i := 0;
           repeat
             Inc(i);
-            if d_685C[i].Active = 1 then
+            if d_685A[i].Inactive = 1 then
             begin
-              d_685C[i].SourceX := d_34EE;
-              d_685C[i].SourceY := d_34F0;
-              d_685C[i].VelocityX := d_34F2;
-              d_685C[i].VelocityY := d_34F4;
-              d_685C[i].Field18 := 39;
-              if (d_3500 = 1) or (d_3500 = 13) or (d_3500 = 9) or (d_3500 = 11) then
+              d_685A[i].X := d_34EC[1].X;
+              d_685A[i].Y := d_34EC[1].Y;
+              d_685A[i].OldX := d_34EC[1].OldX;
+              d_685A[i].OldY := d_34EC[1].OldY;
+              d_685A[i].Sprite := 39;
+              if (d_34EC[1].Sprite = 1) or (d_34EC[1].Sprite = 13) or (d_34EC[1].Sprite = 9) or (d_34EC[1].Sprite = 11) then
               begin
-                d_685C[i].Field20 := 1;
-                d_3500 := 11;
+                d_685A[i].DX := 1;
+                d_34EC[1].Sprite := 11;
               end
               else
               begin
-                d_685C[i].Field20 := -1;
-                d_3500 := 12;
+                d_685A[i].DX := -1;
+                d_34EC[1].Sprite := 12;
               end;
-              d_685C[i].Field22 := 0;
-              d_685C[i].Field8 := 1;
-              d_685C[i].Field24 := 8;
-              d_685C[i].Field10 := 0;
-              d_685C[i].Field12 := 0;
-              d_685C[i].Field26 := 7;
-              d_685C[i].Active := 0;
-              d_685C[i].Flag := 0;
+              d_685A[i].DY := 0;
+              d_685A[i].Frame := 1;
+              d_685A[i].Speed := 8;
+              d_685A[i].Tick := 0;
+              d_685A[i].Limit := 0;
+              d_685A[i].Kind := 7;
+              d_685A[i].Inactive := 0;
+              d_685A[i].Marked := 0;
               changed := 1;
               Dec(d_6858);
               d_6832 := -1;
               u7_0000(2);
-              if (d_3500 = 1) or (d_3500 = 9) or (d_3500 = 13) or (d_3500 = 11) then
-                d_3500 := 11
+              if (d_34EC[1].Sprite = 1) or (d_34EC[1].Sprite = 9) or (d_34EC[1].Sprite = 13) or (d_34EC[1].Sprite = 11) then
+                d_34EC[1].Sprite := 11
               else
-                d_3500 := 12;
+                d_34EC[1].Sprite := 12;
             end;
           until (i = d_69A2) or (changed <> 0);
         end;
       end;
     end;
-  end  else if d_70C2 + 128 = d_6824 then
+  end  else if Integer(d_70C2) + 128 = d_6824 then
   begin
-    if d_3500 = 11 then
-      d_3500 := 9
-    else if d_3500 = 12 then
-      d_3500 := 10;
+    if d_34EC[1].Sprite = 11 then
+      d_34EC[1].Sprite := 9
+    else if d_34EC[1].Sprite = 12 then
+      d_34EC[1].Sprite := 10;
   end
-  else if d_6824 = d_70C4 then
+  else if d_6824 = Integer(d_70C4) then
   begin
     d_6ECD := 1;
   end
-  else if d_70C4 + 128 = d_6824 then
+  else if Integer(d_70C4) + 128 = d_6824 then
   begin
     d_6ECD := 0;
   end
-  else if d_6824 = d_70BA then
+  else if d_6824 = Integer(d_70BA) then
   begin
     if d_681C = 1 then
     begin
       d_6EC3 := 1;
       d_6EC4 := 0;
-      if (d_3500 = 1) or (d_3500 = 9) or (d_3500 = 11) then
-        d_3500 := 1
+      if (d_34EC[1].Sprite = 1) or (d_34EC[1].Sprite = 9) or (d_34EC[1].Sprite = 11) then
+        d_34EC[1].Sprite := 1
       else
-        d_3500 := 5;
+        d_34EC[1].Sprite := 5;
     end;
   end
-  else if d_70BA + 128 = d_6824 then
+  else if Integer(d_70BA) + 128 = d_6824 then
   begin
     if d_681C = 1 then
     begin
       d_6EC3 := 0;
-      if (d_3500 = 1) or (d_3500 = 9) or (d_3500 = 11) then
-        d_3500 := 9
+      if (d_34EC[1].Sprite = 1) or (d_34EC[1].Sprite = 9) or (d_34EC[1].Sprite = 11) then
+        d_34EC[1].Sprite := 9
       else
-        d_3500 := 10;
+        d_34EC[1].Sprite := 10;
     end;
   end
-  else if d_6824 = d_70BC then
+  else if d_6824 = Integer(d_70BC) then
   begin
     if d_681C = 1 then
     begin
       d_6EC4 := 1;
       d_6EC3 := 0;
-      if (d_3500 = 1) or (d_3500 = 9) or (d_3500 = 11) then
-        d_3500 := 1
+      if (d_34EC[1].Sprite = 1) or (d_34EC[1].Sprite = 9) or (d_34EC[1].Sprite = 11) then
+        d_34EC[1].Sprite := 1
       else
-        d_3500 := 5;
+        d_34EC[1].Sprite := 5;
     end;
   end
-  else if d_70BC + 128 = d_6824 then
+  else if Integer(d_70BC) + 128 = d_6824 then
   begin
     if d_681C = 1 then
     begin
       d_6EC4 := 0;
-      if (d_3500 = 1) or (d_3500 = 9) or (d_3500 = 11) then
-        d_3500 := 9
+      if (d_34EC[1].Sprite = 1) or (d_34EC[1].Sprite = 9) or (d_34EC[1].Sprite = 11) then
+        d_34EC[1].Sprite := 9
       else
-        d_3500 := 10;
+        d_34EC[1].Sprite := 10;
     end;
   end
   else if d_6824 = 1 then

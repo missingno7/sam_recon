@@ -1,62 +1,71 @@
 {@decls}
-type
-  TSnapshot = packed record
-    B3E: Byte;
-    W3F: Integer;
-    B41, B42: Byte;
-    W43, W45, W47, W49: Integer;
-    Bytes: array[1..20] of Byte;
-  end;
-  TBand = packed record
-    First: Byte;
-    Rest: array[1..31] of Byte;
-  end;
-  TScore = string[40];
 var
-  d_34B0: array[0..57] of Byte;
-  d_34EA, d_34EB: Byte;
-  d_350A: array[1..25] of TBand;
-  d_6B44: array[1..10] of TScore;
+  d_34EA: Byte;
+  d_34EB: Byte;
   d_6816: Byte;
-  d_681C, d_6820, d_682C, d_6830, d_6832: Integer;
   d_6836: Byte;
-  d_6838, d_683A, d_683C, d_683E, d_6840: Integer;
-  d_6844: array[1..15] of Byte;
-  d_6858: Integer;
-  d_699A: LongInt;
-  d_699E, d_69A0, d_69A2, d_69A4, d_69A6, d_69A8, d_69AA: Integer;
-  d_69AC, d_69AD: Byte;
-  d_69AE: Integer;
+  d_6838: Integer;
+  d_683A: Integer;
+  d_69AC: Byte;
+  d_69AD: Byte;
   d_69B0: Byte;
-  d_69B2: Integer;
   d_69B4: Byte;
-  d_69B6, d_69B8: Integer;
-  d_69BA: array[1..20] of Byte;
-  d_69CE, d_69CF, d_69D0, d_69D1, d_69D2, d_69D3, d_69D4,
-  d_69D5, d_69D6, d_69D7, d_69D8, d_69D9, d_69DA, d_69DB,
-  d_69DC, d_69DD, d_69DE, d_69DF, d_69E0: Byte;
-  d_69E2, d_69E4, d_69E6: Integer;
-  d_69E8, d_69E9, d_69EA, d_69EB, d_69EC, d_69ED, d_69EE,
-  d_69EF, d_69F0, d_69F1, d_69F2, d_69F3, d_69F4, d_69F5,
+  d_69CE: Byte;
+  d_69CF: Byte;
+  d_69D0: Byte;
+  d_69D1: Byte;
+  d_69D2: Byte;
+  d_69D3: Byte;
+  d_69D4: Byte;
+  d_69D5: Byte;
+  d_69D6: Byte;
+  d_69D7: Byte;
+  d_69D8: Byte;
+  d_69D9: Byte;
+  d_69DA: Byte;
+  d_69DB: Byte;
+  d_69DC: Byte;
+  d_69DD: Byte;
+  d_69DE: Byte;
+  d_69DF: Byte;
+  d_69E0: Byte;
+  d_69E8: Byte;
+  d_69E9: Byte;
+  d_69EA: Byte;
+  d_69EB: Byte;
+  d_69EC: Byte;
+  d_69ED: Byte;
+  d_69EE: Byte;
+  d_69EF: Byte;
+  d_69F0: Byte;
+  d_69F1: Byte;
+  d_69F2: Byte;
+  d_69F3: Byte;
+  d_69F4: Byte;
+  d_69F5: Byte;
   d_69F6: Byte;
-  d_69F8: array[0..24] of Integer;
-  d_6A2A: array[0..2] of Integer;
-  d_6A30: array[0..6] of Integer;
-  d_6A3E, d_6A3F, d_6A40, d_6A41, d_6A42: Byte;
-  d_6CDE: array[1..10] of LongInt;
-  d_6D18, d_6D1A: Integer;
-  d_6D1C: LongInt;
-  d_6D20, d_6D22: Integer;
-  d_6D26: array[1..20] of Byte;
-  d_6D3A, d_6D3C: Integer;
-  d_6D3E: TSnapshot;
-  d_6D60: Integer;
+  d_6A3E: Byte;
+  d_6A3F: Byte;
+  d_6A40: Byte;
+  d_6A41: Byte;
+  d_6A42: Byte;
   d_6D66: Byte;
-  d_6EBF, d_6EC0, d_6EC1, d_6EC2, d_6EC3, d_6EC4, d_6EC5,
-  d_6EC6, d_6EC7, d_6EC8, d_6EC9, d_6ECA, d_6ECB, d_6ECD: Byte;
-  d_70BA: array[0..7] of Integer;
+  d_6EBF: Byte;
+  d_6EC0: Byte;
+  d_6EC1: Byte;
+  d_6EC2: Byte;
+  d_6EC3: Byte;
+  d_6EC4: Byte;
+  d_6EC5: Byte;
+  d_6EC6: Byte;
+  d_6EC7: Byte;
+  d_6EC8: Byte;
+  d_6EC9: Byte;
+  d_6ECA: Byte;
+  d_6ECB: Byte;
+  d_6ECD: Byte;
 {@stubs}
-procedure u9_2f32;
+
 {@body}
 procedure u8_0136;
 var
@@ -64,36 +73,36 @@ var
   value: LongInt;
 begin
   for i := 1 to 25 do
-    d_350A[i].First := 1;
+    d_34EC[i].Inactive := 1;
   d_6838 := 0;
   u9_2f32;
   d_6832 := -1;
   d_683A := 0;
   d_682C := 0;
-  d_70BA[6] := 0;
-  d_70BA[7] := 0;
-  d_70BA[0] := $48;
-  d_70BA[1] := $50;
-  d_70BA[2] := $4B;
-  d_70BA[3] := $4D;
-  d_70BA[4] := $38;
-  d_70BA[5] := $1D;
+  d_70C6 := 0;
+  d_70C8 := 0;
+  d_70BA := $48;
+  d_70BC := $50;
+  d_70BE := $4B;
+  d_70C0 := $4D;
+  d_70C2 := $38;
+  d_70C4 := $1D;
   for i := 1 to 10 do
   begin
     case i of
-      1: d_6B44[i] := 'James Bond              200000';
-      2: d_6B44[i] := 'Matt Helm               190000';
-      3: d_6B44[i] := 'Flint                   180000';
-      4: d_6B44[i] := 'Jack Ryan               170000';
-      5: d_6B44[i] := 'Jim Phelps              160000';
-      6: d_6B44[i] := 'Columbo                 150000';
-      7: d_6B44[i] := 'Maxwell Smart           140000';
-      8: d_6B44[i] := 'Frank Drebin            130000';
-      9: d_6B44[i] := 'Underdog                120000';
-      10: d_6B44[i] := 'The A Team              110000';
+      1: d_6B44.Names[i] := 'James Bond              200000';
+      2: d_6B44.Names[i] := 'Matt Helm               190000';
+      3: d_6B44.Names[i] := 'Flint                   180000';
+      4: d_6B44.Names[i] := 'Jack Ryan               170000';
+      5: d_6B44.Names[i] := 'Jim Phelps              160000';
+      6: d_6B44.Names[i] := 'Columbo                 150000';
+      7: d_6B44.Names[i] := 'Maxwell Smart           140000';
+      8: d_6B44.Names[i] := 'Frank Drebin            130000';
+      9: d_6B44.Names[i] := 'Underdog                120000';
+      10: d_6B44.Names[i] := 'The A Team              110000';
     end;
     value := i;
-    d_6CDE[i] := 200000 - (value - 1) * 10000;
+    d_6B44.Scores[i] := 200000 - (value - 1) * 10000;
   end;
   d_6EBF := 0;
   d_6ECA := 0;
@@ -180,86 +189,85 @@ begin
   d_69E2 := 0;
   d_69E4 := 0;
   d_69E6 := 0;
-  d_6D18 := 0;
-  d_6D1A := 0;
-  d_6D1C := d_699A;
-  d_6D20 := d_699E;
-  d_6D22 := d_6858;
+  d_6D18.X := 0;
+  d_6D18.Y := 0;
+  d_6D18.Score := d_699A;
+  d_6D18.Count := d_699E;
+  d_6D18.Ammo := d_6858;
   for i := 1 to 20 do
-    d_6D26[i] := d_6844[i];
-  d_6D3A := d_69A4;
-  d_6D3C := d_69A6;
-  d_6D3E.B3E := d_69AD;
-  d_6D3E.W3F := d_69AA;
-  d_6D3E.B41 := d_69AC;
-  d_6D3E.B42 := d_69B0;
-  d_6D3E.W43 := d_69AE;
-  d_6D3E.W45 := d_69B2;
-  d_6D3E.W47 := d_69B6;
-  d_6D3E.W49 := d_69B8;
+    d_6D18.FlagsA[i] := d_6844[i];
+  d_6D18.TimerA := d_69A4;
+  d_6D18.TimerB := d_69A6;
+  d_6D18.Mode := d_69AD;
+  d_6D18.TimerC := d_69AA;
+  d_6D18.FlagA := d_69AC;
+  d_6D18.FlagB := d_69B0;
+  d_6D18.TimerD := d_69AE;
+  d_6D18.ValueA := d_69B2;
+  d_6D18.ValueB := d_69B6;
+  d_6D18.ValueC := d_69B8;
   for i := 1 to 20 do
-    d_6D3E.Bytes[i] := d_69BA[i];
+    d_6D18.FlagsB[i] := d_69BA[i];
   d_6D60 := 0;
-  d_34B0[0] := 0;
-  d_34B0[1] := 8;
+  d_34B0[1] := 0;
   d_34B0[2] := 8;
   d_34B0[3] := 8;
-  d_34B0[4] := 4;
+  d_34B0[4] := 8;
   d_34B0[5] := 4;
-  d_34B0[6] := 2;
+  d_34B0[6] := 4;
   d_34B0[7] := 2;
   d_34B0[8] := 2;
-  d_34B0[9] := 1;
+  d_34B0[9] := 2;
   d_34B0[10] := 1;
-  d_34B0[11] := 2;
+  d_34B0[11] := 1;
   d_34B0[12] := 2;
   d_34B0[13] := 2;
-  d_34B0[14] := 4;
+  d_34B0[14] := 2;
   d_34B0[15] := 4;
-  d_34B0[16] := 8;
+  d_34B0[16] := 4;
   d_34B0[17] := 8;
   d_34B0[18] := 8;
+  d_34B0[19] := 8;
   d_34EA := $12;
-  d_34B0[20] := 0;
-  d_34B0[21] := 8;
-  d_34B0[22] := 8;
-  d_34B0[23] := 6;
-  d_34B0[24] := 6;
-  d_34B0[25] := 4;
-  d_34B0[26] := 4;
-  d_34B0[27] := 4;
-  d_34B0[28] := 4;
-  d_34B0[29] := 4;
-  d_34B0[30] := 4;
-  d_34B0[31] := 2;
-  d_34B0[32] := 2;
-  d_34B0[33] := 2;
-  d_34B0[34] := 2;
-  d_34B0[35] := 2;
-  d_34B0[36] := 1;
-  d_34B0[37] := 1;
-  d_34B0[38] := 1;
-  d_34B0[39] := 1;
-  d_34B0[40] := 0;
-  d_34B0[41] := 0;
-  d_34B0[42] := 0;
-  d_34B0[43] := 2;
-  d_34B0[44] := 2;
-  d_34B0[45] := 2;
-  d_34B0[46] := 2;
-  d_34B0[47] := 4;
-  d_34B0[48] := 4;
-  d_34B0[49] := 4;
-  d_34B0[50] := 4;
-  d_34B0[51] := 4;
-  d_34B0[52] := 4;
-  d_34B0[53] := 4;
-  d_34B0[54] := 6;
-  d_34B0[55] := 6;
-  d_34B0[56] := 8;
-  d_34B0[57] := 8;
+  d_34C4[1] := 0;
+  d_34C4[2] := 8;
+  d_34C4[3] := 8;
+  d_34C4[4] := 6;
+  d_34C4[5] := 6;
+  d_34C4[6] := 4;
+  d_34C4[7] := 4;
+  d_34C4[8] := 4;
+  d_34C4[9] := 4;
+  d_34C4[10] := 4;
+  d_34C4[11] := 4;
+  d_34C4[12] := 2;
+  d_34C4[13] := 2;
+  d_34C4[14] := 2;
+  d_34C4[15] := 2;
+  d_34C4[16] := 2;
+  d_34C4[17] := 1;
+  d_34C4[18] := 1;
+  d_34C4[19] := 1;
+  d_34C4[20] := 1;
+  d_34C4[21] := 0;
+  d_34C4[22] := 0;
+  d_34C4[23] := 0;
+  d_34C4[24] := 2;
+  d_34C4[25] := 2;
+  d_34C4[26] := 2;
+  d_34C4[27] := 2;
+  d_34C4[28] := 4;
+  d_34C4[29] := 4;
+  d_34C4[30] := 4;
+  d_34C4[31] := 4;
+  d_34C4[32] := 4;
+  d_34C4[33] := 4;
+  d_34C4[34] := 4;
+  d_34C4[35] := 6;
+  d_34C4[36] := 6;
+  d_34C4[37] := 8;
+  d_34C4[38] := 8;
   d_34EB := $25;
-  d_69F8[0] := -8;
   d_69F8[1] := -8;
   d_69F8[2] := -8;
   d_69F8[3] := -8;
@@ -274,41 +282,26 @@ begin
   d_69F8[12] := -8;
   d_69F8[13] := -8;
   d_69F8[14] := -8;
-  d_69F8[15] := -6;
+  d_69F8[15] := -8;
   d_69F8[16] := -6;
   d_69F8[17] := -6;
   d_69F8[18] := -6;
   d_69F8[19] := -6;
   d_69F8[20] := -6;
-  d_69F8[21] := -4;
+  d_69F8[21] := -6;
   d_69F8[22] := -4;
   d_69F8[23] := -4;
   d_69F8[24] := -4;
-  d_6A2A[0] := 0;
-  d_6A2A[1] := 0;
-  d_6A2A[2] := 0;
-  d_6A30[0] := 4;
-  d_6A30[1] := 4;
-  d_6A30[2] := 8;
-  d_6A30[3] := 8;
-  d_6A30[4] := 8;
-  d_6A30[5] := 8;
-  d_6A30[6] := 8;
+  d_69F8[25] := -4;
+  d_69F8[26] := 0;
+  d_69F8[27] := 0;
+  d_69F8[28] := 0;
+  d_69F8[29] := 4;
+  d_69F8[30] := 4;
+  d_69F8[31] := 8;
+  d_69F8[32] := 8;
+  d_69F8[33] := 8;
+  d_69F8[34] := 8;
+  d_69F8[35] := 8;
   d_6D66 := 0;
 end;
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

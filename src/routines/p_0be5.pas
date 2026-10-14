@@ -1,18 +1,7 @@
 {@decls}
-type
-  TMusicTable = array[1..12, 1..305] of Integer;
-  PMusicTable = ^TMusicTable;
-var
-  d_341E: PMusicTable;
-  d_3422: PMusicTable;
-  d_3426: PMusicTable;
-  d_682C: Integer;
-  d_6832: Integer;
-  d_69A4: Integer;
-  d_69A6: Integer;
-  d_69AA: Integer;
-  d_69AE: Integer;
+
 {@stubs}
+
 {@body}
 procedure p_0be5; interrupt;
 begin
@@ -98,7 +87,3 @@ begin
   end;
   inline($FB);
 end;
-
-
-
-

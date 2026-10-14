@@ -1,11 +1,7 @@
-{ Foreign-customer dealer screens. Transcribed from context-sam1.txt. }
 {@decls}
-var
-  d_6824: Integer;
+
 {@stubs}
-procedure u3_079e;
-function u3_1601(Mode: Byte): Byte;
-procedure u3_acdd;
+
 {@body}
 procedure u3_c10d;
 var

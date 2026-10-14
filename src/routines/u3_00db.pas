@@ -1,6 +1,7 @@
 {@decls}
+
 {@stubs}
-procedure u9_0352(register, value: Word);
+procedure u9_0352(X, Y: Integer);
 {@body}
 procedure u3_00db(ticks: Word);
 begin
@@ -37,6 +38,3 @@ begin
   u9_0352(15, 23);
   Delay(ticks);
 end;
-
-
-

@@ -1,6 +1,7 @@
 {@decls}
-var
+
 {@stubs}
+
 {@body}
 procedure p_0e33;
 begin

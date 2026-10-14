@@ -3,11 +3,8 @@ type
   TRec41 = packed record
     S: string[40];
   end;
-var d_6814: Integer;
 {@stubs}
-procedure u3_079e;
-function u3_1601(value: Byte): Byte;
-function u3_3f8c(value: Integer): Byte;
+
 {@body}
 function u3_9163: Integer;
 begin
@@ -34,14 +31,13 @@ begin
   d_6814 := u3_1601(0);
   case d_6814 of
     2..10:
-      if u3_3f8c(d_6814 - 1) = 0 then
+      if Ord(u3_3f8c(d_6814 - 1)) = 0 then
         d_6814 := $1C;
     11:
-      if u3_3f8c(0) = 0 then
+      if Ord(u3_3f8c(0)) = 0 then
         d_6814 := $1C;
   end;
   u3_9163 := d_6814;
   d_6EC5 := 0;
   d_6816 := 0;
 end;
-

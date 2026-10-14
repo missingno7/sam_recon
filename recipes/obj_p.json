@@ -49,6 +49,6 @@
  "kind": "asm",
  "profile": "tasm10",
  "source": "src/asm/p.asm",
- "source_sha256": "d69382ccce50141ca77465c8bedced4df120f9c4479ecf5ede4f5b85cddad769",
+ "source_sha256": "75e00051bdaa0afda54ba179d2c1757b5b2e12e006c63771ea743b932952cc4f",
  "unit": "p"
 }

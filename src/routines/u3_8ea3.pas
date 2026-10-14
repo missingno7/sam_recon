@@ -1,11 +1,8 @@
 {@decls}
 type
   TStr40 = string[40];
-var
-  d_6A44: string;
 {@stubs}
-procedure u3_079e;
-function u3_1e2a(mode: Word): string;
+
 {@body}
 function u3_8ea3: Word;
 var
@@ -25,4 +22,3 @@ begin
   d_6EC5 := 0;
   d_6816 := 0;
 end;
-

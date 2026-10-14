@@ -41,10 +41,13 @@
  ],
  "function": "u6_0000",
  "options": [
-  "/$S-"
+  "/$S-",
+  "/$I-",
+  "/$R-",
+  "/$B-"
  ],
  "profile": "sam",
  "source": "src/routines/u6_0000.pas",
- "source_sha256": "205b25d439d581c61f00ec3dea0e4858d858abad262da7af0a64ae148f6b2bc7",
+ "source_sha256": "d68b79ad7b63413362a3442fe071e7dacdcaba2ee141287c38085bcbe596b6c7",
  "unit": "u6"
 }

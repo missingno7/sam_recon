@@ -1,23 +1,8 @@
 {@decls}
 type
   TMenuText = array[1..299] of String[40];
-var
-  d_6814: Word;
-  d_699E: Word;
-  d_6D60: Word;
 {@stubs}
-procedure u3_079e;
-function u3_1601(Mode: Byte): Byte;
-procedure u3_4e64;
-procedure u3_6ea9;
-function u3_9163: Integer;
-procedure u3_9a71;
-procedure u3_9bdf;
-procedure u3_a027;
-procedure u3_b898;
-procedure u3_c10d;
-procedure u3_cf40;
-procedure u3_d323;
+
 {@body}
 function u3_9340: Char;
 var
@@ -135,10 +120,3 @@ begin
       end;
   end;
 end;
-
-
-
-
-
-
-

@@ -4,12 +4,8 @@ type
     first: string[40];
     second: string[40];
   end;
-var
-  d_6814: Word;
-  d_6824: Word;
 {@stubs}
-procedure u3_079e;
-function u3_1601(value: Byte): Byte;
+
 {@body}
 procedure u3_9bdf;
 begin

@@ -1,6 +1,7 @@
 {@decls}
+
 {@stubs}
-procedure u9_0352(Reg, Color: Integer);
+procedure u9_0352(X, Y: Integer);
 {@body}
 procedure u3_3c93;
 var

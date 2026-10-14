@@ -1,6 +1,7 @@
 {@decls}
+
 {@stubs}
-function u6_00cc(Axis: Word): Integer;
+
 {@body}
 function u6_0000: Boolean;
 var

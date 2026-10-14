@@ -3,11 +3,8 @@ type
   TRec41 = packed record
     S: string[40];
   end;
-var d_6814: Integer;
 {@stubs}
-procedure u3_079e;
-function u3_1601(Value: Byte): Byte;
-procedure u3_3e29(Value: Integer);
+
 {@body}
 procedure u3_8fb6;
 begin

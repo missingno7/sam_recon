@@ -1,12 +1,8 @@
 {@decls}
 type
   TMenuLines = array[1..299] of String[40];
-var
-  d_6824: Word;
 {@stubs}
-procedure u3_079e;
-function u3_1601(Mode: Byte): Byte;
-procedure u3_acdd;
+
 {@body}
 procedure u3_cf40;
 var
@@ -57,4 +53,3 @@ begin
   selectedValue := u3_1601(1);
   u3_acdd;
 end;
-

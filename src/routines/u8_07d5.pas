@@ -1,57 +1,7 @@
 {@decls}
-type
-  TByte20 = array[1..20] of Byte;
-  TSlot32 = record
-    value: Byte;
-    tail: array[1..31] of Byte;
-  end;
-  TSnapshotTail = packed record
-    F3A: Word;
-    F3C: Word;
-    F3E: Byte;
-    F3F: Word;
-    F41: Byte;
-    F42: Byte;
-    F43: Word;
-    F45: Word;
-    F47: Word;
-    F49: Word;
-    F4B: TByte20;
-  end;
-var
-  d_350A: array[1..25] of TSlot32;
-  d_681C: Word;
-  d_6820: Word;
-  d_682C: Word;
-  d_6832: Word;
-  d_683C: Word;
-  d_683E: Word;
-  d_6840: Word;
-  d_6844: TByte20;
-  d_6858: Word;
-  d_699A: Pointer;
-  d_699E: Word;
-  d_69A0: Word;
-  d_69A2: Word;
-  d_69A4: Word;
-  d_69A6: Word;
-  d_69A8: Word;
-  d_69AA: Word;
-  d_69AE: Word;
-  d_69B2: Word;
-  d_69B6: Word;
-  d_69B8: Word;
-  d_69BA: TByte20;
-  d_69E2: Word;
-  d_69E4: Word;
-  d_69E6: Word;
-  d_6D18: Word;
-  d_6D1A: Word;
-  d_6D26: TByte20;
-  d_6D3A: TSnapshotTail;
-  d_6D5F: Byte;
+
 {@stubs}
-procedure u9_2f32;
+
 {@body}
 procedure u8_07d5;
 var
@@ -59,10 +9,10 @@ var
 begin
   d_6D66 := 0;
   for i := 1 to 25 do
-    d_350A[i].value := 1;
+    d_34EC[i].Inactive := 1;
   d_6838 := 0;
   u9_2f32;
-  d_6832 := $FFFF;
+  d_6832 := -1;
   d_683A := 0;
   d_682C := 0;
   d_6EBF := 0;
@@ -86,7 +36,7 @@ begin
   d_683C := 0;
   d_6820 := 0;
   d_6836 := 1;
-  d_699A := nil;
+  d_699A := 0;
   d_699E := 1;
   d_6858 := 5;
   d_69A2 := 1;
@@ -150,24 +100,24 @@ begin
   d_69E2 := 0;
   d_69E4 := 0;
   d_69E6 := 0;
-  d_6D18 := 0;
-  d_6D1A := 0;
-  d_6D1C := d_699A;
-  d_6D20 := d_699E;
-  d_6D22 := d_6858;
+  d_6D18.X := 0;
+  d_6D18.Y := 0;
+  d_6D18.Score := d_699A;
+  d_6D18.Count := d_699E;
+  d_6D18.Ammo := d_6858;
   for i := 1 to 20 do
-    d_6D26[i] := d_6844[i];
-  d_6D3A.F3A := d_69A4;
-  d_6D3A.F3C := d_69A6;
-  d_6D3A.F3E := d_69AD;
-  d_6D3A.F3F := d_69AA;
-  d_6D3A.F41 := d_69AC;
-  d_6D3A.F42 := d_69B0;
-  d_6D3A.F43 := d_69AE;
-  d_6D3A.F45 := d_69B2;
-  d_6D3A.F47 := d_69B6;
-  d_6D3A.F49 := d_69B8;
+    d_6D18.FlagsA[i] := d_6844[i];
+  d_6D18.TimerA := d_69A4;
+  d_6D18.TimerB := d_69A6;
+  d_6D18.Mode := d_69AD;
+  d_6D18.TimerC := d_69AA;
+  d_6D18.FlagA := d_69AC;
+  d_6D18.FlagB := d_69B0;
+  d_6D18.TimerD := d_69AE;
+  d_6D18.ValueA := d_69B2;
+  d_6D18.ValueB := d_69B6;
+  d_6D18.ValueC := d_69B8;
   for i := 1 to 20 do
-    d_6D3A.F4B[i] := d_69BA[i];
-  d_6D5F := d_69DC;
+    d_6D18.FlagsB[i] := d_69BA[i];
+  d_6D18.FlagC := d_69DC;
 end;

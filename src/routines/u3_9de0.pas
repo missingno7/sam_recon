@@ -3,12 +3,8 @@ type
   TRec41 = packed record
     S: String[40];
   end;
-var
-  d_6814: Word;
-  d_6824: Word;
 {@stubs}
-procedure u3_079e;
-function u3_1601(Mode: Byte): Byte;
+
 {@body}
 procedure u3_9de0;
 begin

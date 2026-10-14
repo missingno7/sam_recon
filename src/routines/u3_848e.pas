@@ -1,11 +1,8 @@
 {@decls}
 type
   TStr40 = string[40];
-var
-  d_6A44: string;
 {@stubs}
-procedure u3_079e;
-function u3_1e2a(Length: Word): string;
+
 {@body}
 procedure u3_848e;
 begin

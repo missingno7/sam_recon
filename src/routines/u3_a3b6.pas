@@ -1,11 +1,7 @@
 {@decls}
-var
-  d_341C: Byte;
-  d_6814: Word;
-  d_6824: Word;
-  d_6D68: Word;
-  d_6D6A: Word;
+
 {@stubs}
+
 {@body}
 procedure u3_a3b6;
 var
@@ -49,8 +45,8 @@ begin
   d_6814 := u3_1601(0);
   if d_6814 = $39 then
   begin
-    d_341C := Ord(u6_0000);
-    if d_341C <> 0 then
+    d_341C := u6_0000;
+    if d_341C then
     begin
       d_6D68 := u6_00cc(0);
       d_6D6A := u6_00cc(1);

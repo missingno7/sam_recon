@@ -1,8 +1,10 @@
 {@decls}
 type
   PByte = ^Byte;
+type
   PPointer = ^Pointer;
 {@stubs}
+
 {@body}
 function u3_0000: Char;
 var
@@ -35,7 +37,3 @@ begin
   end;
   u3_0000 := adapter;
 end;
-
-
-
-
