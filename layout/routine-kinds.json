@@ -1,6 +1,8 @@
 {
  "description": "Supervisor-curated routes overriding tools/tasks.py heuristics. ASM: inside a linked {$L} object (build/workers/sol-asm/REPORT.md).",
  "kinds": {
+  "p_0000": "PASCAL",
+  "p_0be5": "PASCAL",
   "p_5151": "ASM",
   "p_516d": "ASM",
   "p_51df": "ASM",

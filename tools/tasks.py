@@ -126,6 +126,11 @@ FACTS = """- Compiler: Turbo Pascal 5.0 (TPC), profile in layout/profiles.json; 
 - Boolean expressions are short-circuit ($B-).  `push cs; call near X` is a call to a FAR routine of
   the same unit; `call near X` a near one; `9A off:seg` a far call to another unit or the runtime.
 - Strings: string literals used by a routine are emitted just before its entry (context shows them).
+  The same pool holds SET constants (32 bytes, e.g. `x in [1..80]` passes `mov di,offset; push cs`
+  to the System set-membership helper).  The pool is NOT a nested routine; nested routines have
+  their own `push bp; mov bp,sp` entry before the target's.
+- Interrupt procedures: `procedure X; interrupt;` (TP saves all registers and loads DS itself);
+  CLI/STI inside one are `inline($FA)` / `inline($FB)`.
 - Frame temporaries come AFTER the declared locals, in statement order: a `for` loop with a
   non-constant upper bound gets a hidden limit word; a call to a string FUNCTION gets a 256-byte
   result temporary (`lea di,[bp-N]; push ss; push di` before the call's own arguments, then that
