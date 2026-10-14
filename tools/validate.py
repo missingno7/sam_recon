@@ -134,6 +134,8 @@ def main() -> int:
                     ok = False
                     failures.append(f"{f} {p.episode}: {p.short()}")
             results[f] = {"ok": ok}
+            for c in rec.get("covers", []):
+                results[c] = {"ok": ok}
             print(f"{f}: {'OK' if ok else 'REGRESSED'} ({','.join(rec['equal'])}, assembly)")
             continue
         for ep in rec["equal"]:
