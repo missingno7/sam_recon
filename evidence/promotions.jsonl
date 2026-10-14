@@ -208,3 +208,4 @@
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_d645", "note": "rewrite_views: canonical d_67FA/d_3812", "source_sha256": "25bd70b88e95bc34d60f508125cc05ab8f377ee88978c19bda8dfbff78dd8bed", "time": "2026-10-14T16:35:44"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_d820", "note": "rewrite_views: canonical d_67FA/d_3812", "source_sha256": "c261a4b557d343f51e6110ab8a23a3284da1d6fe91ddea46dd0ac27a0c6c7246", "time": "2026-10-14T16:35:46"}
 {"equal": ["sam1", "sam2", "sam3"], "function": "u3_079e", "note": "canonical d_3812/d_67FA", "source_sha256": "4402bd48143c204848071857f7d9ff19eb5067aec208aa7ef8b9a9d340fd8509", "time": "2026-10-14T16:35:57"}
+{"equal": ["sam1", "sam2", "sam3"], "function": "u3_1601", "note": "luna; supervisor: gotos -> if block / nested repeat, canonical d_3812, callee header", "source_sha256": "bb00c2bd0b9a1b1e261aef378b13b8ee6938f8774de82712f4f9cd92117baa3c", "time": "2026-10-14T16:40:49"}
