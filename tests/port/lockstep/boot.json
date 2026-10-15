@@ -1,8 +1,65 @@
 {
-  "description": "Boot checkpoints; no input and no state alteration.",
-  "max_time_us": 4000000,
+  "description": "Title and new-game boot to the first two gameplay boundaries.",
+  "max_time_us": 10000000,
   "frames": 2,
-  "checkpoints": ["InstallGameHandlers", "LoadGameConfig", "ShowApogeeSplash", "ShowTitleAndCredits"],
-  "screenshots": [1, 2],
-  "events": []
+  "checkpoints": [
+    "InstallGameHandlers",
+    "LoadGameConfig",
+    "ShowApogeeSplash",
+    "ShowTitleAndCredits",
+    "RunMainMenu"
+  ],
+  "screenshots": [
+    1,
+    2
+  ],
+  "events": [
+    {
+      "after": "ShowApogeeSplash",
+      "scan": [
+        57
+      ],
+      "delay_waits": 422
+    },
+    {
+      "after": "ShowApogeeSplash",
+      "scan": [
+        185
+      ],
+      "delay_waits": 430
+    },
+    {
+      "after": "ShowTitleAndCredits",
+      "scan": [
+        57
+      ],
+      "delay_waits": 295
+    },
+    {
+      "after": "ShowTitleAndCredits",
+      "scan": [
+        185
+      ],
+      "delay_waits": 301
+    },
+    {
+      "after": "RunMainMenu",
+      "scan": [
+        49
+      ],
+      "delay_waits": 167
+    },
+    {
+      "after": "RunMainMenu",
+      "scan": [
+        177
+      ],
+      "delay_waits": 177
+    }
+  ],
+  "required_routines": [
+    "ShowApogeeSplash",
+    "ShowTitleAndCredits",
+    "RunMainMenu"
+  ]
 }

@@ -1,5 +1,5 @@
 {
-  "description": "Title -> new game -> island walking; startup input uses symmetric wait-event counts.",
+  "description": "Island walking and the shared title/new-game path.",
   "required_routines": [
     "ShowApogeeSplash",
     "ShowTitleAndCredits",

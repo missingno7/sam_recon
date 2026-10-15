@@ -47,7 +47,7 @@ foreach(episode sam1 sam2 sam3)
   foreach(module SAM PROGRPHX SAMDATA SAMSOUND GAMEJOY PCXGENUS TEXT80 SAMUI SAMLEVEL SAMPLAY loader)
     list(APPEND EPISODE_SOURCES "${GEN}/${module}.c")
   endforeach()
-  add_custom_command(OUTPUT ${EPISODE_SOURCES} "${GEN}/generated.h" "${GEN}/layout.json" "${GEN}/ds.bin"
+  add_custom_command(OUTPUT ${EPISODE_SOURCES} "${GEN}/generated.h" "${GEN}/layout.json" "${GEN}/ds.bin" "${GEN}/diagnostics.json"
     COMMAND "${Python3_EXECUTABLE}" "${SNAPSHOT_ROOT}/tools/pas2c.py" --episode ${episode}
             --source-dir "${REPO_ROOT}/game" --placement "${SAM_PLACEMENT}" --output-dir "${GEN}"
     DEPENDS ${PASCAL_SOURCE} ${TRANSLATOR_SOURCE} "${SAM_PLACEMENT}"
@@ -93,3 +93,14 @@ add_custom_command(OUTPUT "${ERASE_GEN}/ERASE.c" "${ERASE_GEN}/loader.c" "${ERAS
 add_executable(erase_corpus tests/corpus_runner.c "${ERASE_GEN}/ERASE.c" "${ERASE_GEN}/loader.c")
 target_include_directories(erase_corpus PRIVATE "${ERASE_GEN}")
 target_link_libraries(erase_corpus PRIVATE sam_platform)
+set(FILELIFE_GEN "${CMAKE_BINARY_DIR}/port-gen/filelife")
+add_custom_command(OUTPUT "${FILELIFE_GEN}/FILELIFE.c" "${FILELIFE_GEN}/loader.c" "${FILELIFE_GEN}/generated.h"
+  COMMAND "${Python3_EXECUTABLE}" "${SNAPSHOT_ROOT}/tools/pas2c.py" --episode sam1
+          --source-dir "${SNAPSHOT_ROOT}/tests/port/semantics" --program FILELIFE --output-dir "${FILELIFE_GEN}"
+  DEPENDS "${SNAPSHOT_ROOT}/tests/port/semantics/FILELIFE.PAS" ${TRANSLATOR_SOURCE}
+  VERBATIM)
+add_executable(file_lifetime tests/file_lifetime.c "${FILELIFE_GEN}/FILELIFE.c" "${FILELIFE_GEN}/loader.c")
+target_include_directories(file_lifetime PRIVATE "${FILELIFE_GEN}")
+target_link_libraries(file_lifetime PRIVATE sam_platform)
+add_test(NAME file_lifetime COMMAND file_lifetime --headless --no-audio --data "${CMAKE_BINARY_DIR}")
+set_tests_properties(file_lifetime PROPERTIES WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")

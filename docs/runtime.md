@@ -252,9 +252,13 @@ mute an independently advancing stream. There is one
 active effect, no mixing, and no music driver. The priority comparison in
 `StartSoundEffect` is an original bug: it reads requested priority, overwrites
 that local with current priority, then compares with a different uninitialized
-local. Thus interruption behavior is stack-dependent. The port must record
-an explicit compatibility policy for this undefined value; a clean priority
-system is a behavior change, not a format interpretation.
+local. Thus original interruption behavior is stack-dependent. The approved port
+compatibility policy reads zero for uninitialised locals, retaining the faulty
+comparison itself. The lockstep reference applies that policy at routine entry
+only to diagnostics-listed locals, using verified translator BP-relative frame
+slots. This is a documented compatibility difference, not a sound-state exclusion:
+all sound globals, PIT channel 2 and timestamped speaker history remain exact.
+See [port.md](port.md) for the generic memory-model rule.
 
 - [ ] Use an SDL audio callback/ring buffer to synthesize timestamped speaker
   state changes; never block audio on graphics or asset I/O.

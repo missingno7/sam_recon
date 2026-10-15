@@ -9,6 +9,8 @@ from pathlib import Path
 import sys
 import random
 import os
+import copy
+import subprocess
 import lockstep
 
 FIELDS = '''GenusPcxIdentity PcxDisplayDescriptions PcxSelectedDisplay
@@ -45,6 +47,37 @@ def main():
             output=root/'build/lockstep-libcheck'/episode,side='original',
             map=root/'build/reference'/episode/'SAM.MAP',cpu_mhz=20)
         m = lockstep.Original(args)
+        # Exercise every diagnostics-selected frame, including byte and aggregate
+        # locals and scalar function results. Compare the entire poisoned frame
+        # to prove that only selected objects are cleared, never padding/temps.
+        for routine, proof in m.local_policy['proofs'].items():
+            m.set('ss',m.placement['ss_seg']); m.set('sp',4096); m.set('bp',0x1234)
+            m.jump(m.routine_targets[routine])
+            bp=4094; start=bp-proof['allocated_bytes']
+            poison=bytes([0xa5])*proof['allocated_bytes']
+            C.memmove(m.base+m.placement['ss_seg']*16+start,poison,len(poison))
+            expected=bytearray(poison)
+            for slot in proof['locals']:
+                off=proof['allocated_bytes']+slot['bp_offset']
+                expected[off:off+slot['size']]=bytes(slot['size'])
+            m.trace(routine)
+            actual=C.string_at(m.base+m.placement['ss_seg']*16+start,len(poison))
+            ok=actual==expected and m.get('sp')==4096 and m.get('bp')==0x1234
+            results.append({'episode':episode,'routine':'zero-local exact frame: '+routine,'ok':ok})
+            if not ok: raise RuntimeError('zero-local rule changed an unselected byte/register')
+        # Corrupt generated metadata must fail closed before reference execution.
+        altered=copy.deepcopy(m.diagnostics)
+        note=altered['possible_uninitialized_reads'][0]
+        altered['routine_frames'][note['routine']]['locals'][note['name']]['bp_offset']=-65536
+        try:
+            lockstep.policies(altered,m.routines,
+                C.string_at(m.base+m.load_seg*16,(m.placement['ds_seg']-m.load_seg)*16),m.load_seg*16)
+        except ValueError:
+            rejected=True
+        else:
+            rejected=False
+        results.append({'episode':episode,'routine':'zero-local rejects invalid frame metadata','ok':rejected})
+        if not rejected: raise RuntimeError('invalid local layout was accepted')
         before = C.string_at(m.base+m.ds,m.layout['ds_size'])
         name = 'PCXINITIALIZEVIDEODESCRIPTORS'
         call(m,name)
@@ -127,6 +160,20 @@ def main():
         results.append({'episode':episode,'routine':'BIOS blocking-read cancellation','ok':cancelled})
         if not cancelled: raise RuntimeError('blocking BIOS read did not cancel')
         m.pc.platform_shutdown()
+    # A failing child cannot reuse retained success receipts from an older run.
+    stale=root/'build/lockstep-libcheck/stale-receipts'
+    stale.mkdir(parents=True,exist_ok=True)
+    for side in ('original','port'):
+        (stale/side).mkdir(exist_ok=True)
+        (stale/side/'run.json').write_text('{"error": null}\n')
+    (stale/'comparison.json').write_text('{"ok": true}\n')
+    failed=subprocess.run([sys.executable,'-B',str(root/'tools/lockstep.py'),
+        '--library',str(stale/'missing.dll'),'--output',str(stale)],
+        stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+    fresh=failed.returncode==2 and not (stale/'comparison.json').exists() and all(
+        not (stale/side/'run.json').exists() for side in ('original','port'))
+    results.append({'routine':'crashed child cannot reuse stale receipts','ok':fresh})
+    if not fresh: raise RuntimeError(failed.stdout.decode(errors='replace'))
     dest = root/'build/lockstep-libcheck/checks.json'
     dest.parent.mkdir(parents=True,exist_ok=True)
     dest.write_text(json.dumps({'ok':all(r['ok'] for r in results),'results':results},indent=2)+'\n')

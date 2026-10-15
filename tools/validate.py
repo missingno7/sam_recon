@@ -1,6 +1,6 @@
 """Re-derive every claim of the reconstruction from the committed inputs.
 
-    python tools/validate.py [--crosscheck] [--pack | --dos] [--port]
+    python tools/validate.py [--crosscheck] [--pack | --dos] [--port] [--lockstep]
 
   1. the original files match the immutable oracle lock (tools/oracle.py), optionally
      cross-checked by running each file's own LZEXE stub in an emulator;
@@ -17,6 +17,7 @@ from __future__ import annotations
 import argparse
 import subprocess
 import sys
+import time
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
@@ -30,11 +31,14 @@ def step(name: str, argv: list) -> bool:
 
 
 def main() -> int:
+    started = time.monotonic()
     ap = argparse.ArgumentParser()
     ap.add_argument("--crosscheck", action="store_true", help="also execute the original LZEXE stubs")
     ap.add_argument("--pack", action="store_true", help="also pack the builds with LZEXE 0.91")
     ap.add_argument("--dos", action="store_true", help="run game/BUILD.BAT itself in DOSBox-X")
     ap.add_argument("--port", action="store_true", help="also build and check the SDL3 port")
+    ap.add_argument("--lockstep", action="store_true",
+                    help="also build the lockstep target and run every episode/scenario strictly; needs the DOS reference build for SAM.MAP")
     a = ap.parse_args()
     results = {
         "oracle": step("oracle", ["tools/oracle.py", *(["--crosscheck"] if a.crosscheck else [])]),
@@ -43,7 +47,11 @@ def main() -> int:
     }
     if a.port:
         results["port"] = step("SDL3 port", ["-B", "tools/pas2c_check.py", "--integration"])
+    if a.lockstep:
+        results["lockstep"] = step("strict original/port lockstep", ["-B", "tools/lockstep_gate.py"])
     print("== result: " + ", ".join(f"{k} {'OK' if v else 'FAILED'}" for k, v in results.items()))
+    if a.lockstep:
+        print(f"== full validation wall time: {time.monotonic()-started:.3f} seconds")
     return 0 if all(results.values()) else 1
 
 

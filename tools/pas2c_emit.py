@@ -1,5 +1,6 @@
 """Type checking and deterministic C emission; no game routine substitutions."""
 from pas2c import *
+from pas2c_frames import routine_frame
 import struct
 
 class Emitter:
@@ -1227,6 +1228,11 @@ class Emitter:
         out.extend(self.statement(r.body))
         out.extend(('    ' + line for line in self.comments_before(token.file, self.comment_range[1] + 1)))
         self.analyze_locals(r)
+        # File I/O can expose a host-local FileRec/TextRec to the DOS bridge
+        # even without an explicit Pascal Seg/Ofs expression. Its registration
+        # must end with this invocation, before a later Intr syncs host locals.
+        if any(s.type.kind in ('file', 'text') for s in r.locals):
+            self.frame_needed = True
         # Explicitly mark retained write-only/uninitialized policy locals as used.
         for s in r.locals:
             out.append(f'    (void){s.cname};')
@@ -1437,5 +1443,8 @@ class Emitter:
         for (n, text) in sources.items():
             (path / n).write_text(text)
         (path / 'diagnostics.json').write_text(json.dumps({'local_initialization': 'zero; including original uninitialized reads',
-             'possible_uninitialized_reads': self.notes, 'evaluation_order': self.order_notes, 'memory_layout_source': 'config/port.json' if self.c.program_layout else 'test geometry'},
+             'possible_uninitialized_reads': self.notes,
+             'routine_frames': {r.cname: routine_frame(r) for u in self.c.units.values()
+                 for r in u.routines if any(n['routine'] == r.cname for n in self.notes)},
+             'evaluation_order': self.order_notes, 'memory_layout_source': 'config/port.json' if self.c.program_layout else 'test geometry'},
              indent=2) + '\n')

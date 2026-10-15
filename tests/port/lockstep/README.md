@@ -72,9 +72,8 @@ The instrument additionally designates these actual busy-wait state locations:
 * LastKeyboardScanCode: popup make/release waits have no port or timer reads.
 * SoundPlaying: the shutdown loop waits for the timer to finish the effect.
 
-These additions are explicit **proposed contract extensions**, requiring the
-supervisor's decision. There is no RTC retiming and no per-game-routine delay.
-The proposal for `docs/port.md` is in the worker REPORT.md.
+These additional watches and the symmetric wait-clock contract are approved
+and specified in `docs/port.md`. There is no RTC retiming or game-routine delay.
 
 ## Input and frame boundaries
 
@@ -107,8 +106,7 @@ Every checkpoint stores raw DS, all heap arena bytes (including free space and
 allocator metadata), BDA keyboard flags/ring/bounds, four complete EGA planes,
 VGA registers/latches/indices/flip-flops, PIT channel state including load times,
 keyboard controller state, and timestamped speaker history. DS includes padding.
-Raw artifacts are retained alongside a comparable DS projection. Projection is
-limited to these named rules:
+Raw artifacts are retained alongside a comparable DS projection. Comparison uses only these named rules:
 
 1. **Code-pointer identity.** ExitProc/SavedExitProc, all 22 Genus decoder
    pointers, and Input/Output Open/InOut/Flush/Close callbacks require equal
@@ -127,8 +125,21 @@ limited to these named rules:
 FileRec/TextRec are fully compared, including handles, modes, record/buffer
 sizes, positions, pointers, names, and buffers. TP and Genus use the same DOS
 handle table. No whole-file-record, RNG, sound, heap, or game-state exclusion is
-permitted. Uninitialised StartSoundEffect priority has **no new policy**: a sound
-mismatch remains a failing comparison.
+permitted.
+
+4. **Diagnostic zero locals (approved compatibility difference).** The port reads
+   zero for uninitialised locals. Before each original routine prologue, the
+   runner zeros exactly the local objects reported by `diagnostics.json`, using
+   its translator `routine_frames` BP offsets. A scalar function result precedes
+   declaration-order locals; multi-byte locals start on word boundaries. Compiler
+   temporaries and padding are not zeroed. Each selected routine must have a
+   verified `PUSH BP; MOV BP,SP; SUB SP,n` prologue, contain the declared slots,
+   and reference every selected slot through BP. Unknown/unproved layouts fail.
+   Entry SP minus two is the callee BP. The rule has no game-routine names or
+   offsets in its implementation. Every receipt includes diagnostic hashes,
+   prologue/reference proofs, and every write (routine/frame/wait/SS/SP/BP,
+   selected object, previous bytes). This applies the documented port policy to
+   the reference; it never masks resulting DS or sound/device state.
 
 The stack segment and C locals, code segments/assembly CS scratch, PSP/environment,
 unrelated IVT entries, non-keyboard BDA, and host SDL/audio playback state are
@@ -140,11 +151,40 @@ The most recent MAP/native routine entries accompany snapshots. The comparison
 reports the first differing globals by translator-layout name and every frame's
 differing regions. PNGs are captured on both sides at selected frames.
 
-## Current coverage status
+## Coverage gate
 
-The runner deliberately reports the uninitialised-sound divergence. The mission
-routes and save/restore/quit scenario are diagnostic continuations after it;
-none certifies whole-game equality. See REPORT.md for the actual reached states,
-exact commands, all remaining decisions, and uncovered damage/death/key/door
-work. Synthetic test programs and device checks are regression evidence, not
-substitutes for those whole-game paths.
+`python tools/validate.py --lockstep` builds the test DLL, runs 137 regression
+comparisons, then runs **all 18 episode/scenario pairs strictly**. Its DOS
+reference build supplies the original routine MAP; normal port builds remain
+independent of the DOS toolchain. `tools/lockstep_gate.py --jobs N` controls
+scenario concurrency (default three). Full logs and receipts are written to
+`build/lockstep-gate/`; `checks.json` reports elapsed wall time and every command.
+Each scenario JSON optionally names its `episodes`; omitted means all three.
+All JSON scenario files in this directory participate, including boot and walk.
+Missing coverage, undelivered input, clock/wait-count differences, unknown code
+pointers, failed normalization proofs, and any compared byte difference fail.
+
+| Scenario | Episodes | Enforced path |
+|---|---|---|
+| `boot.json` | 1, 2, 3 | splash, title, new game, two boundaries |
+| `walk.json` | 1, 2, 3 | island movement |
+| `mission-samN.json` | matching episode | ordinary island entrance, jumping, firing, pickups/damage |
+| `save-restore-quit.json` | 1, 2, 3 | save, move, restore position, quit to DOS |
+| `key-door-samN.json` | matching episode | additional mission, key acquired then consumed, door removed |
+| `damage-death-samN.json` | matching episode | health 3 -> 2 -> 1, death, 35-frame animation, snapshot reload |
+
+The additional routes use the game's built-in BOND warp through real keyboard
+input and its text popup. They do not edit DS, seed inventory, suppress damage,
+or enable god mode. Mission numbers are internal map slots: ordinary routes
+enter SAM1 map 4 and SAM2/3 map 3; additional routes use SAM1 maps 7 and 3,
+SAM2 maps 12 and 2, and SAM3 map 10. These are repeatable branch-coverage routes,
+not complete mission playthroughs. The key tests require an actual transition
+from inventory 1 to 0 and a simultaneous decrease in remaining door cells.
+Death tests require health restoration and the reset position after the return.
+
+Ending screens are not certified by this matrix. The blueprint is in SAM1 map
+13 at tile (36,2), SAM2 map 10 at (37,22), and SAM3 map 7 at (1,18), not a
+shared final map slot. Even after BOND warp, the observed starts and locked
+routes require climbing/key puzzles; no short ending route was established.
+See the worker REPORT for the measured probes. The library screen corpus covers
+the END image decoders but does not substitute for executing ShowEpisodeEnding.

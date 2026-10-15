@@ -1,0 +1,186 @@
+{
+  "description": "BOND warp to mission 10; drop through the key shaft and consume key two at its door. No state injection.",
+  "required_routines": [
+    "AskWarpLevel",
+    "ReadPopupText",
+    "LoadLevelMap"
+  ],
+  "max_time_us": 60000000,
+  "frames": 70,
+  "checkpoints": [
+    "InstallGameHandlers",
+    "LoadGameConfig",
+    "ShowApogeeSplash",
+    "ShowTitleAndCredits",
+    "RunMainMenu",
+    "LoadLevelMap",
+    "AskWarpLevel",
+    "ReadPopupText",
+    "RequestIslandReturn",
+    "RestoreGameSnapshot"
+  ],
+  "screenshots": [
+    4,
+    31,
+    38,
+    39,
+    52,
+    70
+  ],
+  "events": [
+    {
+      "after": "ShowApogeeSplash",
+      "scan": [
+        57
+      ],
+      "delay_waits": 422
+    },
+    {
+      "after": "ShowApogeeSplash",
+      "scan": [
+        185
+      ],
+      "delay_waits": 430
+    },
+    {
+      "after": "ShowTitleAndCredits",
+      "scan": [
+        57
+      ],
+      "delay_waits": 295
+    },
+    {
+      "after": "ShowTitleAndCredits",
+      "scan": [
+        185
+      ],
+      "delay_waits": 301
+    },
+    {
+      "after": "RunMainMenu",
+      "scan": [
+        49
+      ],
+      "delay_waits": 167
+    },
+    {
+      "after": "RunMainMenu",
+      "scan": [
+        177
+      ],
+      "delay_waits": 177
+    },
+    {
+      "frame": 2,
+      "scan": [
+        48,
+        24,
+        49,
+        32
+      ]
+    },
+    {
+      "after": "AskWarpLevel",
+      "delay_waits": 4,
+      "scan": [
+        176,
+        152,
+        177,
+        160
+      ]
+    },
+    {
+      "after": "ReadPopupText",
+      "delay_waits": 100,
+      "scan": [
+        10
+      ]
+    },
+    {
+      "after": "ReadPopupText",
+      "delay_waits": 110,
+      "scan": [
+        138
+      ]
+    },
+    {
+      "after": "ReadPopupText",
+      "delay_waits": 200,
+      "scan": [
+        28
+      ]
+    },
+    {
+      "after": "ReadPopupText",
+      "delay_waits": 210,
+      "scan": [
+        156
+      ]
+    },
+    {
+      "frame": 8,
+      "scan": [
+        77
+      ]
+    },
+    {
+      "frame": 17,
+      "scan": [
+        75
+      ]
+    },
+    {
+      "frame": 26,
+      "scan": [
+        203
+      ]
+    },
+    {
+      "frame": 45,
+      "scan": [
+        75
+      ]
+    },
+    {
+      "frame": 56,
+      "scan": [
+        203
+      ]
+    }
+  ],
+  "required_states": [
+    {
+      "name": "additional mission",
+      "field": "CurrentLevelNumber",
+      "frame": 4,
+      "equals": 10
+    },
+    {
+      "name": "key collected",
+      "field": "HasKeyTwo",
+      "frame": 31,
+      "equals": 1
+    },
+    {
+      "name": "key consumed",
+      "field": "HasKeyTwo",
+      "frame": 39,
+      "equals": 0
+    },
+    {
+      "name": "door present",
+      "field": "doors_remaining",
+      "frame": 38,
+      "equals": 7
+    },
+    {
+      "name": "door opened",
+      "field": "doors_remaining",
+      "frame": 39,
+      "equals": 6
+    }
+  ],
+  "episodes": [
+    "sam3"
+  ]
+}

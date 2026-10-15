@@ -1,5 +1,5 @@
 {
-  "description": "Island route into a mission, then movement, jump and fire; diagnostic after the sound-policy divergence.",
+  "description": "Island route into a mission, then movement, jump, fire and episode-specific pickup/damage checks.",
   "required_routines": [
     "ShowApogeeSplash",
     "ShowTitleAndCredits",
@@ -145,5 +145,8 @@
       "field": "HasKeyThree",
       "equals": 1
     }
+  ],
+  "episodes": [
+    "sam2"
   ]
 }

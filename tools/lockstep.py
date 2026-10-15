@@ -27,6 +27,7 @@ for parent in (ROOT, *ROOT.parents):
 import common
 import oracle
 from lockstep_symbols import Symbols, pointer_fields, normalized_ds, canonical_name
+from lockstep_locals import policies, RULE as ZERO_LOCAL_RULE
 from unicorn import (Uc, UC_ARCH_X86, UC_MODE_16, UC_PROT_ALL, UC_HOOK_CODE,
                      UC_HOOK_INTR, UC_HOOK_INSN, UC_HOOK_MEM_WRITE, UC_HOOK_MEM_READ)
 from unicorn.x86_const import *
@@ -107,6 +108,11 @@ class Machine:
         self.mem = (C.c_uint8 * 0x110000).in_dll(self.pc, 'pc_mem')
         self.base = C.addressof(self.mem)
         self.layout = json.loads((args.generated / args.episode / 'layout.json').read_text())
+        diagnostic_bytes = (args.generated / args.episode / 'diagnostics.json').read_bytes()
+        self.diagnostics = json.loads(diagnostic_bytes)
+        self.local_policy = {'rule': ZERO_LOCAL_RULE,
+            'diagnostics_sha256': hashlib.sha256(diagnostic_bytes).hexdigest(),
+            'proofs': {}, 'applications': []}
         self.globals = self.layout['globals'] | self.layout.get('runtime_symbols', {})
         self.placement = json.loads((ROOT / 'config/port.json').read_text())['episodes'][args.episode]
         self.ds = self.placement['ds_seg'] * 16
@@ -229,11 +235,29 @@ class Machine:
             return int(self.args.side == 'port' or kind == 0)
 
     def trace(self, name):
+        plain = re.sub(r'^s[123]_', '', name).upper()
+        if self.args.side == 'original' and plain in self.local_policy['proofs']:
+            proof = self.local_policy['proofs'][plain]
+            ss, sp = self.get('ss'), self.get('sp')
+            bp = (sp + proof['bp_from_entry_sp']) & 65535
+            applied = {'routine': plain, 'frame': self.frames, 'wait': self.waits,
+                       'ss': ss, 'entry_sp': sp, 'callee_bp': bp, 'locals': []}
+            for slot in proof['locals']:
+                off = (bp + slot['bp_offset']) & 65535
+                width = slot['size']
+                if off + width > self.placement['sp']:
+                    raise ValueError('zero-local policy would escape the stack')
+                before = C.string_at(self.base + ss*16 + off, width)
+                C.memset(self.base + ss*16 + off, 0, width)
+                self.pc.pc_lockstep_cpu_host_write(ss, off, C.create_string_buffer(width),
+                    width, b'diagnostic-zero-locals')
+                applied['locals'].append({'name': slot['name'], 'offset':off,
+                                          'size':width, 'before':before.hex()})
+            self.local_policy['applications'].append(applied)
         self.history.append(name)
         self.history = self.history[-32:]
         # Optional routine-entry checkpoints diagnose boot before the first frame.
         wanted = self.script.get('checkpoints', [])
-        plain = re.sub(r'^s[123]_', '', name).upper()
         if plain == 'SHOWGAMEDRAWBUFFER' and self.frame_start is not None:
             record = {'frame':self.frames,'work_to_present_us':self.pc.pc_time_us()-self.frame_start[0]}
             if self.args.side == 'original':
@@ -298,6 +322,9 @@ class Machine:
         meta['state']={n:self.value(n) for n in ('CurrentLevelNumber','EnteredLevelNumber','PlayerHealth','PlayerDying','PlayerScore','PlayerAmmo','PlayerJumping','HasKeyOne','HasKeyTwo','HasKeyThree') if n in self.globals}
         actor=self.ds+self.globals['GameActors']['offset']
         meta['state']['player_x']=self.u16(actor+2); meta['state']['player_y']=self.u16(actor+4)
+        cells=self.ds+self.globals['LevelCells']['offset']
+        # Source-defined foreground codes (SAMDATA), counted from actual state.
+        meta['state']['doors_remaining']=sum(self.u16(cells+i*8+4) in (422,424,426) for i in range(1000))
         if self.args.side == 'original': meta['instructions'] = self.instructions
         self.last_irq = irq
         self.log.append(meta)
@@ -310,6 +337,7 @@ class Machine:
                    'checkpoints':self.checkpoints, 'error':self.error, 'log':self.log,
                    'time_us':self.pc.pc_time_us(), 'program_exited':self.exited,'events_delivered':len(self.delivered),'data_dir':str(self.data),
                    'waits':self.waits, 'wait_kinds':self.wait_kinds, 'sound_calls':self.sound_calls,'rng_log':self.rng_log,
+                   'local_policy': self.local_policy,
                    'routines':self.history, 'visits':self.visits,'frame_work':self.work,
                    'coverage':{n:n.upper() in self.visits for n in self.script.get('required_routines',[])}}
         if self.args.side == 'original':
@@ -358,6 +386,8 @@ class Original(Machine):
             linear=(pointer>>16)*16+(pointer&65535)
             if linear<self.ds: self.routines.setdefault(linear,name)
         self.routines[self.symbols.segments['CRT']*16+0x29e]='Crt.Delay'
+        self.local_policy['proofs'] = policies(self.diagnostics, self.routines,
+                                              bytes(data), self.load_seg*16)
         self.accounted = 0
         self.pending = None
         self.depth = 0
@@ -377,6 +407,7 @@ class Original(Machine):
         notify = {n.upper() for n in self.script.get('checkpoints',[])} | {
             e['after'].upper() for e in self.events if 'after' in e}
         notify.update(('SHOWGAMEDRAWBUFFER','STARTSOUNDEFFECT'))
+        notify.update(self.local_policy['proofs'])
         notify.update(n.upper() for n in self.script.get('required_routines',[]))
         for addr,name in self.routines.items():
             self.pc.pc_lockstep_cpu_routine(addr,name.encode(),int(name.upper() in notify))
@@ -613,6 +644,11 @@ def compare(args):
               'comparison_rules':{'code-pointers':'nonzero pointers require the same established symbol identity; unknown identity fails',
                   'crt-calibration':'CrtPrivate.DelayCnt, exactly first two bytes; virtual CPU speed calibration',
                   'interrupt-flags':'Registers.Flags: compare CF/ZF/IF (0241h); other bits BIOS implementation defined'}}
+    result['comparison_rules']['diagnostic-zero-locals'] = ZERO_LOCAL_RULE
+    result['zero_local_policy'] = {s:r['local_policy'] for s,r in runs.items()}
+    result['zero_local_policy_verified'] = (
+        runs['original']['local_policy']['diagnostics_sha256'] == runs['port']['local_policy']['diagnostics_sha256']
+        and bool(runs['original']['local_policy']['proofs']))
     for a,b in zip(snapshots['original'],snapshots['port']):
         different = {}
         for region in a['regions']:
@@ -634,6 +670,7 @@ def compare(args):
             if ptr['name'] is None or b['code_pointers'].get(name,{}).get('name')!=ptr['name']}
         if pd: different['code_pointers']={'bytes':4*len(pd),'pointers':pd}
         if a['time_us']!=b['time_us']: different['clock']={'bytes':0,'original':a['time_us'],'port':b['time_us']}
+        if a['waits']!=b['waits']: different['wait-events']={'bytes':0,'original':a['waits'],'port':b['waits']}
         if different or a['kind'] != b['kind']:
             detail = {'original':a,'port':b,'differences':different}
             if result['first_divergence'] is None: result['first_divergence'] = detail
@@ -665,7 +702,8 @@ def compare(args):
                         all(r['program_exited'] if json.loads(args.scenario.read_text()).get('expect_exit') else r['frames'] >= json.loads(args.scenario.read_text()).get('frames',100) for r in runs.values()))
     result['state_coverage']={s:state_coverage(r,json.loads(args.scenario.read_text()))for s,r in runs.items()}
     result['coverage_complete'] = all(all(r.get('coverage',{}).values()) for r in runs.values()) and all(all(v.values())for v in result['state_coverage'].values())
-    result['ok'] &= result['coverage_complete'] and result['rng_consumption_equal']
+    result['all_inputs_delivered'] = all(r['events_delivered']==len(json.loads(args.scenario.read_text()).get('events',[])) for r in runs.values())
+    result['ok'] &= result['coverage_complete'] and result['rng_consumption_equal'] and result['zero_local_policy_verified'] and result['all_inputs_delivered']
     (args.output/'comparison.json').write_text(json.dumps(result,indent=2)+'\n')
     print('PASS' if result['ok'] else 'DIVERGENCE / INCOMPLETE',args.output/'comparison.json')
     return 0 if result['ok'] else 1
@@ -698,6 +736,12 @@ def main():
             m.exited=True
             m.snapshot('exit')
         return m.finish()
+    # A crashed child must never inherit a successful receipt from an earlier
+    # invocation using the same output directory. Keep binary diagnostics, but
+    # require newly written run/comparison receipts for this invocation.
+    for receipt in [args.output/'comparison.json',
+                    *(args.output/side/'run.json' for side in ('original','port'))]:
+        if receipt.exists(): receipt.unlink()
     for side in ('original','port'):
         cmd = [sys.executable,'-B',__file__,*sys.argv[1:],'--side',side]
         with (args.output/(side+'.log')).open('w') as log:

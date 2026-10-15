@@ -1,0 +1,175 @@
+{
+  "description": "Built-in BOND warp, contact damage through all health states, 35-frame death animation and snapshot reload; no state injection.",
+  "required_routines": [
+    "AskWarpLevel",
+    "ReadPopupText",
+    "DamagePlayerOnContact",
+    "RequestIslandReturn",
+    "RestoreGameSnapshot",
+    "LoadLevelMap"
+  ],
+  "max_time_us": 30000000,
+  "frames": 170,
+  "checkpoints": [
+    "InstallGameHandlers",
+    "LoadGameConfig",
+    "ShowApogeeSplash",
+    "ShowTitleAndCredits",
+    "RunMainMenu",
+    "LoadLevelMap",
+    "AskWarpLevel",
+    "ReadPopupText",
+    "RequestIslandReturn",
+    "RestoreGameSnapshot"
+  ],
+  "screenshots": [
+    4,
+    117,
+    118,
+    133,
+    155,
+    170
+  ],
+  "events": [
+    {
+      "after": "ShowApogeeSplash",
+      "scan": [
+        57
+      ],
+      "delay_waits": 422
+    },
+    {
+      "after": "ShowApogeeSplash",
+      "scan": [
+        185
+      ],
+      "delay_waits": 430
+    },
+    {
+      "after": "ShowTitleAndCredits",
+      "scan": [
+        57
+      ],
+      "delay_waits": 295
+    },
+    {
+      "after": "ShowTitleAndCredits",
+      "scan": [
+        185
+      ],
+      "delay_waits": 301
+    },
+    {
+      "after": "RunMainMenu",
+      "scan": [
+        49
+      ],
+      "delay_waits": 167
+    },
+    {
+      "after": "RunMainMenu",
+      "scan": [
+        177
+      ],
+      "delay_waits": 177
+    },
+    {
+      "frame": 2,
+      "scan": [
+        48,
+        24,
+        49,
+        32
+      ]
+    },
+    {
+      "after": "AskWarpLevel",
+      "delay_waits": 4,
+      "scan": [
+        176,
+        152,
+        177,
+        160
+      ]
+    },
+    {
+      "after": "ReadPopupText",
+      "delay_waits": 100,
+      "scan": [
+        10
+      ]
+    },
+    {
+      "after": "ReadPopupText",
+      "delay_waits": 110,
+      "scan": [
+        138
+      ]
+    },
+    {
+      "after": "ReadPopupText",
+      "delay_waits": 200,
+      "scan": [
+        28
+      ]
+    },
+    {
+      "after": "ReadPopupText",
+      "delay_waits": 210,
+      "scan": [
+        156
+      ]
+    },
+    {
+      "frame": 8,
+      "scan": [
+        77
+      ]
+    },
+    {
+      "frame": 24,
+      "scan": [
+        205
+      ]
+    }
+  ],
+  "required_states": [
+    {
+      "name": "damaged",
+      "field": "PlayerHealth",
+      "equals": 2
+    },
+    {
+      "name": "one health remains",
+      "field": "PlayerHealth",
+      "equals": 1
+    },
+    {
+      "name": "death started",
+      "field": "PlayerDying",
+      "frame": 118,
+      "equals": 1
+    },
+    {
+      "name": "death returned",
+      "field": "PlayerDying",
+      "frame": 155,
+      "equals": 0
+    },
+    {
+      "name": "health restored",
+      "field": "PlayerHealth",
+      "frame": 155,
+      "equals": 3
+    },
+    {
+      "name": "position reset",
+      "field": "player_x",
+      "frame": 155,
+      "equals_frame": 4
+    }
+  ],
+  "episodes": [
+    "sam3"
+  ]
+}

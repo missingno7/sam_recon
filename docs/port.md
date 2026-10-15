@@ -50,7 +50,13 @@ buffer is cleared by writing its tail pointer.
   host pointers (into `pc_mem` for globals and heap data). Locals are zero-initialised; reads of
   uninitialised locals that the DOS program performs (e.g. the priority comparison in
   `StartSoundEffect`, [runtime.md](runtime.md)) are listed by the translator with the policy
-  applied.
+  applied. This is a documented compatibility difference: the DOS program may
+  read previous stack contents; the port reads zero. Differential tests apply the
+  same policy to the original, generically from `diagnostics.json`: at each listed
+  routine entry, zero exactly its reported local objects at translator-derived
+  BP offsets, checked against the original TP prologue and BP references. They
+  never exclude resulting sound state, PIT channel 2 or speaker history. Every
+  comparison receipt records the rule, frame proofs and applied writes.
 * Records are packed C structs with static size asserts; the hosts are little-endian.
 * Segment A000 (EGA planes) is not plain memory: only `port/lib` and `port/pc` touch it, through
   the `vga_*` API. B800/B000 (text), 0040 (BIOS data) and the IVT are plain `pc_mem`.
@@ -75,6 +81,28 @@ deterministic and replayable:
 * Port 3DAh retrace status follows a virtual display clock (70 Hz) so retrace waits pace like
   the original. A busy-wait that keeps polling without anything becoming due sleeps until the
   next due event instead of burning the CPU.
+
+### Differential-test clock
+
+The optional lockstep build advances emulated time only at shared wait events;
+productive work costs no time. Normal play retains its wall clock and ordinary
+safe points. Waits are reads of ports 3DAh/3BAh, 60h and 201h, BIOS INT 16h/1Ah,
+Crt Delay, and interrupt-owned GameTickCounter, LastKeyboardScanCode and
+SoundPlaying reads. BDA 0040:006C reads during Crt calibration are also waits.
+The translator emits lockstep-only read hooks; the original watches matching
+read instructions at translator DS offsets, excluding read/modify/write stores.
+Crt Delay's original runtime entry charges the same wait as tp_Delay, then its
+body executes with zero productive time, retaining runtime register/stack effects.
+
+A spin is two successive wait events in the common event stream, regardless of
+kind or intervening DS writes. Every wait delivers due events; every second wait
+advances to the next device deadline and delivers again. Joystick quanta are at
+most 8 us; retrace waits also consider the next scanline edge. Empty blocking
+BIOS reads and Delay repeat their wait until satisfied. ISR-internal waits are
+suppressed symmetrically during scheduler dispatch. Other safe points cannot
+advance this clock or deliver IRQs. Input uses frame numbers or shared wait
+counts, including offsets from named routine entries; both sides must consume
+the same Random seeds at the same wait counts. There is no game-routine retiming.
 
 ## Naming and calling convention
 
@@ -101,8 +129,12 @@ The assembly routines take their buffer arguments as far pointers and access the
 3. **Libraries:** each C rewrite of an assembly routine is run against the assembled routine
    (executed in unicorn from the `tools/verify.py` build, located with its map) on generated
    inputs; memory, registers it returns and the EGA state (planes, latches, registers) must match.
-4. **Whole game:** scripted input runs in the port and in the original under DOSBox-X
-   (`tools/dosref.py`, as in duke1_recon); frames and the speaker stream are compared.
+4. **Whole game:** `python tools/validate.py --lockstep` builds the optional test
+   target and runs all scripted scenarios strictly. The original executes in Unicorn
+   on the port's own emulated PC, using the differential-test clock above. Every
+   boundary compares DS, heap, keyboard BDA, EGA state, PIT and speaker history,
+   with only the named rules in `tests/port/lockstep/README.md`. This check needs
+   the pinned DOS reference build for its routine MAP.
 
 ## Milestones
 
