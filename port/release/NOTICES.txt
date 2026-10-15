@@ -1,0 +1,14 @@
+Secret Agent is the original Apogee game (1992). This package is a modern SDL3
+port built from the sam_recon historical source reconstruction. Original game
+data remains separate and is not included or licensed by this package.
+
+SDL3 3.4.16 is Copyright (C) 1997-2026 Sam Lantinga and contributors.
+Its zlib license is reproduced in LICENSE-SDL3.txt. https://libsdl.org/
+
+The emulated BIOS console font, Sam Port Console, is a CP437 subset/resampling
+of GNU Unifont 14.0.01, Copyright (C) 1998-2021 Roman Czyborra, Paul Hardy and
+GNU Unifont contributors; modified for sam_recon. It is distributed under
+SIL Open Font License 1.1. Full source notices and license: LICENSE-FONTS.txt.
+https://unifoundry.com/unifont/
+
+No IBM ROM font or original game data is embedded in the launcher source.

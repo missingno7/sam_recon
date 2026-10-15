@@ -7,6 +7,14 @@
 static samlib_data_offsets active_offsets;
 static uint8_t offsets_bound;
 
+void samlib_reset(void)
+{
+    samlib_bind_data_offsets(NULL);
+    samlib_genus_reset();
+    samlib_progrphx_reset();
+    samlib_cmospit_reset();
+}
+
 void samlib_bind_data_offsets(const samlib_data_offsets *offsets)
 {
     if (offsets == NULL) {

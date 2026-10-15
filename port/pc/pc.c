@@ -497,6 +497,7 @@ void pc_load_program(const pc_program *layout, const uint8_t *image, size_t size
         layout->ss_seg >= layout->mem_top_seg || size > 65536 ||
         ((uint32_t)layout->ds_seg << 4) + size > ((uint32_t)layout->mem_top_seg << 4))
         fatal("invalid program placement");
+    pc_host_program_reset();
     program = *layout;
 #ifdef SAM_LOCKSTEP
     cpu_aborted = 0;

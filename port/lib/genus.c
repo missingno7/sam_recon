@@ -4,6 +4,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
 enum {
     video_interrupt = 0x10,
@@ -550,6 +551,12 @@ typedef struct {
 } ega_decode_call;
 
 static ega_decode_call active_ega_decode;
+
+void samlib_genus_reset(void)
+{
+    memset(dispatch_codes, 0, sizeof dispatch_codes);
+    memset(&active_ega_decode, 0, sizeof active_ega_decode);
+}
 
 static void ega_decode_callback(void)
 {

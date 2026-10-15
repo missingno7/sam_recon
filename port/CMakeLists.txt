@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.20)
-project(sam_milestone2 C)
+project(sam C)
 set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
@@ -27,7 +27,7 @@ if(NOT MSVC)
   add_compile_options(-Wall -Wextra -Wpedantic "-O${SAM_OPTIMIZATION}" -fno-strict-aliasing)
 endif()
 add_library(sam_platform STATIC
-  pc/pc.c pc/pc_io.c pc/pc_dos.c pc/pc_sdl.c pc/pc_speaker.c pc/vga.c pc/fonts.c
+  pc/pc.c pc/pc_io.c pc/pc_dos.c pc/pc_sdl.c pc/pc_speaker.c pc/vga.c pc/fonts.c pc/settings.c
   tp/crt.c tp/dos.c tp/system.c)
 target_include_directories(sam_platform PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}" "${CMAKE_CURRENT_SOURCE_DIR}/pc" "${CMAKE_CURRENT_SOURCE_DIR}/tp")
 target_link_libraries(sam_platform PUBLIC SDL3::SDL3)
@@ -56,11 +56,14 @@ foreach(episode sam1 sam2 sam3)
 endforeach()
 add_executable(sam launcher.c ${GENERATED})
 target_link_libraries(sam PRIVATE sam_lib sam_platform)
+if(MINGW)
+  target_link_options(sam PRIVATE -static-libgcc)
+endif()
 option(SAM_LOCKSTEP "Build optional original/port differential test DLL" OFF)
 if(SAM_LOCKSTEP)
   add_library(sam_lockstep SHARED
     pc/lockstep_cpu.c
-    pc/pc.c pc/pc_io.c pc/pc_dos.c pc/pc_sdl.c pc/pc_speaker.c pc/vga.c pc/fonts.c
+    pc/pc.c pc/pc_io.c pc/pc_dos.c pc/pc_sdl.c pc/pc_speaker.c pc/vga.c pc/fonts.c pc/settings.c
     tp/crt.c tp/dos.c tp/system.c ${LIB_SOURCES} ${GENERATED})
   target_include_directories(sam_lockstep PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}")
   target_compile_definitions(sam_lockstep PRIVATE SAM_LOCKSTEP)
@@ -69,6 +72,12 @@ if(SAM_LOCKSTEP)
   set_target_properties(sam_lockstep PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
 include(CTest)
+add_executable(host_presentation tests/host_presentation.c)
+target_link_libraries(host_presentation PRIVATE sam_platform)
+add_test(NAME host_presentation COMMAND host_presentation --headless --no-audio
+  --script "${CMAKE_CURRENT_SOURCE_DIR}/tests/restart.script"
+  --settings "${CMAKE_BINARY_DIR}/host-test-settings.json")
+set_tests_properties(host_presentation PROPERTIES WORKING_DIRECTORY "${CMAKE_BINARY_DIR}")
 if(SAM_LOCKSTEP)
   add_test(NAME lockstep_libdiff COMMAND "${Python3_EXECUTABLE}" "${SNAPSHOT_ROOT}/tools/lockstep_checks.py" "${CMAKE_BINARY_DIR}")
 endif()

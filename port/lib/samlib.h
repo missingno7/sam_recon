@@ -36,6 +36,8 @@ typedef struct {
 } samlib_data_offsets;
 
 void samlib_bind_data_offsets(const samlib_data_offsets *offsets);
+/* Restore native CS-private state before loading another DOS process. */
+void samlib_reset(void);
 
 /* PROGRAPX.ASM / PROGRPHX.PAS */
 void PgSetToolboxVideoMode(uint16_t toolbox_mode);

@@ -1,5 +1,6 @@
 /* SDL3 display/input backend; host key and controller events become DOS hardware events. */
 #include "pc_internal.h"
+#include "settings.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,6 +13,25 @@ static SDL_Joystick *joystick;
 static int texture_w, texture_h, quit_requested, initialised, deterministic_script, physical_shots;
 static uint32_t pixels[720 * 480];
 static char wav_path[1024];
+static char settings_path[2048];
+static pc_settings presentation;
+static int settings_dirty, headless_mode, program_started;
+static uint8_t presentation_keys[SDL_SCANCODE_COUNT];
+
+const pc_settings *platform_settings(void) { return &presentation; }
+const char *platform_settings_path(void) { return settings_path; }
+int platform_apply_settings(const pc_settings *s) {
+    if (s->window_width < 320 || s->window_width > 8192 ||
+        s->window_height < 200 || s->window_height > 8192) return 0;
+    if (window && !headless_mode && s->fullscreen != presentation.fullscreen &&
+        !SDL_SetWindowFullscreen(window, s->fullscreen != 0)) return 0;
+    if (window && !s->fullscreen)
+        SDL_SetWindowSize(window, s->window_width, s->window_height);
+    presentation = *s;
+    settings_dirty = 1;
+    if (texture) SDL_SetTextureScaleMode(texture, s->smooth ? SDL_SCALEMODE_LINEAR : SDL_SCALEMODE_NEAREST);
+    return 1;
+}
 enum action { DOWN, UP, SHOT, QUIT };
 typedef struct {
     uint64_t us;
@@ -25,6 +45,22 @@ static size_t script_count, script_cursor;
 static uint16_t repeat_scan;
 static uint64_t repeat_next = UINT64_MAX, repeat_number, repeat_origin;
 static uint8_t host_held[SDL_SCANCODE_COUNT];
+
+/* Device time starts at zero on each DOS start; scripts use one session timeline.
+   Keep the window/script cursor, rebase future commands, and release host keys. */
+void pc_host_program_reset(void) {
+    if (!initialised) return;
+    if (program_started) {
+        uint64_t elapsed = pc_time_us();
+        for (size_t i = script_cursor; i < script_count; ++i)
+            script[i].us = script[i].us > elapsed ? script[i].us - elapsed : 0;
+    }
+    program_started = 1;
+    repeat_next = UINT64_MAX;
+    repeat_scan = 0;
+    memset(host_held, 0, sizeof host_held);
+    memset(presentation_keys, 0, sizeof presentation_keys);
+}
 
 enum {
     SDL_PC_SCAN_0 = 0x0b,
@@ -365,16 +401,38 @@ void pc_host_pump(void) {
         if (e.type == SDL_EVENT_QUIT)
             quit_requested = 1;
         else if (e.type == SDL_EVENT_KEY_DOWN || e.type == SDL_EVENT_KEY_UP) {
+            SDL_Scancode s = e.key.scancode;
+            int down = e.type == SDL_EVENT_KEY_DOWN;
+            if (s < 0 || s >= SDL_SCANCODE_COUNT) continue;
+            if ((down && (s == SDL_SCANCODE_F11 ||
+                         (s == SDL_SCANCODE_RETURN && (e.key.mod & SDL_KMOD_ALT)))) ||
+                presentation_keys[s]) {
+                presentation_keys[s] = (uint8_t)down;
+                if (down && !e.key.repeat) {
+                    pc_settings next = presentation;
+                    next.fullscreen = !next.fullscreen;
+                    if (!platform_apply_settings(&next))
+                        fprintf(stderr, "fullscreen: %s\n", SDL_GetError());
+                }
+                continue;
+            }
             if (deterministic_script)
                 continue;
-            SDL_Scancode s = e.key.scancode;
             uint16_t scan = xt(s);
-            int down = e.type == SDL_EVENT_KEY_DOWN;
             if (scan && !e.key.repeat && host_held[s] != down) {
                 host_held[s] = (uint8_t)down;
                 send_key(now, scan, down);
             }
+        } else if (e.type == SDL_EVENT_WINDOW_RESIZED && !presentation.fullscreen) {
+            if (e.window.data1 >= 320 && e.window.data2 >= 200 &&
+                e.window.data1 <= 8192 && e.window.data2 <= 8192 &&
+                (presentation.window_width != e.window.data1 || presentation.window_height != e.window.data2)) {
+                presentation.window_width = e.window.data1;
+                presentation.window_height = e.window.data2;
+                settings_dirty = 1;
+            }
         } else if (e.type == SDL_EVENT_WINDOW_FOCUS_LOST) {
+            memset(presentation_keys, 0, sizeof presentation_keys);
             for (unsigned s = 0; s < SDL_SCANCODE_COUNT; ++s)
                 if (host_held[s]) {
                     send_key(now, xt((SDL_Scancode)s), 0);
@@ -439,13 +497,14 @@ void platform_present(void) {
         }
         texture_w = w;
         texture_h = h;
-        SDL_SetTextureScaleMode(texture, SDL_SCALEMODE_NEAREST);
+        SDL_SetTextureScaleMode(texture, presentation.smooth ? SDL_SCALEMODE_LINEAR : SDL_SCALEMODE_NEAREST);
     }
     int beam_w = w == 320 ? 320 : 640, beam_h = w == 320 ? 240 : 480;
     int border_w = beam_w / 40, border_h = beam_h / 40;
     int canvas_w = beam_w + 2 * border_w, canvas_h = beam_h + 2 * border_h;
     SDL_SetRenderLogicalPresentation(renderer, canvas_w, canvas_h,
-                                     SDL_LOGICAL_PRESENTATION_INTEGER_SCALE);
+                                     presentation.integer_scale ? SDL_LOGICAL_PRESENTATION_INTEGER_SCALE
+                                                                : SDL_LOGICAL_PRESENTATION_LETTERBOX);
     SDL_UpdateTexture(texture, NULL, pixels, w * (int)sizeof(uint32_t));
     uint32_t border = vga_border_rgb();
     SDL_SetRenderDrawColor(renderer, (uint8_t)(border >> 16), (uint8_t)(border >> 8),
@@ -477,6 +536,22 @@ int platform_screenshot(const char *path) {
 int platform_init(int argc, char **argv) {
     int headless = 0, audio = 1, script_clock = 0, realtime_script = 0;
     const char *script_path = NULL;
+    const char *base = SDL_GetBasePath();
+    if (!base) base = "./";
+    pc_set_data_dir(base);
+    if (snprintf(settings_path, sizeof settings_path, "%ssam.json", base) >= (int)sizeof settings_path)
+        return 0;
+    /* Find the override before loading so CLI values always take precedence. */
+    for (int i = 1; i < argc; ++i)
+        if (!strcmp(argv[i], "--settings") && i + 1 < argc) {
+            if (strlen(argv[++i]) >= sizeof settings_path) return 0;
+            strcpy(settings_path, argv[i]);
+        }
+    pc_settings_defaults(&presentation);
+    if (pc_settings_load(settings_path, &presentation) < 0)
+        fprintf(stderr, "Invalid settings in %s; using defaults.\n", settings_path);
+    settings_dirty = program_started = 0;
+    wav_path[0] = 0;
     quit_requested = 0;
     script_cursor = 0;
     repeat_next = UINT64_MAX;
@@ -495,6 +570,22 @@ int platform_init(int argc, char **argv) {
             realtime_script = 1;
         else if (!strcmp(argv[i], "--physical-shots"))
             physical_shots = 1;
+        else if (!strcmp(argv[i], "--settings") && i + 1 < argc)
+            ++i;
+        else if (!strcmp(argv[i], "--fullscreen") || !strcmp(argv[i], "--windowed")) {
+            presentation.fullscreen = !strcmp(argv[i], "--fullscreen"); settings_dirty = 1;
+        } else if (!strcmp(argv[i], "--smooth") || !strcmp(argv[i], "--no-smooth")) {
+            presentation.smooth = !strcmp(argv[i], "--smooth"); settings_dirty = 1;
+        } else if (!strcmp(argv[i], "--scaling") && i + 1 < argc) {
+            const char *value = argv[++i];
+            if (strcmp(value, "integer") && strcmp(value, "fit")) return 0;
+            presentation.integer_scale = !strcmp(value, "integer"); settings_dirty = 1;
+        } else if (!strcmp(argv[i], "--window-size") && i + 1 < argc) {
+            int w, h; char extra;
+            if (sscanf(argv[++i], "%dx%d%c", &w, &h, &extra) != 2 ||
+                w < 320 || w > 8192 || h < 200 || h > 8192) return 0;
+            presentation.window_width = w; presentation.window_height = h; settings_dirty = 1;
+        }
         else if (!strcmp(argv[i], "--script") && i + 1 < argc) {
             script_path = argv[++i];
             script_clock = 1;
@@ -513,13 +604,16 @@ int platform_init(int argc, char **argv) {
         SDL_SetHint(SDL_HINT_VIDEO_DRIVER, "dummy");
         SDL_SetHint(SDL_HINT_AUDIO_DRIVER, "dummy");
     }
+    headless_mode = headless;
     if (!SDL_Init(SDL_INIT_VIDEO | SDL_INIT_AUDIO | SDL_INIT_GAMEPAD))
         goto fail;
     initialised = 1;
-    window = SDL_CreateWindow("Secret Agent platform", 960, 720,
+    window = SDL_CreateWindow("Secret Agent", presentation.window_width, presentation.window_height,
                               SDL_WINDOW_RESIZABLE | (headless ? SDL_WINDOW_HIDDEN : 0));
     if (!window)
         goto fail;
+    SDL_SetWindowMinimumSize(window, 320, 200);
+    if (!headless && presentation.fullscreen && !SDL_SetWindowFullscreen(window, true)) goto fail;
     renderer = SDL_CreateRenderer(window, NULL);
     if (!renderer)
         goto fail;
@@ -542,6 +636,8 @@ fail:
 }
 /* Save the requested audio capture and release SDL/input/device state. */
 void platform_shutdown(void) {
+    if (initialised && settings_dirty && !pc_settings_save(settings_path, &presentation))
+        fprintf(stderr, "Cannot save presentation settings to %s\n", settings_path);
     if (*wav_path && !pc_speaker_capture(wav_path, pc_time_us()))
         fprintf(stderr, "WAV capture failed\n");
     speaker_shutdown();

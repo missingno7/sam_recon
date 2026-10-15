@@ -19,6 +19,14 @@ sam(.exe) = episode 1 + episode 2 + episode 3   generated C, identifiers prefixe
           + port/launcher.c
 ```
 
+The launcher discovers complete episode resource sets beside the executable (or in `--data`).
+It starts a lone episode directly and otherwise uses an emulated text-mode chooser. A DOS exit
+returns to that chooser; `--episode` retains single-run behavior for tests. Each start reloads
+memory/devices and restores the assembly libraries' native CS-private initial state before
+running the generated entry. SDL window and presentation preferences survive these DOS starts.
+Host fullscreen, scaling, filter and window size live in `sam.json` beside the executable;
+they do not alter the game, its `SAMn.CFG`, device timing or source-frame captures.
+
 The game logic is never rewritten by hand: the translator encodes Turbo Pascal 5.0 semantics, so
 the generated C does what the DOS program does, including its overflows and original bugs.
 Everything below the game (TP runtime, assembly libraries, hardware) is C written against the

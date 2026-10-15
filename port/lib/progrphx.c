@@ -41,6 +41,19 @@ static uint8_t sprite_bytes_remaining, sprite_right_shift, sprite_left_shift;
 static uint8_t sprite_source_mask, sprite_plane_byte[4];
 static uint8_t glyph_left_shift, glyph_mask_high, glyph_mask_low;
 
+void samlib_progrphx_reset(void)
+{
+    screen_stride_bytes = default_stride_bytes;
+    draw_page = 0; draw_color = 1;
+    font8_segment = font8_offset = font14_segment = font14_offset = 0;
+    font8_height = 8; font14_height = selected_font_height = 14;
+    selected_font_segment = selected_font_offset = 0;
+    transfer_rows_remaining = transfer_row_bytes = 0;
+    sprite_bytes_remaining = sprite_right_shift = sprite_left_shift = sprite_source_mask = 0;
+    for (unsigned plane = 0; plane < 4; ++plane) sprite_plane_byte[plane] = 0;
+    glyph_left_shift = glyph_mask_high = glyph_mask_low = 0;
+}
+
 #ifdef SAM_LIBDIFF_TEST
 void libdiff_progrphx_set_state(const uint16_t values[25])
 {

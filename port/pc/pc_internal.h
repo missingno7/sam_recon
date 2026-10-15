@@ -16,6 +16,7 @@ void bios_keyboard(pc_regs *r);
 void bios_dos(pc_regs *r);
 void pc_dos_reset(void);
 void pc_host_pump(void);
+void pc_host_program_reset(void);
 uint64_t pc_script_next(void);
 void pc_script_dispatch(uint64_t now);
 void pc_wait_until(uint64_t when);

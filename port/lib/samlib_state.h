@@ -6,5 +6,8 @@
 uint16_t samlib_ds_segment(void);
 const samlib_data_offsets *samlib_current_data_offsets(void);
 const samlib_data_offsets *samlib_require_data_offsets(const char *routine_name);
+void samlib_genus_reset(void);
+void samlib_progrphx_reset(void);
+void samlib_cmospit_reset(void);
 
 #endif

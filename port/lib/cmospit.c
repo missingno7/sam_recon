@@ -26,6 +26,13 @@ static uint8_t cmos_day_work;
 static uint8_t cmos_month_work;
 static uint16_t cmos_year_work;
 
+void samlib_cmospit_reset(void)
+{
+    cmos_second_work = cmos_minute_work = cmos_hour_work = 0;
+    cmos_day_work = cmos_month_work = 0;
+    cmos_year_work = 0;
+}
+
 #ifdef SAM_LIBDIFF_TEST
 void libdiff_cmospit_set_state(const uint16_t values[6])
 {
