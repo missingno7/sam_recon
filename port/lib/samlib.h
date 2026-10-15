@@ -38,6 +38,8 @@ typedef struct {
 void samlib_bind_data_offsets(const samlib_data_offsets *offsets);
 /* Restore native CS-private state before loading another DOS process. */
 void samlib_reset(void);
+/* Optional host idle hint for the generic VGA status wait, not game logic. */
+void pc_wait_video_status(uint8_t mask,uint8_t wanted);
 
 /* PROGRAPX.ASM / PROGRPHX.PAS */
 void PgSetToolboxVideoMode(uint16_t toolbox_mode);

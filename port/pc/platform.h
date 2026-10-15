@@ -240,6 +240,8 @@ int platform_init(int argc, char **argv);
 void platform_shutdown(void);
 int platform_quit_requested(void);
 void platform_present(void);
+/* Host wait hint; manual/lockstep clocks keep their existing poll sequence. */
+void pc_wait_video_status(uint8_t mask,uint8_t wanted);
 int platform_screenshot(const char *path);
 int platform_run(void (*entry)(void)); /* catches pc_terminate, returns DOS exit code */
 void pc_clock_manual(int enabled);

@@ -1,6 +1,25 @@
 /* Emulate EGA/VGA planar memory, indexed registers, BIOS video calls, and CRTC-driven scanout. */
 #include "pc_internal.h"
 #include <string.h>
+#include <stdlib.h>
+
+static FILE *flip_log;
+static int flip_log_checked;
+void vga_diagnostics_close(void) {
+    if(flip_log)fclose(flip_log);
+    flip_log=NULL;flip_log_checked=0;
+}
+static void trace_flip(uint8_t high) {
+    if(!flip_log_checked) {
+        const char *path=getenv("SAM_DIAG_FLIPS");
+        flip_log=path ? fopen(path,"w") : NULL;flip_log_checked=1;
+        if(flip_log)fputs("emu_us,host_us,high\n",flip_log);
+    }
+    if(flip_log) {
+        fprintf(flip_log,"%llu,%llu,%u\n",(unsigned long long)pc_time_us(),
+            (unsigned long long)(SDL_GetTicksNS()/1000u),high);fflush(flip_log);
+    }
+}
 
 static uint8_t planes[4][65536], latch[4];
 static uint8_t seq[8], gc[16], crtc[32], attr[32];
@@ -42,6 +61,28 @@ uint8_t vga_mode(void) {
 }
 uint8_t *vga_plane(int p) {
     return p >= 0 && p < 4 ? planes[p] : NULL;
+}
+/* Presentation cache only. Compare bytes rather than trusting dirty flags:
+   callers may legally write through vga_plane() or the plain B800 memory API. */
+int vga_scanout_changed(void) {
+    static uint8_t old_planes[4][65536],old_crtc[32],old_attr[32];
+    static uint8_t old_text[32768],old_font[4096];
+    static int valid,old_mode,old_adapter,old_enabled,old_blink;
+    int blink=(int)((pc_time_us()/266667u)&1);
+    int changed=!valid || old_mode!=mode || old_adapter!=adapter_vga || old_enabled!=video_enabled ||
+        memcmp(old_crtc,crtc,sizeof crtc) || memcmp(old_attr,attr,sizeof attr);
+    if(mode==PC_VIDEO_MODE_TEXT_80X25) {
+        const uint8_t *font=pc_host_fp(pc_font_pointer(adapter_vga ? 16 : 14));
+        changed=changed || old_blink!=blink || memcmp(old_text,pc_host(0xb800,0),sizeof old_text) ||
+            memcmp(old_font,font,sizeof old_font);
+        if(changed){memcpy(old_text,pc_host(0xb800,0),sizeof old_text);memcpy(old_font,font,sizeof old_font);}
+    } else {
+        changed=changed || memcmp(old_planes,planes,sizeof planes);
+        if(changed)memcpy(old_planes,planes,sizeof planes);
+    }
+    if(changed){memcpy(old_crtc,crtc,sizeof crtc);memcpy(old_attr,attr,sizeof attr);}
+    valid=1;old_mode=mode;old_adapter=adapter_vga;old_enabled=video_enabled;old_blink=blink;
+    return changed;
 }
 const uint8_t *vga_palette_registers(void) {
     return attr;
@@ -127,6 +168,7 @@ int vga_port_write(uint16_t port, uint8_t v) {
     case PC_PORT_CRTC_MONO_DATA:
     case PC_PORT_CRTC_COLOR_DATA:
         crtc[ci] = v;
+        if(ci==PC_VGA_CRTC_START_ADDRESS_HIGH)trace_flip(v);
         return 1;
     default:
         return 0;
@@ -172,12 +214,12 @@ int vga_port_read(uint16_t port, uint8_t *v) {
         break;
     case PC_PORT_VGA_STATUS_MONO:
     case PC_PORT_VGA_STATUS_COLOR: {
-        /* 70 Hz, 449 scanlines, 400 active, 412..413 retrace.
+        /* 25.175 MHz / 800 dots / 449 lines = 70.0863 Hz. 400 active, 412..413 retrace.
            Bit 0 is high during horizontal OR vertical blanking (display disabled). */
-        uint64_t phase = (pc_time_us() * 70u * 449u) % 1000000u;
-        unsigned line = (unsigned)((pc_time_us() * 70u * 449u / 1000000u) % 449u);
+        uint64_t phase = (pc_time_us() * PC_VIDEO_LINE_DEN) % PC_VIDEO_LINE_NUM;
+        unsigned line = (unsigned)(pc_video_line(pc_time_us()) % PC_VIDEO_LINES);
         *v = (uint8_t)((line >= 412 && line < 414 ? 8 : 0) |
-                       (line >= 400 || phase >= 800000u ? 1 : 0));
+                       (line >= 400 || phase >= PC_VIDEO_LINE_NUM*4/5 ? 1 : 0));
         attr_phase = 0;
         break;
     }
@@ -324,6 +366,48 @@ void vga_render_indexed(uint8_t *out) {
             out[y * w + x] = video_enabled ? pixel(x, y, 0) : 0;
 }
 
+/* Decode each planar byte once, hoisting palette/CRTC work out of the pixel
+   loop. The nibble expansion is computed from bits, not from game/ROM data. */
+static void render_planar_rgb(uint32_t *out,int w,int h,int scanout) {
+    static uint32_t spread[256];static int initialized;
+    if(!initialized) {
+        for(unsigned n=0;n<256;++n)
+            for(unsigned bit=0;bit<8;++bit)spread[n]|=((n>>(7-bit))&1u)<<(4*bit);
+        initialized=1;
+    }
+    uint32_t colours[16];
+    for(unsigned n=0;n<16;++n)
+        colours[n]=0xff000000u|vga_colour_rgb(attr[video_enabled ? n&attr[PC_VGA_ATTR_COLOR_PLANE_ENABLE] : 0]);
+    unsigned scale=mode==PC_VIDEO_MODE_EGA_320X200 && adapter_vga &&
+        (crtc[PC_VGA_CRTC_MAX_SCAN_LINE]&0x80) ? 2 : 1;
+    unsigned compare=crtc[PC_VGA_CRTC_LINE_COMPARE]|((crtc[PC_VGA_CRTC_OVERFLOW]&16)<<4)|
+        (adapter_vga ? ((crtc[PC_VGA_CRTC_MAX_SCAN_LINE]&64)<<3) : 0);
+    unsigned initial=(crtc[PC_VGA_CRTC_START_ADDRESS_HIGH]<<8)|crtc[PC_VGA_CRTC_START_ADDRESS_LOW];
+    unsigned previous=UINT32_MAX,previous_pan=0;
+    for(int line=0;line<h;++line) {
+        unsigned physical=scanout ? (unsigned)line : (unsigned)line*scale;
+        unsigned row=scanout ? (unsigned)line/scale : (unsigned)line;
+        unsigned start=initial,pan=attr[PC_VGA_ATTR_PEL_PANNING]&7;
+        if(physical>compare) {
+            row=(physical-compare-1)/scale;start=0;
+            if(attr[PC_VGA_ATTR_MODE_CONTROL]&32)pan=0;
+        }
+        unsigned base=(uint16_t)(start+row*(2u*crtc[PC_VGA_CRTC_OFFSET]));
+        uint32_t *dest=out+line*w;
+        if(base==previous && pan==previous_pan) {memcpy(dest,dest-w,(size_t)w*4);continue;}
+        previous=base;previous_pan=pan;
+        unsigned x=0,skip=pan;
+        uint16_t offset=(uint16_t)base;
+        while(x<(unsigned)w) {
+            uint32_t packed=spread[planes[0][offset]]|(spread[planes[1][offset]]<<1)|
+                (spread[planes[2][offset]]<<2)|(spread[planes[3][offset]]<<3);
+            packed>>=skip*4;
+            unsigned count=8-skip;if(count>(unsigned)w-x)count=(unsigned)w-x;
+            for(unsigned n=0;n<count;++n) {dest[x++]=colours[packed&15];packed>>=4;}
+            skip=0;++offset;
+        }
+    }
+}
 /* Compose text glyphs or planar pixels at the active adapter's physical scanout size. */
 static void render_rgb(uint32_t *out, int scanout) {
     int w, h;
@@ -331,6 +415,7 @@ static void render_rgb(uint32_t *out, int scanout) {
         vga_scanout_dimensions(&w, &h);
     else
         vga_dimensions(&w, &h);
+    if(mode!=PC_VIDEO_MODE_TEXT_80X25) {render_planar_rgb(out,w,h,scanout);return;}
     int blink = ((pc_time_us() / 266667u) & 1) == 0;
     unsigned font_h = adapter_vga ? 16 : 14, cell_w = adapter_vga ? 9 : 8;
     farptr font = pc_font_pointer(font_h);

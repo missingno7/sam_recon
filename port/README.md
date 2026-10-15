@@ -76,6 +76,40 @@ SDL3 CMake package, without MinGW arguments. Linux execution was not tested here
 distribution enumeration with E_ACCESSDENIED. Windows-specific source calls are guarded by
 `_WIN32`; packaging the Windows zip requires a Windows build.
 
+Windows real-time play uses a D3D11 flip presenter on a separate thread, with vsync and one
+pending frame. It displays the latest completed emulated scanout and replaces intermediate
+frames when the monitor is slower than the emulated 70.0863 Hz display. A static frame remains in
+the compositor without repeated rendering. Vsync, GPU work and resizing never hold the PC
+thread or its timer interrupts; SDL window events and input stay on the main thread. This
+backend requires Windows 10 version 1803 or later and a D3D11-capable graphics driver. Other
+platforms retain the SDL renderer. Scaling, borders, fullscreen and filtering use the same
+presentation settings. Manual-clock scripts retain their existing rendering and timing.
+
+Host input pumping runs at most once per millisecond during productive work, and before every
+blocking wait. Windows keyboard/window messages wake those waits immediately; an attached
+controller bounds them to one millisecond. Hardware retrace loops can identify their requested
+status-bit edge through `pc_wait_video_status`, without changing any returned port value. The
+Windows wait uses a high-resolution waitable timer. Emulated time stops exactly at the next
+device edge, so an oversleep cannot hide the retrace pulse; no precision busy spin is needed.
+Later waits catch up against wall time, with lag beyond 100 ms rebasing wall pacing without
+skipping PC history. Productive work samples elapsed wall time at safe points while preserving
+pending device edges. The PIT and virtual display remain independent of host presentation.
+
+Speaker playback uses the audio device's native rate to avoid resampling and a 10 ms replay
+margin (previously 40 ms). Playback follows the emulated clock and holds the current PIT tone
+during a host stall. The requested device period is 256 frames; the actual period is
+device-dependent. WAV capture remains deterministic at 44.1 kHz. Opt-in `SAM_HOST_METRICS=FILE`
+writes cumulative wall-time diagnostics once per second: safe points, event pumps, sleeps,
+scanouts, presentations, audio work and late audible speaker changes. `tools/measure_host.py`
+measures total process CPU as a percentage of one core in real-time title/menu/gameplay/fade
+scripts; `tools/check_host.py` checks visible presentation and an intentionally stalled
+presenter against the unchanged boot images and IRQ counts. `host_latency` measures an SDL
+event reaching the BIOS keyboard ring while the PC is blocked.
+`SAM_DIAG_FLIPS=FILE` logs each CRTC start-address high-byte write with emulated and host time;
+`tools/check_timing.py FILE --start 10 --end 22` summarizes its cadence, including loading gaps.
+The raw-port `clock_edges` regression inserts host stalls longer than the retrace pulse and
+checks that every pulse and the PIT remain observable without a library wait hint.
+
 No DOS tools are needed: each episode's memory placement (PSP, DS, SS, heap) comes from
 [../config/port.json](../config/port.json); DATA offsets are computed by the translator. With the DOS
 toolchain present, `tools/pas2c_placement_check.py` recomputes the placement from the reference

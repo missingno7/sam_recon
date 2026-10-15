@@ -1,6 +1,7 @@
 SECRET AGENT - SDL3 PORT
 
 Unzip this folder somewhere writable. Keep sam.exe and SDL3.dll together.
+Requires Windows 10 version 1803 or later and a D3D11-capable graphics driver.
 Copy the original data for any episodes you own beside sam.exe, then run it.
 The original DOS EXE is not needed. No original episode data is in this package.
 
@@ -25,6 +26,8 @@ Presentation:
   You can resize the window. Fullscreen keeps the saved windowed size.
   These settings are in sam.json beside sam.exe, separate from SAMN.CFG.
   If this folder is read-only, settings cannot be saved; use a writable folder.
+  Presentation uses monitor vsync. The game keeps its original emulated timing;
+  a slow monitor or GPU does not hold its timer interrupts or keyboard input.
 
 Controls:
   Use the game's keyboard controls and its Keyboard Config menu as before.

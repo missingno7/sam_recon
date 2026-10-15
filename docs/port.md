@@ -77,8 +77,9 @@ deterministic and replayable:
 * The translator inserts `pc_poll()` at every loop back-edge and procedure entry. `pc_poll` runs
   every interrupt that is due and enabled (IF set): IRQ0 at the rate programmed into PIT channel 0
   (the game sets divisor 8519, 140.06 Hz) through the BIOS INT 8 model to INT 1Ch, and IRQ1 for
-  each queued key event through the INT 9 vector. It also presents a frame to SDL at the display
-  rate and pumps SDL events.
+  each queued key event through the INT 9 vector. It also captures a completed scanout at the
+  emulated display rate and pumps SDL events. Host event pumping may be throttled in real-time
+  runs, but runs before blocking; Windows input messages wake those waits immediately.
 * Interrupt vectors live in the emulated IVT. Code that exists only as C (BIOS handlers, the
   game's `interrupt` procedures, `ExitProc` handlers) gets a far address from
   `pc_register_code`; calling a far address dispatches to the C function.
@@ -86,9 +87,34 @@ deterministic and replayable:
   clear. The keyboard handler's chaining inline is translated to `pc_chain_interrupt(vector)`;
   its unreachable tail is dropped (documented in [runtime.md](runtime.md)). Any other `inline` is
   a translator error.
-* Port 3DAh retrace status follows a virtual display clock (70 Hz) so retrace waits pace like
+* Port 3DAh retrace status follows the VGA 400-line clock (25.175 MHz / 800 dots / 449 lines,
+  70.0863 Hz) so retrace waits pace like
   the original. A busy-wait that keeps polling without anything becoming due sleeps until the
   next due event instead of burning the CPU.
+* Real-time emulated time is latched at safe points. Productive work advances it by elapsed
+  host time, capped at the next pending PIT, frame, script or enabled key edge. A status reader
+  also caps it at the next relevant status transition. The caller observes that edge before
+  another sample can advance time. Idle waits move to an exact emulated edge and pace against
+  an absolute wall-time origin; they never adopt an overslept wall timestamp. Oversleep becomes
+  lag and subsequent waits catch up without sleeping while behind. Lag beyond 100 ms rebases
+  the wall origin, keeping the PC at its next edge rather than jumping across device history.
+  Windows uses a high-resolution waitable timer, without a precision busy spin or a global
+  timer-resolution change. The short retrace pulse remains lines 412-413, about 63.56 us.
+* Windows real-time presentation runs on a separate D3D11 thread: a replaceable latest-frame
+  mailbox feeds a vsynced flip swap chain with maximum frame latency one. It never runs game
+  code, delivers interrupts or owns emulated memory. The PC thread only copies completed RGB
+  frames under a short mutex; GPU work and vsync run outside that mutex. SDL window/input calls
+  stay on the main thread. Monitor refresh does not change the emulated display clock.
+  Manual-clock and lockstep timing are unchanged; other platforms use the SDL renderer.
+* A hardware-library status loop can supply its mask and desired bits to
+  `pc_wait_video_status`. In real time this selects the next relevant retrace edge, capped by
+  other device deadlines. Port reads still evaluate the existing virtual-clock model at the
+  actual read time. Manual-clock and differential runs treat the hint as an ordinary safe point.
+* The audio callback follows an atomic publication of the emulated clock with a 10 ms replay
+  margin. During host lag it holds the current PIT tone without consuming future device time;
+  the oscillator still runs at the host sample rate. A long host stall therefore cannot leave
+  audio permanently ahead after the clock rebases. Offline WAV replay retains the complete
+  timestamped event history at 44.1 kHz. Live playback uses the device's native sample rate.
 
 ### Differential-test clock
 

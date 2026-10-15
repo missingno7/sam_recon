@@ -1,8 +1,18 @@
 /* Real-mode memory, interrupt vectors, BIOS timer services, and safe-point scheduling. */
 #include "pc_internal.h"
+#include "host_metrics.h"
 #include <stdlib.h>
 #include <string.h>
 #include <limits.h>
+#include <stdatomic.h>
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <windows.h>
+static HANDLE host_timer;
+#endif
+static int video_wait;
+static uint8_t video_mask,video_wanted;
+
 
 uint8_t pc_mem[PC_MEM_SIZE];
 #ifdef SAM_LOCKSTEP
@@ -65,7 +75,20 @@ const char *pc_lockstep_code_name(farptr target) {
 }
 #endif
 static int manual_clock;
+int pc_wall_clock(void) {
+    return !manual_clock
+#ifdef SAM_LOCKSTEP
+        && !wait_clock
+#endif
+        ;
+}
 static uint64_t manual_us, wall_origin, event_us;
+/* Wall time paces the PC; it is not itself the PC clock. A safe-point sample
+   latches time, so the caller can observe a reached edge before the next sample.
+   Dropped oversleep becomes lag; later waits catch up against wall_origin. */
+static uint64_t real_us,real_sample;
+static _Atomic uint64_t playback_us;
+uint64_t pc_playback_time_us(void) {return atomic_load_explicit(&playback_us,memory_order_relaxed);}
 static int event_clock;
 static uint64_t pit_origin, pit_number = 1, pit_next;
 static uint32_t pit_divisor = 65536;
@@ -218,22 +241,67 @@ void pc_pic_eoi(void) {
 uint64_t pc_time_us(void) {
     if (event_clock)
         return event_us;
-    return manual_clock ? manual_us : SDL_GetTicksNS() / 1000u - wall_origin;
+    return manual_clock ? manual_us : real_us;
 }
 void pc_clock_manual(int on) {
     uint64_t now = pc_time_us();
     manual_clock = on != 0;
     manual_us = now;
-    if (!on)
-        wall_origin = SDL_GetTicksNS() / 1000u - now;
+    atomic_store_explicit(&playback_us,now,memory_order_relaxed);
+    if (!on) {
+        real_us=now;real_sample=SDL_GetTicksNS()/1000u;
+        wall_origin=real_sample-now;
+    }
 }
 void pc_clock_advance(uint64_t t) {
     if (!manual_clock || t < manual_us)
         fatal("invalid manual clock advance");
     manual_us = t;
+    atomic_store_explicit(&playback_us,t,memory_order_relaxed);
 }
 static uint64_t pit_deadline(void) {
     return pit_origin + (pit_number * pit_divisor * 1000000u + PC_PIT_HZ - 1) / PC_PIT_HZ;
+}
+/* Next edge of the devices whose changes must be observable at safe points. */
+static uint64_t device_deadline(void) {
+    uint64_t next=frame_next,script=pc_script_next();
+    if(script<next)next=script;
+    if(interrupt_flag && pit_next<next)next=pit_next;
+    if(interrupt_flag && key_count && keys[0].time<next)next=keys[0].time;
+    return next;
+}
+static uint64_t status_deadline(uint64_t now,int retrace) {
+    if(!retrace && !video_wait)return UINT64_MAX;
+    uint64_t tick=pc_video_line(now);
+    if(video_wait && video_mask==8) {
+        unsigned row=(unsigned)(tick%PC_VIDEO_LINES);
+        unsigned value=row>=412 && row<414 ? 8 : 0;
+        if(value==video_wanted)return now;
+        uint64_t edge=tick/PC_VIDEO_LINES*PC_VIDEO_LINES+(video_wanted ? 412 : 414);
+        if(edge<=tick)edge+=PC_VIDEO_LINES;
+        return pc_video_line_time(edge);
+    }
+    /* A raw status reader can depend on either bit, so preserve horizontal
+       display-disable transitions as well as every scanline/retrace boundary. */
+    uint64_t line_start=tick*PC_VIDEO_LINE_NUM;
+    uint64_t blank=(line_start+PC_VIDEO_LINE_NUM*4/5+PC_VIDEO_LINE_DEN-1)/PC_VIDEO_LINE_DEN;
+    return blank>now ? blank : pc_video_line_time(tick+1);
+}
+static void real_clock_at(uint64_t value,uint64_t wall) {
+    real_us=value;real_sample=wall;
+    atomic_store_explicit(&playback_us,value,memory_order_relaxed);
+    /* A debugger, suspended window or OS stall must not create unbounded
+       catch-up. Rebase wall pacing after 100 ms; never jump over PC edges. */
+    if(wall-wall_origin>value+100000u)wall_origin=wall-value;
+}
+static int real_clock_sample(uint64_t edge) {
+    uint64_t wall=SDL_GetTicksNS()/1000u;
+    uint64_t value=real_us+(wall-real_sample);
+    if(edge<real_us)edge=real_us; /* an event queued at the current safe point */
+    int reached=value>=edge && edge>real_us;
+    if(value>edge)value=edge;
+    real_clock_at(value,wall);
+    return reached;
 }
 /* Start a fresh IRQ0 schedule from the selected PIT divisor. */
 void pc_pit_schedule(uint32_t divisor) {
@@ -260,18 +328,65 @@ void pc_queue_key(uint64_t t, uint16_t scan, int down) {
         pc_queue_scan(t, (uint8_t)(scan >> 8));
     pc_queue_scan(t, (uint8_t)(scan | (down ? 0 : PC_SCAN_BREAK_BIT)));
 }
-/* Wait until this absolute emulated timestamp using the manual or SDL wall clock. */
+/* Reach an exact PC timestamp, pacing against wall time without adopting an
+   overslept timestamp. No busy spin is needed even for a 64-us retrace pulse. */
 void pc_wait_until(uint64_t when) {
     uint64_t now = pc_time_us();
     if (when <= now)
         return;
-    if (manual_clock)
+    HOST_COUNT(HM_WAIT,1);
+    HOST_COUNT(HM_WAIT_REQUEST_NS,(when-now)*1000u);
+    HOST_COUNT(HM_SHORT_WAIT,when-now<100);
+    uint64_t before=pc_metrics_enabled ? SDL_GetTicksNS() : 0;
+    if (manual_clock) {
         manual_us = when;
-    else
-        SDL_DelayNS((when - now) * 1000u);
+        atomic_store_explicit(&playback_us,when,memory_order_relaxed);
+    } else {
+        pc_host_pump_force();
+        uint64_t edge=device_deadline();if(edge<when)when=edge;
+        if(pc_host_has_controller() && real_us+1000<when)when=real_us+1000;
+        uint64_t wall=SDL_GetTicksNS()/1000u;
+        if(when>real_us && wall<wall_origin+when) {
+            uint64_t duration=(wall_origin+when-wall)*1000u;
+            int interrupted=0;
+#ifdef _WIN32
+            if(!host_timer)host_timer=CreateWaitableTimerExW(NULL,NULL,0x2,TIMER_ALL_ACCESS);
+            if(host_timer) {
+                LARGE_INTEGER due;due.QuadPart=-(LONGLONG)((duration+99)/100);
+                if(SetWaitableTimer(host_timer,&due,0,NULL,NULL,FALSE)) {
+                    DWORD result=pc_host_window_messages() ?
+                        MsgWaitForMultipleObjectsEx(1,&host_timer,INFINITE,QS_ALLINPUT,MWMO_INPUTAVAILABLE) :
+                        WaitForSingleObject(host_timer,INFINITE);
+                    if(result==WAIT_OBJECT_0+1)interrupted=1;
+                } else SDL_DelayNS(duration);
+            } else SDL_DelayNS(duration);
+#else
+            if(duration>1000000u) {duration=1000000u;interrupted=1;}
+            SDL_DelayNS(duration);
+#endif
+            if(interrupted) {
+                real_clock_sample(when);pc_host_pump_force();
+            } else real_clock_at(when,SDL_GetTicksNS()/1000u);
+        } else if(when>real_us) {
+            real_clock_at(when,wall); /* lag catch-up: reach the edge without sleeping */
+        }
+    }
+    if (pc_metrics_enabled) pc_metrics_add(HM_WAIT_NS,SDL_GetTicksNS()-before);
+}
+void pc_host_wait_shutdown(void) {
+#ifdef _WIN32
+    if(host_timer)CloseHandle(host_timer);
+    host_timer=NULL;
+#endif
+}
+void pc_wait_video_status(uint8_t mask,uint8_t wanted) {
+    if(!pc_wall_clock()) {pc_poll();return;}
+    video_wait=1;video_mask=mask;video_wanted=wanted;
+    pc_poll();video_wait=0;
 }
 /* Deliver scheduled DOS interrupts and host events at deterministic safe points. */
 void pc_poll(void) {
+    HOST_COUNT(HM_POLL,1);
     if (polling)
         return; /* generated handler entry/back-edge safe points */
     polling = 1;
@@ -290,6 +405,13 @@ void pc_poll(void) {
 #ifdef SAM_LOCKSTEP
     if (wait_clock && !wait_active) { polling=0; return; }
 #endif
+    int retrace=0,clock_reached=0;
+    if(pc_wall_clock()) {
+        retrace=pc_retrace_polling();
+        uint64_t next=device_deadline(),status=status_deadline(real_us,retrace);
+        if(status<next)next=status;
+        clock_reached=real_clock_sample(next);
+    }
     pc_host_pump();
     uint64_t target = pc_time_us();
     int work = 0;
@@ -327,7 +449,7 @@ void pc_poll(void) {
         } else if (kind == 3) {
             platform_present();
             ++frame_number;
-            frame_next = (frame_number * 1000000u + 69) / 70;
+            frame_next = pc_video_frame_time(frame_number);
         } else
             pc_script_dispatch(due);
         event_clock = 0;
@@ -337,7 +459,7 @@ void pc_poll(void) {
     else
         ++spins;
     last_poll = target;
-    if (spins >= 32
+    if (!clock_reached && (spins >= 32 || video_wait || (pc_wall_clock() && retrace))
 #ifdef SAM_LOCKSTEP
         && !wait_clock
 #endif
@@ -349,11 +471,16 @@ void pc_poll(void) {
             next = pit_next;
         if (interrupt_flag && key_count && keys[0].time < next)
             next = keys[0].time;
-        /* 3DA polling must also observe both horizontal blank/retrace phases. */
-        uint64_t line =
-            ((target * 70u * 449u / 1000000u + 1) * 1000000u + 70u * 449u - 1) / (70u * 449u);
-        if (pc_retrace_polling() && line < next)
-            next = line;
+        /* Unhinted reads keep the conservative scanline deadline. A masked
+           vertical-retrace reader may sleep to its actual requested edge. */
+        if(pc_wall_clock()) {
+            uint64_t status=status_deadline(target,retrace);
+            if(status<next)next=status;
+        } else {
+            uint64_t line=pc_video_line_time(pc_video_line(target)+1);
+            if(pc_retrace_polling() && line<next)next=line;
+        }
+        if(pc_wall_clock() && pc_host_has_controller() && target+1000<next)next=target+1000;
         pc_wait_until(next);
         spins = 0;
     }
@@ -363,6 +490,7 @@ void pc_poll(void) {
 }
 /* Implement the Pascal delay while polling interrupts and host events at safe points. */
 void pc_delay_ms(uint16_t ms) {
+    HOST_COUNT(HM_DELAY,1);
     uint64_t end = pc_time_us() + (uint64_t)ms * 1000u;
 #ifdef SAM_LOCKSTEP
     unsigned watchdog=0;
@@ -470,7 +598,7 @@ void pc_lockstep_wait(unsigned kind) {
         uint64_t next=pc_lockstep_deadline(), now=pc_time_us();
         if (kind==0x201 && now+8<next) next=now+8;
         if (kind==0x3da || kind==0x3ba) {
-            uint64_t line=((now*70u*449u/1000000u+1)*1000000u+70u*449u-1)/(70u*449u);
+            uint64_t line=pc_video_line_time(pc_video_line(now)+1);
             if (line<next) next=line;
         }
         pc_clock_advance(next); wait_streak=0;
@@ -499,6 +627,7 @@ void pc_load_program(const pc_program *layout, const uint8_t *image, size_t size
         fatal("invalid program placement");
     pc_host_program_reset();
     program = *layout;
+    video_wait=0;
 #ifdef SAM_LOCKSTEP
     cpu_aborted = 0;
 #endif
@@ -512,13 +641,15 @@ void pc_load_program(const pc_program *layout, const uint8_t *image, size_t size
     key_count = 0;
     eois = 0;
     wall_origin = SDL_GetTicksNS() / 1000u;
+    real_us=0;real_sample=wall_origin;
+    atomic_store_explicit(&playback_us,0,memory_order_relaxed);
     manual_us = 0;
     pit_origin = 0;
     pit_number = 1;
     pit_divisor = 65536;
     pit_next = pit_deadline();
     frame_number = 1;
-    frame_next = (1000000u + 69) / 70;
+    frame_next = pc_video_frame_time(1);
     spins = 0;
     last_poll = 0;
     pc_devices_reset();
@@ -587,6 +718,7 @@ int platform_run(void (*entry)(void)) {
     polling = event_clock = 0;
     frame = NULL;
     call_regs = NULL;
+    video_wait=0;
     return exit_status;
 }
 /* Model INT 21h/AH=4Ch by unwinding to the episode launcher with its DOS status. */

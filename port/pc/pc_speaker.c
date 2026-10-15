@@ -1,10 +1,11 @@
 /* Emulate PIT channel 2 and the PC speaker; SDL playback and WAV capture share one renderer. */
 #include "pc_internal.h"
+#include "host_metrics.h"
 #include <math.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define PC_AUDIO_STARTUP_DELAY_NS 40000000u
+#define PC_AUDIO_STARTUP_DELAY_NS 10000000u
 
 enum {
     WAV_PCM_FORMAT = 1,
@@ -29,6 +30,7 @@ static uint32_t audio_divisor = 65536;
 static uint8_t audio_gate;
 static double audio_phase;
 static float audio_filter;
+static unsigned playback_rate=PC_AUDIO_RATE;
 #ifdef SAM_LOCKSTEP
 size_t pc_lockstep_speaker(uint8_t *out) {
     if (!out) return event_count * 14;
@@ -80,6 +82,10 @@ void speaker_change(uint32_t d, uint8_t gate, int restart) {
         event_capacity = capacity;
     }
     speaker_event e = {pc_time_us(), d ? d : 65536, gate, (uint8_t)restart};
+    uint64_t played=sample_index*1000000u/playback_rate;
+    if(pc_metrics_enabled && played>e.us+2000 && (gate==3 || audio_gate==3)) {
+        pc_metrics_add(HM_AUDIO_LATE,1);pc_metrics_max(HM_AUDIO_LATE_US,played-e.us);
+    }
     /* Normally already ordered. IRQs held by CLI are inserted by their scheduled time. */
     size_t i = event_count++;
     while (i && events[i - 1].us > e.us) {
@@ -102,11 +108,11 @@ static double blep(double t, double increment) {
     return 0;
 }
 /* Replay timestamped PIT/speaker state into the filtered, band-limited audio stream. */
-void speaker_render(float *out, size_t n, uint64_t *sample, size_t *event, uint32_t *divisor,
-                    uint8_t *gate, double *phase, float *filter) {
+static void render_rate(float *out, size_t n, uint64_t *sample, size_t *event, uint32_t *divisor,
+                    uint8_t *gate, double *phase, float *filter,unsigned rate,uint64_t limit) {
     lock();
     for (size_t i = 0; i < n; ++i) {
-        uint64_t us = *sample * 1000000u / PC_AUDIO_RATE;
+        uint64_t us = *sample * 1000000u / rate;
         while (*event < event_count && events[*event].us <= us) {
             speaker_event e = events[(*event)++];
             *divisor = e.divisor;
@@ -114,7 +120,7 @@ void speaker_render(float *out, size_t n, uint64_t *sample, size_t *event, uint3
             if (e.restart)
                 *phase = 0;
         }
-        double increment = (double)PC_PIT_HZ / (*divisor * PC_AUDIO_RATE);
+        double increment = (double)PC_PIT_HZ / ((double)*divisor * rate);
         float level = 0;
         if (*gate & PC_SPEAKER_GATE_TIMER2) {
             *phase += increment;
@@ -130,17 +136,34 @@ void speaker_render(float *out, size_t n, uint64_t *sample, size_t *event, uint3
         }
         *filter += (level - *filter) * 0.45f;
         out[i] = *filter;
-        ++*sample;
+        /* A host stall can leave device time behind wall time. Keep producing
+           the current PIT tone, but never consume a state change from the PC's
+           future. Phase continues at the host sample rate as real PIT output
+           does while the CPU is stopped. WAV replay has no such limit. */
+        if(*sample<limit)++*sample;
     }
     unlock();
 }
+void speaker_render(float *out,size_t n,uint64_t *sample,size_t *event,uint32_t *divisor,
+                    uint8_t *gate,double *phase,float *filter) {
+    render_rate(out,n,sample,event,divisor,gate,phase,filter,PC_AUDIO_RATE,UINT64_MAX);
+}
+void speaker_render_live(float *out,size_t n) {
+    uint64_t available=pc_playback_time_us();
+    uint64_t limit=available>10000u ? (available-10000u)*playback_rate/1000000u : 0;
+    render_rate(out,n,&sample_index,&audio_event,&audio_divisor,&audio_gate,
+                &audio_phase,&audio_filter,playback_rate,limit);
+}
 /* Feed SDL while keeping its startup buffering from advancing the emulated speaker timeline. */
 static void SDLCALL fill_audio(void *user, SDL_AudioStream *s, int needed, int total) {
+    HOST_COUNT(HM_AUDIO,1);
+    HOST_COUNT(HM_AUDIO_FRAMES,needed>0 ? (unsigned)needed/sizeof(float) : 0);
+    uint64_t before=pc_metrics_enabled ? SDL_GetTicksNS() : 0;
     (void)user;
     (void)total;
     float buffer[512];
     int count = needed / (int)sizeof(float);
-    /* A fixed 40ms replay delay absorbs a safe point between device changes. */
+    /* A 10ms replay delay leaves time for safe-point device delivery. */
     if (SDL_GetTicksNS() - audio_origin < PC_AUDIO_STARTUP_DELAY_NS) {
         memset(buffer, 0, sizeof buffer);
         while (count > 0) {
@@ -148,17 +171,18 @@ static void SDLCALL fill_audio(void *user, SDL_AudioStream *s, int needed, int t
             SDL_PutAudioStreamData(s, buffer, n * (int)sizeof(float));
             count -= n;
         }
+        if (pc_metrics_enabled) pc_metrics_add(HM_AUDIO_NS,SDL_GetTicksNS()-before);
         return;
     }
     while (count > 0) {
         int n = count < 512 ? count : 512;
-        speaker_render(buffer, (size_t)n, &sample_index, &audio_event, &audio_divisor, &audio_gate,
-                       &audio_phase, &audio_filter);
+        speaker_render_live(buffer,(size_t)n);
         SDL_PutAudioStreamData(s, buffer, n * (int)sizeof(float));
         count -= n;
     }
+    if (pc_metrics_enabled) pc_metrics_add(HM_AUDIO_NS,SDL_GetTicksNS()-before);
 }
-/* Create the mono 44.1 kHz SDL stream after resetting the emulated speaker history. */
+/* Use the device's native sample rate for playback; WAV captures remain 44.1 kHz. */
 int speaker_init(int enabled) {
     mutex = SDL_CreateMutex();
     if (!mutex)
@@ -166,8 +190,18 @@ int speaker_init(int enabled) {
     speaker_reset();
     if (!enabled)
         return 1;
-    SDL_AudioSpec spec = {SDL_AUDIO_F32, 1, PC_AUDIO_RATE};
+    SDL_AudioSpec native;
+    int frames=0;
+    playback_rate=PC_AUDIO_RATE;
+    if(SDL_GetAudioDeviceFormat(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK,&native,&frames) && native.freq>0)
+        playback_rate=(unsigned)native.freq;
+    SDL_SetHint(SDL_HINT_AUDIO_DEVICE_SAMPLE_FRAMES,"256");
+    SDL_AudioSpec spec = {SDL_AUDIO_F32, 1, (int)playback_rate};
     stream = SDL_OpenAudioDeviceStream(SDL_AUDIO_DEVICE_DEFAULT_PLAYBACK, &spec, fill_audio, NULL);
+    if(pc_metrics_enabled && stream) {
+        SDL_GetAudioDeviceFormat(SDL_GetAudioStreamDevice(stream),&native,&frames);
+        fprintf(stderr,"Host audio: rate=%u device_frames=%d replay_ms=10\n",playback_rate,frames);
+    }
     return stream && SDL_ResumeAudioStreamDevice(stream);
 }
 /* Close SDL's audio stream and release the timestamped speaker history. */

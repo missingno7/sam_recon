@@ -24,7 +24,8 @@ for source in sorted(CORPUS.glob('*.PAS')):
     args=[gcc,'-std=c11','-Wall','-Wextra','-Wpedantic','-O'+optimization,'-fno-strict-aliasing',
           '-I',str(WORK/'port'),'-I',str(WORK/'port/tp'),'-I',str(work),
           str(WORK/'port/tests/corpus_runner.c'),*[str(p) for p in work.glob('*.c')],
-          str(build/'libsam_platform.a'),'-L',sdl+'/lib','-lSDL3','-lm','-o',str(work/'native.exe')]
+          str(build/'libsam_platform.a'),'-L',sdl+'/lib','-lSDL3',
+          '-ld3d11','-ldxgi','-ldxguid','-ld3dcompiler','-lm','-o',str(work/'native.exe')]
     compiled=subprocess.run(args,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
     (work/'gcc.log').write_bytes(compiled.stdout)
     if compiled.returncode:raise RuntimeError(compiled.stdout.decode(errors='replace'))

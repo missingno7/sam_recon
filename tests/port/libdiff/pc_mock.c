@@ -438,3 +438,6 @@ const char *libdiff_code_name(farptr address)
             return registered_code[i].name;
     return NULL;
 }
+
+/* The differential/manual double retains the old one-poll wait behavior. */
+void pc_wait_video_status(uint8_t mask,uint8_t wanted) { (void)mask; (void)wanted; pc_poll(); }

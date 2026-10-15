@@ -182,3 +182,6 @@ void tp_GotoXY(uint8_t x,uint8_t y) { fprintf(stderr,"tp_GotoXY %u %u\n",x,y); }
 void tp_ClrScr(void) { fputs("tp_ClrScr\n",stderr); }
 void tp_TextColor(uint8_t c) { fprintf(stderr,"tp_TextColor %u\n",c); }
 void tp_TextBackground(uint8_t c) { fprintf(stderr,"tp_TextBackground %u\n",c); }
+
+/* The differential/manual double retains the old one-poll wait behavior. */
+void pc_wait_video_status(uint8_t mask,uint8_t wanted) { (void)mask; (void)wanted; pc_poll(); }

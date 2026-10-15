@@ -124,7 +124,7 @@ static void wait_retrace_level(int set)
         value = pc_inb(input_status_1_port);
         if (((value & vertical_retrace_bit) != 0) == (set != 0))
             return;
-        pc_poll();
+        pc_wait_video_status(vertical_retrace_bit,set ? vertical_retrace_bit : 0);
     }
 }
 

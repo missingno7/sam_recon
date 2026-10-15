@@ -1,6 +1,8 @@
 /* SDL3 display/input backend; host key and controller events become DOS hardware events. */
 #include "pc_internal.h"
 #include "settings.h"
+#include "host_metrics.h"
+#include "host_video.h"
 #include <ctype.h>
 #include <stdlib.h>
 #include <string.h>
@@ -12,6 +14,11 @@ static SDL_Gamepad *gamepad;
 static SDL_Joystick *joystick;
 static int texture_w, texture_h, quit_requested, initialised, deterministic_script, physical_shots;
 static uint32_t pixels[720 * 480];
+static uint32_t next_pixels[720 * 480];
+static uint32_t shot_pixels[720 * 480];
+static int captured_w,captured_h;
+static uint64_t next_pump,frame_generation;
+static int native_video;
 static char wav_path[1024];
 static char settings_path[2048];
 static pc_settings presentation;
@@ -395,8 +402,18 @@ static void open_controller(SDL_JoystickID id) {
 void pc_host_pump(void) {
     if (!initialised)
         return;
+    uint64_t wall=SDL_GetTicksNS();
+    if(pc_wall_clock() && wall<next_pump)return;
+    next_pump=wall+1000000u;
+    HOST_COUNT(HM_PUMP,1);
+    uint64_t before=pc_metrics_enabled ? SDL_GetTicksNS() : 0;
+    if (pc_metrics_enabled) pc_metrics_tick();
     SDL_Event e;
+    HOST_COUNT(HM_SDL_POLL,1);
     while (SDL_PollEvent(&e)) {
+        HOST_COUNT(HM_SDL_POLL,1);
+        if(native_video && e.type>=SDL_EVENT_WINDOW_FIRST && e.type<=SDL_EVENT_WINDOW_LAST)
+            pc_video_redraw();
         uint64_t now = pc_time_us();
         if (e.type == SDL_EVENT_QUIT)
             quit_requested = 1;
@@ -478,14 +495,39 @@ void pc_host_pump(void) {
         }
         pc_joystick_set(1, axes, buttons);
     }
+    if (pc_metrics_enabled) pc_metrics_add(HM_PUMP_NS,SDL_GetTicksNS()-before);
 }
-/* Render the emulated adapter scanout through SDL's integer-scaled window. */
+void pc_host_pump_force(void) { next_pump=0;pc_host_pump(); }
+int pc_host_has_controller(void) { return gamepad || joystick; }
+int pc_host_window_messages(void) { return !headless_mode; }
+/* Capture completed emulated scanouts; host presentation owns its pacing. */
 void platform_present(void) {
+    HOST_COUNT(HM_SCANOUT,1);
+    if(headless_mode)return;
+    if(native_video) {
+        int w,h;vga_scanout_dimensions(&w,&h);
+        uint64_t before=pc_metrics_enabled ? SDL_GetTicksNS() : 0;
+        if(!frame_generation || vga_scanout_changed()) {
+            vga_render_scanout_rgb(next_pixels);
+            /* The game also draws into hidden pages. Those writes invalidate
+               the adapter cache but need no upload/present if scanout is equal. */
+            if(!frame_generation || captured_w!=w || captured_h!=h ||
+               memcmp(pixels,next_pixels,(size_t)w*h*4)) {
+                memcpy(pixels,next_pixels,(size_t)w*h*4);++frame_generation;
+                captured_w=w;captured_h=h;
+            }
+        }
+        if(pc_metrics_enabled)pc_metrics_add(HM_RENDER_NS,SDL_GetTicksNS()-before);
+        pc_video_submit(pixels,w,h,vga_border_rgb(),frame_generation,&presentation);
+        return;
+    }
     if (!renderer)
         return;
     int w, h;
+    uint64_t before=pc_metrics_enabled ? SDL_GetTicksNS() : 0;
     vga_scanout_dimensions(&w, &h);
     vga_render_scanout_rgb(pixels);
+    if (pc_metrics_enabled) pc_metrics_add(HM_RENDER_NS,SDL_GetTicksNS()-before);
     if (!texture || texture_w != w || texture_h != h) {
         if (texture)
             SDL_DestroyTexture(texture);
@@ -512,20 +554,24 @@ void platform_present(void) {
     SDL_RenderClear(renderer);
     SDL_FRect dest = {(float)border_w, (float)border_h, (float)beam_w, (float)beam_h};
     SDL_RenderTexture(renderer, texture, NULL, &dest);
+    before=pc_metrics_enabled ? SDL_GetTicksNS() : 0;
     SDL_RenderPresent(renderer);
+    HOST_COUNT(HM_PRESENT,1);
+    if (pc_metrics_enabled) pc_metrics_add(HM_PRESENT_NS,SDL_GetTicksNS()-before);
 }
 /* Save either the visible 320x200 virtual frame or physical VGA scanout as a PNG. */
 int platform_screenshot(const char *path) {
+    if(native_video)pc_video_redraw();
     int w, h;
     if (physical_shots) {
         vga_scanout_dimensions(&w, &h);
-        vga_render_scanout_rgb(pixels);
+        vga_render_scanout_rgb(shot_pixels);
     } else {
         vga_dimensions(&w, &h);
-        vga_render_rgb(pixels);
+        vga_render_rgb(shot_pixels);
     }
     SDL_Surface *s =
-        SDL_CreateSurfaceFrom(w, h, SDL_PIXELFORMAT_ARGB8888, pixels, w * (int)sizeof(uint32_t));
+        SDL_CreateSurfaceFrom(w, h, SDL_PIXELFORMAT_ARGB8888, shot_pixels, w * (int)sizeof(uint32_t));
     if (!s)
         return 0;
     int ok = SDL_SavePNG(s, path);
@@ -534,6 +580,7 @@ int platform_screenshot(const char *path) {
 }
 /* Parse launcher options, initialise SDL devices, and choose scripted or wall-clock timing. */
 int platform_init(int argc, char **argv) {
+    pc_metrics_init(getenv("SAM_HOST_METRICS"));
     int headless = 0, audio = 1, script_clock = 0, realtime_script = 0;
     const char *script_path = NULL;
     const char *base = SDL_GetBasePath();
@@ -551,6 +598,8 @@ int platform_init(int argc, char **argv) {
     if (pc_settings_load(settings_path, &presentation) < 0)
         fprintf(stderr, "Invalid settings in %s; using defaults.\n", settings_path);
     settings_dirty = program_started = 0;
+    next_pump=frame_generation=0;native_video=0;
+    captured_w=captured_h=0;
     wav_path[0] = 0;
     quit_requested = 0;
     script_cursor = 0;
@@ -612,11 +661,21 @@ int platform_init(int argc, char **argv) {
                               SDL_WINDOW_RESIZABLE | (headless ? SDL_WINDOW_HIDDEN : 0));
     if (!window)
         goto fail;
+    if(pc_metrics_enabled && !headless) {
+        const SDL_DisplayMode *mode=SDL_GetCurrentDisplayMode(SDL_GetDisplayForWindow(window));
+        if(mode)fprintf(stderr,"Host display: %dx%d %.3f Hz\n",mode->w,mode->h,mode->refresh_rate);
+    }
     SDL_SetWindowMinimumSize(window, 320, 200);
     if (!headless && presentation.fullscreen && !SDL_SetWindowFullscreen(window, true)) goto fail;
-    renderer = SDL_CreateRenderer(window, NULL);
-    if (!renderer)
-        goto fail;
+    deterministic_script = script_clock && !realtime_script;
+    if(!headless && !deterministic_script) {
+        native_video=pc_video_start(window);
+        if(native_video<0)goto fail;
+    }
+    if(!headless && !native_video) {
+        renderer = SDL_CreateRenderer(window, NULL);
+        if (!renderer)goto fail;
+    }
     if (!speaker_init(audio))
         goto fail;
     if (script_path && !load_script(script_path))
@@ -636,6 +695,9 @@ fail:
 }
 /* Save the requested audio capture and release SDL/input/device state. */
 void platform_shutdown(void) {
+    pc_video_stop();native_video=0;
+    vga_diagnostics_close();
+    pc_host_wait_shutdown();
     if (initialised && settings_dirty && !pc_settings_save(settings_path, &presentation))
         fprintf(stderr, "Cannot save presentation settings to %s\n", settings_path);
     if (*wav_path && !pc_speaker_capture(wav_path, pc_time_us()))
@@ -661,5 +723,6 @@ void platform_shutdown(void) {
     script = NULL;
     script_count = script_cursor = 0;
     initialised = 0;
+    pc_metrics_shutdown();
     SDL_Quit();
 }
