@@ -1,0 +1,149 @@
+{
+  "description": "Island route into a mission, then movement, jump and fire; diagnostic after the sound-policy divergence.",
+  "required_routines": [
+    "ShowApogeeSplash",
+    "ShowTitleAndCredits",
+    "RunMainMenu",
+    "LoadLevelMap",
+    "MovePlayerAndCamera",
+    "UpdatePlayerJump"
+  ],
+  "max_time_us": 30000000,
+  "frames": 140,
+  "checkpoints": [
+    "InstallGameHandlers",
+    "LoadGameConfig",
+    "ShowApogeeSplash",
+    "ShowTitleAndCredits",
+    "RunMainMenu",
+    "LoadLevelMap"
+  ],
+  "screenshots": [
+    1,
+    24,
+    60,
+    90,
+    140
+  ],
+  "events": [
+    {
+      "after": "ShowApogeeSplash",
+      "scan": [
+        57
+      ],
+      "delay_waits": 422
+    },
+    {
+      "after": "ShowApogeeSplash",
+      "scan": [
+        185
+      ],
+      "delay_waits": 430
+    },
+    {
+      "after": "ShowTitleAndCredits",
+      "scan": [
+        57
+      ],
+      "delay_waits": 295
+    },
+    {
+      "after": "ShowTitleAndCredits",
+      "scan": [
+        185
+      ],
+      "delay_waits": 301
+    },
+    {
+      "after": "RunMainMenu",
+      "scan": [
+        49
+      ],
+      "delay_waits": 167
+    },
+    {
+      "after": "RunMainMenu",
+      "scan": [
+        177
+      ],
+      "delay_waits": 177
+    },
+    {
+      "frame": 2,
+      "scan": [
+        77
+      ]
+    },
+    {
+      "frame": 16,
+      "scan": [
+        205
+      ]
+    },
+    {
+      "frame": 24,
+      "scan": [
+        29,
+        77
+      ]
+    },
+    {
+      "frame": 26,
+      "scan": [
+        157,
+        56
+      ]
+    },
+    {
+      "frame": 28,
+      "scan": [
+        184
+      ]
+    },
+    {
+      "frame": 44,
+      "scan": [
+        205
+      ]
+    },
+    {
+      "frame": 56,
+      "scan": [
+        75
+      ]
+    },
+    {
+      "frame": 66,
+      "scan": [
+        203
+      ]
+    }
+  ],
+  "required_states": [
+    {
+      "name": "entered mission",
+      "field": "CurrentLevelNumber",
+      "min": 2
+    },
+    {
+      "name": "jumped",
+      "field": "PlayerJumping",
+      "equals": 1
+    },
+    {
+      "name": "fired a shot",
+      "field": "PlayerAmmo",
+      "max": 4
+    },
+    {
+      "name": "collected ammunition",
+      "field": "PlayerAmmo",
+      "min": 9
+    },
+    {
+      "name": "collected key three",
+      "field": "HasKeyThree",
+      "equals": 1
+    }
+  ]
+}

@@ -1,0 +1,8 @@
+{
+  "description": "Boot checkpoints; no input and no state alteration.",
+  "max_time_us": 4000000,
+  "frames": 2,
+  "checkpoints": ["InstallGameHandlers", "LoadGameConfig", "ShowApogeeSplash", "ShowTitleAndCredits"],
+  "screenshots": [1, 2],
+  "events": []
+}

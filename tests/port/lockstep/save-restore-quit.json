@@ -1,0 +1,252 @@
+{
+  "description": "New game -> save slot 0 -> move -> restore saved position -> quit to DOS.",
+  "required_routines": [
+    "ShowApogeeSplash",
+    "ShowTitleAndCredits",
+    "RunMainMenu",
+    "LoadLevelMap",
+    "MovePlayerAndCamera",
+    "ShowSaveGameMenu",
+    "WriteSavedGame",
+    "ShowRestoreGameMenu",
+    "ReadSavedGame",
+    "ShowQuitDestinationMenu",
+    "SaveGameConfig"
+  ],
+  "max_time_us": 30000000,
+  "frames": 40,
+  "checkpoints": [
+    "InstallGameHandlers",
+    "LoadGameConfig",
+    "ShowApogeeSplash",
+    "ShowTitleAndCredits",
+    "RunMainMenu",
+    "LoadLevelMap",
+    "WriteSavedGame",
+    "ReadSavedGame",
+    "SaveGameConfig"
+  ],
+  "screenshots": [
+    1,
+    10,
+    20,
+    30
+  ],
+  "events": [
+    {
+      "after": "ShowApogeeSplash",
+      "scan": [
+        57
+      ],
+      "delay_waits": 422
+    },
+    {
+      "after": "ShowApogeeSplash",
+      "scan": [
+        185
+      ],
+      "delay_waits": 430
+    },
+    {
+      "after": "ShowTitleAndCredits",
+      "scan": [
+        57
+      ],
+      "delay_waits": 295
+    },
+    {
+      "after": "ShowTitleAndCredits",
+      "scan": [
+        185
+      ],
+      "delay_waits": 301
+    },
+    {
+      "after": "RunMainMenu",
+      "scan": [
+        49
+      ],
+      "delay_waits": 167
+    },
+    {
+      "after": "RunMainMenu",
+      "scan": [
+        177
+      ],
+      "delay_waits": 177
+    },
+    {
+      "frame": 10,
+      "scan": [
+        1
+      ]
+    },
+    {
+      "after": "RunGameOptionsMenu",
+      "visit": 1,
+      "delay_waits": 4,
+      "scan": [
+        129
+      ]
+    },
+    {
+      "after": "RunGameOptionsMenu",
+      "visit": 1,
+      "delay_waits": 200,
+      "scan": [
+        31
+      ]
+    },
+    {
+      "after": "RunGameOptionsMenu",
+      "visit": 1,
+      "delay_waits": 210,
+      "scan": [
+        159
+      ]
+    },
+    {
+      "frame": 20,
+      "scan": [
+        1
+      ]
+    },
+    {
+      "after": "RunGameOptionsMenu",
+      "visit": 2,
+      "delay_waits": 4,
+      "scan": [
+        129
+      ]
+    },
+    {
+      "after": "RunGameOptionsMenu",
+      "visit": 2,
+      "delay_waits": 200,
+      "scan": [
+        19
+      ]
+    },
+    {
+      "after": "RunGameOptionsMenu",
+      "visit": 2,
+      "delay_waits": 210,
+      "scan": [
+        147
+      ]
+    },
+    {
+      "frame": 30,
+      "scan": [
+        1
+      ]
+    },
+    {
+      "after": "RunGameOptionsMenu",
+      "visit": 3,
+      "delay_waits": 4,
+      "scan": [
+        129
+      ]
+    },
+    {
+      "after": "RunGameOptionsMenu",
+      "visit": 3,
+      "delay_waits": 200,
+      "scan": [
+        16
+      ]
+    },
+    {
+      "after": "RunGameOptionsMenu",
+      "visit": 3,
+      "delay_waits": 210,
+      "scan": [
+        144
+      ]
+    },
+    {
+      "after": "ShowSaveGameMenu",
+      "delay_waits": 100,
+      "scan": [
+        11
+      ]
+    },
+    {
+      "after": "ShowSaveGameMenu",
+      "delay_waits": 110,
+      "scan": [
+        139
+      ]
+    },
+    {
+      "after": "WriteSavedGame",
+      "delay_waits": 100,
+      "scan": [
+        28
+      ]
+    },
+    {
+      "after": "WriteSavedGame",
+      "delay_waits": 110,
+      "scan": [
+        156
+      ]
+    },
+    {
+      "after": "ShowRestoreGameMenu",
+      "delay_waits": 100,
+      "scan": [
+        11
+      ]
+    },
+    {
+      "after": "ShowRestoreGameMenu",
+      "delay_waits": 110,
+      "scan": [
+        139
+      ]
+    },
+    {
+      "after": "ShowQuitDestinationMenu",
+      "delay_waits": 100,
+      "scan": [
+        32
+      ]
+    },
+    {
+      "after": "ShowQuitDestinationMenu",
+      "delay_waits": 110,
+      "scan": [
+        160
+      ]
+    },
+    {
+      "frame": 14,
+      "scan": [
+        77
+      ]
+    },
+    {
+      "frame": 18,
+      "scan": [
+        205
+      ]
+    }
+  ],
+  "expect_exit": true,
+  "required_states": [
+    {
+      "name": "moved after saving",
+      "field": "player_x",
+      "frame": 19,
+      "differs_from_frame": 1
+    },
+    {
+      "name": "restored saved position",
+      "field": "player_x",
+      "frame": 21,
+      "equals_frame": 1
+    }
+  ]
+}

@@ -612,9 +612,9 @@ static farptr copy_filename_to_display_stack(farptr filename)
         pc_wr8(segment, (uint16_t)(target + i),
                read_far8(filename, (uint16_t)(i + 1u)));
     pc_wr8(segment, (uint16_t)(target + length), 0);
-    /* The assembly rewrites its by-reference filename argument to this local. */
-    pc_wr16(segment, (uint16_t)(entry_sp + 10u), target);
-    pc_wr16(segment, (uint16_t)(entry_sp + 12u), segment);
+    /* The assembly also rewrites its discarded argument cells. C has no DOS
+       call frame here: pc_program.sp is the INITIAL stack top (the heap starts
+       immediately above it), so those argument stores must not be projected. */
     return FP(segment, target);
 }
 

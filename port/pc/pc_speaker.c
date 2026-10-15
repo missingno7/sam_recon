@@ -29,6 +29,18 @@ static uint32_t audio_divisor = 65536;
 static uint8_t audio_gate;
 static double audio_phase;
 static float audio_filter;
+#ifdef SAM_LOCKSTEP
+size_t pc_lockstep_speaker(uint8_t *out) {
+    if (!out) return event_count * 14;
+    uint8_t *p = out;
+    for (size_t i = 0; i < event_count; ++i) {
+        memcpy(p, &events[i].us, 8); p += 8;
+        memcpy(p, &events[i].divisor, 4); p += 4;
+        *p++ = events[i].gate; *p++ = events[i].restart;
+    }
+    return (size_t)(p - out);
+}
+#endif
 /* Guard shared history while the SDL callback renders samples on its audio thread. */
 static void lock(void) {
     if (mutex)

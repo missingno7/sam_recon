@@ -10,7 +10,7 @@ tests/port/libdiff/. Both sides share one EGA model, BIOS/DOS service model, CMO
 scripted port reads. Comparison rules:
 
 * memory: the whole 1 MB, except the routine's own stack scratch (SS:0 up to entry SP plus the
-  parameter bytes it pops); C code-segment state is projected onto the matching assembly
+  four-byte RETF frame and the parameter bytes it pops); C code-segment state is projected onto the matching assembly
   state symbols and compared;
 * code addresses stored in data (Genus decoder pointers) are compared by name;
 * function results at their Pascal widths; INT calls as an ordered list of service, the input
@@ -1140,8 +1140,8 @@ def ranges_for_difference(left: bytes, right: bytes) -> tuple[int, list[tuple[in
 
 def stack_scratch_exclusion(stack_segment: int, entry_sp: int,
                             parameter_pop_bytes: int) -> list[tuple[int, int]]:
-    """Return SS:[0000, entry SP + callee-popped arguments) as linear ranges."""
-    end = (entry_sp + parameter_pop_bytes) & 0xffff
+    """Return SS:[0000, entry SP + RETF frame + callee-popped arguments) as linear ranges."""
+    end = (entry_sp + 4 + parameter_pop_bytes) & 0xffff
     start = ((stack_segment << 4) & 0xfffff)
     if end == 0:
         return []
@@ -1628,6 +1628,14 @@ def test_screen_files(selected_name: str | None = None) -> int:
         c_memory = bytes(dll_memory)
         c_port_reads, c_ports, c_interrupts = event_tuples(dll)
         c_vga = vga_snapshot(dll)
+        # pc.h exposes the program's INITIAL SP, not a live C call's SP.
+        # A second call with that binding must not write beyond STACK into HEAP.
+        guard_address=(ss<<4)+stack_top
+        guard_before=bytes(dll_memory[guard_address:guard_address+16])
+        dll.libdiff_set_program(ds,ss,stack_top)
+        dll.PcxDisplayFile((ds<<16)|string_offset,1,0,0)
+        if bytes(dll_memory[guard_address:guard_address+16])!=guard_before:
+            raise RuntimeError('PcxDisplayFile wrote beyond initial STACK top into HEAP')
 
         dll.libdiff_reset()
         ctypes.memmove(dll_memory, bytes(initial), MEM_SIZE)

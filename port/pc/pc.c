@@ -5,12 +5,44 @@
 #include <limits.h>
 
 uint8_t pc_mem[PC_MEM_SIZE];
+#ifdef SAM_LOCKSTEP
+static pc_external_fn external_code;
+static pc_external_irq_fn external_irq;
+static pc_observer_fn observer;
+static int observe_keyboard;
+static int cpu_aborted;
+int pc_lockstep_aborted(void) { return cpu_aborted; }
+void pc_lockstep_keyboard_observe(int enabled) { observe_keyboard = enabled; }
+void pc_lockstep_external(pc_external_fn fn) { external_code = fn; }
+void pc_lockstep_external_irq(pc_external_irq_fn fn) { external_irq = fn; }
+void pc_lockstep_observer(pc_observer_fn fn) { observer = fn; }
+void pc_lockstep_trace(const char *name) {
+    if (observer && observer(1, name)) pc_terminate(0);
+}
+void pc_lockstep_store(const char *name) {
+    if (observer && observer(2, name)) pc_terminate(0);
+}
+void pc_lockstep_before_store(void) {
+    if (observer && observer(3, NULL)) pc_terminate(0);
+}
+void pc_lockstep_keypoll(void) {
+    if (observe_keyboard && observer && observer(4, NULL)) pc_terminate(0);
+}
+#endif
 static pc_program program;
 static struct {
     pc_code_fn fn;
     const char *name;
 } code[2048];
 static unsigned code_count;
+#ifdef SAM_LOCKSTEP
+int pc_lockstep_registered(farptr target) {
+    uint32_t a = PC_LINEAR(FP_SEG(target), FP_OFF(target));
+    return a >= PC_CODE_REGISTRY_LINEAR &&
+           a < PC_CODE_REGISTRY_LINEAR + code_count * PC_CODE_REGISTRY_SLOT_SIZE &&
+           !(a & PC_CODE_REGISTRY_SLOT_ALIGNMENT_MASK);
+}
+#endif
 static int interrupt_flag = 1, polling;
 static uint64_t counts[256], eois;
 static pc_regs *call_regs;
@@ -21,6 +53,17 @@ typedef struct irq_frame {
 static irq_frame *frame;
 static jmp_buf exit_jump;
 static int exit_ready, exit_status;
+#ifdef SAM_LOCKSTEP
+static int wait_clock, wait_active;
+static unsigned wait_previous, wait_streak;
+int pc_lockstep_enabled(void) { return wait_clock; }
+int pc_lockstep_original(void) { return external_code!=NULL; }
+void pc_lockstep_mode(int enabled) { wait_clock=enabled; wait_previous=wait_streak=0; }
+const char *pc_lockstep_code_name(farptr target) {
+    if (!pc_lockstep_registered(target)) return NULL;
+    return code[(PC_LINEAR(FP_SEG(target),FP_OFF(target))-PC_CODE_REGISTRY_LINEAR)/PC_CODE_REGISTRY_SLOT_SIZE].name;
+}
+#endif
 static int manual_clock;
 static uint64_t manual_us, wall_origin, event_us;
 static int event_clock;
@@ -72,6 +115,9 @@ uint16_t pc_rd16(uint16_t s, uint16_t o) {
 void pc_wr8(uint16_t s, uint16_t o, uint8_t v) {
     uint32_t a = PC_LINEAR(s, o);
     *pc_host(s, o) = v;
+#ifdef SAM_LOCKSTEP
+    if (external_code) pc_lockstep_cpu_host_write(s,o,&v,1,"platform pc_wr8");
+#endif
     /* Mirror writes to the first 64 KiB above 1 MiB for 20-bit wrapping. */
     if (a < PC_REAL_MODE_LOW_ALIAS_END)
         pc_mem[PC_REAL_MODE_WRAP_START + a] = v;
@@ -94,6 +140,11 @@ farptr pc_register_code(pc_code_fn fn, const char *name) {
         fatal("code registry full");
     code[code_count].fn = fn;
     code[code_count].name = name;
+#ifdef SAM_LOCKSTEP
+    /* Original CPU clients call the C handler at this slot, then execute this
+       synthetic BIOS IRET. No original BIOS or program bytes are embedded. */
+    pc_mem[PC_CODE_REGISTRY_LINEAR + code_count * PC_CODE_REGISTRY_SLOT_SIZE] = 0xcf;
+#endif
     return FP(PC_BIOS_ROM_SEGMENT,
               PC_CODE_REGISTRY_BASE + code_count++ * PC_CODE_REGISTRY_SLOT_SIZE);
 }
@@ -106,6 +157,9 @@ void pc_call_far(farptr target) {
     if (a < PC_CODE_REGISTRY_LINEAR ||
         a >= PC_CODE_REGISTRY_LINEAR + code_count * PC_CODE_REGISTRY_SLOT_SIZE ||
         ((a - PC_CODE_REGISTRY_LINEAR) & PC_CODE_REGISTRY_SLOT_ALIGNMENT_MASK)) {
+#ifdef SAM_LOCKSTEP
+        if (external_code) { external_code(target); return; }
+#endif
         fprintf(stderr, "PC: unregistered far call %04x:%04x\n", FP_SEG(target), FP_OFF(target));
         abort();
     }
@@ -123,6 +177,15 @@ int pc_interrupts_enabled(void) {
 /* Deliver an interrupt through the IVT with IF clear, restoring the caller's flags on IRET. */
 void pc_int(uint8_t n) {
     int saved = interrupt_flag;
+#ifdef SAM_LOCKSTEP
+    if (external_irq && polling && !frame && (n == 8 || n == 9)) {
+        interrupt_flag = 0;
+        ++counts[n];
+        external_irq(n);
+        interrupt_flag = saved;
+        return;
+    }
+#endif
     irq_frame local;
     local.previous = frame;
     frame = &local;
@@ -212,6 +275,21 @@ void pc_poll(void) {
     if (polling)
         return; /* generated handler entry/back-edge safe points */
     polling = 1;
+#ifdef SAM_LOCKSTEP
+    if (observer && observer(0, NULL)) {
+        if (external_code) {
+            /* Cancel a CPU test without longjmp across its Python callbacks.
+               A blocking BIOS key read checks this after polling and unwinds. */
+            cpu_aborted = 1;
+            polling = 0;
+            return;
+        }
+        pc_terminate(0);
+    }
+#endif
+#ifdef SAM_LOCKSTEP
+    if (wait_clock && !wait_active) { polling=0; return; }
+#endif
     pc_host_pump();
     uint64_t target = pc_time_us();
     int work = 0;
@@ -259,7 +337,11 @@ void pc_poll(void) {
     else
         ++spins;
     last_poll = target;
-    if (spins >= 32) {
+    if (spins >= 32
+#ifdef SAM_LOCKSTEP
+        && !wait_clock
+#endif
+    ) {
         uint64_t next = frame_next, script = pc_script_next();
         if (script < next)
             next = script;
@@ -282,7 +364,19 @@ void pc_poll(void) {
 /* Implement the Pascal delay while polling interrupts and host events at safe points. */
 void pc_delay_ms(uint16_t ms) {
     uint64_t end = pc_time_us() + (uint64_t)ms * 1000u;
+#ifdef SAM_LOCKSTEP
+    unsigned watchdog=0;
+#endif
     while (pc_time_us() < end && !platform_quit_requested()) {
+#ifdef SAM_LOCKSTEP
+        if (++watchdog==1000000) {
+            fprintf(stderr,"Delay stalled now=%llu end=%llu polling=%d event=%d active=%d IF=%d pit=%llu frame=%llu\n",(unsigned long long)pc_time_us(),(unsigned long long)end,polling,event_clock,wait_active,interrupt_flag,(unsigned long long)pit_next,(unsigned long long)frame_next);
+            abort();
+        }
+#endif
+#ifdef SAM_LOCKSTEP
+        if (wait_clock) { pc_lockstep_wait(0x10001); continue; }
+#endif
         pc_poll();
         uint64_t now = pc_time_us(), next = now + 1000;
         if (pit_next > now && pit_next < next)
@@ -325,6 +419,9 @@ static void bios_dos_wrapper(void) {
     bios_dos(call_regs);
 }
 static void bios_clock(void) {
+#ifdef SAM_LOCKSTEP
+    pc_lockstep_wait(0x1a);
+#endif
     if (!(call_regs->ax >> 8)) {
         call_regs->cx = pc_rd16(PC_BDA_SEGMENT, PC_BDA_TIMER_TICKS_HIGH);
         call_regs->dx = pc_rd16(PC_BDA_SEGMENT, PC_BDA_TIMER_TICKS_LOW);
@@ -341,7 +438,58 @@ void pc_bios_int(uint8_t vector, pc_regs *r) {
     call_regs = r;
     pc_int(vector);
     call_regs = previous;
+#ifdef SAM_LOCKSTEP
+    if (vector==0x16 || vector==0x1a) pc_lockstep_flush();
+#endif
 }
+#ifdef SAM_LOCKSTEP
+void pc_lockstep_call(farptr target, pc_regs *r) {
+    pc_regs *previous = call_regs;
+    call_regs = r;
+    pc_call_far(target);
+    call_regs = previous;
+}
+uint64_t pc_lockstep_deadline(void) {
+    uint64_t due = frame_next;
+    if (interrupt_flag && pit_next < due) due = pit_next;
+    if (interrupt_flag && key_count && keys[0].time < due) due = keys[0].time;
+    return due;
+}
+void pc_lockstep_flush(void) {
+    ++wait_active; pc_poll(); --wait_active;
+}
+void pc_lockstep_wait(unsigned kind) {
+    if (!wait_clock || polling) return;
+    char name[16]; snprintf(name,sizeof name,"%x",kind);
+    if (observer && observer(5,name)) {
+        if (external_code) { cpu_aborted=1; return; }
+        pc_terminate(0);
+    }
+    wait_previous=kind; ++wait_streak;
+    if (wait_streak>=2) {
+        uint64_t next=pc_lockstep_deadline(), now=pc_time_us();
+        if (kind==0x201 && now+8<next) next=now+8;
+        if (kind==0x3da || kind==0x3ba) {
+            uint64_t line=((now*70u*449u/1000000u+1)*1000000u+70u*449u-1)/(70u*449u);
+            if (line<next) next=line;
+        }
+        pc_clock_advance(next); wait_streak=0;
+    }
+    pc_lockstep_flush();
+}
+uint8_t pc_lockstep_status8(const uint8_t *p) { pc_lockstep_wait(0x10003); return *p; }
+uint16_t pc_lockstep_key16(const uint16_t *p) { pc_lockstep_wait(0x60); return *p; }
+uint16_t pc_lockstep_read16(const uint16_t *p) {
+    pc_lockstep_wait(0x10000); return *p;
+}
+void pc_lockstep_cpu_poll(void) {
+    /* The diagnostic instruction-clock mode charges instructions separately;
+       wait-clock mode charges only its explicit wait events. Neither uses the
+       native spin-sleep heuristic as another source of elapsed CPU time. */
+    spins = 0;
+    pc_poll();
+}
+#endif
 /* Set up the PSP, IVT, BIOS Data Area, and DOS load image for one episode. */
 void pc_load_program(const pc_program *layout, const uint8_t *image, size_t size) {
     if (!layout || layout->psp_seg < 0x100 || layout->mem_top_seg > PC_VIDEO_PLANAR_SEGMENT ||
@@ -350,6 +498,9 @@ void pc_load_program(const pc_program *layout, const uint8_t *image, size_t size
         ((uint32_t)layout->ds_seg << 4) + size > ((uint32_t)layout->mem_top_seg << 4))
         fatal("invalid program placement");
     program = *layout;
+#ifdef SAM_LOCKSTEP
+    cpu_aborted = 0;
+#endif
     memset(pc_mem, 0, sizeof pc_mem);
     memset(counts, 0, sizeof counts);
     code_count = 0;

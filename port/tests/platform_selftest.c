@@ -1,6 +1,7 @@
 /* Exercise real-mode memory, BIOS services, VGA registers, PIT, speaker, keyboard, and DOS. */
 #include "pc/platform.h"
 #include "tp/crt_dos.h"
+#include "tp/tp.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -19,6 +20,9 @@ static void reset(void) {
     pc_load_program(&placement, NULL, 0);
     pc_clock_manual(1);
     const tp_crt_offsets o = {0x100, 0x101, 0x102, 0x103, 0x104, 0x106, 0x108, 0x10a};
+    tp_BindSystem(placement.ds_seg,0);
+    tp_BindStandardFiles(0x400,0x500);
+    tp_Init();
     tp_BindCrt(placement.ds_seg, &o);
 }
 /* Select and write a graphics-controller register through its indexed I/O port. */
@@ -208,6 +212,17 @@ static void test_text(void) {
     static uint32_t out[720 * 480];
     reset();
     tp_CrtInit();
+    for (unsigned row=2;row<5;++row)
+        for (unsigned col=3;col<6;++col) pc_wr16(0xb800,(uint16_t)((row*80+col)*2),(uint16_t)(0x700|('A'+row)));
+    pc_regs scroll={0}; scroll.ax=0x0601; scroll.bx=0x1e00; scroll.cx=0x0203; scroll.dx=0x0405;
+    pc_bios_int(0x10,&scroll);
+    CHECK(pc_rd16(0xb800,(2*80+3)*2)==0x744);
+    CHECK(pc_rd16(0xb800,(4*80+3)*2)==0x1e20);
+    scroll.ax=0x0701; pc_bios_int(0x10,&scroll);
+    CHECK(pc_rd16(0xb800,(2*80+3)*2)==0x1e20);
+    CHECK(pc_rd16(0xb800,(3*80+3)*2)==0x744);
+    scroll.ax=0x0600; pc_bios_int(0x10,&scroll);
+    CHECK(pc_rd16(0xb800,(3*80+4)*2)==0x1e20);
     tp_TextColor(14);
     tp_TextBackground(1);
     tp_Window(3, 2, 7, 4);
@@ -431,6 +446,28 @@ static void halt_entry(void) {
 /* Verify PIT channel 2 speaker output and the DOS INT 21h file/termination services. */
 static void test_sound_dos(void) {
     reset();
+    pc_regs device = {0};
+    device.ax = 0x4400;
+    device.bx = 0;
+    pc_bios_int(PC_INT_DOS, &device);
+    CHECK(!(device.flags & 1) && (device.dx & 0x81) == 0x81);
+    device.ax = 0x4400;
+    device.bx = 1;
+    pc_bios_int(PC_INT_DOS, &device);
+    CHECK(!(device.flags & 1) && (device.dx & 0x82) == 0x82);
+    device.ax = 0x4400;
+    device.bx = 31;
+    pc_bios_int(PC_INT_DOS, &device);
+    CHECK((device.flags & 1) && device.ax == 6);
+    device.ax = 0x4a00;
+    device.es = pc_current_program()->psp_seg;
+    device.bx = (uint16_t)(pc_current_program()->mem_top_seg - device.es);
+    pc_bios_int(PC_INT_DOS, &device);
+    CHECK(!(device.flags & 1) && pc_rd16(device.es, 2) == pc_current_program()->mem_top_seg);
+    device.ax = 0x4a00;
+    ++device.bx;
+    pc_bios_int(PC_INT_DOS, &device);
+    CHECK((device.flags & 1) && device.ax == 8);
     tp_NoSound();
     tp_Sound(440);
     CHECK(pc_pit_divisor(PC_PIT_CHANNEL_INDEX_2) == 1193181 / 440 &&

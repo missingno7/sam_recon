@@ -597,6 +597,12 @@ class Emitter:
             if s.kind == 'type':
                 return s.type.cname
             if s.kind in ('global', 'typedconst'):
+                if s.name.lower() == 'lastkeyboardscancode':
+                    return f'tp_KeyRead16({s.cname})'
+                if s.name.lower() == 'soundplaying':
+                    return f'tp_StatusRead8({s.cname})'
+                if s.name.lower() == 'gametickcounter':
+                    return f'tp_ClockRead16({s.cname})'
                 return s.cname
             return self.lvalue(e)
         if op == 'call':
@@ -811,6 +817,8 @@ class Emitter:
             ft = self.type(f)
             vs = [self.file_address(f)]
             if n == 'assign':
+                if ft.kind == 'text':
+                    return f'tp_AssignText({vs[0]}, {self.string(args[1])})'
                 vs.append(self.string(args[1]))
             if n in ('reset', 'rewrite'):
                 size = self.expr(args[1]) if len(args) > 1 else str(ft.elem.size if ft.elem else 128)
@@ -986,9 +994,20 @@ class Emitter:
                 ctx.finish()
             finally:
                 self.order = prev
-            out.extend(self.ordered_statement(Stmt('assign', [v, first], s.token), indent + 1))
-            out.extend([pad + f"    if ({iv} {('<=' if direction == 'to' else '>=')} {bound}) {{",
-                 pad + '        for (;;) {'])
+            # TP5 leaves the control variable untouched for an empty range.
+            # Evaluate both bounds before deciding whether to assign it.
+            initial = self.unique('initial_')
+            ctx = Order(self, first, 'for initial bound before control assignment')
+            self.order = ctx
+            try:
+                ctx.lower(first)
+                out.extend((pad + '    ' + x for x in ctx.lines))
+                out.append(pad + f'    {ty.cname} {initial} = {self.cast(ty, self.expr(first))};')
+                ctx.finish()
+            finally:
+                self.order = prev
+            out.extend([pad + f"    if ({initial} {('<=' if direction == 'to' else '>=')} {bound}) {{",
+                 pad + f'        {iv} = {initial};', pad + '        for (;;) {'])
             out.extend(self.statement(body, indent + 3))
             out.append(pad + f'            if ({iv} == {bound}) break;')
             cop = '+' if direction == 'to' else '-'
@@ -1042,7 +1061,13 @@ class Emitter:
             for x in s.args:
                 out.extend(self.statement(x, indent))
         elif op == 'assign':
+            line('#ifdef SAM_LOCKSTEP')
+            line('pc_lockstep_before_store();')
+            line('#endif')
             line(self.assignment(*s.args))
+            line('#ifdef SAM_LOCKSTEP')
+            line('pc_lockstep_store(__func__);')
+            line('#endif')
         elif op == 'call':
             line(self.expr(s.args[0]) + ';')
         elif op == 'if':
@@ -1070,11 +1095,13 @@ class Emitter:
             (v, first, last, direction, b) = s.args
             ty = self.type(v)
             bound = self.unique('limit_')
+            initial = self.unique('initial_')
             iv = self.lvalue(v)
             line('{')
             line(f'    {ty.cname} {bound} = {self.cast(ty, self.expr(last))};')
-            line('    ' + self.assignment(v, first))
-            line(f"    if ({iv} {('<=' if direction == 'to' else '>=')} {bound}) {{")
+            line(f'    {ty.cname} {initial} = {self.cast(ty, self.expr(first))};')
+            line(f"    if ({initial} {('<=' if direction == 'to' else '>=')} {bound}) {{")
+            line(f'        {iv} = {initial};')
             line('        for (;;) {')
             out.extend(self.statement(b, indent + 3))
             line(f'            if ({iv} == {bound}) break;')
@@ -1181,7 +1208,8 @@ class Emitter:
         self.frame_needed = False
         token = getattr(r, 'implementation_token', r.token)
         self.comment_range = (token.line, getattr(r.body, 'end_line', token.line))
-        out = [f'/* {token.file}:{token.line} */', self.prototype(r) + ' {', '    pc_poll();']
+        out = [f'/* {token.file}:{token.line} */', self.prototype(r) + ' {',
+             '#ifdef SAM_LOCKSTEP', f'    pc_lockstep_trace("{r.cname}");', '#endif', '    pc_poll();']
         if r.scope.routine:
             out.append('    (void)tp_parent;')
         if r.type is not VOID:

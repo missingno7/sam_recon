@@ -268,6 +268,9 @@ void tp_FillChar(void *dest, uint16_t size, uint8_t value) {
 }
 
 int16_t tp_Random(uint16_t range) {
+#ifdef SAM_LOCKSTEP
+    pc_lockstep_trace("TP.Random");
+#endif
     uint32_t seed = (uint32_t)tp_RandSeed * 0x08088405u + 1u;
     tp_RandSeed = tp_i32(seed);
     return range ? tp_i16((seed >> 16) % range) : 0;
@@ -438,166 +441,222 @@ void tp_FarSyncOut(void) {
             memcpy(refs[i].host, pc_host_fp(refs[i].far), refs[i].size);
 }
 
-/* Handles are host-side metadata. Nothing resembling FILE* enters Pascal
-   memory or files; the 128-byte record contains a small handle token. */
-typedef struct {
-    FILE *host;
-    tp_file *owner;
-    uint16_t size;
-    uint8_t text;
-} file_handle;
-static file_handle files[32];
-static uint16_t readword(const void *p) {
-    uint16_t v;
-    memcpy(&v, p, 2);
-    return v;
-}
-static void writeword(void *p, uint16_t v) {
-    memcpy(p, &v, 2);
-}
-static file_handle *handle(tp_file *f) {
-    uint16_t h = readword(f->bytes);
-    if (h >= 32 || files[h].owner != f || !files[h].host) {
-        io_error(103);
-        return NULL;
+/* TP 5.0 FileRec/TextRec. DOS owns every handle; no private FILE* table.
+   Offsets follow the runtime's Assign/Open/Read/Write operations, not snapshots. */
+static uint16_t readword(const void *p) { uint16_t v; memcpy(&v,p,2); return v; }
+static void writeword(void *p, uint16_t v) { memcpy(p,&v,2); }
+static void writeptr(void *p, farptr v) { memcpy(p,&v,4); }
+static farptr readptr(const void *p) { farptr v; memcpy(&v,p,4); return v; }
+static farptr file_far(void *p, uint16_t size) {
+    uintptr_t a=(uintptr_t)p, base=(uintptr_t)pc_mem;
+    if (a>=base && a+size<=base+sizeof pc_mem) {
+        uint32_t linear=(uint32_t)(a-base), dsbase=(uint32_t)system_ds*16;
+        if (linear>=dsbase && linear-dsbase+size<=65536) return FP(system_ds,linear-dsbase);
+        return FP(linear>>4,linear&15);
     }
-    return &files[h];
+    return tp_LocalFar(p,size);
 }
-static void filename(tp_file *f, char name[80]) {
-    memcpy(name, f->bytes + 48, 79);
-    name[79] = 0;
+static int dos(pc_regs *r) {
+    pc_bios_int(0x21,r);
+    if (r->flags & 1) { io_error(r->ax); return 0; }
+    return 1;
 }
-void tp_Assign(tp_file *f, tp_string s) {
-    if (io_result)
-        return;
-    memset(f, 0, sizeof(*f));
-    writeword(f->bytes, 0xffff);
-    writeword(f->bytes + 2, 0xd7b0);
-    unsigned n = s.b[0] > 79 ? 79 : s.b[0];
-    memcpy(f->bytes + 48, s.b + 1, n);
+static uint16_t transfer(uint8_t ah, uint16_t h, void *data, uint16_t count) {
+    uint16_t mark=tp_FrameBegin();
+    farptr p=file_far(data,count);
+    pc_regs r={0}; r.ax=(uint16_t)ah<<8; r.bx=h; r.cx=count; r.ds=FP_SEG(p); r.dx=FP_OFF(p);
+    int ok=dos(&r);
+    if (ah==0x3f && ok && data!=pc_host_fp(p)) memcpy(data,pc_host_fp(p),r.ax);
+    tp_FrameEnd(mark); return ok ? r.ax : 0;
 }
-static void open_file(tp_file *f, uint16_t size, uint8_t text, uint8_t writing) {
-    if (io_result)
-        return;
-    if (!size) {
-        io_error(102);
+static tp_file *text_context;
+static void text_input_callback(void);
+static void text_output_callback(void);
+static void text_device_output_callback(void);
+static void text_close_callback(void);
+static void text_open_callback(void);
+static void crt_text_open_callback(void);
+static void crt_text_input_callback(void);
+static void crt_text_output_callback(void);
+static void crt_text_noop_callback(void) { }
+static void text_callback(tp_file *f, unsigned field) {
+    tp_file *previous=text_context; text_context=f;
+    pc_call_far(readptr(f->bytes+field)); text_context=previous;
+}
+static void assign_record(tp_file *f, tp_string name) {
+    /* Assign clears the header and terminates Name, but preserves its tail. */
+    memset(f->bytes,0,48); writeword(f->bytes+2,0xd7b0);
+    unsigned n=name.b[0]>79 ? 79 : name.b[0];
+    memcpy(f->bytes+48,name.b+1,n); f->bytes[48+n]=0;
+}
+void tp_Assign(tp_file *f, tp_string name) { assign_record(f,name); }
+void tp_AssignText(tp_file *f, tp_string name) {
+    assign_record(f,name); writeword(f->bytes+4,128);
+    writeptr(f->bytes+12,tp_fp_add(file_far(f,256),128));
+    writeptr(f->bytes+16,pc_register_code(text_open_callback,"System.TextOpen"));
+}
+static void close_handle(tp_file *f) {
+    uint16_t h=readword(f->bytes);
+    if (h>4) { pc_regs r={0}; r.ax=0x3e00; r.bx=h; dos(&r); }
+}
+static int valid_file(tp_file *f) {
+    if (readword(f->bytes+2)!=0xd7b3) { io_error(103); return 0; }
+    return 1;
+}
+static void open_file(tp_file *f,uint16_t size,uint8_t text,uint8_t writing) {
+    if (io_result) return;
+    uint16_t mode=readword(f->bytes+2);
+    if (text) {
+        if (mode==0xd7b1 || mode==0xd7b2) tp_Close(f);
+        else if (mode!=0xd7b0) { io_error(102); return; }
+        writeword(f->bytes+2,writing ? 0xd7b2 : 0xd7b1);
+        writeword(f->bytes+8,0); writeword(f->bytes+10,0);
+        text_callback(f,16);
+        if (io_result) writeword(f->bytes+2,0xd7b0);
         return;
     }
-    char name[80];
-    filename(f, name);
-    unsigned i;
-    for (i = 0; i < 32; ++i)
-        if (!files[i].host)
-            break;
-    if (i == 32) {
-        io_error(4);
-        return;
+    if (mode==0xd7b3) tp_Close(f);
+    else if (mode!=0xd7b0) { io_error(102); return; }
+    uint16_t h=writing ? 1 : 0;
+    if (f->bytes[48]) {
+        pc_regs r={0}; farptr p=tp_fp_add(file_far(f,128),48);
+        r.ax=writing ? 0x3c00 : (uint16_t)(0x3d00|tp_FileMode); r.ds=FP_SEG(p); r.dx=FP_OFF(p);
+        if (!dos(&r)) return;
+        h=r.ax;
     }
-    const char *mode = writing ? "wb" : tp_FileMode == 0 ? "rb" : "r+b";
-    FILE *host = pc_fopen(name, mode);
-    if (!host) {
-        io_error(errno == ENOENT ? 2 : errno == EACCES ? 5 : 3);
-        return;
-    }
-    files[i] = (file_handle){host, f, size, text};
-    writeword(f->bytes, (uint16_t)i);
-    writeword(f->bytes + 2, writing ? 0xd7b2 : 0xd7b1);
-    writeword(f->bytes + 4, size);
+    writeword(f->bytes,h); writeword(f->bytes+2,0xd7b3); writeword(f->bytes+4,size);
 }
-void tp_Reset(tp_file *f, uint16_t size, uint8_t text) {
-    open_file(f, size, text, 0);
-}
-void tp_Rewrite(tp_file *f, uint16_t size, uint8_t text) {
-    open_file(f, size, text, 1);
-}
+void tp_Reset(tp_file *f,uint16_t size,uint8_t text) { open_file(f,size,text,0); }
+void tp_Rewrite(tp_file *f,uint16_t size,uint8_t text) { open_file(f,size,text,1); }
 void tp_Close(tp_file *f) {
-    if (io_result)
-        return;
-    file_handle *h = handle(f);
-    if (!h)
-        return;
-    if (h->host != stdin && h->host != stdout && fclose(h->host))
-        io_error(101);
-    memset(h, 0, sizeof(*h));
-    writeword(f->bytes + 2, 0xd7b0);
+    if (io_result) return;
+    uint16_t mode=readword(f->bytes+2);
+    if (mode==0xd7b3) close_handle(f);
+    else if (mode==0xd7b1 || mode==0xd7b2) {
+        if (mode==0xd7b2) text_callback(f,20);
+        text_callback(f,28);
+    } else { io_error(103); return; }
+    writeword(f->bytes+2,0xd7b0);
 }
 void tp_Erase(tp_file *f) {
-    if (io_result)
-        return;
-    char name[80];
-    filename(f, name);
-    uint16_t mark = tp_FrameBegin();
-    farptr p = tp_LocalFar(name, 80);
-    pc_regs r = {0};
-    r.ax = 0x4100;
-    r.ds = FP_SEG(p);
-    r.dx = FP_OFF(p);
-    pc_bios_int(0x21, &r);
-    tp_FrameEnd(mark);
-    if (r.flags & 1)
-        io_error(r.ax);
+    if (io_result) return;
+    pc_regs r={0}; farptr p=tp_fp_add(file_far(f,128),48);
+    r.ax=0x4100; r.ds=FP_SEG(p); r.dx=FP_OFF(p); dos(&r);
 }
-void tp_Read(tp_file *f, void *dest) {
-    if (io_result)
-        return;
-    file_handle *h = handle(f);
-    if (!h)
-        return;
-    if (fread(dest, 1, h->size, h->host) != h->size)
-        io_error(100);
+void tp_Read(tp_file *f,void *p) {
+    if (io_result || !valid_file(f)) return;
+    uint16_t n=readword(f->bytes+4);
+    if (transfer(0x3f,readword(f->bytes),p,n)!=n) io_error(100);
 }
-void tp_Write(tp_file *f, const void *src) {
-    if (io_result)
-        return;
-    file_handle *h = handle(f);
-    if (!h)
-        return;
-    if (fwrite(src, 1, h->size, h->host) != h->size)
-        io_error(101);
+void tp_Write(tp_file *f,const void *p) {
+    if (io_result || !valid_file(f)) return;
+    uint16_t n=readword(f->bytes+4);
+    if (transfer(0x40,readword(f->bytes),(void *)p,n)!=n) io_error(101);
 }
-void tp_Seek(tp_file *f, int32_t index) {
-    if (io_result)
-        return;
-    file_handle *h = handle(f);
-    if (!h)
-        return;
-    if (fseek(h->host, (long)index * h->size, SEEK_SET))
-        io_error(100);
+static int32_t seek_bytes(tp_file *f,int32_t offset,uint8_t origin) {
+    pc_regs r={0}; r.ax=(uint16_t)(0x4200|origin); r.bx=readword(f->bytes);
+    r.cx=(uint16_t)((uint32_t)offset>>16); r.dx=(uint16_t)offset;
+    return dos(&r) ? tp_i32(((uint32_t)r.dx<<16)|r.ax) : 0;
+}
+void tp_Seek(tp_file *f,int32_t index) {
+    if (!io_result && valid_file(f)) seek_bytes(f,tp_i32((uint32_t)index*readword(f->bytes+4)),0);
 }
 int32_t tp_Filepos(tp_file *f) {
-    file_handle *h = handle(f);
-    return h ? (int32_t)(ftell(h->host) / h->size) : 0;
+    if (io_result || !valid_file(f)) return 0;
+    uint16_t size=readword(f->bytes+4); if (!size) tp_Halt(200);
+    return seek_bytes(f,0,1)/size;
 }
 int32_t tp_Filesize(tp_file *f) {
-    file_handle *h = handle(f);
-    if (!h)
-        return 0;
-    long pos = ftell(h->host);
-    fseek(h->host, 0, SEEK_END);
-    long end = ftell(h->host);
-    fseek(h->host, pos, SEEK_SET);
-    return (int32_t)(end / h->size);
+    if (io_result || !valid_file(f)) return 0;
+    int32_t pos=seek_bytes(f,0,1), end=seek_bytes(f,0,2); seek_bytes(f,pos,0);
+    uint16_t size=readword(f->bytes+4); if (!size) tp_Halt(200);
+    return end/size;
 }
-uint8_t tp_Eof(tp_file *f) {
-    file_handle *h = handle(f);
-    if (!h)
-        return 1;
-    if (!h->text)
-        return tp_Filepos(f) >= tp_Filesize(f);
-    int c = fgetc(h->host);
-    if (c != EOF)
-        ungetc(c, h->host);
-    return c == EOF || c == 26;
+static tp_file *text_file(tp_file *f,uint8_t writing) {
+    if (!f) f=(tp_file *)(writing ? (void *)&tp_Output : (void *)&tp_Input);
+    if (readword(f->bytes+2)!=(writing ? 0xd7b2 : 0xd7b1)) io_error(writing ? 105 : 104);
+    return f;
 }
-uint8_t tp_Eoln(tp_file *f) {
-    file_handle *h = handle(f);
-    if (!h)
-        return 1;
-    int c = fgetc(h->host);
-    if (c != EOF)
-        ungetc(c, h->host);
-    return c == '\r' || c == EOF;
+static uint8_t *text_buffer(tp_file *f) { return pc_host_fp(readptr(f->bytes+12)); }
+static void text_input_callback(void) {
+    tp_file *f=text_context; uint16_t n=transfer(0x3f,readword(f->bytes),text_buffer(f),readword(f->bytes+4));
+    writeword(f->bytes+8,0); writeword(f->bytes+10,n);
 }
+static void text_output_callback(void) {
+    tp_file *f=text_context; uint16_t n=readword(f->bytes+8); writeword(f->bytes+8,0);
+    if (transfer(0x40,readword(f->bytes),text_buffer(f),n)!=n) io_error(101);
+}
+static void text_device_output_callback(void) { text_output_callback(); }
+static void text_close_callback(void) { close_handle(text_context); }
+static void text_open_callback(void) {
+    tp_file *f=text_context; uint8_t writing=readword(f->bytes+2)!=0xd7b1;
+    uint16_t h=writing ? 1 : 0;
+    if (f->bytes[48]) {
+        pc_regs r={0}; farptr p=tp_fp_add(file_far(f,256),48);
+        r.ax=writing ? 0x3c02 : 0x3d00; r.ds=FP_SEG(p); r.dx=FP_OFF(p);
+        if (!dos(&r)) return;
+        h=r.ax;
+    }
+    writeword(f->bytes,h);
+    pc_regs r={0}; r.ax=0x4400; r.bx=h;
+    if (writing) dos(&r);
+    int device=writing && (r.dx&128);
+    writeptr(f->bytes+20,pc_register_code(writing ? (device ? text_device_output_callback : text_output_callback) : text_input_callback,
+        writing ? (device ? "System.TextDeviceOutput" : "System.TextOutput") : "System.TextInput"));
+    writeptr(f->bytes+24,device ? readptr(f->bytes+20) : 0);
+    writeptr(f->bytes+28,pc_register_code(text_close_callback,"System.TextClose"));
+}
+static void crt_text_open_callback(void) {
+    tp_file *f=text_context; int writing=readword(f->bytes+2)!=0xd7b1;
+    if (writing) writeword(f->bytes+2,0xd7b2);
+    farptr noop=pc_register_code(crt_text_noop_callback,"Crt.TextNoop");
+    farptr output=pc_register_code(crt_text_output_callback,"Crt.TextOutput");
+    writeptr(f->bytes+20,writing ? output : pc_register_code(crt_text_input_callback,"Crt.TextInput"));
+    writeptr(f->bytes+24,writing ? output : noop); writeptr(f->bytes+28,noop);
+}
+static void crt_text_output_callback(void) {
+    tp_file *f=text_context; uint16_t n=readword(f->bytes+8); writeword(f->bytes+8,0);
+    tp_CrtWrite(text_buffer(f),n);
+}
+static void crt_text_input_callback(void) {
+    tp_file *f=text_context; uint8_t *buf=text_buffer(f); uint16_t n=0, size=readword(f->bytes+4);
+    while (n+2<size) {
+        uint8_t ch=tp_ReadKey();
+        if (ch==13) { buf[n++]=13; buf[n++]=10; break; }
+        if (ch>=32) buf[n++]=ch;
+    }
+    writeword(f->bytes+8,0); writeword(f->bytes+10,n);
+}
+void tp_TextCrtInit(void) {
+    for (unsigned i=0;i<2;++i) {
+        tp_file *f=(tp_file *)tp_StandardAddress((uint8_t)i);
+        writeword(f->bytes+2,0xd7b0); writeword(f->bytes+4,128);
+        writeptr(f->bytes+12,tp_fp_add(file_far(f,256),128));
+        writeptr(f->bytes+16,pc_register_code(crt_text_open_callback,"Crt.TextOpen"));
+        f->bytes[48]=0; open_file(f,128,1,(uint8_t)i);
+    }
+}
+static int text_peek(tp_file *f) {
+    f=text_file(f,0); if (io_result) return 26;
+    uint16_t pos=readword(f->bytes+8), end=readword(f->bytes+10);
+    if (pos==end) { text_callback(f,20); pos=readword(f->bytes+8); end=readword(f->bytes+10); }
+    return pos==end ? 26 : text_buffer(f)[pos];
+}
+static void text_take(tp_file *f) {
+    f=text_file(f,0); if (io_result) return;
+    uint16_t pos=readword(f->bytes+8); if (pos<readword(f->bytes+10)) writeword(f->bytes+8,(uint16_t)(pos+1));
+}
+static void text_put(tp_file *f,uint8_t ch) {
+    f=text_file(f,1); if (io_result) return;
+    uint16_t pos=readword(f->bytes+8); text_buffer(f)[pos++]=ch; writeword(f->bytes+8,pos);
+    if (pos==readword(f->bytes+4)) text_callback(f,20);
+}
+static void text_flush_line(tp_file *f) {
+    f=text_file(f,1); if (!io_result && readptr(f->bytes+24)) text_callback(f,24);
+}
+uint8_t tp_Eof(tp_file *f) { return readword(f->bytes+2)==0xd7b3 ? tp_Filepos(f)>=tp_Filesize(f) : text_peek(f)==26; }
+uint8_t tp_Eoln(tp_file *f) { int c=text_peek(f); return c==13 || c==26; }
+
 void tp_WriteInteger(int32_t value, int16_t width) {
     tp_TextWriteInteger(NULL, value, width);
 }
@@ -610,95 +669,43 @@ void tp_WriteString(tp_string s, int16_t width) {
 void tp_WriteLn(void) {
     tp_TextWriteLn(NULL);
 }
-static FILE *text_host(tp_file *f, uint8_t writing) {
-    if (!f)
-        return writing ? stdout : stdin;
-    file_handle *h = handle(f);
-    return h ? h->host : NULL;
-}
+static void text_put(tp_file *f, uint8_t ch);
+static int text_peek(tp_file *f);
+static void text_take(tp_file *f);
 void tp_TextReadChar(tp_file *f, uint8_t *dest) {
-    if (io_result)
-        return;
-    FILE *h = text_host(f, 0);
-    if (!h)
-        return;
-    int c = fgetc(h);
-    *dest = (uint8_t)(c == EOF ? 26 : c);
+    if (!io_result) { *dest = (uint8_t)text_peek(f); text_take(f); }
 }
 void tp_TextReadString(tp_file *f, void *dest, uint8_t cap) {
-    if (io_result)
-        return;
-    FILE *h = text_host(f, 0);
-    if (!h)
-        return;
+    if (io_result) return;
     tp_string s = {{0}};
     while (s.b[0] < cap) {
-        int c = fgetc(h);
-        if (c == '\r' || c == '\n' || c == 26 || c == EOF) {
-            if (c != EOF)
-                ungetc(c, h);
-            break;
-        }
-        s.b[++s.b[0]] = (uint8_t)c;
+        int c = text_peek(f);
+        if (c == 13 || c == 26) break;
+        s.b[++s.b[0]] = (uint8_t)c; text_take(f);
     }
     tp_AssignString(dest, cap, s);
 }
 void tp_TextReadInteger(tp_file *f, void *dest, uint8_t bytes, uint8_t sign) {
-    if (io_result)
-        return;
-    FILE *h = text_host(f, 0);
-    if (!h)
-        return;
+    if (io_result) return;
     int c;
-    do {
-        c = fgetc(h);
-    } while (c == ' ' || c == '\t' || c == '\r' || c == '\n');
+    while ((c = text_peek(f)) == ' ' || c == 9 || c == 13 || c == 10) text_take(f);
     tp_string s = {{0}};
-    while (c != EOF && c != 26 && c != ' ' && c != '\t' && c != '\r' && c != '\n' && s.b[0] < 255) {
-        s.b[++s.b[0]] = (uint8_t)c;
-        c = fgetc(h);
+    while (c != 26 && c != ' ' && c != 9 && c != 13 && c != 10 && s.b[0] < 255) {
+        s.b[++s.b[0]] = (uint8_t)c; text_take(f); c = text_peek(f);
     }
-    if (c != EOF)
-        ungetc(c, h);
-    int16_t code;
-    tp_Val(s, dest, bytes, sign, &code);
-    if (code)
-        io_error(106);
+    int16_t code; tp_Val(s, dest, bytes, sign, &code);
+    if (code) io_error(106);
 }
 void tp_TextReadLn(tp_file *f) {
-    if (io_result)
-        return;
-    FILE *h = text_host(f, 0);
-    if (!h)
-        return;
+    if (io_result) return;
     int c;
-    do {
-        c = fgetc(h);
-    } while (c != EOF && c != 26 && c != '\r' && c != '\n');
-    if (c == '\r') {
-        c = fgetc(h);
-        if (c != '\n' && c != EOF)
-            ungetc(c, h);
-    } else if (c == 26)
-        ungetc(c, h);
+    while ((c=text_peek(f)) != 26 && c != 13) text_take(f);
+    if (c == 13) { text_take(f); if (text_peek(f) == 10) text_take(f); }
 }
 void tp_TextWriteString(tp_file *f, tp_string s, int16_t width) {
-    if (io_result)
-        return;
-    if ((!f || f == (tp_file *)&tp_Output) && tp_CrtActive) {
-        const uint8_t space = ' ';
-        for (int i = s.b[0]; i < width; ++i)
-            tp_CrtWrite(&space, 1);
-        tp_CrtWrite(s.b + 1, s.b[0]);
-        return;
-    }
-    FILE *h = text_host(f, 1);
-    if (!h)
-        return;
-    for (int i = s.b[0]; i < width; ++i)
-        fputc(' ', h);
-    if (fwrite(s.b + 1, 1, s.b[0], h) != s.b[0])
-        io_error(101);
+    if (io_result) return;
+    for (int i=s.b[0]; i<width; ++i) text_put(f, ' ');
+    for (unsigned i=1; i<=s.b[0]; ++i) text_put(f, s.b[i]);
 }
 void tp_TextWriteInteger(tp_file *f, int32_t value, int16_t width) {
     char data[32];
@@ -710,37 +717,38 @@ void tp_TextWriteBoolean(tp_file *f, uint8_t value, int16_t width) {
     tp_TextWriteString(f, tp_Sliteral((const uint8_t *)s, value ? 4 : 5), width);
 }
 void tp_TextWriteLn(tp_file *f) {
-    if (io_result)
-        return;
-    if ((!f || f == (tp_file *)&tp_Output) && tp_CrtActive) {
-        tp_CrtWriteLn();
-        return;
-    }
-    FILE *h = text_host(f, 1);
-    if (!h)
-        return;
-    if (f)
-        fputc('\r', h);
-    if (fputc('\n', h) == EOF)
-        io_error(101);
+    if (io_result) return;
+    text_put(f,13); text_put(f,10);
+    text_flush_line(f);
 }
 void tp_Init(void) {
     ref_count = ref_next = io_result = 0;
-    memset(files, 0, sizeof(files));
     tp_ExitProc = 0;
     tp_ExitCode = 0;
     tp_RandSeed = 0;
     tp_FileMode = 2;
     tp_PrefixSeg = pc_current_program()->psp_seg;
     tp_HeapOrg = tp_HeapPtr = FP(pc_current_program()->heap_org_seg, 0);
+    /* System startup establishes the empty overlay arena at HeapOrg and saves
+       its DOS interrupt vectors before any unit installs replacement handlers. */
+    for (uint16_t off = 8; off <= 12; off += 2)
+        writeword(tp_SystemAddress(off), FP_SEG(tp_HeapOrg));
+    static const uint8_t saved_vectors[] = {
+        0x00, 0x02, 0x1b, 0x23, 0x24, 0x34, 0x35, 0x36, 0x37,
+        0x38, 0x39, 0x3a, 0x3b, 0x3c, 0x3d, 0x3e, 0x3f, 0x75
+    };
+    for (unsigned i = 0; i < sizeof saved_vectors; ++i) {
+        uint16_t dest = (uint16_t)(standard_offsets[1] + sizeof(tp_text) + i * 4);
+        uint16_t src = (uint16_t)(saved_vectors[i] * 4);
+        pc_wr16(system_ds, dest, pc_rd16(0, src));
+        pc_wr16(system_ds, (uint16_t)(dest + 2), pc_rd16(0, (uint16_t)(src + 2)));
+    }
     tp_FreePtr = FP(pc_current_program()->mem_top_seg - 0x1000u, 0);
     tp_FreeMin = 0;
-    files[0] = (file_handle){stdin, (tp_file *)&tp_Input, 1, 1};
-    files[1] = (file_handle){stdout, (tp_file *)&tp_Output, 1, 1};
-    writeword(tp_Input.bytes, 0);
-    writeword(tp_Input.bytes + 2, 0xd7b1);
-    writeword(tp_Output.bytes, 1);
-    writeword(tp_Output.bytes + 2, 0xd7b2);
+    tp_AssignText((tp_file *)&tp_Input, tp_Sliteral(NULL,0));
+    tp_Reset((tp_file *)&tp_Input,128,1);
+    tp_AssignText((tp_file *)&tp_Output, tp_Sliteral(NULL,0));
+    tp_Rewrite((tp_file *)&tp_Output,128,1);
 }
 _Noreturn void tp_Halt(uint16_t code) {
     tp_ExitCode = tp_i16(code);
@@ -749,9 +757,15 @@ _Noreturn void tp_Halt(uint16_t code) {
         tp_ExitProc = 0;
         pc_call_far(target);
     }
-    for (unsigned i = 0; i < 32; ++i)
-        if (files[i].host && files[i].host != stdin && files[i].host != stdout)
-            fclose(files[i].host);
+    /* System's process finalizer closes the standard text records as well. */
+    uint16_t pending_io=io_result;
+    io_result=0;
+    for (unsigned i=0;i<2;++i) {
+        tp_file *f=(tp_file *)tp_StandardAddress((uint8_t)i);
+        uint16_t mode=readword(f->bytes+2);
+        if (mode==0xd7b1 || mode==0xd7b2) tp_Close(f);
+    }
+    if (pending_io) io_result=pending_io;
     fflush(stdout);
     pc_terminate((uint8_t)tp_ExitCode);
 }

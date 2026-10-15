@@ -7,6 +7,17 @@ static uint8_t seq[8], gc[16], crtc[32], attr[32];
 static uint8_t si, gi, ci, ai, attr_phase, mode = PC_VIDEO_MODE_TEXT_80X25, misc = 0x67;
 static int adapter_vga = 1, video_enabled = 1;
 
+#ifdef SAM_LOCKSTEP
+size_t pc_lockstep_vga(uint8_t *out) {
+    size_t size = 0;
+#define COPY_STATE(x) do { if (out) memcpy(out + size, &(x), sizeof(x)); size += sizeof(x); } while (0)
+    COPY_STATE(latch); COPY_STATE(seq); COPY_STATE(gc); COPY_STATE(crtc); COPY_STATE(attr);
+    COPY_STATE(si); COPY_STATE(gi); COPY_STATE(ci); COPY_STATE(ai); COPY_STATE(attr_phase);
+    COPY_STATE(mode); COPY_STATE(misc); COPY_STATE(adapter_vga); COPY_STATE(video_enabled);
+#undef COPY_STATE
+    return size;
+}
+#endif
 enum {
     VGA_WRITE_MODE_COPY = 0,
     VGA_WRITE_MODE_LATCH = 1,
@@ -389,6 +400,31 @@ void bios_video(pc_regs *r) {
         crtc[PC_VGA_CRTC_START_ADDRESS_HIGH] = (uint8_t)(al * 0x20);
         crtc[PC_VGA_CRTC_START_ADDRESS_LOW] = 0;
         break;
+    case 0x06: /* Scroll text window up; AL=0 clears it. */
+    case 0x07: { /* Scroll text window down. Cursor position is preserved. */
+        unsigned columns=pc_rd16(PC_BDA_SEGMENT,PC_BDA_VIDEO_COLUMNS);
+        unsigned rows=pc_rd8(PC_BDA_SEGMENT,0x84)+1u;
+        unsigned left=r->cx&255u, top=r->cx>>8, right=r->dx&255u, bottom=r->dx>>8;
+        if (!columns || !rows || left>=columns || top>=rows) break;
+        if (right>=columns) right=columns-1;
+        if (bottom>=rows) bottom=rows-1;
+        if (left>right || top>bottom) break;
+        unsigned height=bottom-top+1, count=al && al<height ? al : height;
+        uint16_t segment=mode==7 ? 0xb000 : PC_VIDEO_TEXT_SEGMENT;
+        unsigned page=pc_rd8(PC_BDA_SEGMENT,PC_BDA_VIDEO_ACTIVE_PAGE)*4096u;
+        for (unsigned n=0;n<height;++n) {
+            unsigned dest=ah==6 ? top+n : bottom-n;
+            for (unsigned col=left;col<=right;++col) {
+                uint16_t value=(uint16_t)((bh<<8)|32u);
+                if (n+count<height) {
+                    unsigned source=ah==6 ? dest+count : dest-count;
+                    value=pc_rd16(segment,(uint16_t)(page+(source*columns+col)*2));
+                }
+                pc_wr16(segment,(uint16_t)(page+(dest*columns+col)*2),value);
+            }
+        }
+        break;
+    }
     case PC_VIDEO_FN_READ_CHARACTER: {
         uint16_t pos =
             pc_rd16(PC_BDA_SEGMENT, (uint16_t)(PC_BDA_VIDEO_CURSOR_POSITIONS + 2 * (bh & 7)));

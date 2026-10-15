@@ -18,6 +18,7 @@ static pc_code_fn code[128];
 static unsigned code_count;
 static uint64_t time_us;
 static int enabled=1;
+static FILE *dos_handles[32];
 static uint16_t dos_delete(const char *name);
 uint8_t *pc_host(uint16_t seg,uint16_t off) {
     if (seg==0xa000) { fputs("unexpected planar-memory access\n",stderr); exit(99); }
@@ -49,6 +50,49 @@ void pc_bios_int(uint8_t n,pc_regs *r) {
     /* Deterministic VGA adapter for startup; no frame rendering. */
     if (n==0x10&&r->ax==0x1b00) r->ax=0x1b;
     if (n==0x10&&r->ax==0x1a00) { r->ax=0x1a; r->bx=8; }
+    if (n==0x21) {
+        unsigned ah=r->ax>>8, al=r->ax&255; r->flags&=(uint16_t)~1u;
+        uint16_t error=0;
+        switch (ah) {
+        case 0x44:
+            if (al) error=1;
+            else if (r->bx<5) r->dx=r->bx ? 0x80d2 : 0x80d3;
+            else if (r->bx<32 && dos_handles[r->bx]) r->dx=2;
+            else error=6;
+            break;
+        case 0x3c: case 0x3d: {
+            unsigned h; for (h=5;h<32 && dos_handles[h];++h) { }
+            if (h==32) { error=4; break; }
+            dos_handles[h]=pc_fopen((const char *)pc_host(r->ds,r->dx),ah==0x3c ? "w+b" : al ? "r+b" : "rb");
+            if (!dos_handles[h]) error=errno==ENOENT ? 2 : 5; else r->ax=(uint16_t)h;
+            break;
+        }
+        case 0x3e:
+            if (r->bx<5) break;
+            if (r->bx>=32 || !dos_handles[r->bx]) error=6;
+            else { fclose(dos_handles[r->bx]); dos_handles[r->bx]=NULL; }
+            break;
+        case 0x3f: case 0x40: {
+            FILE *f=r->bx<32 ? dos_handles[r->bx] : NULL;
+            if (ah==0x40 && (r->bx==1 || r->bx==2)) f=r->bx==1 ? stdout : stderr;
+            if (ah==0x3f && r->bx==0) f=stdin;
+            if (!f) { error=6; break; }
+            void *p=pc_host(r->ds,r->dx);
+            r->ax=(uint16_t)(ah==0x40 ? fwrite(p,1,r->cx,f) : fread(p,1,r->cx,f));
+            if (ferror(f)) error=ah==0x40 ? 101 : 100;
+            break;
+        }
+        case 0x42:
+            if (r->bx>=32 || !dos_handles[r->bx] || al>2) error=6;
+            else {
+                int32_t off=tp_i32(((uint32_t)r->cx<<16)|r->dx);
+                if (fseek(dos_handles[r->bx],off,al==0 ? SEEK_SET : al==1 ? SEEK_CUR : SEEK_END)) error=1;
+                else { uint32_t pos=(uint32_t)ftell(dos_handles[r->bx]); r->ax=(uint16_t)pos; r->dx=(uint16_t)(pos>>16); }
+            }
+            break;
+        }
+        if (error) { r->ax=error; r->flags|=1; }
+    }
     if (n==0x21&&r->ax==0x4100) {
         uint16_t error=dos_delete((const char *)pc_host(r->ds,r->dx));
         if (error) { r->ax=error; r->flags|=1; }
@@ -120,7 +164,7 @@ void *tp_CrtAddress(uint8_t index) {
     const uint16_t *offsets=(const uint16_t *)&crt_offsets;
     return pc_host(crt_ds,offsets[index]);
 }
-void tp_CrtInit(void) { tp_CrtActive=1; fputs("tp_CrtInit\n",stderr); }
+void tp_CrtInit(void) { tp_CrtActive=1; tp_TextCrtInit(); fputs("tp_CrtInit\n",stderr); }
 void tp_CrtWrite(const uint8_t *bytes,size_t size) { fprintf(stderr,"tp_CrtWrite %zu\n",size); fwrite(bytes,1,size,stdout); }
 void tp_CrtWriteLn(void) { fputs("tp_CrtWriteLn\n",stderr); putchar('\n'); }
 void tp_Sound(uint16_t f) { fprintf(stderr,"tp_Sound %u\n",f); }

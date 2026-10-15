@@ -39,6 +39,15 @@ void *tp_SystemAddress(uint16_t offset);
 #define tp_FreePtr (*(farptr *)tp_SystemAddress(28))
 #define tp_FreeMin (*(uint16_t *)tp_SystemAddress(32))
 void *tp_StandardAddress(uint8_t which);
+#ifdef SAM_LOCKSTEP
+#define tp_StatusRead8(v) pc_lockstep_status8(&(v))
+#define tp_KeyRead16(v) tp_i16(pc_lockstep_key16((const uint16_t *)&(v)))
+#define tp_ClockRead16(v) tp_i16(pc_lockstep_read16((const uint16_t *)&(v)))
+#else
+#define tp_ClockRead16(v) (v)
+#define tp_KeyRead16(v) (v)
+#define tp_StatusRead8(v) (v)
+#endif
 #define tp_Input (*(tp_text *)tp_StandardAddress(0))
 #define tp_Output (*(tp_text *)tp_StandardAddress(1))
 void tp_BindSystem(uint16_t ds, uint16_t base);
@@ -107,6 +116,8 @@ void tp_FarSyncOut(void);
 farptr tp_TempFar(const void *data,uint16_t size);
 
 void tp_Assign(tp_file *f,tp_string name);
+void tp_AssignText(tp_file *f,tp_string name);
+void tp_TextCrtInit(void);
 void tp_Reset(tp_file *f,uint16_t record_size,uint8_t is_text);
 void tp_Rewrite(tp_file *f,uint16_t record_size,uint8_t is_text);
 void tp_Close(tp_file *f);

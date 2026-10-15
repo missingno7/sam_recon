@@ -18,6 +18,22 @@ static uint8_t joy_buttons;
 static uint64_t joy_start;
 static uint32_t joy_reads;
 
+#ifdef SAM_LOCKSTEP
+size_t pc_lockstep_devices(uint8_t *out) {
+    size_t size = 0;
+    /* Serialize fields, never C struct padding. Absolute loading times are included. */
+#define COPY_STATE(x) do { if (out) memcpy(out + size, &(x), sizeof(x)); size += sizeof(x); } while (0)
+    for (unsigned n = 0; n < 3; ++n) {
+        COPY_STATE(pit[n].divisor); COPY_STATE(pit[n].latch); COPY_STATE(pit[n].access);
+        COPY_STATE(pit[n].mode); COPY_STATE(pit[n].low); COPY_STATE(pit[n].write_phase);
+        COPY_STATE(pit[n].read_phase); COPY_STATE(pit[n].latched); COPY_STATE(pit[n].loaded);
+    }
+    COPY_STATE(scan_latch); COPY_STATE(speaker_port); COPY_STATE(cmos_index);
+    COPY_STATE(keyboard_e0); COPY_STATE(pressed);
+#undef COPY_STATE
+    return size;
+}
+#endif
 int pc_retrace_polling(void) {
     int v = retrace_reads;
     retrace_reads = 0;
@@ -114,6 +130,9 @@ static uint8_t cmos_read(void) {
 }
 /* Decode device reads, including PIT latches and capacitor timing on the game port. */
 uint8_t pc_inb(uint16_t port) {
+#ifdef SAM_LOCKSTEP
+    if (!pc_lockstep_original() && (port==0x3da || port==0x3ba || port==0x60 || port==0x201)) pc_lockstep_wait(port);
+#endif
     uint8_t v;
     if (port == PC_PORT_VGA_STATUS_COLOR || port == PC_PORT_VGA_STATUS_MONO)
         retrace_reads = 1;
@@ -369,6 +388,13 @@ void bios_keyboard_irq(void) {
 }
 /* Implement INT 16h shift queries, nonblocking peeks, and blocking BIOS key reads. */
 void bios_keyboard(pc_regs *r) {
+#ifdef SAM_LOCKSTEP
+    pc_lockstep_wait(0x16);
+#endif
+#ifdef SAM_LOCKSTEP
+    if ((r->ax >> 8) == PC_KEYBOARD_FN_CHECK || (r->ax >> 8) == PC_KEYBOARD_FN_CHECK_EXTENDED)
+        pc_lockstep_keypoll();
+#endif
     unsigned ah = r->ax >> 8;
     if (ah == PC_KEYBOARD_FN_SHIFT_FLAGS || ah == PC_KEYBOARD_FN_EXTENDED_SHIFT_FLAGS) {
         r->ax = pc_rd8(PC_BDA_SEGMENT, PC_BDA_KEYBOARD_FLAGS);
@@ -388,7 +414,16 @@ void bios_keyboard(pc_regs *r) {
         if (h != t || ah == PC_KEYBOARD_FN_CHECK || ah == PC_KEYBOARD_FN_CHECK_EXTENDED)
             break;
         pc_sti();
+#ifdef SAM_LOCKSTEP
+        pc_lockstep_wait(0x16);
+#endif
         pc_poll();
+#ifdef SAM_LOCKSTEP
+        if (pc_lockstep_aborted()) {
+            r->flags |= PC_CPU_FLAG_ZERO;
+            return; /* Test cancellation; the original CPU will not resume. */
+        }
+#endif
         if (platform_quit_requested())
             pc_terminate(0);
     }

@@ -28,6 +28,8 @@ enum {
     DOS_FN_WRITE_FILE = 0x40,
     DOS_FN_SEEK_FILE = 0x42,
     DOS_FN_DELETE_FILE = 0x41,
+    DOS_FN_DEVICE_CONTROL = 0x44,
+    DOS_FN_RESIZE_MEMORY = 0x4a,
     DOS_FN_TERMINATE = 0x4c,
     DOS_FN_GET_PSP = 0x62,
     DOS_FN_GET_PSP_LEGACY = 0x51
@@ -178,6 +180,31 @@ void bios_dos(pc_regs *r) {
         r->ax = 0x0005;
         r->bx = 0;
         r->cx = 0;
+        break;
+    case DOS_FN_DEVICE_CONTROL:
+        /* DOS IOCTL get-device-information: the five inherited handles are
+           character devices; host-backed application handles are disk files. */
+        if (al != 0) {
+            dos_error(r, 1);
+        } else if (r->bx < DOS_FIRST_APPLICATION_HANDLE) {
+            r->dx = r->bx == 0 ? 0x80d3 : 0x80d2;
+        } else if (r->bx < DOS_HANDLE_LIMIT && handles[r->bx]) {
+            r->dx = 2; /* fixed disk C:, bit 7 clear */
+        } else {
+            dos_error(r, 6);
+        }
+        break;
+    case DOS_FN_RESIZE_MEMORY:
+        /* One DOS process owns the conventional arena supplied at load time.
+           Shrinking its PSP block changes the DOS limit, not host allocation. */
+        if (r->es != pc_current_program()->psp_seg) {
+            dos_error(r, 9);
+        } else if ((uint32_t)r->es + r->bx > pc_current_program()->mem_top_seg) {
+            r->bx = (uint16_t)(pc_current_program()->mem_top_seg - r->es);
+            dos_error(r, 8);
+        } else {
+            pc_wr16(r->es, 2, (uint16_t)(r->es + r->bx));
+        }
         break;
     case DOS_FN_SET_DATE:
     case DOS_FN_SET_TIME:

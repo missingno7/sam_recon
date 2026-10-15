@@ -1,5 +1,6 @@
 /* Turbo Pascal Crt text, keyboard, timer, and speaker services over the BIOS device model. */
 #include "crt_dos.h"
+#include "tp.h"
 #include "../pc/platform.h"
 #include <string.h>
 #include <stdlib.h>
@@ -30,7 +31,11 @@ void *tp_CrtAddress(uint8_t index) {
     }
     return pc_host(crt_ds, crt_offsets[index]);
 }
-static uint8_t x = 1, y = 1, read_pending, pending_scan;
+static uint8_t x = 1, y = 1;
+/* CrtPrivate: DelayCnt word, ScreenMax word, NormAttr, LastScan, BreakFlag, pad. */
+#define CRT_PRIVATE(n) pc_host(crt_ds,(uint16_t)(crt_offsets[7]+2+(n)))
+#define pending_scan (*CRT_PRIVATE(5))
+#define break_pending (*CRT_PRIVATE(6))
 static uint16_t video_seg = PC_VIDEO_TEXT_SEGMENT;
 static unsigned left(void) {
     return tp_WindMin & 255;
@@ -54,8 +59,7 @@ static void cursor(void) {
     pc_bios_int(PC_INT_VIDEO, &r);
 }
 static void break_handler(void) {
-    if (tp_CheckBreak)
-        pc_terminate(255);
+    if (tp_CheckBreak) break_pending=1;
 }
 /* Initialise the BIOS text mode and the Crt state used by TP console routines. */
 void tp_CrtInit(void) {
@@ -67,17 +71,33 @@ void tp_CrtInit(void) {
     r.ax = BIOS_VIDEO_READ_CHARACTER_AX;
     r.bx = 0;
     pc_bios_int(PC_INT_VIDEO, &r);
-    tp_TextAttr = (uint8_t)(r.ax >> 8);
+    tp_TextAttr = (uint8_t)((r.ax >> 8)&127);
+    *CRT_PRIVATE(4)=tp_TextAttr;
     tp_CheckBreak = tp_DirectVideo = 1;
     tp_CheckEOF = tp_CheckSnow = 0;
-    read_pending = 0;
+    pending_scan = break_pending = 0;
     tp_CrtActive = 1;
     tp_WindMin = 0;
     tp_WindMax = TP_TEXT_WINDOW_MAX;
     tp_LastMode = PC_VIDEO_MODE_TEXT_80X25;
     x = y = 1;
+    pc_wr16(crt_ds,(uint16_t)(crt_offsets[7]+4),TP_TEXT_WINDOW_MAX);
+#ifdef SAM_LOCKSTEP
+    /* The DOS runtime calibrates against BDA timer reads. Execute the same
+       clock wait protocol; the resulting speed calibration is not compared. */
+    if (pc_lockstep_enabled()) {
+    uint16_t previous=pc_rd16(0x40,0x6c);
+    do { pc_lockstep_wait(0x10002); } while (previous==pc_rd16(0x40,0x6c));
+    previous=pc_rd16(0x40,0x6c);
+    for (uint32_t count=65535; count; --count) {
+        pc_lockstep_wait(0x10002);
+        if (previous!=pc_rd16(0x40,0x6c)) break;
+    }
+    }
+#endif
     tp_SetIntVec(PC_INT_CTRL_BREAK, pc_register_code(break_handler, "Crt Ctrl-Break"));
     cursor();
+    tp_TextCrtInit();
 }
 void tp_Delay(uint16_t ms) {
     pc_delay_ms(ms);
@@ -102,7 +122,7 @@ void tp_NoSound(void) {
 }
 /* Query BIOS INT 16h without consuming the emulated keyboard ring-buffer word. */
 uint8_t tp_KeyPressed(void) {
-    if (read_pending)
+    if (pending_scan)
         return 1;
     pc_poll();
     pc_regs r = {0};
@@ -112,15 +132,15 @@ uint8_t tp_KeyPressed(void) {
 }
 /* Consume a BIOS key word and retain its scan byte for Crt's following ReadKey call. */
 uint8_t tp_ReadKey(void) {
-    if (read_pending) {
-        read_pending = 0;
-        return pending_scan;
+    if (pending_scan) {
+        uint8_t scan=pending_scan; pending_scan=0;
+        return scan;
     }
     pc_regs r = {0};
     pc_bios_int(PC_INT_KEYBOARD_BIOS, &r);
     if (!(r.ax & 255)) {
         pending_scan = (uint8_t)(r.ax >> 8);
-        read_pending = 1;
+
     }
     return (uint8_t)r.ax;
 }

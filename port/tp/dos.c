@@ -10,6 +10,7 @@ _Static_assert(sizeof(pc_regs) == 20, "Dos.Registers width");
 void tp_Intr(uint8_t n, void *regs) {
     pc_regs r;
     memcpy(&r, regs, sizeof r);
+    r.flags=(uint16_t)((r.flags & ~0x200u) | (pc_interrupts_enabled() ? 0x200u : 0));
     tp_FarSyncIn();
     pc_bios_int(n, &r);
     tp_FarSyncOut();
