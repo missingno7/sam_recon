@@ -259,10 +259,13 @@ uint8_t vga_mode(void);
 void vga_set_adapter(int vga); /* default VGA; --ega chooses EGA */
 int vga_is_vga(void);
 void vga_dimensions(int *width, int *height);
+void vga_compose_frame(void); /* presentation sampling, no emulated state changes */
+void vga_scanout_origin(unsigned *start,unsigned *pan,unsigned *stride);
 void vga_render_indexed(uint8_t *pixels);
 void vga_render_rgb(uint32_t *pixels);                /* 0xAARRGGBB, up to 720x480 */
 void vga_scanout_dimensions(int *width, int *height); /* doubled physical VGA lines */
-void vga_render_scanout_rgb(uint32_t *pixels);
+void vga_render_scanout_rgb(uint32_t *pixels); /* instantaneous register diagnostic */
+void vga_render_display_rgb(uint32_t *pixels,int physical); /* sampled display latches */
 uint32_t vga_colour_rgb(uint8_t palette_code);
 const uint8_t *vga_palette_registers(void);
 uint32_t vga_border_rgb(void);

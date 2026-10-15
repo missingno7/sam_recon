@@ -56,10 +56,11 @@ options. No controller event edits game state or generates keyboard input.
 
 Presentation settings are `sam.json` **beside the executable**, separate from the game's
 `SAMn.CFG`. The chooser offers fullscreen, integer scaling versus aspect-correct fit, optional
-smooth filtering and window sizes; resizing also saves the windowed size. Defaults retain the
-existing integer/aspect presentation and nearest filtering. CLI overrides:
+smooth filtering, overscan border and window sizes; resizing also saves the windowed size. Defaults
+retain integer/aspect presentation and nearest filtering; the overscan border is cropped. CLI overrides:
 `--fullscreen` / `--windowed`, `--scaling integer|fit`, `--smooth` / `--no-smooth`,
-`--window-size WIDTHxHEIGHT`, `--settings FILE`. The latter changes only the host settings path.
+`--border` / `--no-border`, `--window-size WIDTHxHEIGHT`, `--settings FILE`.
+The latter changes only the host settings path.
 Use a writable directory for persistence; read-only locations report a save error and keep
 playing. Malformed settings fall back to defaults. These options never change DOS scanout or
 the source-frame screenshots, so the existing boot hashes remain unchanged.
@@ -109,6 +110,12 @@ event reaching the BIOS keyboard ring while the PC is blocked.
 `tools/check_timing.py FILE --start 10 --end 22` summarizes its cadence, including loading gaps.
 The raw-port `clock_edges` regression inserts host stalls longer than the retrace pulse and
 checks that every pulse and the PIT remain observable without a library wait hint.
+
+`SAM_DIAG_SCANOUT=FILE` logs the start address and fine pan used at each composed frame,
+with stride and effective X/Y. `python tools/check_scroll.py --exe build/port/sam.exe`
+checks every frame during scripted mission walking in both directions and title/credits
+vertical panning, on VGA and EGA. It copies disposable episode data without the player's CFG.
+The `scanout_latches` CTest checks writes on both sides of sync and raw register reads.
 
 No DOS tools are needed: each episode's memory placement (PSP, DS, SS, heap) comes from
 [../config/port.json](../config/port.json); DATA offsets are computed by the translator. With the DOS

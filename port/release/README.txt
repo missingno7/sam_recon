@@ -20,14 +20,21 @@ exits the program. Each episode start has fresh DOS memory and devices.
 
 Presentation:
   Alt+Enter or F11 toggles fullscreen.
-  S in the chooser changes fullscreen, scaling, filter and window size.
+  S in the chooser changes fullscreen, scaling, filter, border and window size.
   Integer scaling is the default. Fit uses the available window while keeping
   the same corrected 4:3 picture. Smooth filtering is optional and off by default.
+  The overscan border is cropped by default. Enable Border in the chooser
+  settings (B) to see the original CRT border; it turns red during gameplay.
   You can resize the window. Fullscreen keeps the saved windowed size.
   These settings are in sam.json beside sam.exe, separate from SAMN.CFG.
   If this folder is read-only, settings cannot be saved; use a writable folder.
   Presentation uses monitor vsync. The game keeps its original emulated timing;
   a slow monitor or GPU does not hold its timer interrupts or keyboard input.
+
+Video Select in the game's own menu should normally be N (the default) for
+both the IBM VGA and EGA models. Y is the original workaround for some clone
+boards and can cause uneven fine scrolling with these adapter models. This
+choice is stored in the game's SAMN.CFG; port settings never change it.
 
 Controls:
   Use the game's keyboard controls and its Keyboard Config menu as before.
@@ -44,6 +51,7 @@ Command line examples:
   sam.exe --data "D:\Games\Secret Agent"
   sam.exe --episode 2 --data "D:\Games\Secret Agent"
   sam.exe --fullscreen --scaling fit --smooth
+  sam.exe --border          (show the original CRT overscan; --no-border crops it)
   sam.exe --windowed --window-size 960x720 --scaling integer --no-smooth
   sam.exe --settings "D:\My Settings\sam.json"
 --episode selects a direct run, which exits the program when the episode quits.

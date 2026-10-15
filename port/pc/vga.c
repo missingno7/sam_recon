@@ -5,9 +5,29 @@
 
 static FILE *flip_log;
 static int flip_log_checked;
+static FILE *scanout_log;
+static int scanout_log_checked;
+static void display_advance(void);
+void vga_compose_frame(void) {
+    display_advance();
+    if(!scanout_log_checked) {
+        const char *path=getenv("SAM_DIAG_SCANOUT");
+        scanout_log=path ? fopen(path,"w") : NULL;scanout_log_checked=1;
+        if(scanout_log)fputs("emu_us,adapter,mode,start,pan,stride,x,y\n",scanout_log);
+    }
+    if(scanout_log) {
+        unsigned start,pan,stride;
+        vga_scanout_origin(&start,&pan,&stride);
+        fprintf(scanout_log,"%llu,%s,%u,%u,%u,%u,%u,%u\n",
+            (unsigned long long)pc_time_us(),vga_is_vga() ? "vga" : "ega",vga_mode(),
+            start,pan,stride,stride ? (start%stride)*8+pan : pan,stride ? start/stride : 0);
+    }
+}
 void vga_diagnostics_close(void) {
     if(flip_log)fclose(flip_log);
     flip_log=NULL;flip_log_checked=0;
+    if(scanout_log)fclose(scanout_log);
+    scanout_log=NULL;scanout_log_checked=0;
 }
 static void trace_flip(uint8_t high) {
     if(!flip_log_checked) {
@@ -50,6 +70,37 @@ static const uint32_t cga[16] = {0x000000, 0x0000aa, 0x00aa00, 0x00aaaa, 0xaa000
                                  0xaa5500, 0xaaaaaa, 0x555555, 0x5555ff, 0x55ff55, 0x55ffff,
                                  0xff5555, 0xff55ff, 0xffff55, 0xffffff};
 
+/* IBM EGA and VGA latch the start address at vertical sync (IBM VGA TR,
+   2-67; IBM PC Seminar 1984/11, pp.50-51). AC13 takes effect on the next
+   line (Abrash ch.30). Keep the programmer-visible registers untouched.
+   Advance lazily before relevant writes, processing edges before the write
+   at that same timestamp. No scheduler event, safe point or device state
+   is added. At active line zero sample the pair used by frame scanout. */
+static uint64_t display_line;
+static unsigned display_latched_start,display_frame_start,display_frame_pan;
+static void display_advance(void) {
+    uint64_t now=pc_video_line(pc_time_us());
+    uint64_t sync=display_line/PC_VIDEO_LINES*PC_VIDEO_LINES+412;
+    uint64_t active=(display_line/PC_VIDEO_LINES+1)*PC_VIDEO_LINES;
+    if(sync<=display_line)sync+=PC_VIDEO_LINES;
+    while(sync<=now || active<=now) {
+        if(sync<active) {
+            display_latched_start=(crtc[PC_VGA_CRTC_START_ADDRESS_HIGH]<<8)|crtc[PC_VGA_CRTC_START_ADDRESS_LOW];
+            sync+=PC_VIDEO_LINES;
+        } else {
+            display_frame_start=display_latched_start;
+            display_frame_pan=attr[PC_VGA_ATTR_PEL_PANNING]&7;
+            active+=PC_VIDEO_LINES;
+        }
+    }
+    display_line=now;
+}
+void vga_scanout_origin(unsigned *start,unsigned *pan,unsigned *stride) {
+    display_advance();
+    *start=display_frame_start;
+    *pan=display_frame_pan;
+    *stride=2u*crtc[PC_VGA_CRTC_OFFSET];
+}
 void vga_set_adapter(int vga) {
     adapter_vga = vga != 0;
 }
@@ -68,8 +119,9 @@ int vga_scanout_changed(void) {
     static uint8_t old_planes[4][65536],old_crtc[32],old_attr[32];
     static uint8_t old_text[32768],old_font[4096];
     static int valid,old_mode,old_adapter,old_enabled,old_blink;
+    static unsigned old_start,old_pan;
     int blink=(int)((pc_time_us()/266667u)&1);
-    int changed=!valid || old_mode!=mode || old_adapter!=adapter_vga || old_enabled!=video_enabled ||
+    int changed=!valid || old_start!=display_frame_start || old_pan!=display_frame_pan || old_mode!=mode || old_adapter!=adapter_vga || old_enabled!=video_enabled ||
         memcmp(old_crtc,crtc,sizeof crtc) || memcmp(old_attr,attr,sizeof attr);
     if(mode==PC_VIDEO_MODE_TEXT_80X25) {
         const uint8_t *font=pc_host_fp(pc_font_pointer(adapter_vga ? 16 : 14));
@@ -82,6 +134,7 @@ int vga_scanout_changed(void) {
     }
     if(changed){memcpy(old_crtc,crtc,sizeof crtc);memcpy(old_attr,attr,sizeof attr);}
     valid=1;old_mode=mode;old_adapter=adapter_vga;old_enabled=video_enabled;old_blink=blink;
+    old_start=display_frame_start;old_pan=display_frame_pan;
     return changed;
 }
 const uint8_t *vga_palette_registers(void) {
@@ -142,8 +195,10 @@ int vga_port_write(uint16_t port, uint8_t v) {
         if (!attr_phase) {
             ai = v & 31;
             video_enabled = (v & 32) != 0;
-        } else
+        } else {
+            if(ai==PC_VGA_ATTR_PEL_PANNING)display_advance();
             attr[ai] = v & (ai < 16 ? 63 : 255);
+        }
         attr_phase ^= 1;
         return 1;
     case PC_PORT_VGA_MISC_WRITE:
@@ -167,6 +222,7 @@ int vga_port_write(uint16_t port, uint8_t v) {
         return 1;
     case PC_PORT_CRTC_MONO_DATA:
     case PC_PORT_CRTC_COLOR_DATA:
+        if(ci==PC_VGA_CRTC_START_ADDRESS_HIGH || ci==PC_VGA_CRTC_START_ADDRESS_LOW)display_advance();
         crtc[ci] = v;
         if(ci==PC_VGA_CRTC_START_ADDRESS_HIGH)trace_flip(v);
         return 1;
@@ -248,6 +304,8 @@ void bios_set_mode(uint8_t m) {
         fprintf(stderr, "unsupported BIOS video mode %02x\n", m);
         abort();
     }
+    display_line=pc_video_line(pc_time_us());
+    display_latched_start=display_frame_start=display_frame_pan=0;
     mode = m;
     memset(seq, 0, sizeof seq);
     memset(gc, 0, sizeof gc);
@@ -368,7 +426,7 @@ void vga_render_indexed(uint8_t *out) {
 
 /* Decode each planar byte once, hoisting palette/CRTC work out of the pixel
    loop. The nibble expansion is computed from bits, not from game/ROM data. */
-static void render_planar_rgb(uint32_t *out,int w,int h,int scanout) {
+static void render_planar_rgb(uint32_t *out,int w,int h,int scanout,unsigned initial,unsigned initial_pan) {
     static uint32_t spread[256];static int initialized;
     if(!initialized) {
         for(unsigned n=0;n<256;++n)
@@ -382,12 +440,11 @@ static void render_planar_rgb(uint32_t *out,int w,int h,int scanout) {
         (crtc[PC_VGA_CRTC_MAX_SCAN_LINE]&0x80) ? 2 : 1;
     unsigned compare=crtc[PC_VGA_CRTC_LINE_COMPARE]|((crtc[PC_VGA_CRTC_OVERFLOW]&16)<<4)|
         (adapter_vga ? ((crtc[PC_VGA_CRTC_MAX_SCAN_LINE]&64)<<3) : 0);
-    unsigned initial=(crtc[PC_VGA_CRTC_START_ADDRESS_HIGH]<<8)|crtc[PC_VGA_CRTC_START_ADDRESS_LOW];
     unsigned previous=UINT32_MAX,previous_pan=0;
     for(int line=0;line<h;++line) {
         unsigned physical=scanout ? (unsigned)line : (unsigned)line*scale;
         unsigned row=scanout ? (unsigned)line/scale : (unsigned)line;
-        unsigned start=initial,pan=attr[PC_VGA_ATTR_PEL_PANNING]&7;
+        unsigned start=initial,pan=initial_pan;
         if(physical>compare) {
             row=(physical-compare-1)/scale;start=0;
             if(attr[PC_VGA_ATTR_MODE_CONTROL]&32)pan=0;
@@ -409,20 +466,22 @@ static void render_planar_rgb(uint32_t *out,int w,int h,int scanout) {
     }
 }
 /* Compose text glyphs or planar pixels at the active adapter's physical scanout size. */
-static void render_rgb(uint32_t *out, int scanout) {
+static void render_rgb(uint32_t *out, int scanout, int displayed) {
     int w, h;
     if (scanout)
         vga_scanout_dimensions(&w, &h);
     else
         vga_dimensions(&w, &h);
-    if(mode!=PC_VIDEO_MODE_TEXT_80X25) {render_planar_rgb(out,w,h,scanout);return;}
+    unsigned origin=(crtc[PC_VGA_CRTC_START_ADDRESS_HIGH]<<8)|crtc[PC_VGA_CRTC_START_ADDRESS_LOW];
+    unsigned pan=attr[PC_VGA_ATTR_PEL_PANNING]&7;
+    if(displayed) {display_advance();origin=display_frame_start;pan=display_frame_pan;}
+    if(mode!=PC_VIDEO_MODE_TEXT_80X25) {render_planar_rgb(out,w,h,scanout,origin,pan);return;}
     int blink = ((pc_time_us() / 266667u) & 1) == 0;
     unsigned font_h = adapter_vga ? 16 : 14, cell_w = adapter_vga ? 9 : 8;
     farptr font = pc_font_pointer(font_h);
     uint16_t cursor = (uint16_t)((crtc[PC_VGA_CRTC_CURSOR_LOCATION_HIGH] << 8) |
                                  crtc[PC_VGA_CRTC_CURSOR_LOCATION_LOW]);
-    unsigned start =
-        (crtc[PC_VGA_CRTC_START_ADDRESS_HIGH] << 8) | crtc[PC_VGA_CRTC_START_ADDRESS_LOW];
+    unsigned start=origin;
     for (int y = 0; y < h; ++y)
         for (int x = 0; x < w; ++x) {
             uint32_t rgb;
@@ -450,13 +509,16 @@ static void render_rgb(uint32_t *out, int scanout) {
         }
 }
 void vga_render_rgb(uint32_t *out) {
-    render_rgb(out, 0);
+    render_rgb(out, 0, 0);
 }
 void vga_render_scanout_rgb(uint32_t *out) {
-    render_rgb(out, 1);
+    render_rgb(out, 1, 0);
 }
 
 /* Implement the INT 10h video subset used for mode, cursor, text, palette, and font queries. */
+void vga_render_display_rgb(uint32_t *out,int physical) {
+    render_rgb(out,physical,1);
+}
 void bios_video(pc_regs *r) {
     unsigned ah = r->ax >> 8, al = r->ax & 255, bh = r->bx >> 8, bl = r->bx & 255;
     switch (ah) {

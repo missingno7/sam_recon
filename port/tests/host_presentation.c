@@ -15,13 +15,13 @@ int main(int argc, char **argv) {
     const uint8_t image[] = {1,2,3,4};
     pc_load_program(&p,image,sizeof image); pc_clock_manual(1);
     pc_settings defaults = *platform_settings(), changed = defaults;
-    changed.integer_scale = 0; changed.smooth = 1;
+    changed.integer_scale = 0; changed.smooth = 1; changed.border = 1;
     changed.window_width = 640; changed.window_height = 480;
     CHECK(platform_apply_settings(&changed)); platform_present();
     CHECK(pc_settings_save("settings-roundtrip.json",platform_settings()));
     pc_settings loaded; pc_settings_defaults(&loaded);
     CHECK(pc_settings_load("settings-roundtrip.json",&loaded)==1);
-    CHECK(loaded.smooth && !loaded.integer_scale && loaded.window_width==640 && loaded.window_height==480);
+    CHECK(loaded.border && loaded.smooth && !loaded.integer_scale && loaded.window_width==640 && loaded.window_height==480);
     FILE *bad = fopen("settings-invalid.json","w"); CHECK(bad);
     fputs("{\"window_width\": 800, \"smooth\": tru}",bad); fclose(bad);
     CHECK(pc_settings_load("settings-invalid.json",&loaded)==-1);

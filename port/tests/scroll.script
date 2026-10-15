@@ -1,0 +1,16 @@
+1500 key space
+2500 key space
+3250 key n
+8000 keydown right
+10000 keyup right
+16000 shot mission.png
+16500 keydown right
+16500 keydown ctrl
+21000 keyup right
+21000 keyup ctrl
+21500 keydown left
+21500 keydown ctrl
+25000 keyup left
+25000 keyup ctrl
+25200 shot returned-left.png
+25400 quit

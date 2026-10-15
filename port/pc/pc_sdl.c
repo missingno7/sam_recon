@@ -503,12 +503,13 @@ int pc_host_window_messages(void) { return !headless_mode; }
 /* Capture completed emulated scanouts; host presentation owns its pacing. */
 void platform_present(void) {
     HOST_COUNT(HM_SCANOUT,1);
+    vga_compose_frame();
     if(headless_mode)return;
     if(native_video) {
         int w,h;vga_scanout_dimensions(&w,&h);
         uint64_t before=pc_metrics_enabled ? SDL_GetTicksNS() : 0;
         if(!frame_generation || vga_scanout_changed()) {
-            vga_render_scanout_rgb(next_pixels);
+            vga_render_display_rgb(next_pixels,1);
             /* The game also draws into hidden pages. Those writes invalidate
                the adapter cache but need no upload/present if scanout is equal. */
             if(!frame_generation || captured_w!=w || captured_h!=h ||
@@ -526,7 +527,7 @@ void platform_present(void) {
     int w, h;
     uint64_t before=pc_metrics_enabled ? SDL_GetTicksNS() : 0;
     vga_scanout_dimensions(&w, &h);
-    vga_render_scanout_rgb(pixels);
+    vga_render_display_rgb(pixels,1);
     if (pc_metrics_enabled) pc_metrics_add(HM_RENDER_NS,SDL_GetTicksNS()-before);
     if (!texture || texture_w != w || texture_h != h) {
         if (texture)
@@ -542,13 +543,13 @@ void platform_present(void) {
         SDL_SetTextureScaleMode(texture, presentation.smooth ? SDL_SCALEMODE_LINEAR : SDL_SCALEMODE_NEAREST);
     }
     int beam_w = w == 320 ? 320 : 640, beam_h = w == 320 ? 240 : 480;
-    int border_w = beam_w / 40, border_h = beam_h / 40;
+    int border_w = presentation.border ? beam_w / 40 : 0, border_h = presentation.border ? beam_h / 40 : 0;
     int canvas_w = beam_w + 2 * border_w, canvas_h = beam_h + 2 * border_h;
     SDL_SetRenderLogicalPresentation(renderer, canvas_w, canvas_h,
                                      presentation.integer_scale ? SDL_LOGICAL_PRESENTATION_INTEGER_SCALE
                                                                 : SDL_LOGICAL_PRESENTATION_LETTERBOX);
     SDL_UpdateTexture(texture, NULL, pixels, w * (int)sizeof(uint32_t));
-    uint32_t border = vga_border_rgb();
+    uint32_t border = presentation.border ? vga_border_rgb() : 0xff000000u;
     SDL_SetRenderDrawColor(renderer, (uint8_t)(border >> 16), (uint8_t)(border >> 8),
                            (uint8_t)border, 255);
     SDL_RenderClear(renderer);
@@ -565,10 +566,10 @@ int platform_screenshot(const char *path) {
     int w, h;
     if (physical_shots) {
         vga_scanout_dimensions(&w, &h);
-        vga_render_scanout_rgb(shot_pixels);
+        vga_render_display_rgb(shot_pixels,1);
     } else {
         vga_dimensions(&w, &h);
-        vga_render_rgb(shot_pixels);
+        vga_render_display_rgb(shot_pixels,0);
     }
     SDL_Surface *s =
         SDL_CreateSurfaceFrom(w, h, SDL_PIXELFORMAT_ARGB8888, shot_pixels, w * (int)sizeof(uint32_t));
@@ -625,6 +626,8 @@ int platform_init(int argc, char **argv) {
             presentation.fullscreen = !strcmp(argv[i], "--fullscreen"); settings_dirty = 1;
         } else if (!strcmp(argv[i], "--smooth") || !strcmp(argv[i], "--no-smooth")) {
             presentation.smooth = !strcmp(argv[i], "--smooth"); settings_dirty = 1;
+        } else if (!strcmp(argv[i], "--border") || !strcmp(argv[i], "--no-border")) {
+            presentation.border = !strcmp(argv[i], "--border"); settings_dirty = 1;
         } else if (!strcmp(argv[i], "--scaling") && i + 1 < argc) {
             const char *value = argv[++i];
             if (strcmp(value, "integer") && strcmp(value, "fit")) return 0;

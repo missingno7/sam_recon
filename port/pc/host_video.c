@@ -137,7 +137,8 @@ static int SDLCALL present_thread(void *unused) {
             ID3D11DeviceContext_Unmap(context,(ID3D11Resource *)image,0);uploaded=frame->generation;
         }
         float beam_w=tw==320 ? 320.f : 640.f,beam_h=tw==320 ? 240.f : 480.f;
-        float bw=beam_w/40,bh=beam_h/40,canvas_w=beam_w+2*bw,canvas_h=beam_h+2*bh;
+        float bw=frame->settings.border ? beam_w/40 : 0,bh=frame->settings.border ? beam_h/40 : 0;
+        float canvas_w=beam_w+2*bw,canvas_h=beam_h+2*bh;
         float scale=SDL_min(w/canvas_w,h/canvas_h);
         if(frame->settings.integer_scale && scale>=1) scale=(float)(int)scale;
         float x=(w-canvas_w*scale)/2,y=(h-canvas_h*scale)/2;

@@ -76,14 +76,16 @@ static void settings_dialog(void) {
         char line[100];
         frame("PORT PRESENTATION");
         snprintf(line, sizeof line, "F  Fullscreen       %s", s->fullscreen ? "On" : "Off");
-        text(12, 10, 0x1f, line);
+        text(12, 9, 0x1f, line);
         snprintf(line, sizeof line, "I  Scaling          %s", s->integer_scale ? "Integer, aspect corrected" : "Fit, aspect corrected");
-        text(12, 12, 0x1f, line);
+        text(12, 11, 0x1f, line);
         snprintf(line, sizeof line, "M  Smooth filter    %s", s->smooth ? "On" : "Off");
-        text(12, 14, 0x1f, line);
+        text(12, 13, 0x1f, line);
+        snprintf(line, sizeof line, "B  Overscan border  %s", s->border ? "On" : "Off (cropped)");
+        text(12, 15, 0x1f, line);
         snprintf(line, sizeof line, "W  Window size      %d x %d", s->window_width, s->window_height);
-        text(12, 16, 0x1f, line);
-        text(12, 18, 0x1e, "Esc: Back     Changes are saved in sam.json");
+        text(12, 17, 0x1f, line);
+        text(12, 19, 0x1e, "Esc: Back     Changes are saved in sam.json");
         platform_present();
         int key = read_key() & 255;
         if (key == 27) return;
@@ -91,6 +93,7 @@ static void settings_dialog(void) {
         if (key == 'f' || key == 'F') next.fullscreen = !next.fullscreen;
         else if (key == 'i' || key == 'I') next.integer_scale = !next.integer_scale;
         else if (key == 'm' || key == 'M') next.smooth = !next.smooth;
+        else if (key == 'b' || key == 'B') next.border = !next.border;
         else if (key == 'w' || key == 'W') {
             const int sizes[][2] = {{640,480},{960,720},{1280,960}};
             unsigned i;

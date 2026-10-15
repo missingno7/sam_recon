@@ -4,6 +4,7 @@
 typedef struct {
     int fullscreen, integer_scale, smooth;
     int window_width, window_height;
+    int border; /* show CRT overscan; default cropped */
 } pc_settings;
 void pc_settings_defaults(pc_settings *settings);
 int pc_settings_load(const char *path, pc_settings *settings);

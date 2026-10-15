@@ -186,3 +186,42 @@ speaker `pc_speaker.c`, SDL front end `pc_sdl.c`, script runner, `tools/dosref.p
 what Secret Agent uses beyond Duke: 640x400 virtual screens with an 80-byte stride, CRTC start
 address and fine panning, the line-compare split for the status band, mode 10h for the font query,
 and text mode 3 for the exit screen.
+
+## Display latches and overscan presentation
+
+Program-visible CRTC and attribute registers remain immediate and readable, and
+remain the state checked by lockstep. Presentation separately tracks the IBM
+EGA/VGA start-address latch at vertical sync start (line 412 in the existing
+virtual raster). Before either start byte or AC13 changes, presentation consumes
+any elapsed raster edges using the old register values. Writes exactly on the
+edge occur after the latch; even two start bytes straddling sync are represented.
+This lazy history neither schedules events nor advances emulated time.
+
+At the existing line-zero frame event, compose with the start address latched at
+the preceding sync and the fine pan present at active-display start. AC13 is a
+next-scanline value, not a second frame latch. The game's blanking-time writes
+therefore become a consistent coarse/fine pair. The current frame compositor
+samples that pair at active line zero; it does not synthesize mid-active-display
+raster effects. Memory, palettes and the existing line-compare/split renderer
+retain their previous behavior. Both the host texture and source-frame script
+screenshots use this sampled pair. Instantaneous-register rendering APIs remain
+available for device diagnostics and indexed/RGB conversion tests.
+
+The start-address rule is shared by IBM EGA and VGA, not reversed for EGA:
+[IBM PC Seminar, November 1984, pp.50-51](https://bitsavers.trailing-edge.com/pdf/ibm/pc/IBM_Personal_Computer_Seminar_Proceedings/PC_Seminar_V02_N11_198411.pdf),
+[IBM VGA Technical Reference, 2-63 and 2-67](https://bitsavers.trailing-edge.com/pdf/ibm/pc/cards/IBM_VGA_XGA_Technical_Reference_Manual_May92.pdf).
+[Abrash, chapter 23, page flipping](https://github.com/jagregory/abrash-black-book/blob/master/src/chapter-23.md)
+and [chapter 30, horizontal panning](https://github.com/jagregory/abrash-black-book/blob/master/src/chapter-30.md)
+describe the split-update sequence used by ProGraphx: program the start after
+sync ends, then fine pan at the next sync start because fine pan takes effect on
+the next line. EGA lacks VGA scan doubling and VGA split-region pan suppression;
+its existing adapter-specific split handling is unchanged here. Clone latch
+variations are not additional adapter models. Game Video Select N selects the
+normal retrace-start routine for both modeled adapters; Y selects the original
+clone workaround and remains game-owned in SAMn.CFG.
+
+Overscan is still an emulated attribute register (including the game's red
+value). Host settings `border`, chooser B and `--border`/`--no-border` control
+whether to allocate a visible overscan area. Default false crops it, preserving
+the picture's 4:3 aspect and the existing integer/fit/filter settings. Letterbox
+space is black. Script source-frame captures always exclude host borders.

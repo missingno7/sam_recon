@@ -74,15 +74,21 @@ def main(argv=None):
             dest,r = run('direct-quit',(1,),quit_script,args=('--episode','1'))
             assert 'LAUNCHER' not in r['stdout'] and 'returned.png' not in r['captures'],r
             dest,r = run('settings',(1,2,3),
-                '100 shot chooser.png\n200 key s\n300 shot settings-before.png\n400 key i\n500 key m\n600 key w\n700 shot settings-after.png\n800 key escape\n900 shot chooser-after.png\n1000 quit\n')
+                '100 shot chooser.png\n200 key s\n300 shot settings-before.png\n400 key i\n500 key m\n600 key w\n650 key b\n700 shot settings-after.png\n800 key escape\n900 shot chooser-after.png\n1000 quit\n')
             settings = json.loads((dest/'sam.json').read_text())
-            assert settings['scaling']=='fit' and settings['smooth'] is True and settings['window_width']==1280,settings
+            assert settings['border'] is True and settings['scaling']=='fit' and settings['smooth'] is True and settings['window_width']==1280,settings
             # A later process loads the same file without passing any presentation switches.
             p = subprocess.run([str(dest/'sam.exe'),'--headless','--no-audio','--script',str(dest/'test.script')],
                                cwd=output,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=20)
             assert p.returncode==0
             settings2 = json.loads((dest/'sam.json').read_text())
-            assert settings2['scaling']=='integer' and settings2['smooth'] is False and settings2['window_width']==640,settings2
+            assert settings2['border'] is False and settings2['scaling']=='integer' and settings2['smooth'] is False and settings2['window_width']==640,settings2
+            dest,r = run('border-switches',(1,2,3),'100 quit\n',args=('--border',))
+            assert json.loads((dest/'sam.json').read_text())['border'] is True
+            p = subprocess.run([str(dest/'sam.exe'),'--headless','--no-audio','--no-border',
+                                '--script',str(dest/'test.script')], cwd=output,
+                               stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=20)
+            assert p.returncode==0 and json.loads((dest/'sam.json').read_text())['border'] is False
             events = ['100 shot chooser.png']
             for index,ep in enumerate((1,2,3,1)):
                 start=250+index*6500

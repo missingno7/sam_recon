@@ -6,7 +6,7 @@
 #include <string.h>
 
 void pc_settings_defaults(pc_settings *s) {
-    *s = (pc_settings){0, 1, 0, 960, 720};
+    *s = (pc_settings){0, 1, 0, 960, 720, 0};
 }
 static void space(const char **p) {
     while (isspace((unsigned char)**p)) ++*p;
@@ -66,6 +66,8 @@ int pc_settings_load(const char *path, pc_settings *settings) {
             if (quoted || strcmp(value, "1")) return -1;
         } else if (!strcmp(key, "fullscreen")) {
             if (quoted || !boolean(value, &s.fullscreen)) return -1;
+        } else if (!strcmp(key, "border")) {
+            if (quoted || !boolean(value, &s.border)) return -1;
         } else if (!strcmp(key, "smooth")) {
             if (quoted || !boolean(value, &s.smooth)) return -1;
         } else if (!strcmp(key, "scaling")) {
@@ -96,9 +98,9 @@ int pc_settings_save(const char *path, const pc_settings *s) {
     if (!f) return 0;
     int ok = fprintf(f, "{\n  \"version\": 1,\n  \"fullscreen\": %s,\n"
                      "  \"scaling\": \"%s\",\n  \"smooth\": %s,\n"
-                     "  \"window_width\": %d,\n  \"window_height\": %d\n}\n",
+                     "  \"window_width\": %d,\n  \"window_height\": %d,\n  \"border\": %s\n}\n",
                      s->fullscreen ? "true" : "false", s->integer_scale ? "integer" : "fit",
-                     s->smooth ? "true" : "false", s->window_width, s->window_height) > 0;
+                     s->smooth ? "true" : "false", s->window_width, s->window_height, s->border ? "true" : "false") > 0;
     if (fclose(f)) ok = 0;
     return ok;
 }
