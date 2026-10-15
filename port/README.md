@@ -58,13 +58,12 @@ arguments.
 
 ## Status
 
-* Milestone 2 reached: all three episodes boot to their title screens.
-* The library differential gate covers all 43 called routines and all 13 screens.
-* Open: strict whole-game verification and the uninitialised sound-stack policy, Android.
+* Milestones 1-4 reached: all three episodes run; the library differential gate covers all 43
+  called routines and all 13 screens; strict lockstep against the original passes for 18
+  scenarios of SAM1-3 (`python tools/validate.py --lockstep`).
+* Open: launcher, presentation settings and release packages (milestone 5), Android.
 
-The optional `-DSAM_LOCKSTEP=ON` target and `tools/lockstep.py` run the original
-in Unicorn on this port's PC model. Usage, synchronization, comparisons and the
-current compatibility decisions are documented in
-[tests/port/lockstep/README.md](../tests/port/lockstep/README.md). This is a strict
-diagnostic gate. Mission and save/restore/quit scenarios expose the uninitialised
-sound priority; no new policy or sound exclusion is applied.
+The optional `-DSAM_LOCKSTEP=ON` target and `tools/lockstep.py` run the original in Unicorn on
+this port's PC model and compare it with the port at every gameplay frame. Usage,
+synchronization, comparisons and the named rules (including the documented uninitialised
+sound-priority difference) are in [tests/port/lockstep/README.md](../tests/port/lockstep/README.md).

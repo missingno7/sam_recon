@@ -28,10 +28,14 @@ Every change to `game/` must keep `python tools/validate.py` green.
 
 Design, memory model and contract: [port.md](port.md); platform API: `port/pc/pc.h`.
 
-Status: milestones 1 and 2 reached (translator output for SAM1-3 compiles at -O0/-O2 with the DS
-image equal to the originals; all three episodes boot to their title screens in SDL3);
-`python tools/validate.py --port` checks it. Next: full differential gate for `port/lib`, gameplay,
-original-vs-port script comparisons, readability of the generated C and runtime, Android.
+Status (2026-10-15): milestones 1-4 reached. Translator output for SAM1-3 compiles at -O0/-O2
+with the DS image equal to the originals and builds without DOS tools; all 43 library routines the
+game calls match the assembled originals (`tools/libdiff.py`); the original program, run on the
+port's own emulated PC, and the port agree strictly at every gameplay frame of 18 scenarios
+(boot, walk, missions, pickups, damage, death, key/door, save/restore/quit; 1558 frames) - the only
+documented difference is the original's uninitialised sound-priority read (user decision).
+Checks: `python tools/validate.py --port` and `--lockstep`. Next: milestone 5 (launcher, settings,
+release packages), then Android.
 
 Keep `game/` (Turbo Pascal 5.0) as the single source of truth and generate the port's C from it with
 a purpose-built translator, as duke1_recon does with `tools/port_gen.py`:
